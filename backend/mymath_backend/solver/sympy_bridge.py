@@ -135,6 +135,8 @@ def from_sympy(expr: sympy.Expr) -> CoreNode:
 
     if expr is sympy.oo:
         return CoreNode.constant("∞")
+    if expr is -sympy.oo:
+        return CoreNode.node(T.NEGATIVE, CoreNode.constant("∞"))
     if expr is sympy.I:
         return CoreNode.constant("i")
     if expr is sympy.pi:

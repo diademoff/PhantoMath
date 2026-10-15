@@ -8,14 +8,18 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
+import sympy
 
 from mymath_backend import CoreNode, load_explanations
 from mymath_backend import CoreNodeType as T
 from mymath_backend.explanations import DEFAULT_LOCALE
-from mymath_backend.solver import SolveError, registered_types, solve
+from mymath_backend.solver import registered_types, solve
+from mymath_backend.solver.sympy_bridge import to_sympy
 
 EXPLANATIONS = Path(__file__).resolve().parents[2] / "truth" / "data" / "explanations.json"
+
+# Символ sympy для сверки (``x`` занят конструктором узла).
+sx = sympy.Symbol("x")
 
 
 def c(value: str) -> CoreNode:
@@ -120,9 +124,15 @@ class TestSteps:
 
 
 class TestUnsupported:
-    def test_type_without_rule_is_rejected(self) -> None:
-        with pytest.raises(SolveError, match="не поддерживается"):
-            solve(derivative(node(T.SEC, x())))
+    def test_sympy_fallback_handles_more_functions(self) -> None:
+        # sec нет в таблице правил, но sympy берёт производную.
+        result = solution_of(node(T.SEC, x()))
+        assert sympy.simplify(to_sympy(result) - (sympy.sec(sx) * sympy.tan(sx))) == 0
+
+    def test_variable_exponent_goes_through_sympy(self) -> None:
+        result = solution_of(node(T.POWER, x(), x()))
+        expected = sx**sx * (sympy.log(sx) + 1)
+        assert sympy.simplify(to_sympy(result) - expected) == 0
 
 
 class TestExplanationKeys:

@@ -19,10 +19,13 @@ from __future__ import annotations
 
 from fractions import Fraction
 
+import sympy
+
 from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
 from .arithmetic import format_number
 from .base import SolveContext, SolveError, Step, solver_for
+from .sympy_bridge import from_sympy, to_sympy
 
 _HEADER = CoreRichText(type="derive_short")
 
@@ -284,11 +287,28 @@ def solve_derivative(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Взять производную подвыражения.
 
     Переменная — единственная свободная переменная выражения, иначе ``x``.
+    Сначала пробуем собственные правила (они дают аккуратную запись для
+    многочленов), а для того, что таблица не знает, зовём sympy.
     """
     ctx.require(len(node.children) >= 1, "производная без выражения")
-    result = _diff(node.children[0], ctx)
+    expression = node.children[0]
+    try:
+        result = _diff(expression, ctx)
+    except SolveError:
+        result = _sympy_derivative(expression, ctx)
+
     ctx.result.add(Step(left=node, right=result, key="find_derivative"), [_HEADER])
     return result
+
+
+def _sympy_derivative(expression: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Производная через sympy — на случай, если таблица правил не покрывает."""
+    var = ctx.variables[0] if ctx.variables else "x"
+    computed = sympy.simplify(sympy.diff(to_sympy(expression), sympy.Symbol(var)))
+    try:
+        return from_sympy(computed)
+    except SolveError as err:
+        raise SolveError("производная не выражается в поддерживаемых узлах") from err
 
 
 __all__ = [

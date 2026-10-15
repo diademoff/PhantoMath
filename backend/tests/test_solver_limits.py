@@ -1,15 +1,21 @@
-"""Тесты модуля пределов (подстановкой в конечной точке)."""
+"""Тесты модуля пределов.
+
+Предел считает sympy: проверяем конечные точки, бесконечность, односторонние
+и раскрытие неопределённости. Значение сверяется через мост.
+"""
 
 from __future__ import annotations
 
 from pathlib import Path
 
 import pytest
+import sympy
 
 from mymath_backend import CoreNode, load_explanations
 from mymath_backend import CoreNodeType as T
 from mymath_backend.explanations import DEFAULT_LOCALE
 from mymath_backend.solver import SolveError, registered_types, solve
+from mymath_backend.solver.sympy_bridge import to_sympy
 
 EXPLANATIONS = Path(__file__).resolve().parents[2] / "truth" / "data" / "explanations.json"
 
@@ -30,10 +36,14 @@ def limit(point: CoreNode, expression: CoreNode, t: T = T.LIMIT) -> CoreNode:
     return node(t, point, expression)
 
 
-def value_of(problem: CoreNode) -> str | None:
+def solution_of(problem: CoreNode) -> CoreNode:
     vertical = solve(problem).result.vertical()
     assert vertical is not None and vertical.solution is not None
-    return vertical.solution.value
+    return vertical.solution
+
+
+def value_of(problem: CoreNode) -> str | None:
+    return solution_of(problem).value
 
 
 def step_keys(problem: CoreNode) -> list[str]:
@@ -53,36 +63,41 @@ class TestLimits:
         assert value_of(problem) == "7"
 
     def test_fraction_result(self) -> None:
-        problem = limit(c("2"), node(T.DIVIDE, c("1"), var()))
-        assert value_of(problem) == "1/2"
+        assert value_of(limit(c("2"), node(T.DIVIDE, c("1"), var()))) == "1/2"
 
     def test_square_root(self) -> None:
-        problem = limit(c("0"), node(T.ROOT2, node(T.ADD, var(), c("4"))))
-        assert value_of(problem) == "2"
-
-    def test_one_sided_uses_same_value(self) -> None:
-        problem = limit(c("2"), node(T.POWER, var(), c("2")), T.LIMIT_LEFT)
-        assert value_of(problem) == "4"
+        assert value_of(limit(c("0"), node(T.ROOT2, node(T.ADD, var(), c("4"))))) == "2"
 
     def test_constant_expression(self) -> None:
-        problem = limit(c("5"), c("7"))
-        assert value_of(problem) == "7"
+        assert value_of(limit(c("5"), c("7"))) == "7"
+
+
+class TestAdvanced:
+    def test_indeterminate_is_resolved(self) -> None:
+        # (x^2 - 1)/(x - 1) при x -> 1: раскрывается в 2.
+        numerator = node(T.SUBTRACT, node(T.POWER, var(), c("2")), c("1"))
+        denominator = node(T.SUBTRACT, var(), c("1"))
+        problem = limit(c("1"), node(T.DIVIDE, numerator, denominator))
+        assert value_of(problem) == "2"
+
+    def test_limit_at_infinity(self) -> None:
+        problem = limit(c("∞"), node(T.POWER, var(), c("2")))
+        assert value_of(problem) == "∞"
+
+    def test_right_limit_of_reciprocal(self) -> None:
+        problem = limit(c("0"), node(T.DIVIDE, c("1"), var()), T.LIMIT_RIGHT)
+        assert value_of(problem) == "∞"
+
+    def test_left_limit_of_reciprocal_is_negative_infinity(self) -> None:
+        problem = limit(c("0"), node(T.DIVIDE, c("1"), var()), T.LIMIT_LEFT)
+        assert to_sympy(solution_of(problem)) == -sympy.oo
 
 
 class TestUnsupported:
-    def test_indeterminate_is_reported(self) -> None:
-        numerator = node(T.SUBTRACT, node(T.POWER, var(), c("2")), c("1"))
-        denominator = node(T.SUBTRACT, var(), c("1"))
-        with pytest.raises(SolveError):
-            solve(limit(c("1"), node(T.DIVIDE, numerator, denominator)))
-
-    def test_point_at_infinity(self) -> None:
-        with pytest.raises(SolveError, match="бесконечности"):
-            solve(limit(c("∞"), node(T.POWER, var(), c("2"))))
-
-    def test_unknown_function_is_rejected(self) -> None:
-        with pytest.raises(SolveError, match="реализован"):
-            solve(limit(c("0"), node(T.SIN, var())))
+    def test_nonexistent_limit(self) -> None:
+        problem = limit(c("0"), node(T.SIN, node(T.DIVIDE, c("1"), var())))
+        with pytest.raises(SolveError, match="не существует"):
+            solve(problem)
 
 
 class TestExplanationKeys:
