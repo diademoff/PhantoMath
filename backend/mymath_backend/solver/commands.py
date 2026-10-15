@@ -20,6 +20,8 @@
 * ``approximate`` — приближённое значение с округлением (``round0``…``round4``);
 * ``inverse_function`` — обратная функция (``find_inverse``);
 * ``solve_param`` — уравнение с параметрами относительно переменной (``eq_param_write``);
+* ``complex_power`` — степень комплексного числа (``complex_pow_polar_moivre_simple``);
+* ``complex_roots`` — корни n-й степени из комплексного числа (``complex_find_root_polar``);
 * ``intercepts`` — пересечения графика с осями координат
   (``find_x_intercept``/``find_y_intercept``);
 * ``range`` — область значений функции (``graph_rt_info_range``);
@@ -41,6 +43,7 @@ from sympy.calculus.util import function_range
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
 from .base import Command, SolveContext, SolveError, Step, boolean_node
+from .complex import complex_power, complex_roots
 from .derivatives import nth_derivative
 from .diff_equations import diff_eq
 from .domain import domain, restrictions
@@ -680,6 +683,8 @@ def conic(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
 
 COMMANDS: dict[str, Command] = {
     "approximate": approximate,
+    "complex_power": complex_power,
+    "complex_roots": complex_roots,
     "factor": factor,
     "expand": expand,
     "simplify": simplify,
@@ -735,6 +740,8 @@ __all__ = [
     "approximate",
     "area",
     "asymptotes",
+    "complex_power",
+    "complex_roots",
     "conic",
     "convergence",
     "diff_eq",

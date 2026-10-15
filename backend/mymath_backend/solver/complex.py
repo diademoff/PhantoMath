@@ -18,7 +18,7 @@ import sympy
 
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
-from .base import SolveContext, Step, solver_for
+from .base import SolveContext, SolveError, Step, solver_for
 from .sympy_bridge import from_sympy, to_sympy
 
 _IMAGINARY = "i"
@@ -44,6 +44,54 @@ def solve_imaginary_arithmetic(node: CoreNode, ctx: SolveContext) -> CoreNode:
     return result
 
 
+def complex_power(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Возвести комплексное число в целую степень (формула Муавра).
+
+    Аргумент команды — целый показатель; шаг ``complex_pow_polar_moivre_simple``.
+    """
+    exponent = _integer_argument(args)
+    value = to_sympy(node)
+    if value.is_number is not True or value.is_real is True:
+        raise SolveError("степень берётся у комплексного числа")
+    result = from_sympy(sympy.simplify(value**exponent))
+    ctx.result.add(Step(left=node, right=result, key="complex_pow_polar_moivre_simple"))
+    return result
+
+
+def complex_roots(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Извлечь корни n-й степени из комплексного числа.
+
+    Аргумент — натуральная степень ``n``; ответ — множество из ``n`` корней
+    (шаг ``complex_find_root_polar``).
+    """
+    degree = _integer_argument(args)
+    if degree < 1:
+        raise SolveError("степень корня — натуральное число")
+    value = to_sympy(node)
+    if value.is_number is not True:
+        raise SolveError("корни извлекаются из числа")
+    unknown = sympy.Symbol("_z")
+    try:
+        found = sympy.solve(sympy.Eq(unknown**degree, value), unknown)
+    except (NotImplementedError, TypeError, ValueError) as error:
+        raise SolveError("корни не выражаются") from error
+    if not found:
+        raise SolveError("корни не выражаются")
+    answer = from_sympy(sympy.FiniteSet(*found))
+    ctx.result.add(Step(left=node, right=answer, key="complex_find_root_polar"))
+    return answer
+
+
+def _integer_argument(args: list[CoreNode]) -> int:
+    """Целый аргумент команды."""
+    if len(args) != 1 or args[0].type is not T.CONSTANT or args[0].value is None:
+        raise SolveError("нужен целый аргумент")
+    text = args[0].value.strip()
+    if not text.lstrip("-").isdigit():
+        raise SolveError("нужен целый аргумент")
+    return int(text)
+
+
 @solver_for(T.REAL, T.IMAGINARY, T.CONJUGATE)
 def solve_complex(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Re, Im или сопряжение комплексного числа."""
@@ -62,6 +110,8 @@ def solve_complex(node: CoreNode, ctx: SolveContext) -> CoreNode:
 
 
 __all__ = [
+    "complex_power",
+    "complex_roots",
     "contains_imaginary",
     "solve_complex",
     "solve_imaginary_arithmetic",

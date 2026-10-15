@@ -1,0 +1,35 @@
+{
+  "module": "complex_ops",
+  "tasks": [
+    {
+      "id": "power",
+      "title": "(1 + i)² = 2i",
+      "input": "{1+\\i}",
+      "command": "complex_power",
+      "args": ["{2}"],
+      "solution": {
+        "type": "MULTIPLY_IMPLICIT",
+        "children": [
+          {"type": "CONSTANT", "value": "2"},
+          {"type": "CONSTANT", "value": "i"}
+        ]
+      },
+      "steps": ["complex_pow_polar_moivre_simple"]
+    },
+    {
+      "id": "roots-of-unity",
+      "title": "корни второй степени из 1 — {−1, 1}",
+      "input": "{1}",
+      "command": "complex_roots",
+      "args": ["{2}"],
+      "solution": {
+        "type": "SET",
+        "children": [
+          {"type": "CONSTANT", "value": "-1"},
+          {"type": "CONSTANT", "value": "1"}
+        ]
+      },
+      "steps": ["complex_find_root_polar"]
+    }
+  ]
+}

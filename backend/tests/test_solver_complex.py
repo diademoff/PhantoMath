@@ -13,6 +13,7 @@ import sympy
 from mymath_backend import CoreNode, load_explanations
 from mymath_backend import CoreNodeType as T
 from mymath_backend.explanations import DEFAULT_LOCALE
+from mymath_backend.input import parse_protocol
 from mymath_backend.solver import registered_types, solve
 from mymath_backend.solver.complex import contains_imaginary
 from mymath_backend.solver.sympy_bridge import to_sympy
@@ -82,6 +83,34 @@ class TestArithmetic:
     def test_contains_imaginary(self) -> None:
         assert contains_imaginary(Z)
         assert not contains_imaginary(c("2"))
+
+
+class TestComplexPowerRoots:
+    def _run(self, source: str, command: str, arg: str) -> tuple[list[str], CoreNode]:
+        vertical = solve(
+            parse_protocol(source),
+            command=command,
+            args=[parse_protocol(arg)],
+        ).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
+        return keys, vertical.solution
+
+    def test_power(self) -> None:
+        # (1 + i)² = 2i.
+        keys, solution = self._run(r"{1+\i}", "complex_power", "{2}")
+        assert keys == ["complex_pow_polar_moivre_simple"]
+        assert sympy.simplify(to_sympy(solution) - (1 + I_UNIT) ** 2) == 0
+
+    def test_roots(self) -> None:
+        # Корни второй степени из 1 — множество {−1, 1}.
+        keys, solution = self._run("{1}", "complex_roots", "{2}")
+        assert keys == ["complex_find_root_polar"]
+        assert solution.type is T.SET and len(solution.children) == 2
+
+    def test_roots_of_complex(self) -> None:
+        _, solution = self._run(r"{1+\i}", "complex_roots", "{2}")
+        assert solution.type is T.SET and len(solution.children) == 2
 
 
 class TestExplanationKeys:

@@ -224,6 +224,7 @@ def test_corpus_covers_every_module() -> None:
         "series",
         "combinatorics",
         "complex",
+        "complex_ops",
         "trig_equations",
         "vectors",
         "vertical",
