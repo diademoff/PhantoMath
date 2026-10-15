@@ -122,7 +122,7 @@
 | `combinatorics.py` | факториал, `C(n,k)`, перестановки, размещения |
 | `complex.py` | `Re`, `Im`, сопряжение; арифметика с `i` через sympy |
 | `vectors.py` | векторы (узел `LIST`) и операции командами: длина, сумма, разность, скаляр, скалярное и векторное произведение |
-| `commands.py` | действия `CoreAction`: `factor`, `expand`, `simplify`, векторные |
+| `commands.py` | действия `CoreAction`: `factor`, `expand`, `simplify`, векторные; `expand` раскрывает формулы углов (`trig=True`); тождества сворачивает запасной проход `simplify` |
 | `sympy_bridge.py` | не модуль, а слой: `CoreNode ↔ sympy`, `simplify_node` |
 
 **Символьный слой появился.** Мост `sympy_bridge.py` переводит дерево в

@@ -49,9 +49,14 @@ def factor(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
 
 
 def expand(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
-    """Раскрыть скобки."""
+    """Раскрыть скобки и формулы углов.
+
+    ``trig=True`` раскрывает и тригонометрические формулы: ``sin(2x)``
+    превращается в ``2·sin(x)·cos(x)``. Без него sympy оставил бы функцию
+    как есть.
+    """
     del args
-    return _apply_side(node, ctx, "expand_msg", sympy.expand)
+    return _apply_side(node, ctx, "expand_msg", lambda expr: sympy.expand(expr, trig=True))
 
 
 def simplify(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:

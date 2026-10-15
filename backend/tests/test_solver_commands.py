@@ -61,6 +61,12 @@ class TestCommands:
         assert sympy.simplify(to_sympy(result) - (x**2 + 2 * x + 1)) == 0
         assert step_keys(problem, "expand") == ["expand_msg"]
 
+    def test_expand_trig_formula(self) -> None:
+        problem = node(T.SIN, muli(c("2"), var()))
+        result = solution_of(problem, "expand")
+        assert sympy.simplify(to_sympy(result) - 2 * sympy.sin(x) * sympy.cos(x)) == 0
+        assert step_keys(problem, "expand") == ["expand_msg"]
+
     def test_simplify(self) -> None:
         problem = node(T.DIVIDE, node(T.POWER, var(), c("2")), var())
         result = solution_of(problem, "simplify")

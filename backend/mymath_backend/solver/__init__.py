@@ -9,6 +9,8 @@
 
 from __future__ import annotations
 
+import sympy
+
 from ..ast import CoreNode
 from ..node_types import CoreNodeType
 from ..results import CoreSolverData
@@ -35,8 +37,12 @@ from .limits import solve_limit
 from .matrices import solve_determinant
 from .powers import solve_logarithm, solve_root
 from .series import solve_series
+from .sympy_bridge import from_sympy, to_sympy
 from .systems import solve_system
 from .trigonometry import solve_angle_unit, solve_function
+
+# Ключ шага упрощения (общий с командой ``simplify``).
+_KEY_SIMPLIFY = "simplify"
 
 
 def solve(
@@ -84,13 +90,42 @@ def solve(
         result.set_solution(solve_imaginary_arithmetic(node, ctx))
         return build_solver_data(node, result)
 
-    route(node, ctx)
+    try:
+        route(node, ctx)
+    except SolveError as error:
+        fallback = _simplify_fallback(node)
+        if fallback is None:
+            raise error
+        return build_solver_data(node, fallback)
     if not result:
         # Вырожденный ввод — одно число без операций: шага нет, но ответ есть.
         result.set_solution(_constant_or_original(node))
     else:
         result.set_solution(_final_value(result))
     return build_solver_data(node, result)
+
+
+def _simplify_fallback(node: CoreNode) -> SolveResult | None:
+    """Упростить символьное выражение, если обычный маршрут не справился.
+
+    Запасной путь для тождеств и формул: арифметика не пропускает
+    символьные операнды, поэтому ``sin²x + cos²x`` до неё не доходит.
+    Возвращает результат с шагом «Упростить» или ``None``, если упрощение
+    ничего не изменило — тогда важнее исходная ошибка.
+    """
+    try:
+        expression = to_sympy(node)
+        simplified = sympy.simplify(expression)
+        if simplified == expression:
+            return None
+        simplified_node = from_sympy(simplified)
+    except SolveError:
+        return None
+
+    result = SolveResult()
+    result.add(Step(left=node, right=simplified_node, key=_KEY_SIMPLIFY))
+    result.set_solution(simplified_node)
+    return result
 
 
 def _free_variables(node: CoreNode) -> list[str]:

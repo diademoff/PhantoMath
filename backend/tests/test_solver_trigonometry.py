@@ -285,6 +285,32 @@ class TestPeriodicity:
         assert solution_of(problem).structural_eq(problem)
 
 
+class TestIdentities:
+    def test_pythagorean_identity(self) -> None:
+        # Автоматический запасной проход simplify: арифметика символьную
+        # сумму не берёт, поэтому тождество сворачивает sympy.
+        problem = node(
+            T.ADD,
+            node(T.POWER, node(T.SIN, CoreNode.variable("x")), c("2")),
+            node(T.POWER, node(T.COS, CoreNode.variable("x")), c("2")),
+        )
+        assert value_of(problem) == 1
+        assert step_keys(problem) == ["simplify"]
+
+    def test_double_angle_collapse(self) -> None:
+        problem = node(
+            T.MULTIPLY,
+            node(T.SIN, CoreNode.variable("x")),
+            node(T.COS, CoreNode.variable("x")),
+        )
+        assert value_of(problem) == sympy.sin(2 * sympy.Symbol("x")) / 2
+
+    def test_arithmetic_still_stepwise(self) -> None:
+        # Запасной проход не должен перехватывать обычную арифметику.
+        problem = node(T.ADD, c("2"), c("3"))
+        assert step_keys(problem) == ["add"]
+
+
 class TestErrors:
     def test_tan_90_is_undefined(self) -> None:
         with pytest.raises(SolveError) as info:
