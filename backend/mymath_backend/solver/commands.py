@@ -24,6 +24,7 @@
 * ``complex_roots`` — корни n-й степени из комплексного числа (``complex_find_root_polar``);
 * ``explicit_formula`` — явная формула общего члена последовательности;
 * ``slope_intercept`` — линейное уравнение в виде y = kx + b (``slope_and_y_intercept``);
+* ``axis_of_symmetry``/``intercept_form`` — ось симметрии и форма по корням параболы;
 * ``sequence_convergence`` — сходимость последовательности (``seq_lim_conv``);
 * ``ratio_test`` — признак Даламбера для ряда (``series_ratio_test``);
 * ``root_test``/``nth_term_test`` — радикальный и необходимый признаки сходимости ряда;
@@ -531,6 +532,52 @@ def partial_fractions(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -
     return result
 
 
+def axis_of_symmetry(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Ось симметрии параболы: ``x = −b/(2a)`` (шаг ``find_axis``)."""
+    del args
+    expression_node = _expression_of(node)
+    if len(ctx.variables) != 1:
+        raise SolveError("ось симметрии: поддерживается одна переменная")
+    var = ctx.variables[0]
+    symbol = sympy.Symbol(var)
+    function = to_sympy(expression_node)
+    try:
+        polynomial = sympy.Poly(function, symbol)
+    except sympy.PolynomialError as error:
+        raise SolveError("ось симметрии — у квадратичной функции") from error
+    if polynomial.degree() != 2:
+        raise SolveError("ось симметрии — у квадратичной функции")
+    a = polynomial.coeff_monomial(symbol**2)
+    b = polynomial.coeff_monomial(symbol)
+    answer = CoreNode.node(
+        T.EQUALS, CoreNode.variable(var), from_sympy(sympy.simplify(-b / (2 * a)))
+    )
+    ctx.result.add(Step(left=node, right=answer, key="find_axis"))
+    return answer
+
+
+def intercept_form(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Квадратичную функцию — в форму по корням ``a(x−r₁)(x−r₂)``.
+
+    Шаг ``intercept_form``; ответ — разложение на множители.
+    """
+    del args
+    expression_node = _expression_of(node)
+    if len(ctx.variables) != 1:
+        raise SolveError("форма по корням: поддерживается одна переменная")
+    symbol = sympy.Symbol(ctx.variables[0])
+    function = to_sympy(expression_node)
+    try:
+        polynomial = sympy.Poly(function, symbol)
+    except sympy.PolynomialError as error:
+        raise SolveError("форма по корням — у квадратичной функции") from error
+    if polynomial.degree() != 2:
+        raise SolveError("форма по корням — у квадратичной функции")
+    result = from_sympy(sympy.factor(function))
+    ctx.result.add(Step(left=node, right=result, key="intercept_form"))
+    return result
+
+
 def slope_intercept(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Записать линейное уравнение в виде ``y = kx + b`` и назвать ``k`` и ``b``.
 
@@ -766,6 +813,8 @@ def conic(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
 
 COMMANDS: dict[str, Command] = {
     "approximate": approximate,
+    "axis_of_symmetry": axis_of_symmetry,
+    "intercept_form": intercept_form,
     "complex_power": complex_power,
     "complex_roots": complex_roots,
     "explicit_formula": explicit_formula,
@@ -833,6 +882,7 @@ __all__ = [
     "approximate",
     "area",
     "asymptotes",
+    "axis_of_symmetry",
     "complex_power",
     "complex_roots",
     "conic",
@@ -843,16 +893,25 @@ __all__ = [
     "expand",
     "extrema",
     "factor",
+    "geom_series_test",
     "inflection",
+    "intercept_form",
     "intercepts",
     "inverse_function",
     "nth_derivative",
+    "nth_term_test",
+    "partial_fractions",
     "periodic_to_frac",
     "polar",
     "prove",
+    "pseries_test",
+    "radius_of_convergence",
+    "ratio_test",
     "rationalize",
     "restrictions",
+    "root_test",
     "simplify",
+    "slope_intercept",
     "solve_param",
     "substitute",
     "to_degrees",

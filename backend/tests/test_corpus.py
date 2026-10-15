@@ -215,6 +215,7 @@ def test_corpus_covers_every_module() -> None:
         "angle",
         "approximate",
         "vertex",
+        "parabola_forms",
         "rationalize",
         "polar",
         "matrices",
