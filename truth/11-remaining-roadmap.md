@@ -190,6 +190,16 @@ R6 график кусочной функции (`/graph`, признак `piece
 пределов у определённого интеграла (`integrate_def_bounds`) и формулы
 специальных сумм (`series_find_sum_*`).
 
+Углубление R10 (шаги по модулям, все с ключами словаря): пределы
+(`limit_solve_const`/`_insert_value`/`limit_poly_msg`), extrema
+(`extrema_critical_point`/`_critical_intervals`/`_interval_points`),
+интегрирование (`integrate_by_parts_prepare_simple`,
+`integrate_differential_sub`, `integrate_def_bounds`), ряды
+(`series_find_sum_*`), коники (`conics_complete_square_both`), сравнение
+(`compare_frac_*`), комплексные (`complex_find_parts`), системы
+(`system_2x2_cramer_rule`), тождества (`prove_identity`), модуль
+(`abs_separate`).
+
 Остаётся: R11 (анимации — по решению пользователя отложены), дальнейшая
 глубина R8/R10 и остатки по модулям.
 
