@@ -56,6 +56,40 @@
       "input": "{root2({16})+1}",
       "solution": {"type": "CONSTANT", "value": "5"},
       "steps": ["root_simplify", "add"]
+    },
+    {
+      "id": "sqrt-of-sum",
+      "title": "иррациональный корень: аргумент сворачивается, ответ √5",
+      "input": "{root2({2+3})}",
+      "solution": {"type": "ROOT2", "children": [{"type": "CONSTANT", "value": "5"}]},
+      "steps": ["add"]
+    },
+    {
+      "id": "log10-of-sum",
+      "title": "логарифм не из степени: аргумент сворачивается, ответ log10(5)",
+      "input": "{log10({2+3})}",
+      "solution": {"type": "LOG10", "children": [{"type": "CONSTANT", "value": "5"}]},
+      "steps": ["add"]
+    },
+    {
+      "id": "cube-root-of-sum",
+      "title": "кубический корень не извлекается: ответ ∛2",
+      "input": "{root({3},{1+1})}",
+      "solution": {
+        "type": "ROOT",
+        "children": [
+          {"type": "CONSTANT", "value": "3"},
+          {"type": "CONSTANT", "value": "2"}
+        ]
+      },
+      "steps": ["add"]
+    },
+    {
+      "id": "sqrt-of-negative",
+      "title": "корень из отрицательного остаётся: √(-4)",
+      "input": "{root2({-4})}",
+      "solution": {"type": "ROOT2", "children": [{"type": "CONSTANT", "value": "-4"}]},
+      "steps": ["calculate_short"]
     }
   ]
 }

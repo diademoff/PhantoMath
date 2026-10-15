@@ -93,6 +93,36 @@ class TestWithArithmetic:
         assert value_of(problem) == "4"
 
 
+class TestKeptNodeFoldsChild:
+    """Модуль оставляет узел, но с уже свёрнутым подвыражением (Q10)."""
+
+    def test_irrational_root_folds_radicand(self) -> None:
+        problem = node(T.ROOT2, node(T.ADD, c("2"), c("3")))
+        result = solution_of(problem)
+        assert result.type is T.ROOT2
+        assert result.children[0].value == "5"
+        assert step_keys(problem) == ["add"]
+
+    def test_answer_is_not_child_value(self) -> None:
+        # √(2+3) не должно давать 5 — шаг сворачивания не подменяет ответ.
+        problem = node(T.ROOT2, node(T.ADD, c("2"), c("3")))
+        assert solution_of(problem).type is T.ROOT2
+
+    def test_log_keeps_node_with_folded_argument(self) -> None:
+        problem = node(T.LOG10, node(T.ADD, c("2"), c("3")))
+        result = solution_of(problem)
+        assert result.type is T.LOG10
+        assert result.children[0].value == "5"
+        assert step_keys(problem) == ["add"]
+
+    def test_nth_root_folds_degree_and_radicand(self) -> None:
+        problem = node(T.ROOT, c("3"), node(T.ADD, c("1"), c("1")))
+        result = solution_of(problem)
+        assert result.type is T.ROOT
+        assert [child.value for child in result.children] == ["3", "2"]
+        assert step_keys(problem) == ["add"]
+
+
 class TestErrors:
     def test_nth_root_without_degree(self) -> None:
         with pytest.raises(SolveError, match="степень"):
