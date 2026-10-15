@@ -80,6 +80,38 @@ class TestOperations:
         )
 
 
+class TestRowOperations:
+    def test_multiply_row(self) -> None:
+        result = to_sympy(
+            solve(A, command="matrix_mul_row", args=[c("1"), c("2")]).result.vertical().solution
+        )
+        assert result == sympy.Matrix([[2, 4], [3, 4]])
+        assert step_key(A, "matrix_mul_row", [c("1"), c("2")]) == "mat_mul_row"
+
+    def test_divide_row(self) -> None:
+        result = to_sympy(
+            solve(A, command="matrix_divide_row", args=[c("2"), c("2")]).result.vertical().solution
+        )
+        assert result == sympy.Matrix([[1, 2], [sympy.Rational(3, 2), 2]])
+
+    def test_add_row(self) -> None:
+        result = to_sympy(
+            solve(A, command="matrix_add_row", args=[c("1"), c("2"), c("2")])
+            .result.vertical()
+            .solution
+        )
+        assert result == sympy.Matrix([[1, 2], [5, 8]])
+        assert step_key(A, "matrix_add_row", [c("1"), c("2"), c("2")]) == "mul_row_add"
+
+    def test_row_out_of_range(self) -> None:
+        try:
+            solve(A, command="matrix_mul_row", args=[c("5"), c("2")])
+        except SolveError as err:
+            assert "вне матрицы" in str(err)
+        else:
+            raise AssertionError("ожидалась ошибка")
+
+
 class TestErrors:
     def test_add_size_mismatch(self) -> None:
         tall = mat(row(c("1"), c("2")), row(c("3"), c("4")), row(c("5"), c("6")))

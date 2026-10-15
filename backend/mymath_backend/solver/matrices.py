@@ -275,9 +275,74 @@ def matrix_inverse_gauss(node: CoreNode, ctx: SolveContext, args: list[CoreNode]
     return answer
 
 
+def _row_index(args: list[CoreNode], position: int, rows: int) -> int:
+    """Индекс строки (1-based, как на экране) из аргумента команды."""
+    if position >= len(args):
+        raise SolveError("не указан номер строки")
+    argument = args[position]
+    if argument.type is not T.CONSTANT or argument.value is None:
+        raise SolveError("номер строки — целое число")
+    text = argument.value.strip()
+    if not text.isdigit():
+        raise SolveError("номер строки — целое число")
+    row = int(text) - 1
+    if not 0 <= row < rows:
+        raise SolveError("строка вне матрицы")
+    return row
+
+
+def matrix_mul_row(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Умножить строку матрицы на число (элементарное преобразование)."""
+    matrix = _to_matrix(node)
+    row = _row_index(args, 0, matrix.rows)
+    factor = to_sympy(args[1]) if len(args) > 1 else sympy.Integer(1)
+    changed = sympy.Matrix(matrix)
+    changed[row, :] = changed[row, :] * factor
+    result = from_sympy(changed)
+    ctx.result.add(Step(left=node, right=result, key="mat_mul_row", args=[from_sympy(factor)]))
+    return result
+
+
+def matrix_divide_row(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Разделить строку матрицы на число (элементарное преобразование)."""
+    matrix = _to_matrix(node)
+    row = _row_index(args, 0, matrix.rows)
+    divisor = to_sympy(args[1]) if len(args) > 1 else sympy.Integer(1)
+    if divisor == 0:
+        raise SolveError("деление строки на ноль")
+    changed = sympy.Matrix(matrix)
+    changed[row, :] = changed[row, :] / divisor
+    result = from_sympy(changed)
+    ctx.result.add(Step(left=node, right=result, key="mat_divide_row", args=[from_sympy(divisor)]))
+    return result
+
+
+def matrix_add_row(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Прибавить к строке другую строку, умноженную на число."""
+    matrix = _to_matrix(node)
+    source = _row_index(args, 0, matrix.rows)
+    factor = to_sympy(args[1]) if len(args) > 1 else sympy.Integer(1)
+    target = _row_index(args, 2, matrix.rows)
+    changed = sympy.Matrix(matrix)
+    changed[target, :] = changed[target, :] + changed[source, :] * factor
+    result = from_sympy(changed)
+    ctx.result.add(
+        Step(
+            left=node,
+            right=result,
+            key="mul_row_add",
+            args=[args[0], from_sympy(factor), args[2]],
+        )
+    )
+    return result
+
+
 MATRIX_COMMANDS: dict[str, Command] = {
     "matrix_add": matrix_add,
+    "matrix_add_row": matrix_add_row,
     "matrix_subtract": matrix_subtract,
+    "matrix_mul_row": matrix_mul_row,
+    "matrix_divide_row": matrix_divide_row,
     "matrix_multiply": matrix_multiply,
     "matrix_scale": matrix_scale,
     "matrix_transpose": matrix_transpose,

@@ -168,6 +168,60 @@
       "command": "matrix_determinant",
       "solution": {"type": "CONSTANT", "value": "-2"},
       "steps": ["matrix_det_rewrite"]
+    },
+    {
+      "id": "multiply-row",
+      "title": "умножить первую строку на 2",
+      "input": "{mat({mat_row({1},{2})},{mat_row({3},{4})})}",
+      "command": "matrix_mul_row",
+      "args": ["{1}", "{2}"],
+      "solution": {
+        "type": "MATRIX",
+        "children": [
+          {
+            "type": "MATRIX_ROW",
+            "children": [
+              {"type": "CONSTANT", "value": "2"},
+              {"type": "CONSTANT", "value": "4"}
+            ]
+          },
+          {
+            "type": "MATRIX_ROW",
+            "children": [
+              {"type": "CONSTANT", "value": "3"},
+              {"type": "CONSTANT", "value": "4"}
+            ]
+          }
+        ]
+      },
+      "steps": ["mat_mul_row"]
+    },
+    {
+      "id": "add-row",
+      "title": "ко второй строке прибавить первую, умноженную на 2",
+      "input": "{mat({mat_row({1},{2})},{mat_row({3},{4})})}",
+      "command": "matrix_add_row",
+      "args": ["{1}", "{2}", "{2}"],
+      "solution": {
+        "type": "MATRIX",
+        "children": [
+          {
+            "type": "MATRIX_ROW",
+            "children": [
+              {"type": "CONSTANT", "value": "1"},
+              {"type": "CONSTANT", "value": "2"}
+            ]
+          },
+          {
+            "type": "MATRIX_ROW",
+            "children": [
+              {"type": "CONSTANT", "value": "5"},
+              {"type": "CONSTANT", "value": "8"}
+            ]
+          }
+        ]
+      },
+      "steps": ["mul_row_add"]
     }
   ]
 }
