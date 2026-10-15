@@ -134,6 +134,31 @@ class TestQuadratic:
         assert answer.children[0].type is T.NEGATIVE
 
 
+class TestRationalInequality:
+    def test_fraction_less(self) -> None:
+        # 1/(x-1) < 2 -> (-inf, 1) ∪ (3/2, inf)
+        problem = ineq(
+            T.LESS_THAN, node(T.FRACTION, c("1"), node(T.SUBTRACT, var("x"), c("1"))), c("2")
+        )
+        answer = solution_of(problem)
+        assert answer.type is T.UNION
+
+    def test_pole_excluded_root_included(self) -> None:
+        # (x-1)/(x+1) >= 0 -> (-inf,-1) ∪ [1, inf)
+        problem = ineq(
+            T.GREATER_THAN_EQUAL,
+            node(
+                T.FRACTION,
+                node(T.SUBTRACT, var("x"), c("1")),
+                node(T.ADD, var("x"), c("1")),
+            ),
+            c("0"),
+        )
+        answer = solution_of(problem)
+        assert answer.type is T.UNION
+        assert answer.children[1].type is T.CLOSED_OPEN_INTERVAL
+
+
 class TestUnsupported:
     def test_two_variables(self) -> None:
         problem = ineq(T.LESS_THAN, node(T.ADD, var("x"), var("y")), c("1"))

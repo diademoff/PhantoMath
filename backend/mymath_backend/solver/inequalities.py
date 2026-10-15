@@ -7,7 +7,9 @@
   ``a < 0`` меняется на противоположный; ответ — ``x < 2``;
 * степень 2 — метод интервалов: находятся корни, знак старшего коэффициента
   задаёт промежутки; ответ — промежуток или их объединение;
-* степень 0 — утверждение верно для всех или ни для одного значения.
+* степень 0 — утверждение верно для всех или ни для одного значения;
+* неизвестное в знаменателе — множество решений даёт ``sympy.solveset``,
+  ответ — промежутки/объединение (ключи ``ineq_quotient_*``).
 
 Ключи: ``ineq_linear_div``/``ineq_linear_div_neg``, ``move``,
 ``ineq_quad_to_eq_quad``, ``ineq_quad_lead_*``. Ответ-промежуток — узлы
@@ -23,9 +25,9 @@ import sympy
 from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
 from .arithmetic import format_number
-from .base import SolveContext, Step, solver_for
+from .base import SolveContext, SolveError, Step, solver_for
 from .equations import _poly_expr, poly_of
-from .sympy_bridge import from_sympy
+from .sympy_bridge import from_sympy, to_sympy
 
 _HEADER = CoreRichText(type="ineq_solve_short")
 
@@ -68,11 +70,17 @@ def solve_inequality(node: CoreNode, ctx: SolveContext) -> CoreNode:
     var = ctx.variables[0]
     lhs, rhs = node.children
 
-    poly = poly_of(lhs, var)
-    for degree, coeff in poly_of(rhs, var).items():
-        poly[degree] = poly.get(degree, Fraction(0)) - coeff
-        if poly[degree] == 0:
-            del poly[degree]
+    try:
+        poly = poly_of(lhs, var)
+        for degree, coeff in poly_of(rhs, var).items():
+            poly[degree] = poly.get(degree, Fraction(0)) - coeff
+            if poly[degree] == 0:
+                del poly[degree]
+    except SolveError:
+        rational = _rational_inequality(node, var, ctx)
+        if rational is None:
+            raise
+        return rational
 
     degree = max(poly) if poly else 0
     if degree == 0:
@@ -99,6 +107,58 @@ def solve_inequality(node: CoreNode, ctx: SolveContext) -> CoreNode:
         key = "ineq_linear_div_neg" if a < 0 else "ineq_linear_div"
         ctx.result.add(Step(left=left, right=solution, key=key, args=[_const(a)]), [_HEADER])
     return solution
+
+
+_QUOTIENT_KEY: dict[T, str] = {
+    T.LESS_THAN: "ineq_quotient_lt",
+    T.LESS_THAN_EQUAL: "ineq_quotient_lte",
+    T.GREATER_THAN: "ineq_quotient_gt",
+    T.GREATER_THAN_EQUAL: "ineq_quotient_gte",
+}
+
+
+def _rational_inequality(node: CoreNode, var: str, ctx: SolveContext) -> CoreNode | None:
+    """Решить неравенство с неизвестным в знаменателе.
+
+    Множество решений даёт ``sympy.solveset`` на числовой прямой; ответ
+    переводится в промежутки/объединение. ``None`` — знаменатель не зависит
+    от неизвестного (не рациональное) или отношение не поддерживается.
+    """
+    lhs, rhs = node.children
+    try:
+        expression = sympy.together(to_sympy(lhs) - to_sympy(rhs))
+        _, denominator = sympy.fraction(expression)
+    except SolveError:
+        return None
+    if not denominator.has(sympy.Symbol(var)):
+        return None
+    key = _QUOTIENT_KEY.get(node.type)
+    if key is None:
+        return None
+
+    symbol = sympy.Symbol(var)
+    try:
+        values = sympy.solveset(_relational(node.type, expression), symbol, sympy.S.Reals)
+    except (TypeError, ValueError, NotImplementedError):
+        return None
+
+    answer = from_sympy(values)
+    ctx.result.add(Step(left=node, right=answer, key=key), [_HEADER])
+    return answer
+
+
+def _relational(node_type: T, expression: sympy.Expr) -> sympy.Rel:
+    """Отношение ``выражение ⋚ 0`` для решателя множеств sympy."""
+    zero = sympy.Integer(0)
+    if node_type is T.LESS_THAN:
+        return sympy.Lt(expression, zero)
+    if node_type is T.LESS_THAN_EQUAL:
+        return sympy.Le(expression, zero)
+    if node_type is T.GREATER_THAN:
+        return sympy.Gt(expression, zero)
+    if node_type is T.GREATER_THAN_EQUAL:
+        return sympy.Ge(expression, zero)
+    return sympy.Ne(expression, zero)
 
 
 def _constant_inequality(node: CoreNode, poly: dict[int, Fraction], ctx: SolveContext) -> CoreNode:
