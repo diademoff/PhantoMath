@@ -213,9 +213,14 @@ R6 график кусочной функции (`/graph`, признак `piece
 перед отсевом корней, `trig_find_period` в тригонометрических уравнениях,
 `det2_determinant_rule`/`det3_sarrus_rule`, `def_vert_asymptote`/`def_hor_asymptote`.
 
+Ещё в глубину: дроби (`frac_reduce_reduce`), последовательности
+(`seq_find_first`), пределы односторонние (`limit_common_left/_right`),
+интегралы (`integrate`, `integrate_def_rewrite`), производные (`derive_multi`),
+коники-классификация (`conics_identify`, `conics_identify_disc`).
+
 Остаётся: R11 (анимации — по решению пользователя отложены), дальнейшая
-глубина R8/R10 и остатки по модулям (`frac_*`, `seq_*`, `trig_*` дальше,
-`integrate_*`/`limit_*` детали).
+глубина R8/R10 и остатки по модулям (`trig_*` дальше, `matrix_*` строками,
+`eq_*` трансцендентные, `integrate_*`/`limit_*` детали).
 
 ## 11.4. Порядок работ
 
