@@ -31,6 +31,20 @@ def solve_evaluate_expression(node: CoreNode, ctx: SolveContext) -> CoreNode:
     return result
 
 
+@solver_for(T.MEAN)
+def solve_mean(node: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Среднее арифметическое значений (узел ``MEAN``).
+
+    Ответ — сумма, делённая на число слагаемых; шаг ``calculate_short``.
+    """
+    ctx.require(len(node.children) >= 1, "среднее: хотя бы одно значение")
+    values = [to_sympy(child) for child in node.children]
+    result = from_sympy(sympy.simplify(sympy.Add(*values) / len(values)))
+    ctx.result.add(Step(left=node, right=result, key="calculate_short"))
+    return result
+
+
 __all__ = [
     "solve_evaluate_expression",
+    "solve_mean",
 ]

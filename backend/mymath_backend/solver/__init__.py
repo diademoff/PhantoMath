@@ -32,7 +32,7 @@ from .comparison import COMPARABLE, solve_comparison, solve_order
 from .complex import contains_imaginary, solve_complex, solve_imaginary_arithmetic
 from .derivatives import solve_derivative
 from .equations import solve_equation, solve_methods
-from .evaluate import solve_evaluate_expression
+from .evaluate import solve_evaluate_expression, solve_mean
 from .fractions import solve_fraction
 from .inequalities import solve_inequality
 from .integrals import solve_integral
@@ -206,6 +206,7 @@ __all__ = [
     "solve_limit",
     "solve_logarithm",
     "solve_matrix",
+    "solve_mean",
     "solve_membership",
     "solve_order",
     "solve_percentage",
