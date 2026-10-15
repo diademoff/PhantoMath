@@ -20,7 +20,7 @@ import sympy
 
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
-from .base import SolveContext, SolveError, Step, solver_for
+from .base import SolveContext, SolveError, Step, boolean_node, solver_for
 from .sympy_bridge import from_sympy, to_sympy
 
 _NEXT_COUNT = 4
@@ -65,21 +65,12 @@ def explicit_formula(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) ->
     del args
     ctx.require(node.type is T.SEQUENCE and len(node.children) >= 2, "нужна последовательность")
     terms = [to_sympy(child) for child in node.children]
-    index = sympy.Symbol("n")
-    first = terms[0]
-
-    difference = _constant_difference(terms)
-    if difference is not None:
-        formula = sympy.simplify(first + (index - 1) * difference)
-        key = "seq_arithmetic_sub_explicit_formula"
-        step = difference
-    else:
-        ratio = _constant_ratio(terms)
-        if ratio is None:
-            raise SolveError("последовательность не арифметическая и не геометрическая")
-        formula = sympy.simplify(first * ratio ** (index - 1))
-        key = "seq_geometric_sub_explicit_formula"
-        step = ratio
+    first, step, formula, arithmetic = _explicit(terms)
+    key = (
+        "seq_arithmetic_sub_explicit_formula"
+        if arithmetic
+        else "seq_geometric_sub_explicit_formula"
+    )
 
     answer = from_sympy(formula)
     ctx.result.add(Step(left=node, right=None, key="seq_write_explicit_formula"))
@@ -92,6 +83,46 @@ def explicit_formula(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) ->
         )
     )
     return answer
+
+
+def sequence_convergence(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Определить сходимость последовательности (предел общего члена).
+
+    Предел берётся у явной формулы ``aₙ``; шаги ``seq_find_limit`` и
+    ``seq_lim_conv``/``seq_lim_div``/``seq_no_lim_div``. Ответ — «Истина»/«Ложь».
+    """
+    del args
+    ctx.require(node.type is T.SEQUENCE and len(node.children) >= 2, "нужна последовательность")
+    terms = [to_sympy(child) for child in node.children]
+    _, _, formula, _ = _explicit(terms)
+    index = sympy.Symbol("n")
+    value = sympy.limit(formula, index, sympy.oo)
+    if value is sympy.nan or value.has(sympy.Limit):
+        key = "seq_no_lim_div"
+        converges = False
+    elif value in (sympy.oo, -sympy.oo, sympy.zoo):
+        key = "seq_lim_div"
+        converges = False
+    else:
+        key = "seq_lim_conv"
+        converges = True
+    answer = boolean_node(converges)
+    ctx.result.add(Step(left=node, right=None, key="seq_find_limit"))
+    ctx.result.add(Step(left=node, right=answer, key=key))
+    return answer
+
+
+def _explicit(terms: list[sympy.Expr]) -> tuple[sympy.Expr, sympy.Expr, sympy.Expr, bool]:
+    """``(первый член, шаг, формула aₙ, арифметическая?)``."""
+    index = sympy.Symbol("n")
+    first = terms[0]
+    difference = _constant_difference(terms)
+    if difference is not None:
+        return first, difference, sympy.simplify(first + (index - 1) * difference), True
+    ratio = _constant_ratio(terms)
+    if ratio is None:
+        raise SolveError("последовательность не арифметическая и не геометрическая")
+    return first, ratio, sympy.simplify(first * ratio ** (index - 1)), False
 
 
 def _constant_difference(terms: list[sympy.Expr]) -> sympy.Expr | None:
@@ -133,5 +164,6 @@ def _extend(last: sympy.Expr, step: sympy.Expr, *, multiply: bool) -> list[sympy
 
 __all__ = [
     "explicit_formula",
+    "sequence_convergence",
     "solve_sequence",
 ]

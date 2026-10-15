@@ -77,3 +77,26 @@ class TestExplicitFormula:
         keys, solution = self._run("{sequence({3},{6},{12})}")
         assert keys == ["seq_write_explicit_formula", "seq_geometric_sub_explicit_formula"]
         assert solution.type is T.MULTIPLY_IMPLICIT
+
+
+class TestConvergence:
+    def _run(self, source: str) -> tuple[list[str], str]:
+        vertical = solve(parse_protocol(source), command="sequence_convergence").result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
+        value = vertical.solution.children[0].value or ""
+        return keys, value
+
+    def test_geometric_converges(self) -> None:
+        keys, value = self._run("{sequence({1},{frac({1},{2})},{frac({1},{4})})}")
+        assert keys == ["seq_find_limit", "seq_lim_conv"]
+        assert value == "true"
+
+    def test_arithmetic_diverges(self) -> None:
+        keys, value = self._run("{sequence({2},{5},{8})}")
+        assert keys == ["seq_find_limit", "seq_lim_div"]
+        assert value == "false"
+
+    def test_geometric_diverges(self) -> None:
+        _, value = self._run("{sequence({2},{4},{8})}")
+        assert value == "false"

@@ -76,6 +76,22 @@
         ]
       },
       "steps": ["seq_write_explicit_formula", "seq_geometric_sub_explicit_formula"]
+    },
+    {
+      "id": "convergence-convergent",
+      "title": "1, 1/2, 1/4 → сходится",
+      "input": "{sequence({1},{frac({1},{2})},{frac({1},{4})})}",
+      "command": "sequence_convergence",
+      "solution": {"type": "TEXT", "children": [{"type": "TEXT_KEY", "value": "true"}]},
+      "steps": ["seq_find_limit", "seq_lim_conv"]
+    },
+    {
+      "id": "convergence-divergent",
+      "title": "2, 5, 8 → расходится",
+      "input": "{sequence({2},{5},{8})}",
+      "command": "sequence_convergence",
+      "solution": {"type": "TEXT", "children": [{"type": "TEXT_KEY", "value": "false"}]},
+      "steps": ["seq_find_limit", "seq_lim_div"]
     }
   ]
 }

@@ -23,6 +23,7 @@
 * ``complex_power`` — степень комплексного числа (``complex_pow_polar_moivre_simple``);
 * ``complex_roots`` — корни n-й степени из комплексного числа (``complex_find_root_polar``);
 * ``explicit_formula`` — явная формула общего члена последовательности;
+* ``sequence_convergence`` — сходимость последовательности (``seq_lim_conv``);
 * ``intercepts`` — пересечения графика с осями координат
   (``find_x_intercept``/``find_y_intercept``);
 * ``range`` — область значений функции (``graph_rt_info_range``);
@@ -50,7 +51,7 @@ from .diff_equations import diff_eq
 from .domain import domain, restrictions
 from .integrals import area
 from .matrices import MATRIX_COMMANDS
-from .sequences import explicit_formula
+from .sequences import explicit_formula, sequence_convergence
 from .series import convergence
 from .sympy_bridge import from_sympy, to_sympy
 from .vectors import VECTOR_COMMANDS
@@ -711,6 +712,7 @@ COMMANDS: dict[str, Command] = {
     "nth_derivative": nth_derivative,
     "periodic_to_frac": periodic_to_frac,
     "range": value_range,
+    "sequence_convergence": sequence_convergence,
     "solve_param": solve_param,
     "prove": prove,
     "substitute": substitute,
