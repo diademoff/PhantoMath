@@ -215,11 +215,43 @@ String _nodeBody(CoreNode node) {
     case CoreNodeType.derivation1:
       return _wrap(node, r'\frac{d}{dx}\left($0\right)');
 
+    case CoreNodeType.derivation1Diff:
+      return _wrap(node, r'\frac{d\,$1}{d\,$0}');
+
+    case CoreNodeType.prime:
+    case CoreNodeType.derivation1Prime:
+      return _wrap(node, r"$0'");
+
+    case CoreNodeType.derivation2Prime:
+      return _wrap(node, r"$0''");
+
     case CoreNodeType.integral:
       return _wrap(node, r'\int $0\,dx');
 
     case CoreNodeType.integralDefinite:
       return _wrap(node, r'\int_{$0}^{$1} $2\,dx');
+
+    case CoreNodeType.integralRightDash:
+      return _wrap(node, r'\left.$0\right|_{$1}^{$2}');
+
+    // ── углы: градусы-минуты-секунды ────────────────────────────────
+    case CoreNodeType.degreeMinute:
+      return _wrap(node, r'{$0}^{\circ}{$1}^{\prime}');
+
+    case CoreNodeType.degreeMinuteSecond:
+      return _wrap(node, r'{$0}^{\circ}{$1}^{\prime}{$2}^{\prime\prime}');
+
+    case CoreNodeType.degreeSecond:
+      return _wrap(node, r'{$0}^{\circ}{$1}^{\prime\prime}');
+
+    case CoreNodeType.minute:
+      return _wrap(node, r'{$0}^{\prime}');
+
+    case CoreNodeType.second:
+      return _wrap(node, r'{$0}^{\prime\prime}');
+
+    case CoreNodeType.minuteSecond:
+      return _wrap(node, r'{$0}^{\prime}{$1}^{\prime\prime}');
 
     case CoreNodeType.limit:
       return _wrap(node, r'\lim_{x \to $0} $1');
