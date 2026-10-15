@@ -67,3 +67,27 @@ class TestRatioTest:
         harmonic = "{sigma_def({n},{1},{inf},{frac({1},{n})})}"
         with pytest.raises(SolveError, match="не даёт ответа"):
             solve(parse_protocol(harmonic), command="ratio_test")
+
+
+class TestRootTest:
+    def test_converges(self) -> None:
+        source = "{sigma_def({n},{1},{inf},{frac({1},{2^n})})}"
+        vertical = solve(parse_protocol(source), command="root_test").result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
+        assert keys == ["series_root_test", "series_root_test_use", "series_root_test_lim_ltone"]
+        assert vertical.solution.children[0].value == "true"
+
+
+class TestNthTermTest:
+    def test_diverges(self) -> None:
+        source = "{sigma_def({n},{1},{inf},{frac({n},{n+1})})}"
+        vertical = solve(parse_protocol(source), command="nth_term_test").result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
+        assert keys == [
+            "series_nth_term_test",
+            "series_nth_term_test_use",
+            "series_nth_term_test_lim_nozero",
+        ]
+        assert vertical.solution.children[0].value == "false"

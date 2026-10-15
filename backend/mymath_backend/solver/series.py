@@ -107,8 +107,83 @@ def ratio_test(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreN
     return answer
 
 
+def root_test(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Радикальный признак (Коши): предел ``|aₙ|^(1/n)``.
+
+    Шаги ``series_root_test``, ``series_root_test_use`` и
+    ``series_root_test_lim_ltone``/``_gtone``/``_inf``. Предел ``1`` ответа не даёт.
+    """
+    del args
+    if node.type is not T.SIGMA_DEFINITE:
+        raise SolveError("радикальный признак применяется к ряду (сумме)")
+    index, _, _, expression = _parts(node)
+    symbol = sympy.Symbol(index)
+    term = to_sympy(expression)
+    root = sympy.Abs(term) ** (sympy.Integer(1) / symbol)
+
+    ctx.result.add(Step(left=node, right=None, key="series_root_test"))
+    ctx.result.add(Step(left=node, right=None, key="series_root_test_use", args=[from_sympy(root)]))
+    limit = sympy.limit(root, symbol, sympy.oo)
+    if limit in (sympy.oo, -sympy.oo, sympy.zoo):
+        key, answer, args_nodes = (
+            "series_root_test_lim_inf",
+            boolean_node(False),
+            [from_sympy(sympy.oo)],
+        )
+    elif limit.is_number and (limit < 1) is sympy.true:
+        key, answer, args_nodes = (
+            "series_root_test_lim_ltone",
+            boolean_node(True),
+            [CoreNode.constant("1")],
+        )
+    elif limit.is_number and (limit > 1) is sympy.true:
+        key, answer, args_nodes = (
+            "series_root_test_lim_gtone",
+            boolean_node(False),
+            [CoreNode.constant("1")],
+        )
+    else:
+        raise SolveError("радикальный признак не даёт ответа")
+    ctx.result.add(Step(left=node, right=answer, key=key, args=args_nodes))
+    return answer
+
+
+def nth_term_test(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Необходимый признак сходимости: предел общего члена.
+
+    Если предел отличен от нуля — ряд расходится (``series_nth_term_test_lim_nozero``);
+    нулевой предел ответа не даёт (:class:`SolveError`).
+    """
+    del args
+    if node.type is not T.SIGMA_DEFINITE:
+        raise SolveError("необходимый признак применяется к ряду (сумме)")
+    index, _, _, expression = _parts(node)
+    symbol = sympy.Symbol(index)
+    term = to_sympy(expression)
+
+    ctx.result.add(Step(left=node, right=None, key="series_nth_term_test"))
+    ctx.result.add(
+        Step(left=node, right=None, key="series_nth_term_test_use", args=[from_sympy(term)])
+    )
+    limit = sympy.limit(term, symbol, sympy.oo)
+    if limit.is_number and limit != 0:
+        answer = boolean_node(False)
+        ctx.result.add(
+            Step(
+                left=node,
+                right=answer,
+                key="series_nth_term_test_lim_nozero",
+                args=[CoreNode.constant("0")],
+            )
+        )
+        return answer
+    raise SolveError("необходимый признак сходимости не даёт ответа")
+
+
 __all__ = [
     "convergence",
+    "nth_term_test",
     "ratio_test",
+    "root_test",
     "solve_series",
 ]
