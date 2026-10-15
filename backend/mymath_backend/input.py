@@ -539,7 +539,8 @@ def _build_infix(items: list[CoreNode | str]) -> CoreNode:
         if pos + 1 < len(items) and items[pos] in ("-", "+"):
             op = items[pos]
             pos += 1
-            operand = parse_unary()
+            # Унарный знак слабее степени: -x^2 = -(x^2), а не (-x)^2.
+            operand = parse(_PRECEDENCE["^"])
             node_type = T.NEGATIVE if op == "-" else T.POSITIVE
             return CoreNode(type=node_type, children=[operand])
         if pos >= len(items) or isinstance(items[pos], str):

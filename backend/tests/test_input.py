@@ -266,3 +266,22 @@ class TestJsonInput:
     def test_json_rejects_unknown_type(self) -> None:
         with pytest.raises(ValueError):
             parse_json({"type": "НЕТ_ТАКОГО", "value": "1"})
+
+
+class TestUnaryMinus:
+    def test_minus_binds_weaker_than_power(self) -> None:
+        """-x^2 = -(x^2), а не (-x)^2."""
+        node = parse_protocol("{-x^2}")
+        assert node.type is T.NEGATIVE
+        assert node.children[0].type is T.POWER
+
+    def test_minus_in_exponent(self) -> None:
+        """2^-x — знак в показателе."""
+        node = parse_protocol("{2^-x}")
+        assert node.type is T.POWER
+        assert node.children[1].type is T.NEGATIVE
+
+    def test_minus_before_product(self) -> None:
+        node = parse_protocol("{-x*y}")
+        assert node.type is T.MULTIPLY
+        assert node.children[0].type is T.NEGATIVE
