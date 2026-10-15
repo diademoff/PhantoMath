@@ -336,6 +336,35 @@ def _vertical_asymptotes(function: sympy.Expr, symbol: sympy.Symbol) -> list[sym
     return points
 
 
+def vertex(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Найти вершину параболы (для квадратичной функции)."""
+    del args
+    expression_node = (
+        node.children[1] if node.type is T.EQUALS and len(node.children) == 2 else node
+    )
+    if len(ctx.variables) != 1:
+        raise SolveError("вершина: поддерживается одна переменная")
+    var = ctx.variables[0]
+    symbol = sympy.Symbol(var)
+    function = to_sympy(expression_node)
+    try:
+        polynomial = sympy.Poly(function, symbol)
+    except sympy.PolynomialError as error:
+        raise SolveError("вершина — у квадратичной функции") from error
+    if polynomial.degree() != 2:
+        raise SolveError("вершина — у квадратичной функции")
+    a = polynomial.coeff_monomial(symbol**2)
+    b = polynomial.coeff_monomial(symbol)
+    x_vertex = sympy.simplify(-b / (2 * a))
+    y_vertex = sympy.simplify(function.subs(symbol, x_vertex))
+    ctx.result.add(Step(left=node, right=None, key="find_vertex"))
+    return CoreNode.node(
+        T.LIST,
+        CoreNode.node(T.EQUALS, CoreNode.variable(var), from_sympy(x_vertex)),
+        CoreNode.node(T.EQUALS, CoreNode.variable("y"), from_sympy(y_vertex)),
+    )
+
+
 def to_degrees(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Радианы — в градусы: угол оборачивается узлом ``DEGREE``."""
     del args
@@ -394,6 +423,7 @@ COMMANDS: dict[str, Command] = {
     "convergence": convergence,
     "to_degrees": to_degrees,
     "to_radians": to_radians,
+    "vertex": vertex,
     "asymptotes": asymptotes,
     "even_odd": even_odd,
     "extrema": extrema,
@@ -446,4 +476,5 @@ __all__ = [
     "to_percent",
     "to_radians",
     "to_sci",
+    "vertex",
 ]
