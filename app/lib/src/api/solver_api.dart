@@ -26,14 +26,28 @@ class SolveFailure implements Exception {
 }
 
 /// Ответ бэкенда: дерево, шаги и тексты.
+///
+/// Если решатель предложил несколько способов решения, в [methods] лежат все
+/// (включая основной), а [steps] и [solution] повторяют первый из них.
 class SolveResponse {
-  const SolveResponse({required this.steps, this.solution});
+  const SolveResponse({
+    required this.steps,
+    this.solution,
+    this.methods = const [],
+    this.selectMethodText,
+  });
 
   /// Шаги решения по порядку следования.
   final List<SolveStep> steps;
 
   /// Итоговый ответ, если бэкенд его посчитал.
   final CoreNode? solution;
+
+  /// Способы решения: основной и альтернативные. Пусто, если способ один.
+  final List<SolveResponse> methods;
+
+  /// Подпись переключателя способов («показать другой способ»).
+  final String? selectMethodText;
 }
 
 /// Шаг решения: список подшагов под общим заголовком.
@@ -147,27 +161,48 @@ class SolverApi {
   }
 
   SolveResponse _parseSolve(Map<String, dynamic> body) {
-    final result = body['result'] as Map<String, dynamic>?;
-    if (result == null) {
+    final result = body['result'];
+    if (result is! Map<String, dynamic>) {
       return const SolveResponse(steps: []);
     }
-    final solutionNode = result['solution'] as Map<String, dynamic>?;
-    final steps = <SolveStep>[];
+    final topSolution = result['solution'];
+    final methods = <SolveResponse>[];
+    String? selectLabel;
     for (final group in _asList(result['groups'])) {
       if (group is! Map<String, dynamic>) continue;
       if (group['type'] != 'VERTICAL') continue;
+      final select = group['selectMethodText'];
+      if (select is Map<String, dynamic>) {
+        selectLabel ??= _headerText(select);
+      }
       for (final entry in _asList(group['entries'])) {
         if (entry is! Map<String, dynamic>) continue;
-        steps.addAll(_parseSteps(entry['result']));
+        methods.add(_parseVertical(entry['result']));
       }
     }
+    if (methods.isEmpty) {
+      return SolveResponse(steps: const [], solution: _node(topSolution));
+    }
+    final primary = methods.first;
     return SolveResponse(
-      steps: steps,
-      solution: solutionNode == null
-          ? null
-          : CoreNode.fromJson(solutionNode),
+      steps: primary.steps,
+      solution: primary.solution ?? _node(topSolution),
+      methods: methods.length > 1 ? methods : const [],
+      selectMethodText: selectLabel,
     );
   }
+
+  /// Один способ решения: шаги и его собственный ответ.
+  SolveResponse _parseVertical(Object? raw) {
+    if (raw is! Map<String, dynamic>) return const SolveResponse(steps: []);
+    return SolveResponse(
+      steps: _parseSteps(raw),
+      solution: _node(raw['solutionNode']),
+    );
+  }
+
+  CoreNode? _node(Object? raw) =>
+      raw is Map<String, dynamic> ? CoreNode.fromJson(raw) : null;
 
   List<SolveStep> _parseSteps(Object? raw) {
     if (raw is! Map<String, dynamic>) return const [];

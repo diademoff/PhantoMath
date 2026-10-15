@@ -66,8 +66,14 @@ class _SolvePageState extends State<SolvePage> {
   String? _command;
 
   SolveResponse? _result;
+  List<SolveResponse> _methods = const [];
+  int _methodIndex = 0;
   String? _error;
   bool _busy = false;
+
+  /// Текущий способ решения (основной или выбранный переключателем).
+  SolveResponse? get _current =>
+      _methods.isEmpty ? _result : _methods[_methodIndex];
 
   /// Команды действий над выражением (совпадают с `CoreAction.command`).
   static const List<(String?, String)> _commands = [
@@ -100,7 +106,11 @@ class _SolvePageState extends State<SolvePage> {
         command: _command,
       );
       if (!mounted) return;
-      setState(() => _result = answer);
+      setState(() {
+        _result = answer;
+        _methods = answer.methods.isEmpty ? [answer] : answer.methods;
+        _methodIndex = 0;
+      });
     } on SolveFailure catch (err) {
       if (!mounted) return;
       setState(() {
@@ -197,7 +207,7 @@ class _SolvePageState extends State<SolvePage> {
   }
 
   Widget _buildBody(ThemeData theme) {
-    final result = _result;
+    final result = _current;
     if (result == null) {
       return Center(
         child: Padding(
@@ -216,6 +226,7 @@ class _SolvePageState extends State<SolvePage> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        if (_methods.length > 1) _methodSwitcher(theme),
         for (final step in result.steps) ...[
           for (final header in step.headers)
             Padding(
@@ -231,6 +242,24 @@ class _SolvePageState extends State<SolvePage> {
           const SizedBox(height: 8),
           _Math(latex: nodeToLatex(result.solution!)),
         ],
+      ],
+    );
+  }
+
+  /// Переключатель способов решения.
+  Widget _methodSwitcher(ThemeData theme) {
+    return Row(
+      children: [
+        Text(
+          'Способ ${_methodIndex + 1} из ${_methods.length}',
+          style: theme.textTheme.labelMedium,
+        ),
+        const Spacer(),
+        TextButton(
+          onPressed: () =>
+              setState(() => _methodIndex = (_methodIndex + 1) % _methods.length),
+          child: Text(_result?.selectMethodText ?? 'Другой способ'),
+        ),
       ],
     );
   }

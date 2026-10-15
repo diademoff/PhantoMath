@@ -175,6 +175,22 @@ void main() {
       );
       api.close();
     });
+
+    test('разбирает несколько способов решения', () async {
+      final api = _apiWith(_response(
+        '''{"result":{"solution":{"type":"CONSTANT","value":"2"},"groups":[{"type":"VERTICAL","selectMethodText":{"type":"select_method"},"entries":[
+          {"result":{"solutionNode":{"type":"CONSTANT","value":"2"},"steps":[{"headers":[],"substeps":[{"description":{"type":"eq_quad_solve_in_r"},"explanation":{"text":"формула"}}]}]}},
+          {"result":{"solutionNode":{"type":"CONSTANT","value":"2"},"steps":[{"headers":[],"substeps":[{"description":{"type":"solve_by_factoring"},"explanation":{"text":"разложение"}}]}]}}
+        ]}]}}''',
+        200,
+      ));
+
+      final answer = await api.solve(bin(CoreNodeType.add, c2, c3));
+      expect(answer.methods, hasLength(2));
+      expect(answer.steps.single.substeps.single.text, 'формула');
+      expect(answer.methods[1].steps.single.substeps.single.text, 'разложение');
+      api.close();
+    });
   });
 }
 
