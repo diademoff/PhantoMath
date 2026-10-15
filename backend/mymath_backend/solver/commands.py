@@ -581,11 +581,31 @@ def intercepts(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreN
             args=[axis_x, CoreNode.node(T.EQUALS, axis_y, CoreNode.constant("0"))],
         )
     )
-    points: list[CoreNode] = [
-        CoreNode.node(T.EQUALS, axis_x, from_sympy(root)) for root in _real_roots(function, symbol)
-    ]
-    if not points:
+    roots = _real_roots(function, symbol)
+    points: list[CoreNode] = [CoreNode.node(T.EQUALS, axis_x, from_sympy(root)) for root in roots]
+    if not roots:
         ctx.result.add(Step(left=node, right=None, key="no_x_intercept", args=[axis_x]))
+    elif len(roots) == 1:
+        ctx.result.add(
+            Step(
+                left=node,
+                right=None,
+                key="one_x_intercept",
+                args=[axis_x, from_sympy(roots[0])],
+            )
+        )
+    else:
+        ctx.result.add(
+            Step(
+                left=node,
+                right=None,
+                key="two_x_intercepts",
+                args=[
+                    axis_x,
+                    CoreNode.node(T.LIST, *(from_sympy(root) for root in roots)),
+                ],
+            )
+        )
 
     ctx.result.add(Step(left=node, right=None, key="find_y_intercept", args=[axis_y]))
     ctx.result.add(

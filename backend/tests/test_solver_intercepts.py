@@ -41,6 +41,7 @@ class TestIntercepts:
         assert step_keys(source) == [
             "find_x_intercept",
             "x_intercept_substitute",
+            "two_x_intercepts",
             "find_y_intercept",
             "y_intercept_substitute",
         ]
