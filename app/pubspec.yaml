@@ -25,6 +25,17 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
+
+# Launcher-иконка из app/logo.png. Фон adaptive-иконки взят из самого лого
+# (малиновый #B80730), поэтому вписывается без полей.
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "logo.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#B80730"
+  adaptive_icon_foreground: "logo.png"
