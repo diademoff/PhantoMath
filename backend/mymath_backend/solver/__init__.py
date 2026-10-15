@@ -101,7 +101,7 @@ def solve(
         return build_solver_data(node, result)
 
     try:
-        route(node, ctx)
+        folded = route(node, ctx)
     except SolveError as error:
         fallback = _simplify_fallback(node)
         if fallback is None:
@@ -109,9 +109,12 @@ def solve(
         return build_solver_data(node, fallback)
     if not result:
         # Вырожденный ввод — одно число без операций: шага нет, но ответ есть.
-        result.set_solution(_constant_or_original(node))
+        result.set_solution(_constant_or_original(folded))
     else:
-        result.set_solution(_final_value(result))
+        # Ответ — значение, которое вернул маршрутизатор, а не последний шаг:
+        # узел мог остаться несвёрнутым (``√(2+3)``), и шаг подвыражения не
+        # должен подменять ответ (truth/07-open-questions.md, Q10).
+        result.set_solution(folded)
     return build_solver_data(node, result)
 
 
@@ -160,16 +163,6 @@ def _constant_or_original(node: CoreNode) -> CoreNode:
         return CoreNode.constant(format_number(as_fraction(node)))
     except SolveError:
         return node
-
-
-def _final_value(result: SolveResult) -> CoreNode:
-    """Взять значение последнего шага как ответ."""
-    last: Step | None = None
-    for step in result:
-        last = step
-    if last is None or last.right is None:
-        return CoreNode.empty()
-    return last.right
 
 
 __all__ = [

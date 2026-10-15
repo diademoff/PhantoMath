@@ -22,7 +22,7 @@ from math import isqrt
 
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
-from .base import SolveContext, SolveError, Step, route, solver_for
+from .base import SolveContext, SolveError, Step, fold_semantically, solver_for
 
 _KEY_ROOT = "root_simplify"
 _KEY_CALCULATE = "calculate_short"
@@ -67,25 +67,33 @@ def _exact_log(value: int, base: int) -> int | None:
 
 @solver_for(T.ROOT2, T.ROOT)
 def solve_root(node: CoreNode, ctx: SolveContext) -> CoreNode:
-    """Упростить корень, если он извлекается нацело."""
+    """Упростить корень, если он извлекается нацело.
+
+    Если точного корня нет, узел возвращается, но **с уже свёрнутыми**
+    степенью и подкоренным: ``√(2+3)`` даёт шаг ``2+3 = 5`` и ответ ``√5``
+    (см. ``truth/07-open-questions.md``, Q10).
+    """
     if node.type is T.ROOT2:
         degree = 2
-        radicand = node.children[0]
+        radicand = fold_semantically(node.children[0], ctx)
+        kept = CoreNode(type=T.ROOT2, children=[radicand])
     else:
         if len(node.children) != 2:
             raise SolveError("корень n-й степени должен иметь степень и подкоренное")
-        degree_value = _integer(route(node.children[0], ctx))
+        degree_node = fold_semantically(node.children[0], ctx)
+        radicand = fold_semantically(node.children[1], ctx)
+        kept = CoreNode(type=T.ROOT, children=[degree_node, radicand])
+        degree_value = _integer(degree_node)
         if degree_value is None or degree_value <= 1:
-            return node
+            return kept
         degree = degree_value
-        radicand = node.children[1]
 
-    value = _integer(route(radicand, ctx))
+    value = _integer(radicand)
     if value is None or value < 0:
-        return node
+        return kept
     root = _perfect_root(value, degree)
     if root is None:
-        return node
+        return kept
 
     result = CoreNode.constant(str(root))
     ctx.result.add(Step(left=node, right=result, key=_KEY_ROOT))
@@ -94,28 +102,39 @@ def solve_root(node: CoreNode, ctx: SolveContext) -> CoreNode:
 
 @solver_for(T.LOG10, T.LN, T.LOG, T.EXP)
 def solve_logarithm(node: CoreNode, ctx: SolveContext) -> CoreNode:
-    """Вычислить логарифм или экспоненту, если значение точное."""
-    result: CoreNode | None = None
+    """Вычислить логарифм или экспоненту, если значение точное.
 
+    Аргументы сворачиваются заранее; если точного значения нет, узел
+    возвращается со свёрнутыми аргументами (``log₁₀(2+3)`` -> ``log₁₀(5)``).
+    """
+    result: CoreNode | None = None
     if node.type is T.LN:
-        argument = route(node.children[0], ctx)
+        argument = fold_semantically(node.children[0], ctx)
+        node = CoreNode(type=T.LN, children=[argument])
         if argument.type is T.CONSTANT and argument.value == "e":
             result = CoreNode.constant("1")
         elif _integer(argument) == 1:
             result = CoreNode.constant("0")
     elif node.type is T.EXP:
-        if _integer(route(node.children[0], ctx)) == 0:
+        argument = fold_semantically(node.children[0], ctx)
+        node = CoreNode(type=T.EXP, children=[argument])
+        if _integer(argument) == 0:
             result = CoreNode.constant("1")
     elif node.type is T.LOG10:
-        value = _integer(route(node.children[0], ctx))
+        argument = fold_semantically(node.children[0], ctx)
+        node = CoreNode(type=T.LOG10, children=[argument])
+        value = _integer(argument)
         if value is not None:
             exponent = _exact_log(value, 10)
             if exponent is not None:
                 result = CoreNode.constant(str(exponent))
     elif node.type is T.LOG:
         if len(node.children) == 2:
-            value = _integer(route(node.children[0], ctx))
-            base = _integer(route(node.children[1], ctx))
+            value_node = fold_semantically(node.children[0], ctx)
+            base_node = fold_semantically(node.children[1], ctx)
+            node = CoreNode(type=T.LOG, children=[value_node, base_node])
+            value = _integer(value_node)
+            base = _integer(base_node)
             if value is not None and base is not None:
                 exponent = _exact_log(value, base)
                 if exponent is not None:

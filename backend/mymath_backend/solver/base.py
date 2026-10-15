@@ -217,6 +217,32 @@ def registered_types() -> set[CoreNodeType]:
     return set(_MODULE_REGISTRY)
 
 
+def fold_semantically(node: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Свернуть подвыражение, если это возможно без неизвестных.
+
+    Считает в **служебном** накопителе: если свёртка не удалась (в поддереве
+    есть переменная) или ничего не изменила, шаги не переносятся, и узел
+    остаётся прежним. Только при успешной свёртке шаги переносятся в
+    основной результат.
+
+    Нужен модулям, которые могут **оставить** свой узел (``√(2+3)``,
+    ``log₁₀(2+3)``, ``sin(1+1)``): подвыражение показывается как отдельный
+    шаг (``2+3 = 5``), но если модуль решает сохранить узел, шаг не должен
+    подменять собой ответ (см. ``truth/07-open-questions.md``, Q10).
+    """
+    scratch = SolveResult()
+    scratch_ctx = SolveContext(result=scratch, variables=list(ctx.variables))
+    try:
+        folded = route(node, scratch_ctx)
+    except SolveError:
+        return node
+    if folded.structural_eq(node):
+        return node
+    for step in scratch:
+        ctx.result.add(step)
+    return folded
+
+
 def build_solver_data(
     node: CoreNode,
     result: SolveResult,
@@ -269,6 +295,7 @@ __all__ = [
     "Solver",
     "Step",
     "build_solver_data",
+    "fold_semantically",
     "registered_types",
     "route",
     "solver_for",
