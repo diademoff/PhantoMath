@@ -110,6 +110,9 @@ def sequence_convergence(node: CoreNode, ctx: SolveContext, args: list[CoreNode]
         key = "seq_lim_conv"
         converges = True
     answer = boolean_node(converges)
+    ctx.result.add(
+        Step(left=node, right=None, key="seq_conv_div_lim", args=[CoreNode.variable("n")])
+    )
     ctx.result.add(Step(left=node, right=None, key="seq_find_limit"))
     ctx.result.add(Step(left=node, right=answer, key=key))
     return answer

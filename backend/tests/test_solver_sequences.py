@@ -105,12 +105,12 @@ class TestConvergence:
 
     def test_geometric_converges(self) -> None:
         keys, value = self._run("{sequence({1},{frac({1},{2})},{frac({1},{4})})}")
-        assert keys == ["seq_find_limit", "seq_lim_conv"]
+        assert keys == ["seq_conv_div_lim", "seq_find_limit", "seq_lim_conv"]
         assert value == "true"
 
     def test_arithmetic_diverges(self) -> None:
         keys, value = self._run("{sequence({2},{5},{8})}")
-        assert keys == ["seq_find_limit", "seq_lim_div"]
+        assert keys == ["seq_conv_div_lim", "seq_find_limit", "seq_lim_div"]
         assert value == "false"
 
     def test_geometric_diverges(self) -> None:

@@ -153,6 +153,7 @@
         ]
       },
       "steps": [
+        "seq_conv_div_lim",
         "seq_find_limit",
         "seq_lim_conv"
       ]
@@ -172,6 +173,7 @@
         ]
       },
       "steps": [
+        "seq_conv_div_lim",
         "seq_find_limit",
         "seq_lim_div"
       ]
