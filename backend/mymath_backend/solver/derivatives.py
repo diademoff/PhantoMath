@@ -351,6 +351,31 @@ def solve_derivative_with_respect(node: CoreNode, ctx: SolveContext) -> CoreNode
     return result
 
 
+@solver_for(T.PRIME, T.DERIVATION1_PRIME, T.DERIVATION2_PRIME)
+def solve_derivative_notation(node: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Производная в штриховой записи: ``f′`` (первый порядок) и ``f′′``.
+
+    Дети узла — выражение (как рисует Photomath: штрих ставится справа).
+    """
+    ctx.require(len(node.children) >= 1, "производная без выражения")
+    expression = node.children[0]
+    order = 2 if node.type is T.DERIVATION2_PRIME else 1
+
+    result = expression
+    for _ in range(order):
+        try:
+            result = _diff(result, ctx)
+        except SolveError:
+            result = _sympy_derivative(result, ctx)
+
+    if order == 2:
+        ctx.result.add(Step(left=node, right=None, key="derive_higher_order"), [_HEADER])
+        ctx.result.add(Step(left=node, right=result, key="second_derivative"), [_HEADER])
+    else:
+        ctx.result.add(Step(left=node, right=result, key="find_derivative"), [_HEADER])
+    return result
+
+
 def nth_derivative(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Производная порядка ``n`` (команда ``nth_derivative``, аргумент ``n``)."""
     if len(args) != 1:
@@ -392,5 +417,6 @@ def _sympy_derivative(expression: CoreNode, ctx: SolveContext) -> CoreNode:
 __all__ = [
     "nth_derivative",
     "solve_derivative",
+    "solve_derivative_notation",
     "solve_derivative_with_respect",
 ]

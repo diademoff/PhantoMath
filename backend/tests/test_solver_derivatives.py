@@ -205,6 +205,26 @@ class TestLeibniz:
         assert vertical.solution.structural_eq(CoreNode.variable("y"))
 
 
+class TestNotation:
+    def test_prime(self) -> None:
+        vertical = solve(parse_protocol("{prime({x^2})}")).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        assert vertical.solution.structural_eq(muli(c("2"), x()))
+        keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
+        assert keys == ["find_derivative"]
+
+    def test_second_prime(self) -> None:
+        vertical = solve(parse_protocol("{derivation2_prime({x^3})}")).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        assert vertical.solution.structural_eq(muli(c("6"), x()))
+
+
 class TestRegistration:
     def test_registered(self) -> None:
-        assert {T.DERIVATION, T.DERIVATION1, T.DERIVATION1_DIFF} <= registered_types()
+        assert {
+            T.DERIVATION,
+            T.DERIVATION1,
+            T.DERIVATION1_DIFF,
+            T.PRIME,
+            T.DERIVATION2_PRIME,
+        } <= registered_types()

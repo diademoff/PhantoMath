@@ -110,7 +110,7 @@ KEYWORD_TO_TYPE: dict[str, CoreNodeType] = {
     "definiteintegral": T.INTEGRAL_DEFINITE,
     "derivation": T.DERIVATION,
     "derivation_prime": T.DERIVATION1,
-    "derivation2_prime": T.DERIVATION1_PRIME,
+    "derivation2_prime": T.DERIVATION2_PRIME,
     "derivation_diff": T.DERIVATION1_DIFF,
     "nderivation_diff": T.DERIVATION_DIFF,
     "nderivation": T.DERIVATION,

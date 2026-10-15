@@ -285,6 +285,32 @@
       "steps": [
         "find_derivative"
       ]
+    },
+    {
+      "id": "prime-notation",
+      "title": "штриховая запись: (x²)′ = 2x",
+      "input": "{prime({x^2})}",
+      "solution": {
+        "type": "MULTIPLY_IMPLICIT",
+        "children": [
+          {"type": "CONSTANT", "value": "2"},
+          {"type": "VARIABLE", "value": "x"}
+        ]
+      },
+      "steps": ["find_derivative"]
+    },
+    {
+      "id": "second-prime-notation",
+      "title": "вторая производная: (x³)′′ = 6x",
+      "input": "{derivation2_prime({x^3})}",
+      "solution": {
+        "type": "MULTIPLY_IMPLICIT",
+        "children": [
+          {"type": "CONSTANT", "value": "6"},
+          {"type": "VARIABLE", "value": "x"}
+        ]
+      },
+      "steps": ["derive_higher_order", "second_derivative"]
     }
   ]
 }
