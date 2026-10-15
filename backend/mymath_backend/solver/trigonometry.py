@@ -30,7 +30,7 @@ import sympy
 
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
-from .base import SolveContext, SolveError, Step, solver_for
+from .base import SolveContext, SolveError, Step, fold_semantically, solver_for
 from .sympy_bridge import from_sympy, to_sympy
 
 # Ключи шагов.
@@ -192,8 +192,15 @@ def _evaluate(node: CoreNode, ctx: SolveContext) -> CoreNode:
 
 
 def _value(node: CoreNode, ctx: SolveContext) -> CoreNode:
-    """Точное значение функции или сам узел, если значения нет."""
-    radians = to_sympy(node.children[0])
+    """Точное значение функции или сам узел, если значения нет.
+
+    Аргумент сворачивается заранее: ``sin(1+1)`` даёт шаг ``1+1 = 2`` и
+    ответ ``sin(2)``. Чётность и периодичность при этом уже отработали —
+    сворачивание здесь не мешает им вынести знак или привести угол.
+    """
+    argument = fold_semantically(node.children[0], ctx)
+    node = CoreNode.node(node.type, argument)
+    radians = to_sympy(argument)
     value = getattr(sympy, _ALL[node.type])(radians)
 
     if value in _UNDEFINED or value.has(sympy.I):
@@ -203,7 +210,8 @@ def _value(node: CoreNode, ctx: SolveContext) -> CoreNode:
             explanation_key=_KEY_UNDEF,
         )
     if value.has(*_UNRESOLVED):
-        # Точного значения нет -- символьный узел остаётся как есть.
+        # Точного значения нет -- символьный узел остаётся со свёрнутым
+        # аргументом.
         return node
 
     result = from_sympy(value)

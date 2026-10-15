@@ -134,6 +134,35 @@ class TestWithArithmetic:
         assert step_keys(problem) == ["trig_table_calc", "add"]
 
 
+class TestArgumentFolding:
+    """Аргумент функции сворачивается, если он числовой."""
+
+    def test_argument_is_folded(self) -> None:
+        problem = node(T.SIN, node(T.ADD, c("1"), c("1")))
+        result = solution_of(problem)
+        assert result.type is T.SIN
+        assert result.children[0].value == "2"
+        assert step_keys(problem) == ["add"]
+
+    def test_folded_argument_computes_value(self) -> None:
+        problem = node(T.COS, node(T.MULTIPLY, c("2"), c("0")))
+        assert value_of(problem) == 1
+        assert step_keys(problem) == ["mul", "trig_table_calc"]
+
+    def test_symbolic_argument_untouched(self) -> None:
+        problem = node(T.SIN, CoreNode.variable("x"))
+        assert solution_of(problem).structural_eq(problem)
+        assert step_keys(problem) == []
+
+    def test_numeric_negative_uses_parity_not_folding(self) -> None:
+        # sin(-1) = -sin(1): знак выносится, а не аргумент сворачивается.
+        problem = node(T.SIN, negative(c("1")))
+        result = solution_of(problem)
+        assert result.type is T.NEGATIVE
+        assert result.children[0].type is T.SIN
+        assert step_keys(problem) == ["trig_neg_sin"]
+
+
 class TestInverse:
     def test_asin_half(self) -> None:
         assert value_of(node(T.ASIN, c("1/2"))) == sympy.pi / 6

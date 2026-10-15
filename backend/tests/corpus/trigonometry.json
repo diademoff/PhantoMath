@@ -45,7 +45,7 @@
     {
       "id": "asin-half",
       "title": "арксинус 1/2 — π/6",
-      "input": "{asin({1/2})}",
+      "input": "{asin({frac({1},{2})})}",
       "solution": {
         "type": "FRACTION",
         "children": [
@@ -96,15 +96,20 @@
     {
       "id": "asin-negative-half",
       "title": "нечётность арксинуса: arcsin(-1/2) = -π/6",
-      "input": "{asin({-1/2})}",
+      "input": "{asin({-frac({1},{2})})}",
       "solution": {
-        "type": "FRACTION",
+        "type": "NEGATIVE",
         "children": [
-          {"type": "NEGATIVE", "children": [{"type": "CONSTANT", "value": "π"}]},
-          {"type": "CONSTANT", "value": "6"}
+          {
+            "type": "FRACTION",
+            "children": [
+              {"type": "CONSTANT", "value": "π"},
+              {"type": "CONSTANT", "value": "6"}
+            ]
+          }
         ]
       },
-      "steps": ["trig_func_calc"]
+      "steps": ["trig_func_calc", "trig_neg"]
     },
     {
       "id": "pythagorean-identity",
@@ -112,6 +117,27 @@
       "input": "{sin({x})^2+cos({x})^2}",
       "solution": {"type": "CONSTANT", "value": "1"},
       "steps": ["simplify"]
+    },
+    {
+      "id": "argument-is-folded",
+      "title": "аргумент сворачивается: sin(1 + 1) = sin 2",
+      "input": "{sin({1+1})}",
+      "solution": {"type": "SIN", "children": [{"type": "CONSTANT", "value": "2"}]},
+      "steps": ["add"]
+    },
+    {
+      "id": "argument-product-zero",
+      "title": "аргумент сворачивается и считается: cos(2·0) = 1",
+      "input": "{cos({2*0})}",
+      "solution": {"type": "CONSTANT", "value": "1"},
+      "steps": ["mul", "trig_table_calc"]
+    },
+    {
+      "id": "symbolic-argument-untouched",
+      "title": "символьный аргумент остаётся: sin x",
+      "input": "{sin({x})}",
+      "solution": {"type": "SIN", "children": [{"type": "VARIABLE", "value": "x"}]},
+      "steps": []
     }
   ]
 }
