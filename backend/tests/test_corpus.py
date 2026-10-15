@@ -215,6 +215,7 @@ def test_corpus_covers_every_module() -> None:
         "matrix_ops",
         "matrix_eq",
         "derivatives",
+        "derivative_high",
         "limits",
         "integrals",
         "series",

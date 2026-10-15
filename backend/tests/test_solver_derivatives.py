@@ -13,6 +13,7 @@ import sympy
 from mymath_backend import CoreNode, load_explanations
 from mymath_backend import CoreNodeType as T
 from mymath_backend.explanations import DEFAULT_LOCALE
+from mymath_backend.input import parse_protocol
 from mymath_backend.solver import registered_types, solve
 from mymath_backend.solver.sympy_bridge import to_sympy
 
@@ -145,6 +146,59 @@ class TestExplanationKeys:
             assert "ARG" not in template
 
 
+class TestHigherOrder:
+    def _solution(self, source: str, order: str) -> CoreNode:
+        vertical = solve(
+            parse_protocol(source),
+            command="nth_derivative",
+            args=[parse_protocol(order)],
+        ).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        return vertical.solution
+
+    def _keys(self, source: str, order: str) -> list[str]:
+        vertical = solve(
+            parse_protocol(source),
+            command="nth_derivative",
+            args=[parse_protocol(order)],
+        ).result.vertical()
+        assert vertical is not None
+        return [sub.description.type for step in vertical.steps for sub in step.substeps]
+
+    def test_second(self) -> None:
+        assert self._solution("{x^3}", "{2}").structural_eq(muli(c("6"), x()))
+        assert self._keys("{x^3}", "{2}") == ["derive_higher_order", "second_derivative"]
+
+    def test_third(self) -> None:
+        assert self._solution("{x^4}", "{3}").structural_eq(muli(c("24"), x()))
+        assert self._keys("{x^4}", "{3}") == [
+            "derive_higher_order",
+            "find_high_order_derivative",
+        ]
+
+    def test_first_is_plain(self) -> None:
+        assert self._keys("{x^2}", "{1}") == ["find_derivative"]
+
+
+class TestLeibniz:
+    def test_with_respect(self) -> None:
+        # d/dx (x²) = 2x.
+        problem = node(T.DERIVATION1_DIFF, x(), node(T.POWER, x(), c("2")))
+        vertical = solve(problem).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        assert vertical.solution.structural_eq(muli(c("2"), x()))
+        keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
+        assert keys == ["find_derivative_with_respect"]
+
+    def test_other_variable(self) -> None:
+        # d/dx (x·y) = y.
+        expression = muli(x(), CoreNode.variable("y"))
+        problem = node(T.DERIVATION1_DIFF, x(), expression)
+        vertical = solve(problem).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        assert vertical.solution.structural_eq(CoreNode.variable("y"))
+
+
 class TestRegistration:
     def test_registered(self) -> None:
-        assert {T.DERIVATION, T.DERIVATION1} <= registered_types()
+        assert {T.DERIVATION, T.DERIVATION1, T.DERIVATION1_DIFF} <= registered_types()

@@ -20,7 +20,9 @@
 * ``intercepts`` — пересечения графика с осями координат
   (``find_x_intercept``/``find_y_intercept``);
 * ``range`` — область значений функции (``graph_rt_info_range``);
-* ``periodic_to_frac`` — периодическую дробь в обыкновенную (``periodic_to_frac``).
+* ``periodic_to_frac`` — периодическую дробь в обыкновенную (``periodic_to_frac``);
+* ``nth_derivative`` — производная порядка ``n``
+  (``second_derivative``/``find_high_order_derivative``).
 
 Для уравнения команда применяется к обеим частям.
 """
@@ -36,6 +38,7 @@ from sympy.calculus.util import function_range
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
 from .base import Command, SolveContext, SolveError, Step, boolean_node
+from .derivatives import nth_derivative
 from .diff_equations import diff_eq
 from .domain import domain, restrictions
 from .integrals import area
@@ -592,6 +595,7 @@ COMMANDS: dict[str, Command] = {
     "extrema": extrema,
     "inflection": inflection,
     "intercepts": intercepts,
+    "nth_derivative": nth_derivative,
     "periodic_to_frac": periodic_to_frac,
     "range": value_range,
     "prove": prove,
@@ -634,6 +638,7 @@ __all__ = [
     "factor",
     "inflection",
     "intercepts",
+    "nth_derivative",
     "periodic_to_frac",
     "polar",
     "prove",

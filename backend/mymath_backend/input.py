@@ -111,6 +111,8 @@ KEYWORD_TO_TYPE: dict[str, CoreNodeType] = {
     "derivation": T.DERIVATION,
     "derivation_prime": T.DERIVATION1,
     "derivation2_prime": T.DERIVATION1_PRIME,
+    "derivation_diff": T.DERIVATION1_DIFF,
+    "nderivation_diff": T.DERIVATION_DIFF,
     "nderivation": T.DERIVATION,
     "sigma_def": T.SIGMA_DEFINITE,
     "definitesigma": T.SIGMA_DEFINITE,

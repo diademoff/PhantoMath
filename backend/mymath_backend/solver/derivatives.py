@@ -301,6 +301,62 @@ def solve_derivative(node: CoreNode, ctx: SolveContext) -> CoreNode:
     return result
 
 
+@solver_for(T.DERIVATION1_DIFF)
+def solve_derivative_with_respect(node: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Производная по явно указанной переменной (запись Лейбница ``d/dx``).
+
+    Узел ``DERIVATION1_DIFF`` хранит детей в порядке ``[переменная, выражение]``
+    (как рисует Photomath: ``d(выражение)/d(переменная)``).
+    """
+    ctx.require(len(node.children) == 2, "d/dx: переменная и выражение")
+    variable_node, expression_node = node.children
+    if variable_node.type is not T.VARIABLE or not variable_node.value:
+        raise SolveError("дифференцирование возможно только по переменной")
+    local = SolveContext(result=ctx.result, variables=[variable_node.value])
+    try:
+        result = _diff(expression_node, local)
+    except SolveError:
+        result = _sympy_derivative(expression_node, local)
+    ctx.result.add(
+        Step(
+            left=node,
+            right=result,
+            key="find_derivative_with_respect",
+            args=[variable_node],
+        ),
+        [_HEADER],
+    )
+    return result
+
+
+def nth_derivative(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Производная порядка ``n`` (команда ``nth_derivative``, аргумент ``n``)."""
+    if len(args) != 1:
+        raise SolveError("нужен порядок производной")
+    order = _as_number(args[0])
+    if order is None or order.denominator != 1 or order.numerator < 1:
+        raise SolveError("порядок производной — натуральное число")
+    count = order.numerator
+
+    result = node
+    for _ in range(count):
+        try:
+            result = _diff(result, ctx)
+        except SolveError:
+            result = _sympy_derivative(result, ctx)
+
+    if count >= 2:
+        ctx.result.add(Step(left=node, right=None, key="derive_higher_order"), [_HEADER])
+    if count == 1:
+        key = "find_derivative"
+    elif count == 2:
+        key = "second_derivative"
+    else:
+        key = "find_high_order_derivative"
+    ctx.result.add(Step(left=node, right=result, key=key), [_HEADER])
+    return result
+
+
 def _sympy_derivative(expression: CoreNode, ctx: SolveContext) -> CoreNode:
     """Производная через sympy — на случай, если таблица правил не покрывает."""
     var = ctx.variables[0] if ctx.variables else "x"
@@ -312,5 +368,7 @@ def _sympy_derivative(expression: CoreNode, ctx: SolveContext) -> CoreNode:
 
 
 __all__ = [
+    "nth_derivative",
     "solve_derivative",
+    "solve_derivative_with_respect",
 ]
