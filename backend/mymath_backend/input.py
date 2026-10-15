@@ -109,6 +109,7 @@ KEYWORD_TO_TYPE: dict[str, CoreNodeType] = {
     "lim_both": T.LIMIT,
     "integral": T.INTEGRAL,
     "integral_def": T.INTEGRAL_DEFINITE,
+    "integralrightdash": T.INTEGRAL_RIGHT_DASH,
     "definiteintegral": T.INTEGRAL_DEFINITE,
     "derivation": T.DERIVATION,
     "derivation_prime": T.DERIVATION1,

@@ -226,6 +226,13 @@
       "input": "{integral_def({0},{1},{integral_def({0},{2},{muli({x},{y^2})})})}",
       "solution": {"type": "CONSTANT", "value": "4/3"},
       "steps": ["integrate_iterated", "integrate_iterated_inner", "integrate_calc"]
+    },
+    {
+      "id": "right-dash",
+      "title": "подстановка пределов: x²|₀¹ = 1",
+      "input": "{integralrightdash({x^2},{0},{1})}",
+      "solution": {"type": "CONSTANT", "value": "1"},
+      "steps": ["integrate_def_bounds"]
     }
   ]
 }

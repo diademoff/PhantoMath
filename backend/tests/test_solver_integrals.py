@@ -14,6 +14,7 @@ import sympy
 from mymath_backend import CoreNode, load_explanations
 from mymath_backend import CoreNodeType as T
 from mymath_backend.explanations import DEFAULT_LOCALE
+from mymath_backend.input import parse_protocol
 from mymath_backend.solver import SolveError, registered_types, solve
 from mymath_backend.solver.sympy_bridge import to_sympy
 
@@ -128,6 +129,18 @@ class TestIterated:
         problem = node(T.INTEGRAL_DEFINITE, c("0"), c("1"), inner)
         with pytest.raises(SolveError, match="две переменные"):
             solve(problem)
+
+
+class TestRightDash:
+    def test_substitute_limits(self) -> None:
+        # x²|₀¹ = 1.
+        problem = node(T.INTEGRAL_RIGHT_DASH, node(T.POWER, var(), c("2")), c("0"), c("1"))
+        assert solution_of(problem).value == "1"
+        assert step_keys(problem) == ["integrate_def_bounds"]
+
+    def test_protocol(self) -> None:
+        problem = parse_protocol("{integralrightdash({x^3},{1},{2})}")
+        assert solution_of(problem).value == "7"
 
 
 class TestUnsupported:

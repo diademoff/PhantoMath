@@ -128,6 +128,24 @@ def _iterated_integral(node: CoreNode, ctx: SolveContext) -> CoreNode:
     return result
 
 
+@solver_for(T.INTEGRAL_RIGHT_DASH)
+def solve_right_dash(node: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Подстановка пределов в записи ``F(x)|ₐᵇ``.
+
+    Дети — ``[выражение, нижний предел, верхний предел]`` (как рисует
+    Photomath: вертикальная черта с пределами). Значение — разность
+    ``F(b) − F(a)``; шаг ``integrate_def_bounds``.
+    """
+    ctx.require(len(node.children) == 3, "подстановка пределов: выражение и границы")
+    expression_node, lower, upper = node.children
+    symbol = _variable(ctx)
+    expression = to_sympy(expression_node)
+    value = expression.subs(symbol, to_sympy(upper)) - expression.subs(symbol, to_sympy(lower))
+    result = from_sympy(sympy.simplify(value))
+    ctx.result.add(Step(left=node, right=result, key="integrate_def_bounds"))
+    return result
+
+
 def _real_singularities(
     expression: sympy.Expr, symbol: sympy.Symbol, lower: sympy.Expr, upper: sympy.Expr
 ) -> list[sympy.Expr]:
