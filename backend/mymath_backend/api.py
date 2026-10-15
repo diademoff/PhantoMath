@@ -33,6 +33,24 @@ from .explanations import DEFAULT_LOCALE, Explanations, load_explanations
 from .input import ProtocolError, parse_json, parse_protocol
 from .solver import SolveError, solve
 
+# Продукт поддерживает только два языка (решение пользователя, см.
+# truth/09-decisions.md). В данных английский хранится как `default`.
+SUPPORTED_LOCALES: tuple[str, ...] = ("ru", "en")
+
+
+def normalize_locale(locale: str) -> str:
+    """Привести язык к поддерживаемому: `ru` или английский (`default`).
+
+    Любой другой язык (в том числе диалект вида `ru-RU`) откатывается к
+    английскому. Так решение «только ru/en» действует и для старых клиентов,
+    а в словаре остаются все 9 языков как исследовательский артефакт.
+    """
+    base = locale.strip().lower().split("-")[0]
+    if base == "ru":
+        return "ru"
+    return DEFAULT_LOCALE
+
+
 # Словарь лежит в truth/data рядом с пакетом. Путь можно переопределить
 # переменной окружения, иначе бэкенд не запустится вне монорепозитория.
 # mymath_backend/api.py -> mymath_backend -> backend -> корень репозитория
@@ -107,9 +125,14 @@ def _render_view(key: str, args: list[CoreNode], locale: str) -> dict[str, Any]:
     """
     if not _explanations_loaded():
         return ExplanationView(
-            key=key, text="", locale=locale, links=[], tail_label=None, missing=True
+            key=key,
+            text="",
+            locale=normalize_locale(locale),
+            links=[],
+            tail_label=None,
+            missing=True,
         ).model_dump()
-    rendered = explanations().render(key, args, locale)
+    rendered = explanations().render(key, args, normalize_locale(locale))
     return ExplanationView(
         key=key,
         text=rendered.text,
@@ -118,6 +141,12 @@ def _render_view(key: str, args: list[CoreNode], locale: str) -> dict[str, Any]:
         tail_label=rendered.tail_label,
         missing=rendered.missing_key,
     ).model_dump()
+
+
+def _render_rich(rich: dict[str, Any], locale: str) -> dict[str, Any]:
+    """Развернуть `CoreRichText` (`{"type","args"}`) в текстовую вьюху."""
+    args = [CoreNode.from_contract(a) for a in rich.get("args", [])]
+    return _render_view(rich["type"], args, locale)
 
 
 def _attach_text(node: dict[str, Any], locale: str) -> dict[str, Any]:
@@ -130,8 +159,17 @@ def _attach_text(node: dict[str, Any], locale: str) -> dict[str, Any]:
     out = dict(node)
     description = out.get("description")
     if isinstance(description, dict) and "type" in description:
-        args = [CoreNode.from_contract(a) for a in description.get("args", [])]
-        out["explanation"] = _render_view(description["type"], args, locale)
+        out["explanation"] = _render_rich(description, locale)
+    # Заголовки шагов — тоже `CoreRichText`, но лежат списком, а не под
+    # ключом `description`, поэтому разворачиваются отдельно.
+    headers = out.get("headers")
+    if isinstance(headers, list):
+        out["headers"] = [
+            {**h, "explanation": _render_rich(h, locale)}
+            if isinstance(h, dict) and "type" in h
+            else h
+            for h in headers
+        ]
     for key in ("children", "substeps", "steps", "entries"):
         value = out.get(key)
         if isinstance(value, list):
@@ -157,7 +195,11 @@ def create_app() -> FastAPI:
             size = len(explanations())
         except OSError as err:
             return {"status": "degraded", "explanations": 0, "detail": str(err)}
-        return {"status": "ok", "explanations": size}
+        return {
+            "status": "ok",
+            "explanations": size,
+            "locales": list(SUPPORTED_LOCALES),
+        }
 
     @app.get("/")
     def index() -> dict[str, Any]:

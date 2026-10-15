@@ -27,19 +27,10 @@ const String defaultBaseUrl = String.fromEnvironment(
   defaultValue: 'http://10.0.2.2:8000',
 );
 
-/// Языки пояснений из `explanations.json`.
-const List<String> explanationLocales = [
-  'default',
-  'ru',
-  'en',
-  'de',
-  'es',
-  'fr',
-  'it',
-  'pl',
-  'pt',
-  'uk',
-];
+/// Языки пояснений. Продукт поддерживает только русский и английский
+/// (решение пользователя, `truth/09-decisions.md`). Английский в данных
+/// хранится как `default`, поэтому на бэкенд идёт `en`.
+const List<String> explanationLocales = ['ru', 'en'];
 
 class MyMathApp extends StatelessWidget {
   const MyMathApp({super.key, this.baseUrl = defaultBaseUrl});

@@ -139,3 +139,65 @@ class TestSolveErrors:
     def test_unknown_field_rejected(self, client: TestClient) -> None:
         response = client.post("/api/v1/solve", json={"node": num("1"), "мусор": 1})
         assert response.status_code == 422
+
+
+def var(name: str) -> dict:
+    return {"type": "VARIABLE", "value": name}
+
+
+def mul_implicit(a: dict, b: dict) -> dict:
+    return {"type": "MULTIPLY_IMPLICIT", "children": [a, b]}
+
+
+def equation(a: dict, b: dict) -> dict:
+    return {"type": "EQUALS", "children": [a, b]}
+
+
+class TestLocales:
+    """Продукт поддерживает только русский и английский (truth/09-decisions.md)."""
+
+    def test_health_lists_supported_locales(self, client: TestClient) -> None:
+        assert client.get("/api/v1/health").json()["locales"] == ["ru", "en"]
+
+    def test_english_maps_to_default(self, client: TestClient) -> None:
+        body = solve(client, add(num("2"), num("3")), locale="en")
+        view = body["result"]["groups"][0]["entries"][0]["result"]["steps"][0]["substeps"][0][
+            "explanation"
+        ]
+        assert view["locale"] == "default"
+        assert view["text"] == "Add the numbers"
+
+    def test_dropped_locale_falls_back_to_english(self, client: TestClient) -> None:
+        body = solve(client, add(num("2"), num("3")), locale="de")
+        view = body["result"]["groups"][0]["entries"][0]["result"]["steps"][0]["substeps"][0][
+            "explanation"
+        ]
+        assert view["locale"] == "default"
+
+    def test_regional_russian_keeps_russian(self, client: TestClient) -> None:
+        body = solve(client, add(num("2"), num("3")), locale="ru-RU")
+        view = body["result"]["groups"][0]["entries"][0]["result"]["steps"][0]["substeps"][0][
+            "explanation"
+        ]
+        assert view["locale"] == "ru"
+
+
+class TestSolveEquations:
+    def test_linear_equation_end_to_end(self, client: TestClient) -> None:
+        node = equation(add(mul_implicit(num("2"), var("x")), num("3")), num("7"))
+        body = solve(client, node, locale="ru")
+        vertical = body["result"]["groups"][0]["entries"][0]["result"]
+        assert vertical["solutionNode"]["type"] == "EQUALS"
+        assert vertical["solutionNode"]["children"][1]["value"] == "2"
+        keys = [
+            sub["description"]["type"] for step in vertical["steps"] for sub in step["substeps"]
+        ]
+        assert keys == ["move", "eq_linar_divide_both_sides"]
+
+    def test_step_header_has_rendered_text(self, client: TestClient) -> None:
+        node = equation(add(mul_implicit(num("2"), var("x")), num("3")), num("7"))
+        body = solve(client, node, locale="ru")
+        steps = body["result"]["groups"][0]["entries"][0]["result"]["steps"]
+        header = steps[0]["headers"][0]
+        assert header["explanation"]["text"] == "Решите уравнение"
+        assert header["explanation"]["locale"] == "ru"

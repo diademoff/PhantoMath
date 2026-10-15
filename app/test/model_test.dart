@@ -98,6 +98,20 @@ void main() {
       expect(nodeToLatex(CoreNode(type: CoreNodeType.empty)), '');
     });
 
+    test('список решений через запятую', () {
+      final node = CoreNode(
+        type: CoreNodeType.list,
+        children: [
+          bin(CoreNodeType.equals, cx, c2),
+          bin(CoreNodeType.equals, cx, c3),
+        ],
+      );
+      final latex = nodeToLatex(node);
+      expect(latex, contains(r',\quad '));
+      expect(latex, contains(r'$x$ = $2$'));
+      expect(latex, contains(r'$x$ = $3$'));
+    });
+
     test('незавершённый узел даёт заглушку, а не пустоту', () {
       final node = CoreNode(type: CoreNodeType.add, children: [c2]);
       expect(nodeToLatex(node), contains(r'\square'));

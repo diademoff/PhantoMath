@@ -70,6 +70,7 @@ enum CoreNodeType {
   choose('CHOOSE'),
   partialPermutation('PARTIAL_PERMUTATION_LEFT_SUBSCRIPT_RIGHT_SUBSCRIPT'),
   variation('VARIATION'),
+  list('LIST'),
   system('SYSTEM');
 
   const CoreNodeType(this.wire);

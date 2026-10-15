@@ -189,6 +189,12 @@ String nodeToLatex(CoreNode node) {
       return _wrap(node, r'$0 \ge $1');
 
     // ── составные ───────────────────────────────────────────────────
+    case CoreNodeType.list:
+      if (node.children.isEmpty) return _placeholder;
+      return [
+        for (final child in node.children) _asMath(child),
+      ].join(r',\quad ');
+
     case CoreNodeType.system:
       return _wrap(node, r'\begin{cases}$0\end{cases}');
 

@@ -22,6 +22,7 @@ from .base import (
     route,
     solver_for,
 )
+from .equations import solve_equation
 
 
 def solve(node: CoreNode) -> CoreSolverData:
@@ -84,5 +85,6 @@ __all__ = [
     "registered_types",
     "route",
     "solve",
+    "solve_equation",
     "solver_for",
 ]

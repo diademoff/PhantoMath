@@ -176,8 +176,7 @@ class SolverApi {
         SolveStep(
           headers: [
             for (final h in _asList(step['headers']))
-              if (h is Map<String, dynamic>)
-                _textOf(h) ?? '',
+              if (h is Map<String, dynamic>) _headerText(h),
           ],
           substeps: [
             for (final s in _asList(step['substeps']))
@@ -206,6 +205,16 @@ class SolverApi {
   String? _textOf(Map<String, dynamic> description) {
     final type = description['type'] as String?;
     return type == null ? null : 'step_$type';
+  }
+
+  /// Текст заголовка шага.
+  ///
+  /// Заголовок — тоже `CoreRichText`, и бэкенд присылает развёрнутый текст в
+  /// `explanation`. Если развёртки нет, заголовок просто пустой: показывать
+  /// техническое `step_eq_solve_short` пользователю незачем.
+  String _headerText(Map<String, dynamic> header) {
+    final explanation = header['explanation'] as Map<String, dynamic>?;
+    return explanation?['text'] as String? ?? '';
   }
 
   // ── сериализация запроса ──────────────────────────────────────────
