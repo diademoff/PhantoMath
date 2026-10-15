@@ -136,6 +136,58 @@ class TestKeywords:
         assert parse_protocol("{sin({x})}").type is T.SIN
 
 
+class TestConstantsAndUnits:
+    """Константы и обёртки: π, ∞, мнимая единица, единицы угла, комплексные."""
+
+    @pytest.mark.parametrize("source", ["{pi}", "{\\pi}", "{π}"])
+    def test_pi_is_constant(self, source: str) -> None:
+        node = parse_protocol(source)
+        assert node.type is T.CONSTANT
+        assert node.value == "π"
+
+    def test_number_times_pi(self) -> None:
+        r"""`2\pi` — неявное умножение числа на константу."""
+        node = parse_protocol("{2\\pi}")
+        assert node.type is T.MULTIPLY_IMPLICIT
+        assert [c.value for c in node.children] == ["2", "π"]
+
+    @pytest.mark.parametrize("source", ["{infty}", "{\\infty}", "{∞}"])
+    def test_infinity_is_constant(self, source: str) -> None:
+        node = parse_protocol(source)
+        assert node.type is T.CONSTANT
+        assert node.value == "∞"
+
+    def test_imaginary_unit_is_constant(self) -> None:
+        r"""Мнимая единица — явный токен `\i` (CONSTANT_I в редакторе)."""
+        node = parse_protocol("{\\i}")
+        assert node.type is T.CONSTANT
+        assert node.value == "i"
+
+    def test_plain_i_stays_variable(self) -> None:
+        node = parse_protocol("{i}")
+        assert node.type is T.VARIABLE
+        assert node.value == "i"
+
+    @pytest.mark.parametrize(
+        ("source", "expected"),
+        [
+            ("{deg({30})}", T.DEGREE),
+            ("{radian({1})}", T.RADIAN),
+            ("{real({1})}", T.REAL),
+            ("{imag({1})}", T.IMAGINARY),
+            ("{conj({1})}", T.CONJUGATE),
+        ],
+    )
+    def test_wrapper_keywords(self, source: str, expected: CoreNodeType) -> None:
+        assert parse_protocol(source).type is expected
+
+    def test_degrees_inside_sine(self) -> None:
+        node = parse_protocol("{sin({deg({30})})}")
+        assert node.type is T.SIN
+        assert node.children[0].type is T.DEGREE
+        assert node.children[0].children[0].value == "30"
+
+
 class TestErrors:
     def test_unknown_operator(self) -> None:
         with pytest.raises(ProtocolError, match="неизвестный оператор"):

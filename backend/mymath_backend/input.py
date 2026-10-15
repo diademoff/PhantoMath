@@ -93,6 +93,12 @@ KEYWORD_TO_TYPE: dict[str, CoreNodeType] = {
     "ceil": T.FLOOR,
     "gcd": T.ABS,
     "lcm": T.ABS,
+    # единицы угла и комплексные -- постфиксные обёртки (1 ребёнок)
+    "deg": T.DEGREE,
+    "radian": T.RADIAN,
+    "real": T.REAL,
+    "imag": T.IMAGINARY,
+    "conj": T.CONJUGATE,
     # исчисления
     "lim": T.LIMIT,
     "lim_left": T.LIMIT_LEFT,
@@ -160,12 +166,30 @@ NUMBER_RE = re.compile(r"^-?\d+(?:\.\d+)?$")
 GREEK_RE = re.compile(r"^\\[a-zA-Z]+$")
 IDENT_RE = re.compile(r"^[A-Za-zΑ-Ωα-ω][A-Za-z0-9Α-Ωα-ω]*$")
 
+# Имена, которые протокол трактует как математические константы, а не буквы.
+# ``pi``/``\pi`` -- число π, ``inf``/``infty``/``\infty`` -- бесконечность.
+# Словарь проверяется раньше разбиения много-буквенного токена на переменные:
+# иначе ``pi`` распалось бы на ``p·i``, а ``infty`` -- на ``i·n·f·t·y``.
+CONSTANT_NAMES: dict[str, str] = {
+    "π": "π",
+    "pi": "π",
+    "\\pi": "π",
+    "∞": "∞",
+    "inf": "∞",
+    "infty": "∞",
+    "\\infty": "∞",
+    # Мнимая единица: в редакторе Photomath это отдельный оператор CONSTANT_I,
+    # а в контракте — CONSTANT "i". Явный токен «\i», чтобы буква i осталась
+    # переменной (решение пользователя).
+    "\\i": "i",
+}
+
 # Знаки, которые разрывают имя токена. `_` сюда намеренно не входит:
 # переменные с индексами пишутся как `a_1` и должны остаться одним токеном.
 OPERATOR_CHARS = frozenset("+-*/=<>!^")
 TWO_CHAR_OPERATORS = ("<=", ">=", "!=")
-# `2x`, `2xy`, `3(…)` — число вплотную к имени или скобке.
-IMPLICIT_MUL_RE = re.compile(r"^(\d+(?:\.\d+)?|\.\d+)([A-Za-zΑ-Ωα-ω(].*)$")
+# `2x`, `2xy`, `2\pi`, `3(…)` — число вплотную к имени, константе или скобке.
+IMPLICIT_MUL_RE = re.compile(r"^(\d+(?:\.\d+)?|\.\d+)([A-Za-zΑ-Ωα-ω\\(].*)$")
 
 
 class ProtocolError(ValueError):
@@ -319,6 +343,12 @@ class _Parser:
                 continue
             if tok.value == "(":
                 items.append(self._parse_paren(items))
+                continue
+            if tok.value in CONSTANT_NAMES:
+                self.take()
+                if items and isinstance(items[-1], CoreNode):
+                    items.append(IMPLICIT_MUL)
+                items.append(CoreNode.constant(CONSTANT_NAMES[tok.value]))
                 continue
             letters = self._take_split_identifier(tok)
             if letters is not None:
@@ -534,16 +564,16 @@ def _leaf(text: str, pos: int) -> CoreNode:
     """Лист: число, переменная, константа или текст."""
     if NUMBER_RE.match(text):
         return CoreNode.constant(text)
+    if text in CONSTANT_NAMES:
+        # π и бесконечность -- константы. Проверяются раньше IDENT_RE, иначе
+        # ``pi`` стало бы переменной, а ``\pi`` -- переменной с именем «\pi».
+        return CoreNode.constant(CONSTANT_NAMES[text])
     if text in KEYWORD_TO_TYPE and text not in SYMBOL_TO_TYPE:
         # Имя функции без скобок: «забыли скобки» — трактуем как вызов с
         # пустым аргументом, чтобы не потерять узел молча.
         return CoreNode(type=KEYWORD_TO_TYPE[text], value=None)
     if IDENT_RE.match(text) or GREEK_RE.match(text):
         return CoreNode.variable(text)
-    if text in {"π", "pi"}:
-        return CoreNode.constant("π")
-    if text in {"∞", "inf"}:
-        return CoreNode.constant("∞")
     raise ProtocolError(f"поз. {pos}: не удалось разобрать токен {text!r}")
 
 
