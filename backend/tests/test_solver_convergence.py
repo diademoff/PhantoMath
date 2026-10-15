@@ -79,6 +79,42 @@ class TestRootTest:
         assert vertical.solution.children[0].value == "true"
 
 
+class TestPSeries:
+    def _run(self, source: str, command: str) -> tuple[list[str], str]:
+        vertical = solve(parse_protocol(source), command=command).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
+        return keys, vertical.solution.children[0].value or ""
+
+    def test_converges(self) -> None:
+        source = "{sigma_def({n},{1},{inf},{frac({1},{n^2})})}"
+        keys, value = self._run(source, "pseries_test")
+        assert keys == [
+            "series_pseries_test",
+            "series_pseries_test_use",
+            "series_pseries_test_converges",
+        ]
+        assert value == "true"
+
+    def test_diverges(self) -> None:
+        source = "{sigma_def({n},{1},{inf},{frac({1},{n})})}"
+        keys, value = self._run(source, "pseries_test")
+        assert keys[-1] == "series_pseries_test_diverges"
+        assert value == "false"
+
+    def test_geometric_converges(self) -> None:
+        source = "{sigma_def({n},{1},{inf},{frac({1},{2^n})})}"
+        keys, value = self._run(source, "geom_series_test")
+        assert keys == ["series_geom_series_test", "series_geom_series_test_converges"]
+        assert value == "true"
+
+    def test_geometric_diverges(self) -> None:
+        source = "{sigma_def({n},{1},{inf},{2^n})}"
+        keys, value = self._run(source, "geom_series_test")
+        assert keys[-1] == "series_geom_series_test_diverges"
+        assert value == "false"
+
+
 class TestRadiusOfConvergence:
     def test_finite_radius(self) -> None:
         source = "{sigma_def({n},{0},{inf},{frac({x^n},{2^n})})}"

@@ -217,9 +217,68 @@ def radius_of_convergence(node: CoreNode, ctx: SolveContext, args: list[CoreNode
     return answer
 
 
+def pseries_test(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Признак обобщённого гармонического ряда: ``Σ 1/nᵖ`` сходится при ``p > 1``."""
+    del args
+    index, _, _, expression = _parts(node)
+    symbol = sympy.Symbol(index)
+    term = sympy.simplify(to_sympy(expression))
+    _, rest = term.as_coeff_Mul()
+    if not isinstance(rest, sympy.Pow) or rest.base != symbol:
+        raise SolveError("ряд не обобщённый гармонический")
+    exponent = -rest.exp
+
+    ctx.result.add(Step(left=node, right=None, key="series_pseries_test"))
+    ctx.result.add(
+        Step(
+            left=node,
+            right=None,
+            key="series_pseries_test_use",
+            args=[from_sympy(exponent)],
+        )
+    )
+    converges = (exponent > 1) is sympy.true
+    condition = CoreNode.node(
+        T.GREATER_THAN if converges else T.LESS_THAN_EQUAL,
+        from_sympy(exponent),
+        CoreNode.constant("1"),
+    )
+    answer = boolean_node(converges)
+    key = "series_pseries_test_converges" if converges else "series_pseries_test_diverges"
+    ctx.result.add(Step(left=node, right=answer, key=key, args=[condition]))
+    return answer
+
+
+def geom_series_test(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Признак геометрического ряда: отношение соседних членов постоянно."""
+    del args
+    index, _, _, expression = _parts(node)
+    symbol = sympy.Symbol(index)
+    term = to_sympy(expression)
+    if term == 0:
+        raise SolveError("нулевой член ряда")
+    ratio = sympy.simplify(term.subs(symbol, symbol + 1) / term)
+    if ratio.has(symbol):
+        raise SolveError("ряд не геометрический")
+
+    ctx.result.add(Step(left=node, right=None, key="series_geom_series_test"))
+    converges = (sympy.Abs(ratio) < 1) is sympy.true
+    condition = CoreNode.node(
+        T.LESS_THAN if converges else T.GREATER_THAN_EQUAL,
+        from_sympy(sympy.Abs(ratio)),
+        CoreNode.constant("1"),
+    )
+    answer = boolean_node(converges)
+    key = "series_geom_series_test_converges" if converges else "series_geom_series_test_diverges"
+    ctx.result.add(Step(left=node, right=answer, key=key, args=[condition]))
+    return answer
+
+
 __all__ = [
     "convergence",
+    "geom_series_test",
     "nth_term_test",
+    "pseries_test",
     "radius_of_convergence",
     "ratio_test",
     "root_test",

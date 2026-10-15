@@ -45,6 +45,22 @@
       "steps": ["series_nth_term_test", "series_nth_term_test_use", "series_nth_term_test_lim_nozero"]
     },
     {
+      "id": "p-series-test",
+      "title": "Σ 1/n² — признак обобщённого гармонического ряда, сходится",
+      "input": "{sigma_def({n},{1},{inf},{frac({1},{n^2})})}",
+      "command": "pseries_test",
+      "solution": {"type": "TEXT", "children": [{"type": "TEXT_KEY", "value": "true"}]},
+      "steps": ["series_pseries_test", "series_pseries_test_use", "series_pseries_test_converges"]
+    },
+    {
+      "id": "geometric-test",
+      "title": "Σ 1/2ⁿ — признак геометрического ряда, сходится",
+      "input": "{sigma_def({n},{1},{inf},{frac({1},{2^n})})}",
+      "command": "geom_series_test",
+      "solution": {"type": "TEXT", "children": [{"type": "TEXT_KEY", "value": "true"}]},
+      "steps": ["series_geom_series_test", "series_geom_series_test_converges"]
+    },
+    {
       "id": "radius-finite",
       "title": "Σ xⁿ/2ⁿ — радиус сходимости 2",
       "input": "{sigma_def({n},{0},{inf},{frac({x^n},{2^n})})}",
