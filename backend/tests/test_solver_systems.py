@@ -96,7 +96,8 @@ class TestSolve:
 
 
 class TestUnsupported:
-    def test_no_unique_solution(self) -> None:
+    def test_parametric_solution(self) -> None:
+        # Вырожденная система: бесконечно много решений.
         problem = system(
             eq(node(T.ADD, var("x"), var("y")), c("1")),
             eq(
@@ -108,33 +109,45 @@ class TestUnsupported:
                 c("2"),
             ),
         )
-        with pytest.raises(SolveError, match="единственного решения"):
+        with pytest.raises(SolveError, match="параметрическ"):
             solve(problem)
 
+
+class TestExtended:
     def test_nonlinear(self) -> None:
+        # xy = 1, x + y = 2 -> (1, 1).
         problem = system(
             eq(node(T.MULTIPLY, var("x"), var("y")), c("1")),
             eq(node(T.ADD, var("x"), var("y")), c("2")),
         )
-        with pytest.raises(SolveError, match="нелинейная"):
-            solve(problem)
+        vertical = solve(problem).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+
+    def test_three_unknowns(self) -> None:
+        problem = system(
+            eq(node(T.ADD, node(T.ADD, var("x"), var("y")), var("z")), c("6")),
+            eq(node(T.SUBTRACT, var("x"), var("y")), c("0")),
+            eq(node(T.SUBTRACT, var("y"), var("z")), c("0")),
+        )
+        assert solution_map(problem) == {"x": "2", "y": "2", "z": "2"}
 
     def test_one_unknown(self) -> None:
         problem = system(
             eq(node(T.ADD, var("x"), c("1")), c("3")),
             eq(node(T.SUBTRACT, var("x"), c("1")), c("1")),
         )
-        with pytest.raises(SolveError, match="двумя неизвестными"):
-            solve(problem)
+        vertical = solve(problem).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        assert vertical.solution.children[1].value == "2"
 
     def test_three_equations(self) -> None:
+        # Три уравнения с двумя неизвестными: решается через sympy.
         problem = system(
             eq(node(T.ADD, var("x"), var("y")), c("3")),
             eq(node(T.SUBTRACT, var("x"), var("y")), c("1")),
-            eq(node(T.ADD, var("x"), c("1")), c("2")),
+            eq(node(T.ADD, var("x"), c("1")), c("3")),
         )
-        with pytest.raises(SolveError, match="двух уравнений"):
-            solve(problem)
+        assert solution_map(problem) == {"x": "2", "y": "1"}
 
 
 class TestExplanationKeys:

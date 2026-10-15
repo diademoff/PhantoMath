@@ -3,16 +3,11 @@
 Модуль зарегистрирован на узел ``SYSTEM``. Если среди элементов есть знак
 отношения, это **система неравенств**: множества решений элементов (через
 ``solveset``) пересекаются, ответ — промежуток (шаг ``intersection_plural``).
-Иначе — два линейных уравнения: каждое приводится к форме ``a·u + b·v + c = 0``,
-система решается правилом Крамера; ответ — список ``x = …, y = …``.
-
-Поддерживаются линейные системы 2×2 (произведение неизвестных, степени и
-функции отклоняются). Общий случай (метод Гаусса, ``n×n``, параметрические
-решения) — следующие модули.
-
-Шаг системы уравнений — ``system_2x2_solve_elimination`` с заголовком
-``system_solve_short``; при нулевом определителе система не имеет
-единственного решения и это ошибка.
+Иначе — уравнения: система 2×2 линейных решается правилом Крамера
+(``system_2x2_solve_elimination``), прочие (3×3 и выше, нелинейные, с
+параметром) — через ``sympy.solve`` (шаг ``system_3x3_rem_vars`` или
+``system_2x2_solve_substitution``). Параметрические решения пока не
+поддерживаются.
 """
 
 from __future__ import annotations
@@ -130,15 +125,25 @@ def _equation_form(equation: CoreNode, index: dict[str, int]) -> _Form:
 
 @solver_for(T.SYSTEM)
 def solve_system(node: CoreNode, ctx: SolveContext) -> CoreNode:
-    """Решить систему уравнений или неравенств."""
+    """Решить систему уравнений или неравенств.
+
+    Система неравенств — пересечение множеств решений. Система 2×2 линейных
+    уравнений — правило Крамера. Прочие (3×3 и выше, нелинейные) — через
+    sympy ``solve``.
+    """
     if any(child.type in _RELATIONS for child in node.children):
         return _inequality_system(node, ctx)
 
-    ctx.require(len(node.children) == 2, "поддерживаются системы из двух уравнений")
-    ctx.require(
-        len(ctx.variables) == 2,
-        "поддерживаются системы с двумя неизвестными",
-    )
+    if len(node.children) == 2 and len(ctx.variables) == 2:
+        try:
+            return _cramer_2x2(node, ctx)
+        except SolveError:
+            pass
+    return _general_system(node, ctx)
+
+
+def _cramer_2x2(node: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Система 2×2 линейных уравнений правилом Крамера."""
     first_var, second_var = ctx.variables
     index = {first_var: 0, second_var: 1}
 
@@ -168,6 +173,42 @@ def solve_system(node: CoreNode, ctx: SolveContext) -> CoreNode:
     )
     ctx.result.add(Step(left=node, right=solution, key="system_2x2_solve_elimination"), [_HEADER])
     return solution
+
+
+def _general_system(node: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Система 3×3 и выше или нелинейная — через ``sympy.solve``."""
+    ctx.require(len(ctx.variables) >= 1, "в системе нет неизвестных")
+    equations = []
+    for child in node.children:
+        ctx.require(
+            child.type is T.EQUALS and len(child.children) == 2,
+            "в системе должны быть уравнения",
+        )
+        equations.append(sympy.Eq(to_sympy(child.children[0]), to_sympy(child.children[1])))
+    symbols = [sympy.Symbol(name) for name in ctx.variables]
+    try:
+        found = sympy.solve(equations, symbols, dict=True)
+    except (TypeError, ValueError, NotImplementedError) as error:
+        raise SolveError("система не решается") from error
+    if not found:
+        raise SolveError("система не имеет решений")
+
+    answers = [_solution_node(ctx.variables, mapping) for mapping in found]
+    solution = answers[0] if len(answers) == 1 else CoreNode.node(T.LIST, *answers)
+    key = "system_3x3_rem_vars" if len(ctx.variables) >= 3 else "system_2x2_solve_substitution"
+    ctx.result.add(Step(left=node, right=solution, key=key), [_HEADER])
+    return solution
+
+
+def _solution_node(variables: list[str], mapping: dict[sympy.Symbol, sympy.Expr]) -> CoreNode:
+    """Одно решение системы: ``x = …, y = …`` (или ``x = …``)."""
+    parts: list[CoreNode] = []
+    for name in variables:
+        value = mapping.get(sympy.Symbol(name))
+        if value is None:
+            raise SolveError("параметрические решения системы пока не поддерживаются")
+        parts.append(CoreNode.node(T.EQUALS, CoreNode.variable(name), from_sympy(value)))
+    return CoreNode.node(T.LIST, *parts) if len(parts) > 1 else parts[0]
 
 
 def _inequality_system(node: CoreNode, ctx: SolveContext) -> CoreNode:

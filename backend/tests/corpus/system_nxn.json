@@ -1,0 +1,57 @@
+{
+  "module": "system_nxn",
+  "tasks": [
+    {
+      "id": "three-unknowns",
+      "title": "3×3: x+y+z=6, x−y=0, y−z=0",
+      "input": "system({=({x+y+z},{6})},{=({x-y},{0})},{=({y-z},{0})})",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "2"}]},
+          {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "y"}, {"type": "CONSTANT", "value": "2"}]},
+          {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "z"}, {"type": "CONSTANT", "value": "2"}]}
+        ]
+      },
+      "steps": ["system_3x3_rem_vars"]
+    },
+    {
+      "id": "nonlinear-unique",
+      "title": "нелинейная: xy=1, x+y=2 → (1, 1)",
+      "input": "system({=({x*y},{1})},{=({x+y},{2})})",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "1"}]},
+          {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "y"}, {"type": "CONSTANT", "value": "1"}]}
+        ]
+      },
+      "steps": ["system_2x2_solve_substitution"]
+    },
+    {
+      "id": "nonlinear-two-solutions",
+      "title": "нелинейная: x²+y²=5, x−y=1 → два решения",
+      "input": "system({=({x^2+y^2},{5})},{=({x-y},{1})})",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "LIST",
+            "children": [
+              {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "-1"}]},
+              {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "y"}, {"type": "CONSTANT", "value": "-2"}]}
+            ]
+          },
+          {
+            "type": "LIST",
+            "children": [
+              {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "2"}]},
+              {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "y"}, {"type": "CONSTANT", "value": "1"}]}
+            ]
+          }
+        ]
+      },
+      "steps": ["system_2x2_solve_substitution"]
+    }
+  ]
+}
