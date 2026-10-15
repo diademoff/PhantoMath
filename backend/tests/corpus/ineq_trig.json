@@ -1,0 +1,56 @@
+{
+  "module": "ineq_trig",
+  "tasks": [
+    {
+      "id": "sine",
+      "title": "sin x > 1/2 на [0, 2π] → (π/6, 5π/6)",
+      "input": "{gt({sin({x})},{frac({1},{2})})}",
+      "command": "inequality_on_interval",
+      "args": ["{0}", "{2*pi}"],
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {"type": "FRACTION", "children": [{"type": "CONSTANT", "value": "π"}, {"type": "CONSTANT", "value": "6"}]},
+          {
+            "type": "FRACTION",
+            "children": [
+              {"type": "MULTIPLY_IMPLICIT", "children": [{"type": "CONSTANT", "value": "5"}, {"type": "CONSTANT", "value": "π"}]},
+              {"type": "CONSTANT", "value": "6"}
+            ]
+          }
+        ]
+      },
+      "steps": ["ineq_solve_short"]
+    },
+    {
+      "id": "polynomial-closed",
+      "title": "x² ≤ 4 на [−5, 5] → [−2, 2]",
+      "input": "{lte({x^2},{4})}",
+      "command": "inequality_on_interval",
+      "args": ["{-5}", "{5}"],
+      "solution": {
+        "type": "CLOSED_CLOSED_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "-2"},
+          {"type": "CONSTANT", "value": "2"}
+        ]
+      },
+      "steps": ["ineq_solve_short"]
+    },
+    {
+      "id": "rational-pole",
+      "title": "1/(x−2) > 0 на [−5, 5] → (2, 5]",
+      "input": "{gt({frac({1},{x-2})},{0})}",
+      "command": "inequality_on_interval",
+      "args": ["{-5}", "{5}"],
+      "solution": {
+        "type": "OPEN_CLOSED_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "2"},
+          {"type": "CONSTANT", "value": "5"}
+        ]
+      },
+      "steps": ["ineq_solve_short"]
+    }
+  ]
+}

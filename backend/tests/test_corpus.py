@@ -191,6 +191,7 @@ def test_corpus_covers_every_module() -> None:
         "ineq_transcendental",
         "ineq_compound",
         "ineq_system",
+        "ineq_trig",
         "restrictions",
         "system_nxn",
         "system_param",

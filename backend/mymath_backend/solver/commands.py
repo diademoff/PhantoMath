@@ -38,6 +38,7 @@
 * ``extrema_on_interval`` — наибольшее и наименьшее значение на отрезке;
 * ``gcd``/``lcm``/``mod`` — НОД/НОК/остаток; ``prime_factorization``, ``round_place``;
 * ``piecewise_value`` — значение кусочно-заданной функции (``PIECEWISE_DEFINITION``);
+* ``inequality_on_interval`` — неравенство (в т.ч. тригонометрическое) на отрезке;
 * ``radius_of_convergence`` — радиус сходимости степенного ряда;
 * ``pseries_test``/``geom_series_test`` — признаки обобщённого гармонического
   и геометрического рядов;
@@ -73,6 +74,7 @@ from .conics import conic_details
 from .derivatives import nth_derivative
 from .diff_equations import diff_eq
 from .domain import domain, restrictions
+from .inequalities import inequality_on_interval
 from .integrals import area
 from .matrices import MATRIX_COMMANDS
 from .piecewise import piecewise_value
@@ -1118,6 +1120,7 @@ COMMANDS: dict[str, Command] = {
     "extrema": extrema,
     "extrema_on_interval": extrema_on_interval,
     "inflection": inflection,
+    "inequality_on_interval": inequality_on_interval,
     "intercepts": intercepts,
     "inverse_function": inverse_function,
     "nth_derivative": nth_derivative,
@@ -1185,6 +1188,7 @@ __all__ = [
     "factor",
     "gcd",
     "geom_series_test",
+    "inequality_on_interval",
     "inflection",
     "intercept_form",
     "intercepts",

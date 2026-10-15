@@ -426,6 +426,91 @@ def _sort_key(root: sympy.Expr) -> float:
         return 0.0
 
 
+def inequality_on_interval(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Решить неравенство на отрезке методом интервалов (в т.ч. тригонометрическое).
+
+    Аргументы — границы отрезка. Выражение ``f = lhs − rhs`` разбивается
+    точками нулей и разрывов; на каждом промежутке проверяется знак ``f``;
+    подходящие промежутки объединяются, концы включаются по нестрогому
+    отношению. Ответ — промежуток или объединение.
+    """
+    ctx.require(node.type in _RELATIONS, "неравенство: знак отношения")
+    ctx.require(len(args) == 2, "нужны границы отрезка")
+    ctx.require(len(ctx.variables) == 1, "неравенство на отрезке: одна неизвестная")
+    symbol = sympy.Symbol(ctx.variables[0])
+    lower, upper = to_sympy(args[0]), to_sympy(args[1])
+    if lower > upper:
+        lower, upper = upper, lower
+    if lower.is_real is not True or upper.is_real is not True:
+        raise SolveError("границы отрезка должны быть числами")
+
+    expression = sympy.together(to_sympy(node.children[0]) - to_sympy(node.children[1]))
+    singular = _real_points(sympy.singularities(expression, symbol), lower, upper)
+    roots = [
+        root
+        for root in _real_points(sympy.solve(sympy.Eq(expression, 0), symbol), lower, upper)
+        if not any(sympy.simplify(root - point) == 0 for point in singular)
+    ]
+    critical = sorted({*singular, *roots}, key=_sort_key)
+    boundaries = [lower, *critical, upper]
+
+    atoms: list[sympy.Set] = []
+    for start, end in itertools.pairwise(boundaries):
+        if _relation_holds(node.type, expression.subs(symbol, (start + end) / 2)):
+            left_closed = _relation_holds(node.type, expression.subs(symbol, start))
+            right_closed = _relation_holds(node.type, expression.subs(symbol, end))
+            atoms.append(
+                sympy.Interval(start, end, left_open=not left_closed, right_open=not right_closed)
+            )
+    for point in critical:
+        if _relation_holds(node.type, expression.subs(symbol, point)):
+            atoms.append(sympy.Interval(point, point))
+
+    combined = sympy.simplify(sympy.Union(*atoms)) if atoms else sympy.EmptySet
+    answer = from_sympy(combined)
+    ctx.result.add(Step(left=node, right=answer, key="ineq_solve_short"), [_HEADER])
+    return answer
+
+
+def _real_points(values: object, lower: sympy.Expr, upper: sympy.Expr) -> list[sympy.Expr]:
+    """Действительные точки из набора/списка внутри ``(lower, upper)``."""
+    if isinstance(values, (sympy.FiniteSet, list, tuple, set)):
+        candidates = list(values)
+    else:
+        return []
+    result: list[sympy.Expr] = []
+    for point in candidates:
+        try:
+            if point.is_real is False:
+                continue
+            value = float(sympy.N(point))
+        except (TypeError, ValueError):
+            continue
+        if float(sympy.N(lower)) < value < float(sympy.N(upper)):
+            result.append(point)
+    return result
+
+
+def _relation_holds(node_type: T, value: sympy.Expr) -> bool:
+    """Верно ли строгое/нестрогое отношение для значения выражения."""
+    try:
+        number = float(sympy.N(value))
+    except (TypeError, ValueError):
+        return False
+    if node_type is T.LESS_THAN:
+        return number < 0
+    if node_type is T.LESS_THAN_EQUAL:
+        return number <= 0
+    if node_type is T.GREATER_THAN:
+        return number > 0
+    if node_type is T.GREATER_THAN_EQUAL:
+        return number >= 0
+    if node_type is T.EQUALS:
+        return number == 0
+    return number != 0
+
+
 __all__ = [
+    "inequality_on_interval",
     "solve_inequality",
 ]
