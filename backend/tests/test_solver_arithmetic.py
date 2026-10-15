@@ -101,7 +101,7 @@ class TestErrors:
             solve(parse_protocol("{2^99999}"))
 
     def test_unimplemented_type_is_reported(self) -> None:
-        node = CoreNode.node(T.SIN, CoreNode.variable("x"))
+        node = CoreNode.node(T.SET, CoreNode.constant("1"))
         with pytest.raises(SolveError, match="не реализован"):
             solve(node)
 
@@ -174,6 +174,6 @@ class TestRegistration:
             T.BRACKET,
         } <= registered_types()
 
-    def test_sin_not_registered_yet(self) -> None:
-        """Функции ещё не реализованы -- это осознанная граница первого модуля."""
-        assert T.SIN not in registered_types()
+    def test_set_type_not_registered_yet(self) -> None:
+        """Множества ещё не реализованы -- следующая граница модулей."""
+        assert T.SET not in registered_types()

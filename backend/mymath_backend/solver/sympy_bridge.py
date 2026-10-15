@@ -123,6 +123,12 @@ def to_sympy(node: CoreNode) -> sympy.Expr:
         return sympy.factorial(to_sympy(node.children[0]))
     if node_type is T.EQUALS:
         return sympy.Eq(*(to_sympy(child) for child in node.children))
+    if node_type is T.DEGREE:
+        # Градусы -- только единица записи: в sympy угол всегда в радианах.
+        return to_sympy(node.children[0]) * sympy.pi / 180
+    if node_type is T.RADIAN:
+        # Радианы -- единица записи без изменения числового значения.
+        return to_sympy(node.children[0])
     if node_type in _FUNCTIONS:
         function = getattr(sympy, _FUNCTIONS[node_type])
         return function(to_sympy(node.children[0]))
@@ -213,11 +219,33 @@ def _from_mul(expr: sympy.Expr) -> CoreNode:
         else:
             numerator.append(factor)
 
-    top = _product(numerator)
-    if not denominator:
+    # Рациональный множитель выносим в дробь: ``√3/2`` читается лучше, чем
+    # ``1/2·√3``, и это тот же ответ. Целый множитель остаётся в
+    # произведении: ``2·x`` -- не дробь.
+    coefficient = sympy.Integer(1)
+    others: list[sympy.Expr] = []
+    for factor in numerator:
+        if factor.is_Rational:
+            coefficient *= factor
+        else:
+            others.append(factor)
+
+    if not denominator and (coefficient.q == 1 or not others):
+        return _product(numerator)
+
+    top_factors = list(others)
+    bottom_factors = list(denominator)
+    if abs(coefficient.p) != 1:
+        top_factors.insert(0, sympy.Integer(coefficient.p))
+    if coefficient.q != 1:
+        bottom_factors.insert(0, sympy.Integer(coefficient.q))
+
+    top: CoreNode = _product(top_factors) if top_factors else CoreNode.constant("1")
+    if coefficient.p < 0:
+        top = CoreNode.node(T.NEGATIVE, top)
+    if not bottom_factors:
         return top
-    bottom = _product(denominator)
-    return CoreNode.node(T.FRACTION, top, bottom)
+    return CoreNode.node(T.FRACTION, top, _product(bottom_factors))
 
 
 def _product(factors: list[sympy.Expr]) -> CoreNode:
