@@ -125,12 +125,12 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('ссылка в пояснении нажимается', (tester) async {
+  testWidgets('ссылка в пояснении открывает определение', (tester) async {
     final api = SolverApi(
       baseUrl: 'http://test',
       client: MockClient(
         (request) async => http.Response(
-          '{"result":{"groups":[{"type":"VERTICAL","entries":[{"result":{"steps":[{"headers":[],"substeps":[{"description":{"type":"factorise_call"},"explanation":{"key":"factorise_call","text":"Factor","links":[{"label":"Factor","uuid":"1ceef362-dfb4-4ae6-ba5d-46dbd862a37b"}]}}]}]}}]}]}}',
+          '{"result":{"groups":[{"type":"VERTICAL","entries":[{"result":{"steps":[{"headers":[],"substeps":[{"description":{"type":"factorise_call"},"explanation":{"key":"factorise_call","text":"Factor","links":[{"label":"Factor","uuid":"1ceef362-dfb4-4ae6-ba5d-46dbd862a37b","definition":"Разложение на множители."}]}}]}]}}]}]}}',
           200,
           headers: const {'content-type': 'application/json; charset=utf-8'},
         ),
@@ -145,7 +145,8 @@ void main() {
 
     await tester.tap(find.text('Factor'));
     await tester.pump();
-    expect(find.textContaining('«Factor»'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Разложение на множители.'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

@@ -58,12 +58,19 @@ class SolveStep {
   final List<Substep> substeps;
 }
 
-/// Ссылка в тексте пояснения: метка и идентификатор способа/понятия.
+/// Ссылка в тексте пояснения: метка, идентификатор и определение понятия.
 class ExplanationLink {
-  const ExplanationLink({required this.label, required this.uuid});
+  const ExplanationLink({
+    required this.label,
+    required this.uuid,
+    this.definition = '',
+  });
 
   final String label;
   final String uuid;
+
+  /// Краткое определение понятия; пусто, если его нет.
+  final String definition;
 }
 
 /// Подшаг: «было → стало» с пояснением.
@@ -265,7 +272,13 @@ class SolverApi {
       final label = item['label'] as String?;
       final uuid = item['uuid'] as String?;
       if (label != null && uuid != null) {
-        out.add(ExplanationLink(label: label, uuid: uuid));
+        out.add(
+          ExplanationLink(
+            label: label,
+            uuid: uuid,
+            definition: item['definition'] as String? ?? '',
+          ),
+        );
       }
     }
     return out;

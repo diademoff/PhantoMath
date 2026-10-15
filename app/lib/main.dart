@@ -266,9 +266,29 @@ class _SolvePageState extends State<SolvePage> {
 
   /// Нажатие на ссылку в тексте шага.
   ///
-  /// Если решатель предложил несколько способов, ссылка переключает на
-  /// следующий; иначе показываем, что понятие пока не раскрыто.
+  /// Если у понятия есть определение — открываем карточку. Иначе, когда
+  /// решатель предложил несколько способов, ссылка переключает на следующий;
+  /// в остальных случаях показываем, что понятие пока не раскрыто.
   void _onLink(ExplanationLink link) {
+    if (link.definition.isNotEmpty) {
+      showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        builder: (context) => Padding(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(link.label, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 12),
+              Text(link.definition, style: Theme.of(context).textTheme.bodyLarge),
+            ],
+          ),
+        ),
+      );
+      return;
+    }
     if (_methods.length > 1) {
       setState(() => _methodIndex = (_methodIndex + 1) % _methods.length);
       return;

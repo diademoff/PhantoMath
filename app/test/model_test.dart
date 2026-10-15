@@ -195,7 +195,7 @@ void main() {
     test('разбирает ссылки в тексте пояснения', () async {
       final api = _apiWith(_response(
         '''{"result":{"groups":[{"type":"VERTICAL","entries":[{"result":{"steps":[
-          {"headers":[],"substeps":[{"description":{"type":"factorise_call"},"explanation":{"key":"factorise_call","text":"Factor","links":[{"label":"Factor","uuid":"1ceef362-dfb4-4ae6-ba5d-46dbd862a37b"}]}}]}]}}]}]}}''',
+          {"headers":[],"substeps":[{"description":{"type":"factorise_call"},"explanation":{"key":"factorise_call","text":"Factor","links":[{"label":"Factor","uuid":"1ceef362-dfb4-4ae6-ba5d-46dbd862a37b","definition":"Разложение на множители."}]}}]}]}}]}]}}''',
         200,
       ));
 
@@ -203,6 +203,7 @@ void main() {
       final link = answer.steps.single.substeps.single.links.single;
       expect(link.label, 'Factor');
       expect(link.uuid, '1ceef362-dfb4-4ae6-ba5d-46dbd862a37b');
+      expect(link.definition, 'Разложение на множители.');
       api.close();
     });
   });
