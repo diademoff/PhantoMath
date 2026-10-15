@@ -38,12 +38,17 @@ from .series import solve_series
 from .systems import solve_system
 
 
-def solve(node: CoreNode, command: str | None = None) -> CoreSolverData:
+def solve(
+    node: CoreNode,
+    command: str | None = None,
+    args: list[CoreNode] | None = None,
+) -> CoreSolverData:
     """Решить выражение и вернуть ответ в формате контракта.
 
     ``command`` — имя действия (``CoreAction.command``): ``None`` или ``solve``
-    решают как обычно, ``factor``/``expand``/``simplify`` применяют
-    соответствующее преобразование (см. ``solver/commands.py``).
+    решают как обычно, ``factor``/``expand``/``simplify`` и векторные команды
+    применяют соответствующее преобразование (см. ``solver/commands.py``).
+    ``args`` — аргументы команды (``CoreAction.args``), например второй вектор.
 
     Бросает :class:`SolveError`, если задача не решается текущим набором
     модулей. Вызывающий сам решает, что показать пользователю: 404 с
@@ -53,7 +58,7 @@ def solve(node: CoreNode, command: str | None = None) -> CoreSolverData:
     ctx = SolveContext(result=result, variables=_free_variables(node))
 
     if command is not None and command != "solve":
-        solution = commands.apply(command, node, ctx)
+        solution = commands.apply(command, node, ctx, args)
         result.set_solution(solution)
         return build_solver_data(node, result)
 

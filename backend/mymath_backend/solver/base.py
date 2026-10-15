@@ -178,6 +178,9 @@ Solver = Callable[[CoreNode, SolveContext], CoreNode]
 маршрутизация идёт по ``CoreNode.type``.
 """
 
+# Команда (``CoreAction``): узел, контекст и аргументы команды.
+Command = Callable[[CoreNode, SolveContext, list[CoreNode]], CoreNode]
+
 _MODULE_REGISTRY: dict[CoreNodeType, list[Solver]] = {}
 
 
@@ -259,6 +262,7 @@ def _vertical_entry(result: SolveResult) -> Entry:
 
 
 __all__ = [
+    "Command",
     "SolveContext",
     "SolveError",
     "SolveResult",

@@ -23,10 +23,9 @@ import sympy
 
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
-from .base import SolveContext, SolveError, Step
+from .base import Command, SolveContext, SolveError, Step
 from .sympy_bridge import from_sympy, to_sympy
-
-Command = Callable[[CoreNode, SolveContext], CoreNode]
+from .vectors import VECTOR_COMMANDS
 
 
 def _apply_side(
@@ -43,18 +42,21 @@ def _apply_side(
     return result
 
 
-def factor(node: CoreNode, ctx: SolveContext) -> CoreNode:
+def factor(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Разложить выражение на множители."""
+    del args
     return _apply_side(node, ctx, "factorise_call", sympy.factor)
 
 
-def expand(node: CoreNode, ctx: SolveContext) -> CoreNode:
+def expand(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Раскрыть скобки."""
+    del args
     return _apply_side(node, ctx, "expand_msg", sympy.expand)
 
 
-def simplify(node: CoreNode, ctx: SolveContext) -> CoreNode:
+def simplify(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Упростить выражение."""
+    del args
     return _apply_side(node, ctx, "simplify", sympy.simplify)
 
 
@@ -62,15 +64,21 @@ COMMANDS: dict[str, Command] = {
     "factor": factor,
     "expand": expand,
     "simplify": simplify,
+    **VECTOR_COMMANDS,
 }
 
 
-def apply(command: str, node: CoreNode, ctx: SolveContext) -> CoreNode:
+def apply(
+    command: str,
+    node: CoreNode,
+    ctx: SolveContext,
+    args: list[CoreNode] | None = None,
+) -> CoreNode:
     """Выполнить команду; неизвестная команда — ошибка."""
     handler = COMMANDS.get(command)
     if handler is None:
         raise SolveError(f"неизвестная команда {command!r}")
-    return handler(node, ctx)
+    return handler(node, ctx, list(args or []))
 
 
 __all__ = [

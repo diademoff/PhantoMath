@@ -249,3 +249,12 @@ class TestCommands:
         assert links and links[0]["label"] and links[0]["uuid"]
         # Факторинг: определение понятия подставлено из нашего глоссария.
         assert links[0]["definition"]
+
+    def test_vector_length(self, client: TestClient) -> None:
+        node = {"type": "LIST", "children": [num("3"), num("4")]}
+        response = client.post(
+            "/api/v1/solve",
+            json={"node": node, "action": {"command": "vector_length", "args": []}},
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["result"]["solution"]["value"] == "5"

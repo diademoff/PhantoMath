@@ -248,7 +248,11 @@ def create_app() -> FastAPI:
             ) from err
 
         try:
-            data = solve(node, command=payload.action.command if payload.action else None)
+            data = solve(
+                node,
+                command=payload.action.command if payload.action else None,
+                args=payload.action.args if payload.action else None,
+            )
         except SolveError as err:
             # Задачу не решили -- это не поломка сервиса. Отвечаем 422 с
             # понятным текстом и ключом пояснения, если он есть.
