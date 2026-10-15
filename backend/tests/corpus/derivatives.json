@@ -8,11 +8,19 @@
       "solution": {
         "type": "MULTIPLY_IMPLICIT",
         "children": [
-          {"type": "CONSTANT", "value": "2"},
-          {"type": "VARIABLE", "value": "x"}
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          },
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          }
         ]
       },
-      "steps": ["find_derivative"]
+      "steps": [
+        "find_derivative"
+      ]
     },
     {
       "id": "polynomial",
@@ -24,21 +32,43 @@
           {
             "type": "MULTIPLY_IMPLICIT",
             "children": [
-              {"type": "CONSTANT", "value": "6"},
-              {"type": "VARIABLE", "value": "x"}
+              {
+                "type": "CONSTANT",
+                "value": "6"
+              },
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              }
             ]
           },
-          {"type": "CONSTANT", "value": "2"}
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          }
         ]
       },
-      "steps": ["find_derivative"]
+      "steps": [
+        "derive_sum",
+        "find_derivative"
+      ]
     },
     {
       "id": "sine",
       "title": "производная sin x",
       "input": "{derivation_prime({sin({x})})}",
-      "solution": {"type": "COS", "children": [{"type": "VARIABLE", "value": "x"}]},
-      "steps": ["find_derivative"]
+      "solution": {
+        "type": "COS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          }
+        ]
+      },
+      "steps": [
+        "find_derivative"
+      ]
     },
     {
       "id": "sine-chain-rule",
@@ -47,22 +77,34 @@
       "solution": {
         "type": "MULTIPLY_IMPLICIT",
         "children": [
-          {"type": "CONSTANT", "value": "2"},
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          },
           {
             "type": "COS",
             "children": [
               {
                 "type": "MULTIPLY_IMPLICIT",
                 "children": [
-                  {"type": "CONSTANT", "value": "2"},
-                  {"type": "VARIABLE", "value": "x"}
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  },
+                  {
+                    "type": "VARIABLE",
+                    "value": "x"
+                  }
                 ]
               }
             ]
           }
         ]
       },
-      "steps": ["find_derivative"]
+      "steps": [
+        "derive_chain",
+        "find_derivative"
+      ]
     },
     {
       "id": "reciprocal",
@@ -71,17 +113,29 @@
       "solution": {
         "type": "FRACTION",
         "children": [
-          {"type": "CONSTANT", "value": "-1"},
+          {
+            "type": "CONSTANT",
+            "value": "-1"
+          },
           {
             "type": "POWER",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
-              {"type": "CONSTANT", "value": "2"}
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
             ]
           }
         ]
       },
-      "steps": ["find_derivative"]
+      "steps": [
+        "derive_quot",
+        "find_derivative"
+      ]
     },
     {
       "id": "square-root",
@@ -90,17 +144,33 @@
       "solution": {
         "type": "FRACTION",
         "children": [
-          {"type": "CONSTANT", "value": "1"},
+          {
+            "type": "CONSTANT",
+            "value": "1"
+          },
           {
             "type": "MULTIPLY_IMPLICIT",
             "children": [
-              {"type": "CONSTANT", "value": "2"},
-              {"type": "ROOT2", "children": [{"type": "VARIABLE", "value": "x"}]}
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              },
+              {
+                "type": "ROOT2",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "x"
+                  }
+                ]
+              }
             ]
           }
         ]
       },
-      "steps": ["find_derivative"]
+      "steps": [
+        "find_derivative"
+      ]
     },
     {
       "id": "cube",
@@ -109,17 +179,28 @@
       "solution": {
         "type": "MULTIPLY_IMPLICIT",
         "children": [
-          {"type": "CONSTANT", "value": "3"},
+          {
+            "type": "CONSTANT",
+            "value": "3"
+          },
           {
             "type": "POWER",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
-              {"type": "CONSTANT", "value": "2"}
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
             ]
           }
         ]
       },
-      "steps": ["find_derivative"]
+      "steps": [
+        "find_derivative"
+      ]
     },
     {
       "id": "product-rule",
@@ -128,17 +209,39 @@
       "solution": {
         "type": "ADD",
         "children": [
-          {"type": "SIN", "children": [{"type": "VARIABLE", "value": "x"}]},
+          {
+            "type": "SIN",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              }
+            ]
+          },
           {
             "type": "MULTIPLY",
             "children": [
-              {"type": "COS", "children": [{"type": "VARIABLE", "value": "x"}]},
-              {"type": "VARIABLE", "value": "x"}
+              {
+                "type": "COS",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "x"
+                  }
+                ]
+              },
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              }
             ]
           }
         ]
       },
-      "steps": ["find_derivative"]
+      "steps": [
+        "derive_prod",
+        "find_derivative"
+      ]
     },
     {
       "id": "natural-log",
@@ -147,11 +250,19 @@
       "solution": {
         "type": "FRACTION",
         "children": [
-          {"type": "CONSTANT", "value": "1"},
-          {"type": "VARIABLE", "value": "x"}
+          {
+            "type": "CONSTANT",
+            "value": "1"
+          },
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          }
         ]
       },
-      "steps": ["find_derivative"]
+      "steps": [
+        "find_derivative"
+      ]
     },
     {
       "id": "cosine",
@@ -159,9 +270,21 @@
       "input": "{derivation_prime({cos({x})})}",
       "solution": {
         "type": "NEGATIVE",
-        "children": [{"type": "SIN", "children": [{"type": "VARIABLE", "value": "x"}]}]
+        "children": [
+          {
+            "type": "SIN",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              }
+            ]
+          }
+        ]
       },
-      "steps": ["find_derivative"]
+      "steps": [
+        "find_derivative"
+      ]
     }
   ]
 }

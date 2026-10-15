@@ -297,8 +297,30 @@ def solve_derivative(node: CoreNode, ctx: SolveContext) -> CoreNode:
     except SolveError:
         result = _sympy_derivative(expression, ctx)
 
+    rule = _rule_step(node, expression, result)
+    if rule is not None:
+        ctx.result.add(rule, [_HEADER])
     ctx.result.add(Step(left=node, right=result, key="find_derivative"), [_HEADER])
     return result
+
+
+def _rule_step(node: CoreNode, expression: CoreNode, result: CoreNode) -> Step | None:
+    """Шаг с названием правила дифференцирования по верхнему узлу."""
+    node_type = expression.type
+    if node_type is T.CONSTANT:
+        return Step(left=node, right=None, key="derive_const", args=[result])
+    if node_type is T.VARIABLE:
+        return Step(left=node, right=None, key="derive_var", args=[result])
+    if node_type in (T.ADD, T.SUBTRACT):
+        return Step(left=node, right=None, key="derive_sum")
+    if node_type in (T.MULTIPLY, T.MULTIPLY_IMPLICIT):
+        return Step(left=node, right=None, key="derive_prod")
+    if node_type in (T.DIVIDE, T.FRACTION):
+        return Step(left=node, right=None, key="derive_quot")
+    argument = expression.children[0] if expression.children else None
+    if argument is not None and argument.type is not T.VARIABLE:
+        return Step(left=node, right=None, key="derive_chain", args=[argument])
+    return None
 
 
 @solver_for(T.DERIVATION1_DIFF)

@@ -115,8 +115,14 @@ class TestRules:
 
 
 class TestSteps:
-    def test_step_key(self) -> None:
-        assert step_keys(x()) == ["find_derivative"]
+    def test_variable_rule(self) -> None:
+        assert step_keys(x()) == ["derive_var", "find_derivative"]
+
+    def test_product_rule_step(self) -> None:
+        assert step_keys(muli(x(), node(T.SIN, x()))) == ["derive_prod", "find_derivative"]
+
+    def test_chain_rule_step(self) -> None:
+        assert step_keys(node(T.SIN, muli(c("2"), x()))) == ["derive_chain", "find_derivative"]
 
     def test_header(self) -> None:
         vertical = solve(derivative(x())).result.vertical()
