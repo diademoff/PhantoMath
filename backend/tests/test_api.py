@@ -228,3 +228,22 @@ class TestCommands:
         )
         assert response.status_code == 422
         assert "команда" in response.json()["detail"]["message"]
+
+    def test_link_returned_with_label_and_uuid(self, client: TestClient) -> None:
+        """Ссылка в тексте шага приходит с меткой и uuid — для навигации."""
+        node = add(
+            add(
+                {"type": "POWER", "children": [var("x"), num("2")]},
+                mul_implicit(num("2"), var("x")),
+            ),
+            num("1"),
+        )
+        response = client.post(
+            "/api/v1/solve",
+            json={"node": node, "action": {"command": "factor", "args": []}, "locale": "default"},
+        )
+        substep = response.json()["result"]["groups"][0]["entries"][0]["result"]["steps"][0][
+            "substeps"
+        ][0]
+        links = substep["explanation"]["links"]
+        assert links and links[0]["label"] and links[0]["uuid"]

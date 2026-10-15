@@ -116,7 +116,9 @@ class ExplanationView(BaseModel):
     key: str = Field(description="Ключ словаря")
     text: str = Field(description="Текст с подставленными аргументами")
     locale: str
-    links: list[str] = Field(default_factory=list, description="UUID способов решения")
+    links: list[dict[str, str]] = Field(
+        default_factory=list, description="Ссылки: метка и uuid способа/понятия"
+    )
     tail_label: str | None = Field(default=None, description="Метка в конце строки")
     missing: bool = Field(default=False, description="Ключа нет ни в одном языке")
 
@@ -141,7 +143,7 @@ def _render_view(key: str, args: list[CoreNode], locale: str) -> dict[str, Any]:
         key=key,
         text=rendered.text,
         locale=rendered.locale,
-        links=[link.uuid for link in rendered.links],
+        links=[{"label": link.label, "uuid": link.uuid} for link in rendered.links],
         tail_label=rendered.tail_label,
         missing=rendered.missing_key,
     ).model_dump()
