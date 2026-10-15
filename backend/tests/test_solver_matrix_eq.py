@@ -67,14 +67,24 @@ class TestMatrixEquation:
 class TestInverseGauss:
     def test_inverse(self) -> None:
         keys, solution = run(A, "matrix_inverse_gauss")
-        assert keys == ["matrix_inv_find_identity", "matrix_inv_right_is_inv"]
+        assert keys == [
+            "matrix_inv_use_notation",
+            "matrix_inv_write_right",
+            "matrix_inv_find_identity",
+            "matrix_inv_right_is_inv",
+        ]
         assert to_sympy(solution) == sympy.Matrix(
             [[-2, 1], [sympy.Rational(3, 2), -sympy.Rational(1, 2)]]
         )
 
     def test_singular(self) -> None:
         keys, solution = run(SINGULAR, "matrix_inverse_gauss")
-        assert keys == ["matrix_inv_find_identity", "matrix_inv_no_inv"]
+        assert keys == [
+            "matrix_inv_use_notation",
+            "matrix_inv_write_right",
+            "matrix_inv_find_identity",
+            "matrix_inv_no_inv",
+        ]
         assert solution.type is T.EMPTY
 
     def test_protocol_inverse(self) -> None:

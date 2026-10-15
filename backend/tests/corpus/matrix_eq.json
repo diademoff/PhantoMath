@@ -12,20 +12,35 @@
           {
             "type": "MATRIX_ROW",
             "children": [
-              {"type": "CONSTANT", "value": "-3"},
-              {"type": "CONSTANT", "value": "-4"}
+              {
+                "type": "CONSTANT",
+                "value": "-3"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "-4"
+              }
             ]
           },
           {
             "type": "MATRIX_ROW",
             "children": [
-              {"type": "CONSTANT", "value": "4"},
-              {"type": "CONSTANT", "value": "5"}
+              {
+                "type": "CONSTANT",
+                "value": "4"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "5"
+              }
             ]
           }
         ]
       },
-      "steps": ["matrix_eq_mul", "matrix_eq_set_elements_equal"]
+      "steps": [
+        "matrix_eq_mul",
+        "matrix_eq_set_elements_equal"
+      ]
     },
     {
       "id": "inverse-gauss",
@@ -38,20 +53,37 @@
           {
             "type": "MATRIX_ROW",
             "children": [
-              {"type": "CONSTANT", "value": "-2"},
-              {"type": "CONSTANT", "value": "1"}
+              {
+                "type": "CONSTANT",
+                "value": "-2"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "1"
+              }
             ]
           },
           {
             "type": "MATRIX_ROW",
             "children": [
-              {"type": "CONSTANT", "value": "3/2"},
-              {"type": "CONSTANT", "value": "-1/2"}
+              {
+                "type": "CONSTANT",
+                "value": "3/2"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "-1/2"
+              }
             ]
           }
         ]
       },
-      "steps": ["matrix_inv_find_identity", "matrix_inv_right_is_inv"]
+      "steps": [
+        "matrix_inv_use_notation",
+        "matrix_inv_write_right",
+        "matrix_inv_find_identity",
+        "matrix_inv_right_is_inv"
+      ]
     }
   ]
 }

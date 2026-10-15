@@ -280,6 +280,8 @@ def matrix_inverse_gauss(node: CoreNode, ctx: SolveContext, args: list[CoreNode]
         "matrix_inv_undef",
     )
     augmented = matrix.row_join(sympy.eye(size))
+    ctx.result.add(Step(left=node, right=None, key="matrix_inv_use_notation"))
+    ctx.result.add(Step(left=node, right=None, key="matrix_inv_write_right"))
     ctx.result.add(Step(left=node, right=None, key="matrix_inv_find_identity"))
     reduced, pivots = augmented.rref()
     if tuple(pivots) != tuple(range(size)):
