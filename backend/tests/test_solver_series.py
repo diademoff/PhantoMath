@@ -44,7 +44,7 @@ class TestSeries:
     def test_natural_numbers(self) -> None:
         problem = node(T.SIGMA_DEFINITE, var(), c("1"), c("5"), var())
         assert value_of(problem) == "15"
-        assert step_keys(problem) == ["series_sigma_find_sub"]
+        assert step_keys(problem) == ["series_find_sum_pos_int", "series_sigma_find_sub"]
 
     def test_squares(self) -> None:
         problem = node(T.SIGMA_DEFINITE, var(), c("1"), c("4"), node(T.POWER, var(), c("2")))

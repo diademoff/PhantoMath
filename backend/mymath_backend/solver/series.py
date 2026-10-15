@@ -46,9 +46,31 @@ def solve_series(node: CoreNode, ctx: SolveContext) -> CoreNode:
     )
     if value.has(sympy.Sum):
         raise SolveError("сумму не удалось вычислить")
+    special = _special_sum(to_sympy(expression), symbol, to_sympy(lower), to_sympy(upper))
+    if special is not None:
+        ctx.result.add(Step(left=node, right=None, key=special, args=[from_sympy(to_sympy(upper))]))
     result = from_sympy(sympy.simplify(value))
     ctx.result.add(Step(left=node, right=result, key="series_sigma_find_sub"))
     return result
+
+
+def _special_sum(
+    term: sympy.Expr, symbol: sympy.Symbol, lower: sympy.Expr, upper: sympy.Expr
+) -> str | None:
+    """Ключ формулы специальной суммы (первые ``n`` чисел) или ``None``."""
+    if lower != 1 or upper in (sympy.oo, -sympy.oo):
+        return None
+    candidates = [
+        ("series_find_sum_cube", symbol**3),
+        ("series_find_sum_square", symbol**2),
+        ("series_find_sum_pos_int", symbol),
+        ("series_find_sum_even", 2 * symbol),
+        ("series_find_sum_odd", 2 * symbol - 1),
+    ]
+    for key, reference in candidates:
+        if sympy.simplify(term - reference) == 0:
+            return key
+    return None
 
 
 def convergence(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
