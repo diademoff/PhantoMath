@@ -207,6 +207,7 @@ def test_corpus_covers_every_module() -> None:
         "inverse",
         "even_odd",
         "extrema",
+        "extrema_interval",
         "inflection",
         "intercepts",
         "range",

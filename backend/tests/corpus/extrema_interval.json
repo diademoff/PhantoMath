@@ -1,0 +1,75 @@
+{
+  "module": "extrema_interval",
+  "tasks": [
+    {
+      "id": "cubic",
+      "title": "x³ − 3x на [−2, 3]",
+      "input": "{x^3-3x}",
+      "command": "extrema_on_interval",
+      "args": ["{-2}", "{3}"],
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {"type": "VARIABLE", "value": "x"},
+              {"type": "CONSTANT", "value": "3"}
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {"type": "VARIABLE", "value": "x"},
+              {"type": "CONSTANT", "value": "-2"}
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "extrema_find_critical",
+        "extrema_critical_point",
+        "extrema_endpoint",
+        "extrema_calculate_at_point",
+        "extrema_calculate_at_point",
+        "extrema_calculate_at_point",
+        "extrema_calculate_at_point",
+        "extrema_final"
+      ]
+    },
+    {
+      "id": "quadratic",
+      "title": "x² на [1, 2]",
+      "input": "{x^2}",
+      "command": "extrema_on_interval",
+      "args": ["{1}", "{2}"],
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {"type": "VARIABLE", "value": "x"},
+              {"type": "CONSTANT", "value": "2"}
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {"type": "VARIABLE", "value": "x"},
+              {"type": "CONSTANT", "value": "1"}
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "extrema_find_critical",
+        "extrema_critical_point",
+        "extrema_endpoint",
+        "extrema_calculate_at_point",
+        "extrema_calculate_at_point",
+        "extrema_final"
+      ]
+    }
+  ]
+}

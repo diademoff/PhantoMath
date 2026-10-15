@@ -35,6 +35,7 @@
 * ``root_test``/``nth_term_test`` — радикальный и необходимый признаки сходимости ряда;
 * ``integral_test``/``alt_test`` — интегральный признак и признак Лейбница;
 * ``system_check`` — проверка набора значений на решение системы;
+* ``extrema_on_interval`` — наибольшее и наименьшее значение на отрезке;
 * ``radius_of_convergence`` — радиус сходимости степенного ряда;
 * ``pseries_test``/``geom_series_test`` — признаки обобщённого гармонического
   и геометрического рядов;
@@ -307,6 +308,58 @@ def even_odd(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNod
         key = "function_not_even_nor_odd"
     ctx.result.add(Step(left=node, right=None, key=key))
     return expression_node
+
+
+def extrema_on_interval(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Точки наибольшего и наименьшего значения функции на отрезке.
+
+    Аргументы команды — границы отрезка. Критические точки внутри и концы
+    сравниваются по значению функции; ответ — ``x = …`` для максимума и
+    минимума. Шаги ``extrema_find_critical``, ``extrema_critical_point``,
+    ``extrema_endpoint``, ``extrema_calculate_at_point``, ``extrema_final``.
+    """
+    expression_node = _expression_of(node)
+    if len(ctx.variables) != 1:
+        raise SolveError("экстремумы на отрезке: поддерживается одна переменная")
+    if len(args) != 2:
+        raise SolveError("нужны границы отрезка")
+    var = ctx.variables[0]
+    symbol = sympy.Symbol(var)
+    function = to_sympy(expression_node)
+    lower, upper = to_sympy(args[0]), to_sympy(args[1])
+    if lower.is_real is not True or upper.is_real is not True:
+        raise SolveError("границы отрезка должны быть числами")
+    if lower > upper:
+        lower, upper = upper, lower
+
+    derivative = sympy.diff(function, symbol)
+    ctx.result.add(Step(left=node, right=None, key="extrema_find_critical"))
+    critical = [root for root in _real_roots(derivative, symbol) if _within(root, lower, upper)]
+    ctx.result.add(Step(left=node, right=None, key="extrema_critical_point"))
+    candidates = [lower, *critical, upper]
+    ctx.result.add(Step(left=node, right=None, key="extrema_endpoint"))
+    values = []
+    for point in candidates:
+        value = sympy.simplify(function.subs(symbol, point))
+        values.append((point, value))
+        ctx.result.add(
+            Step(left=node, right=None, key="extrema_calculate_at_point", args=[from_sympy(point)])
+        )
+    maximum = max(values, key=lambda item: _numeric(item[1]))
+    minimum = min(values, key=lambda item: _numeric(item[1]))
+    answer = CoreNode.node(
+        T.LIST,
+        CoreNode.node(T.EQUALS, CoreNode.variable(var), from_sympy(maximum[0])),
+        CoreNode.node(T.EQUALS, CoreNode.variable(var), from_sympy(minimum[0])),
+    )
+    ctx.result.add(Step(left=node, right=answer, key="extrema_final"))
+    return answer
+
+
+def _within(point: sympy.Expr, lower: sympy.Expr, upper: sympy.Expr) -> bool:
+    """Лежит ли точка в отрезке ``[lower, upper]`` (численно)."""
+    value = _numeric(point)
+    return _numeric(lower) <= value <= _numeric(upper)
 
 
 def extrema(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
@@ -981,6 +1034,7 @@ COMMANDS: dict[str, Command] = {
     "asymptotes": asymptotes,
     "even_odd": even_odd,
     "extrema": extrema,
+    "extrema_on_interval": extrema_on_interval,
     "inflection": inflection,
     "intercepts": intercepts,
     "inverse_function": inverse_function,
@@ -1044,6 +1098,7 @@ __all__ = [
     "even_odd",
     "expand",
     "extrema",
+    "extrema_on_interval",
     "factor",
     "geom_series_test",
     "inflection",
