@@ -1,0 +1,33 @@
+{
+  "module": "vertical",
+  "tasks": [
+    {
+      "id": "add",
+      "title": "сложение в столбик: 123 + 456",
+      "input": "{vert_add({123},{456})}",
+      "solution": {"type": "CONSTANT", "value": "579"},
+      "steps": ["animation_long_add"]
+    },
+    {
+      "id": "subtract",
+      "title": "вычитание в столбик: 456 − 123",
+      "input": "{vert_sub({456},{123})}",
+      "solution": {"type": "CONSTANT", "value": "333"},
+      "steps": ["animation_long_sub"]
+    },
+    {
+      "id": "multiply",
+      "title": "умножение в столбик: 12 × 34",
+      "input": "{vert_mul({12},{34})}",
+      "solution": {"type": "CONSTANT", "value": "408"},
+      "steps": ["animation_long_mul"]
+    },
+    {
+      "id": "long-division",
+      "title": "деление уголком: 84 : 2",
+      "input": "{us_longdiv({84},{2})}",
+      "solution": {"type": "CONSTANT", "value": "42"},
+      "steps": ["animation_long_div"]
+    }
+  ]
+}

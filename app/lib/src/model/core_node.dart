@@ -105,6 +105,10 @@ enum CoreNodeType {
   determinant3('DETERMINANT3'),
   matrix('MATRIX'),
   matrixRow('MATRIX_ROW'),
+  verticalAdd('VERTICAL_ADD'),
+  verticalSubtract('VERTICAL_SUBTRACT'),
+  verticalMultiply('VERTICAL_MULTIPLY'),
+  horizontalMultiply('HORIZONTAL_MULTIPLY'),
   list('LIST'),
   system('SYSTEM');
 

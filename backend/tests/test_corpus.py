@@ -222,6 +222,7 @@ def test_corpus_covers_every_module() -> None:
         "complex",
         "trig_equations",
         "vectors",
+        "vertical",
         "commands",
     }
     assert expected <= modules

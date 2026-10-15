@@ -126,6 +126,14 @@ KEYWORD_TO_TYPE: dict[str, CoreNodeType] = {
     "ocint": T.OPEN_CLOSED_INTERVAL,
     "coint": T.CLOSED_OPEN_INTERVAL,
     "ccint": T.CLOSED_CLOSED_INTERVAL,
+    # столбиковые вычисления: токенов в нативном парсере нет — синтаксис наш
+    "vert_add": T.VERTICAL_ADD,
+    "vert_sub": T.VERTICAL_SUBTRACT,
+    "vert_mul": T.VERTICAL_MULTIPLY,
+    "horiz_mul": T.HORIZONTAL_MULTIPLY,
+    "vert_div": T.VERTICAL_DIVIDE,
+    "us_longdiv": T.US_LONGDIV,
+    "ru_longdiv": T.RU_LONGDIV,
     # структуры
     "system": T.SYSTEM,
     "mat": T.MATRIX,

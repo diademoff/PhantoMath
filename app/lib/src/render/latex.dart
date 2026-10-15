@@ -244,6 +244,19 @@ String _nodeBody(CoreNode node) {
     case CoreNodeType.matrixRow:
       return node.children.map(_childLatex).join(' & ');
 
+    // ── столбиковые вычисления ──────────────────────────────────────
+    case CoreNodeType.verticalAdd:
+      return _vertical(node, '+');
+
+    case CoreNodeType.verticalSubtract:
+      return _vertical(node, '-');
+
+    case CoreNodeType.verticalMultiply:
+      return _vertical(node, r'\times');
+
+    case CoreNodeType.horizontalMultiply:
+      return _wrap(node, r'$0 \times $1');
+
     // ── отношения ───────────────────────────────────────────────────
     case CoreNodeType.equals:
       return _wrap(node, r'$0 = $1');
@@ -338,6 +351,13 @@ String _nodeBody(CoreNode node) {
     case CoreNodeType.empty:
       return '';
   }
+}
+
+/// Столбик: операнды друг под другом с общим знаком слева.
+String _vertical(CoreNode node, String sign) {
+  if (node.children.isEmpty) return _placeholder;
+  final rows = node.children.map((child) => '$sign\\; ${_childLatex(child)}');
+  return '\\begin{array}{r}${rows.join(r' \\ ')}\\end{array}';
 }
 
 /// Периодическая дробь: цифры и длина периода во втором ребёнке.

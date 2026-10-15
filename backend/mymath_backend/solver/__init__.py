@@ -47,6 +47,7 @@ from .sympy_bridge import from_sympy, to_sympy
 from .systems import solve_system
 from .trig_equations import Interval, solve_trig_equation
 from .trigonometry import solve_angle_unit, solve_function
+from .vertical import solve_vertical
 
 # Ключ шага упрощения (общий с командой ``simplify``).
 _KEY_SIMPLIFY = "simplify"
@@ -213,5 +214,6 @@ __all__ = [
     "solve_system",
     "solve_trig_equation",
     "solve_value_function",
+    "solve_vertical",
     "solver_for",
 ]
