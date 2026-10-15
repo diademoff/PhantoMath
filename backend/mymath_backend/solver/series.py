@@ -67,7 +67,48 @@ def convergence(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> Core
     return answer
 
 
+def ratio_test(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Признак Даламбера: сходимость ряда по пределу ``|aₙ₊₁/aₙ|``.
+
+    Шаги ``series_ratio_test_use`` и ``series_ratio_test_lim_ltone``/
+    ``_gtone``/``_inf``. Предел, равный ``1``, ответа не даёт — :class:`SolveError`.
+    """
+    del args
+    if node.type is not T.SIGMA_DEFINITE:
+        raise SolveError("признак Даламбера применяется к ряду (сумме)")
+    index, _, _, expression = _parts(node)
+    symbol = sympy.Symbol(index)
+    term = to_sympy(expression)
+    if term == 0:
+        raise SolveError("нулевой член ряда")
+    ratio = sympy.simplify(sympy.Abs(term.subs(symbol, symbol + 1) / term))
+
+    ctx.result.add(Step(left=node, right=None, key="series_ratio_test"))
+    ctx.result.add(
+        Step(left=node, right=None, key="series_ratio_test_use", args=[from_sympy(ratio)])
+    )
+    limit = sympy.limit(ratio, symbol, sympy.oo)
+    if limit in (sympy.oo, -sympy.oo, sympy.zoo):
+        key, answer = "series_ratio_test_lim_inf", boolean_node(False)
+        args = [from_sympy(sympy.oo)]
+    elif limit.is_number and (limit < 1) is sympy.true:
+        key = "series_ratio_test_lim_ltone"
+        answer, args = boolean_node(True), [CoreNode.constant("1")]
+    elif limit.is_number and (limit > 1) is sympy.true:
+        key, answer, args = (
+            "series_ratio_test_lim_gtone",
+            boolean_node(False),
+            [CoreNode.constant("1")],
+        )
+    else:
+        raise SolveError("признак Даламбера не даёт ответа")
+
+    ctx.result.add(Step(left=node, right=answer, key=key, args=args))
+    return answer
+
+
 __all__ = [
     "convergence",
+    "ratio_test",
     "solve_series",
 ]

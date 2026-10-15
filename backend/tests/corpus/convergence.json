@@ -13,6 +13,22 @@
       "steps": ["convergent"]
     },
     {
+      "id": "ratio-test-converges",
+      "title": "Σ 1/2ⁿ — признак Даламбера, сходится",
+      "input": "{sigma_def({n},{1},{inf},{frac({1},{2^n})})}",
+      "command": "ratio_test",
+      "solution": {"type": "TEXT", "children": [{"type": "TEXT_KEY", "value": "true"}]},
+      "steps": ["series_ratio_test", "series_ratio_test_use", "series_ratio_test_lim_ltone"]
+    },
+    {
+      "id": "ratio-test-diverges",
+      "title": "Σ 2ⁿ/n — признак Даламбера, расходится",
+      "input": "{sigma_def({n},{1},{inf},{frac({2^n},{n})})}",
+      "command": "ratio_test",
+      "solution": {"type": "TEXT", "children": [{"type": "TEXT_KEY", "value": "false"}]},
+      "steps": ["series_ratio_test", "series_ratio_test_use", "series_ratio_test_lim_gtone"]
+    },
+    {
       "id": "harmonic-diverges",
       "title": "Σ 1/n — расходится",
       "input": "{sigma_def({n},{1},{inf},{frac({1},{n})})}",
