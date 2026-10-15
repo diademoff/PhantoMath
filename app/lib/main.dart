@@ -13,6 +13,7 @@ import 'src/editor/controller.dart';
 import 'src/editor/editor_view.dart';
 import 'src/editor/keyboard.dart';
 import 'src/model/core_node.dart';
+import 'src/render/graph_view.dart';
 import 'src/render/latex.dart';
 
 void main() {
@@ -244,6 +245,14 @@ class _SolvePageState extends State<SolvePage> {
                       onPressed: _openVectorSheet,
                     ),
                   ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ActionChip(
+                      avatar: const Icon(Icons.show_chart, size: 16),
+                      label: const Text('График'),
+                      onPressed: _openGraph,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -328,6 +337,40 @@ class _SolvePageState extends State<SolvePage> {
         ),
       ],
     );
+  }
+
+  /// Открыть график текущего выражения.
+  Future<void> _openGraph() async {
+    if (_editor.isEmpty) {
+      setState(() => _error = 'Введите выражение');
+      return;
+    }
+    try {
+      final data = await widget.api.graph(_editor.toCoreNode());
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('График y = f(${data.variable})'),
+          content: SizedBox(
+            width: 320,
+            height: 260,
+            child: GraphView(data: data),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Закрыть'),
+            ),
+          ],
+        ),
+      );
+    } on SolveFailure catch (err) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(err.message)),
+      );
+    }
   }
 
   /// Нажатие на ссылку в тексте шага.

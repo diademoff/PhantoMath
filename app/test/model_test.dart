@@ -217,6 +217,27 @@ void main() {
       expect(link.definition, 'Разложение на множители.');
       api.close();
     });
+
+    test('разбирает точки графика', () async {
+      final api = SolverApi(
+        baseUrl: 'http://test',
+        client: MockClient(
+          (request) async => http.Response(
+            '{"variable":"x","xMin":-1,"xMax":1,"yMin":0,"yMax":1,'
+            '"points":[[-1,1],[0,0],[1,1]]}',
+            200,
+            headers: jsonHeaders,
+          ),
+        ),
+      );
+
+      final data = await api.graph(bin(CoreNodeType.add, c2, c3));
+      expect(data.points, hasLength(3));
+      expect(data.points[1].x, 0);
+      expect(data.points[2].y, 1);
+      expect(data.variable, 'x');
+      api.close();
+    });
   });
 }
 

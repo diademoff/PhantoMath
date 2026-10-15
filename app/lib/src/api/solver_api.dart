@@ -96,6 +96,33 @@ class Substep {
   final List<ExplanationLink> links;
 }
 
+/// Точка графика.
+class GraphPoint {
+  const GraphPoint(this.x, this.y);
+
+  final double x;
+  final double y;
+}
+
+/// Данные для графика `y = f(x)`.
+class GraphData {
+  const GraphData({
+    required this.points,
+    required this.xMin,
+    required this.xMax,
+    required this.yMin,
+    required this.yMax,
+    required this.variable,
+  });
+
+  final List<GraphPoint> points;
+  final double xMin;
+  final double xMax;
+  final double yMin;
+  final double yMax;
+  final String variable;
+}
+
 /// Клиент решателя.
 class SolverApi {
   SolverApi({required this.baseUrl, http.Client? client})
@@ -157,8 +184,49 @@ class SolverApi {
     return CoreNode.fromJson(body['node'] as Map<String, dynamic>);
   }
 
-  Future<bool> isHealthy() async {
-    try {
+  /// Точки графика `y = f(x)` на отрезке.
+  ///
+  /// Бросает [SolveFailure], если график не построить (например, нет
+  /// вещественных значений или неверный диапазон).
+  Future<GraphData> graph(
+    CoreNode node, {
+    double xMin = -10,
+    double xMax = 10,
+    int samples = 400,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl/api/v1/graph'),
+      headers: const {'content-type': 'application/json'},
+      body: jsonEncode({
+        'node': _toJson(node),
+        'xMin': xMin,
+        'xMax': xMax,
+        'samples': samples,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw _failure(response);
+    }
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final points = [
+      for (final point in _asList(body['points']))
+        if (point is List && point.length >= 2)
+          GraphPoint(
+            (point[0] as num).toDouble(),
+            (point[1] as num).toDouble(),
+          ),
+    ];
+    return GraphData(
+      points: points,
+      xMin: (body['xMin'] as num).toDouble(),
+      xMax: (body['xMax'] as num).toDouble(),
+      yMin: (body['yMin'] as num).toDouble(),
+      yMax: (body['yMax'] as num).toDouble(),
+      variable: body['variable'] as String? ?? 'x',
+    );
+  }
+
+  Future<bool> isHealthy() async {    try {
       final response = await _client.get(
         Uri.parse('$baseUrl/api/v1/health'),
       );

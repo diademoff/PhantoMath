@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mymath_app/main.dart';
 import 'package:mymath_app/src/api/solver_api.dart';
+import 'package:mymath_app/src/render/graph_view.dart';
 
 /// Ответ бэкенда с одним шагом и итогом 5.
 const String _solveBody = '''
@@ -183,6 +184,34 @@ void main() {
     final args = sent?['action']?['args'] as List<dynamic>?;
     expect(args, hasLength(1));
     expect((args!.first as Map)['type'], 'LIST');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('кнопка «График» показывает график', (tester) async {
+    final view =
+        TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
+    view.physicalSize = const Size(2400, 2280);
+    view.devicePixelRatio = 1;
+    final api = SolverApi(
+      baseUrl: 'http://test',
+      client: MockClient(
+        (request) async => http.Response(
+          '{"variable":"x","xMin":-1,"xMax":1,"yMin":0,"yMax":1,'
+          '"points":[[-1,1],[0,0],[1,1]]}',
+          200,
+          headers: const {'content-type': 'application/json; charset=utf-8'},
+        ),
+      ),
+    );
+    await tester.pumpWidget(MaterialApp(home: SolvePage(api: api)));
+    await tester.pump();
+    await _key(tester, '1');
+    await tester.tap(find.text('График'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('График y = f(x)'), findsOneWidget);
+    expect(find.byType(GraphView), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
