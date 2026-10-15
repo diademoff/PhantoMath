@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -68,9 +70,9 @@ void main() {
 
     test('дробь и корень', () {
       expect(nodeToLatex(bin(CoreNodeType.fraction, c2, c3)),
-          r'\frac{$2$}{$3$}');
+          r'\frac{2}{3}');
       expect(nodeToLatex(CoreNode(type: CoreNodeType.root2, children: [c2])),
-          r'\sqrt{$2$}');
+          r'\sqrt{2}');
     });
 
     test('скобки разделяют операнды', () {
@@ -79,19 +81,19 @@ void main() {
         bin(CoreNodeType.multiply, c2, c3),
         c2,
       );
-      expect(nodeToLatex(node), r'$2$ \cdot $3$ + $2$');
+      expect(nodeToLatex(node), r'2 \cdot 3 + 2');
     });
 
     test('неявное умножение не вставляет знак', () {
       final node = bin(CoreNodeType.multiplyImplicit, c2, cx);
-      expect(nodeToLatex(node), r'$2$ $x$');
+      expect(nodeToLatex(node), r'2 x');
     });
 
     test('аргументы разводятся по разным местам шаблона', () {
       // Дробь: первый ребёнок в числитель, второй в знаменатель.
-      expect(nodeToLatex(bin(CoreNodeType.fraction, c2, c3)), r'\frac{$2$}{$3$}');
+      expect(nodeToLatex(bin(CoreNodeType.fraction, c2, c3)), r'\frac{2}{3}');
       // Степень: основание и показатель на своих местах.
-      expect(nodeToLatex(bin(CoreNodeType.power, c2, c3)), r'{$2$}^{$3$}');
+      expect(nodeToLatex(bin(CoreNodeType.power, c2, c3)), r'{2}^{3}');
     });
 
     test('пустой узел даёт пустую строку', () {
@@ -101,22 +103,22 @@ void main() {
     test('единицы угла', () {
       expect(
         nodeToLatex(CoreNode(type: CoreNodeType.degree, children: [c2])),
-        r'{$2$}^{\circ}',
+        r'{2}^{\circ}',
       );
       expect(
         nodeToLatex(CoreNode(type: CoreNodeType.radian, children: [c2])),
-        r'{$2$}\ \mathrm{rad}',
+        r'{2}\ \mathrm{rad}',
       );
     });
 
     test('гиперболические функции', () {
       expect(
         nodeToLatex(CoreNode(type: CoreNodeType.sech, children: [c2])),
-        r'\mathrm{sech}\left($2$\right)',
+        r'\mathrm{sech}\left(2\right)',
       );
       expect(
         nodeToLatex(CoreNode(type: CoreNodeType.asinh, children: [c2])),
-        r'\mathrm{asinh}\left($2$\right)',
+        r'\mathrm{asinh}\left(2\right)',
       );
     });
 
@@ -130,8 +132,8 @@ void main() {
       );
       final latex = nodeToLatex(node);
       expect(latex, contains(r',\quad '));
-      expect(latex, contains(r'$x$ = $2$'));
-      expect(latex, contains(r'$x$ = $3$'));
+      expect(latex, contains(r'x = 2'));
+      expect(latex, contains(r'x = 3'));
     });
 
     test('определитель рисуется матрицей', () {
@@ -148,6 +150,69 @@ void main() {
     test('незавершённый узел даёт заглушку, а не пустоту', () {
       final node = CoreNode(type: CoreNodeType.add, children: [c2]);
       expect(nodeToLatex(node), contains(r'\square'));
+    });
+  });
+
+  group('nodeToLatex рендерится', () {
+    testWidgets('формулы не вызывают ParseException в flutter_math', (
+      tester,
+    ) async {
+      CoreNode cnst(String value) =>
+          CoreNode(type: CoreNodeType.constant, value: value);
+      final pi = cnst('π');
+      final k = CoreNode(type: CoreNodeType.variable, value: 'k');
+      final twoPi = bin(CoreNodeType.multiplyImplicit, c2, pi);
+      final samples = <CoreNode>[
+        bin(CoreNodeType.fraction, c2, c3),
+        CoreNode(type: CoreNodeType.root2, children: [c2]),
+        CoreNode(type: CoreNodeType.root, children: [c3, cnst('8')]),
+        bin(CoreNodeType.power, cx, c2),
+        CoreNode(type: CoreNodeType.sin, children: [cx]),
+        CoreNode(type: CoreNodeType.asec, children: [c2]),
+        CoreNode(type: CoreNodeType.sech, children: [c2]),
+        CoreNode(type: CoreNodeType.asinh, children: [c2]),
+        CoreNode(type: CoreNodeType.degree, children: [cnst('30')]),
+        CoreNode(type: CoreNodeType.radian, children: [cx]),
+        CoreNode(type: CoreNodeType.abs, children: [cx]),
+        CoreNode(type: CoreNodeType.log, children: [cx, c2]),
+        CoreNode(type: CoreNodeType.exp, children: [cx]),
+        CoreNode(type: CoreNodeType.integralDefinite, children: [c2, c3, cx]),
+        CoreNode(
+          type: CoreNodeType.determinant2,
+          children: [c2, c3, c3, c2],
+        ),
+        // Серия общего решения тригонометрического уравнения: x = π/6 + 2πk.
+        bin(
+          CoreNodeType.equals,
+          cx,
+          CoreNode(
+            type: CoreNodeType.add,
+            children: [
+              bin(CoreNodeType.fraction, pi, cnst('6')),
+              bin(CoreNodeType.multiply, twoPi, k),
+            ],
+          ),
+        ),
+      ];
+      for (final node in samples) {
+        final latex = nodeToLatex(node);
+        String? error;
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Math.tex(
+                latex,
+                onErrorFallback: (e) {
+                  error = '$e';
+                  return const SizedBox();
+                },
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+        expect(error, isNull, reason: 'LaTeX: $latex');
+      }
     });
   });
 

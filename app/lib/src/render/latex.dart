@@ -7,8 +7,12 @@
 /// Шаблон использует позиционные плейсхолдеры `$0`, `$1`, … — по одному
 /// на каждого ребёнка. Это позволяет разводить аргументы по разным
 /// местам: `\frac{$0}{$1}` кладёт первого в числитель, второго — в
-/// знаменатель. Каждый аргумент оборачивается в `$…$`, чтобы движок
-/// понимал, где математика.
+/// знаменатель.
+///
+/// Результат — «сырой» LaTeX без обёрток `$…$`: `flutter_math` (парсер
+/// KaTeX) не принимает `$` внутри формулы и падает с `ParseException`.
+/// Поэтому в шаблонах допустимы только позиционные плейсхолдеры, а дети
+/// подставляются как есть.
 ///
 /// Незавершённый узел (ребёнок без значения) даёт `\square`: в интерфейсе
 /// видно, что выражение ждёт продолжения ввода, а не молчаливый пропуск.
@@ -236,7 +240,7 @@ String nodeToLatex(CoreNode node) {
     case CoreNodeType.list:
       if (node.children.isEmpty) return _placeholder;
       return [
-        for (final child in node.children) _asMath(child),
+        for (final child in node.children) _childLatex(child),
       ].join(r',\quad ');
 
     case CoreNodeType.system:
@@ -256,7 +260,7 @@ String _wrap(CoreNode node, String template) {  if (node.children.isEmpty) retur
     (m) => int.parse(m[1]!) < node.children.length ? m[0]! : _placeholder,
   );
   for (var i = 0; i < node.children.length; i++) {
-    out = out.replaceAll('\$$i', _asMath(node.children[i]));
+    out = out.replaceAll('\$$i', _childLatex(node.children[i]));
   }
   return out;
 }
@@ -273,7 +277,7 @@ String _matrix(CoreNode node, int size, String open, String close) {
       final index = row * size + column;
       cells.add(
         index < node.children.length
-            ? _asMath(node.children[index])
+            ? _childLatex(node.children[index])
             : _placeholder,
       );
     }
@@ -282,11 +286,10 @@ String _matrix(CoreNode node, int size, String open, String close) {
   return '$open ${rows.join(r' \\ ')} $close';
 }
 
-/// Обернуть узел в `$…$`, если он ещё не обёрнут.
-String _asMath(CoreNode child) {  final latex = nodeToLatex(child);
-  if (latex.isEmpty) return _placeholder;
-  if (latex.startsWith(r'$') && latex.endsWith(r'$')) return latex;
-  return '\$$latex\$';
+/// LaTeX ребёнка или заглушка, если узел пуст.
+String _childLatex(CoreNode child) {
+  final latex = nodeToLatex(child);
+  return latex.isEmpty ? _placeholder : latex;
 }
 
 /// Экранировать символы, которые LaTeX считает служебными.
