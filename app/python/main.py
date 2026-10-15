@@ -4,18 +4,30 @@
 сервер решателя на ``127.0.0.1`` и слушает его. Словарь объяснений лежит
 рядом, в ``assets/explanations.json`` (его кладёт сюда ``make python-bundle``).
 
-Программа блокирующая: ``serious_python`` держит поток, пока работает
-``serve_forever``.
+``serious_python`` не задаёт ``__file__``, поэтому каталог приложения
+ищем через ``sys.path`` (движок кладёт его нулевым элементом).
 """
 
 from __future__ import annotations
 
 import os
+import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_EXPLANATIONS = os.path.join(_HERE, "assets", "explanations.json")
-if os.path.exists(_EXPLANATIONS):
-    os.environ.setdefault("MYMATH_EXPLANATIONS", _EXPLANATIONS)
+
+def _find_explanations() -> str | None:
+    """Путь к словарю в каталоге приложения или ``None``."""
+    for entry in sys.path:
+        if not entry:
+            continue
+        candidate = os.path.join(entry, "assets", "explanations.json")
+        if os.path.exists(candidate):
+            return candidate
+    return None
+
+
+_explanations = _find_explanations()
+if _explanations:
+    os.environ.setdefault("MYMATH_EXPLANATIONS", _explanations)
 
 from mymath_backend import device  # noqa: E402  (после установки переменной)
 

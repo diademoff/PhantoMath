@@ -40,7 +40,7 @@ Future<String?> startEmbeddedBackend() async {
 /// поэтому адрес готов не сразу.
 Future<bool> waitForHealth(
   String baseUrl, {
-  Duration timeout = const Duration(seconds: 60),
+  Duration timeout = const Duration(seconds: 30),
 }) async {
   final deadline = DateTime.now().add(timeout);
   final client = http.Client();

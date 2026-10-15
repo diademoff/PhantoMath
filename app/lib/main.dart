@@ -19,10 +19,9 @@ import 'src/notebook/notebook_page.dart';
 import 'src/render/graph_view.dart';
 import 'src/render/latex.dart';
 
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  final baseUrl = await resolveBaseUrl();
-  runApp(MyMathApp(baseUrl: baseUrl));
+  runApp(const BootstrapApp());
 }
 
 /// Адрес бэкенда по умолчанию.
@@ -41,6 +40,62 @@ Future<String> resolveBaseUrl() async {
   if (override.isNotEmpty) return override;
   final embedded = await startEmbeddedBackend();
   return embedded ?? defaultBaseUrl;
+}
+
+/// Оболочка запуска.
+///
+/// Сразу показывает окно, а встроенный Python поднимает в фоне: иначе
+/// приложение висело бы без интерфейса, пока стартует интерпретатор.
+class BootstrapApp extends StatefulWidget {
+  const BootstrapApp({super.key});
+
+  @override
+  State<BootstrapApp> createState() => _BootstrapAppState();
+}
+
+class _BootstrapAppState extends State<BootstrapApp> {
+  String? _baseUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolve();
+  }
+
+  Future<void> _resolve() async {
+    final baseUrl = await resolveBaseUrl();
+    if (mounted) setState(() => _baseUrl = baseUrl);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final baseUrl = _baseUrl;
+    if (baseUrl == null) return const _StartingScreen();
+    return MyMathApp(baseUrl: baseUrl);
+  }
+}
+
+/// Экран ожидания, пока поднимается встроенный решатель.
+class _StartingScreen extends StatelessWidget {
+  const _StartingScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Запуск решателя…'),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Языки пояснений. Продукт поддерживает только русский и английский
