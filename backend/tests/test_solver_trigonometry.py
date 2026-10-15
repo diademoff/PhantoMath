@@ -34,6 +34,10 @@ def degrees(value: str) -> CoreNode:
     return node(T.DEGREE, c(value))
 
 
+def negative(child: CoreNode) -> CoreNode:
+    return node(T.NEGATIVE, child)
+
+
 def solution_of(problem: CoreNode) -> CoreNode:
     vertical = solve(problem).result.vertical()
     assert vertical is not None and vertical.solution is not None
@@ -218,6 +222,69 @@ class TestMoreSymbolic:
         assert solution_of(problem).structural_eq(problem)
 
 
+class TestParity:
+    def test_sin_is_odd(self) -> None:
+        problem = node(T.SIN, negative(CoreNode.variable("x")))
+        result = solution_of(problem)
+        assert result.type is T.NEGATIVE
+        assert result.children[0].type is T.SIN
+        assert step_keys(problem) == ["trig_neg_sin"]
+
+    def test_cos_is_even(self) -> None:
+        problem = node(T.COS, negative(CoreNode.variable("x")))
+        result = solution_of(problem)
+        assert result.type is T.COS
+        assert step_keys(problem) == ["trig_neg_cos"]
+
+    def test_tan_is_odd(self) -> None:
+        problem = node(T.TAN, negative(CoreNode.variable("x")))
+        assert solution_of(problem).type is T.NEGATIVE
+
+    def test_sinh_is_odd(self) -> None:
+        problem = node(T.SINH, negative(CoreNode.variable("x")))
+        assert solution_of(problem).type is T.NEGATIVE
+        assert step_keys(problem) == ["trig_hyp_neg_sinh"]
+
+    def test_cosh_is_even(self) -> None:
+        problem = node(T.COSH, negative(CoreNode.variable("x")))
+        assert solution_of(problem).type is T.COSH
+
+    def test_negative_numeric_angle(self) -> None:
+        problem = node(T.SIN, negative(degrees("30")))
+        assert to_sympy(solution_of(problem)) == sympy.Rational(-1, 2)
+
+    def test_asin_is_odd(self) -> None:
+        problem = node(T.ASIN, negative(c("1/2")))
+        assert to_sympy(solution_of(problem)) == -sympy.pi / 6
+
+
+class TestPeriodicity:
+    def test_degrees_above_full_turn(self) -> None:
+        problem = node(T.SIN, degrees("390"))
+        assert value_of(problem) == sympy.Rational(1, 2)
+        assert step_keys(problem) == ["trig_rewrite_coterminal_pos", "trig_table_calc"]
+
+    def test_degrees_negative_full_turn(self) -> None:
+        assert value_of(node(T.SIN, degrees("750"))) == sympy.Rational(1, 2)
+
+    def test_radians_multiple_of_pi(self) -> None:
+        problem = node(T.SIN, node(T.FRACTION, node(T.MULTIPLY_IMPLICIT, c("13"), c("π")), c("6")))
+        assert value_of(problem) == sympy.Rational(1, 2)
+
+    def test_tangent_has_half_period(self) -> None:
+        problem = node(T.TAN, node(T.FRACTION, node(T.MULTIPLY_IMPLICIT, c("5"), c("π")), c("4")))
+        assert value_of(problem) == 1
+
+    def test_already_reduced_not_rewritten(self) -> None:
+        problem = node(T.SIN, degrees("30"))
+        assert step_keys(problem) == ["trig_table_calc"]
+
+    def test_plain_radians_not_reduced(self) -> None:
+        # sin(7) -- 7 радиан, не рациональное кратное π: не сворачиваем.
+        problem = node(T.SIN, c("7"))
+        assert solution_of(problem).structural_eq(problem)
+
+
 class TestErrors:
     def test_tan_90_is_undefined(self) -> None:
         with pytest.raises(SolveError) as info:
@@ -246,9 +313,19 @@ class TestErrors:
 class TestExplanationKeys:
     def test_keys_exist(self) -> None:
         explanations = load_explanations(str(EXPLANATIONS))
-        for key in ("trig_table_calc", "trig_func_calc", "trig_err_undef"):
+        zero_arity = (
+            "trig_table_calc",
+            "trig_func_calc",
+            "trig_rewrite_coterminal_pos",
+            "trig_neg_sin",
+            "trig_neg_cos",
+            "trig_neg",
+            "trig_hyp_neg_sinh",
+            "trig_hyp_neg",
+        )
+        for key in (*zero_arity, "trig_err_undef"):
             assert key in explanations
-        for key in ("trig_table_calc", "trig_func_calc"):
+        for key in zero_arity:
             assert explanations.arity(key) == 0
             assert "ARG" not in (explanations.raw_template(key, DEFAULT_LOCALE) or "")
 
