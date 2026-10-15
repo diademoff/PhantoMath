@@ -28,16 +28,32 @@ def step_keys(source: str) -> list[str]:
 
 class TestConic:
     def test_circle(self) -> None:
-        assert step_keys("{=({x^2+y^2},{1})}") == ["conics_classify_circle"]
+        assert step_keys("{=({x^2+y^2},{1})}") == [
+            "conics_identify",
+            "conics_identify_disc",
+            "conics_classify_circle",
+        ]
 
     def test_ellipse(self) -> None:
-        assert step_keys("{=({x^2+2y^2},{1})}") == ["conics_classify_ellipse"]
+        assert step_keys("{=({x^2+2y^2},{1})}") == [
+            "conics_identify",
+            "conics_identify_disc",
+            "conics_classify_ellipse",
+        ]
 
     def test_hyperbola(self) -> None:
-        assert step_keys("{=({x^2-y^2},{1})}") == ["conics_classify_hyperbola"]
+        assert step_keys("{=({x^2-y^2},{1})}") == [
+            "conics_identify",
+            "conics_identify_disc",
+            "conics_classify_hyperbola",
+        ]
 
     def test_parabola(self) -> None:
-        assert step_keys("{=({y},{x^2})}") == ["conics_classify_parabola"]
+        assert step_keys("{=({y},{x^2})}") == [
+            "conics_identify",
+            "conics_identify_disc",
+            "conics_classify_parabola",
+        ]
 
     def test_answer_is_equation(self) -> None:
         answer = _vertical("{=({x^2+y^2},{1})}").solution

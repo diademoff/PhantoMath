@@ -12,14 +12,45 @@
           {
             "type": "ADD",
             "children": [
-              {"type": "POWER", "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "2"}]},
-              {"type": "POWER", "children": [{"type": "VARIABLE", "value": "y"}, {"type": "CONSTANT", "value": "2"}]}
+              {
+                "type": "POWER",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "x"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
+                ]
+              },
+              {
+                "type": "POWER",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "y"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
+                ]
+              }
             ]
           },
-          {"type": "CONSTANT", "value": "1"}
+          {
+            "type": "CONSTANT",
+            "value": "1"
+          }
         ]
       },
-      "steps": ["conics_classify_circle"]
+      "steps": [
+        "conics_identify",
+        "conics_identify_disc",
+        "conics_classify_circle"
+      ]
     },
     {
       "id": "hyperbola",
@@ -32,14 +63,45 @@
           {
             "type": "SUBTRACT",
             "children": [
-              {"type": "POWER", "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "2"}]},
-              {"type": "POWER", "children": [{"type": "VARIABLE", "value": "y"}, {"type": "CONSTANT", "value": "2"}]}
+              {
+                "type": "POWER",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "x"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
+                ]
+              },
+              {
+                "type": "POWER",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "y"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
+                ]
+              }
             ]
           },
-          {"type": "CONSTANT", "value": "1"}
+          {
+            "type": "CONSTANT",
+            "value": "1"
+          }
         ]
       },
-      "steps": ["conics_classify_hyperbola"]
+      "steps": [
+        "conics_identify",
+        "conics_identify_disc",
+        "conics_classify_hyperbola"
+      ]
     },
     {
       "id": "parabola",
@@ -49,11 +111,30 @@
       "solution": {
         "type": "EQUALS",
         "children": [
-          {"type": "VARIABLE", "value": "y"},
-          {"type": "POWER", "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "2"}]}
+          {
+            "type": "VARIABLE",
+            "value": "y"
+          },
+          {
+            "type": "POWER",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
+            ]
+          }
         ]
       },
-      "steps": ["conics_classify_parabola"]
+      "steps": [
+        "conics_identify",
+        "conics_identify_disc",
+        "conics_classify_parabola"
+      ]
     }
   ]
 }

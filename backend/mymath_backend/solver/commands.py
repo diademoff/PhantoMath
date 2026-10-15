@@ -1100,6 +1100,8 @@ def conic(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
         key = "conics_classify_parabola"
     else:
         key = "conics_classify_hyperbola"
+    ctx.result.add(Step(left=node, right=None, key="conics_identify"))
+    ctx.result.add(Step(left=node, right=None, key="conics_identify_disc"))
     ctx.result.add(Step(left=node, right=None, key=key))
     return node
 
