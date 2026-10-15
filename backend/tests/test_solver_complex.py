@@ -112,6 +112,18 @@ class TestComplexPowerRoots:
         _, solution = self._run(r"{1+\i}", "complex_roots", "{2}")
         assert solution.type is T.SET and len(solution.children) == 2
 
+    def test_polar_multiply(self) -> None:
+        # (1 + i)(3 − i) = 4 + 2i.
+        keys, solution = self._run(r"{1+\i}", "complex_polar_multiply", r"{3-\i}")
+        assert keys == ["complex_mul_polar"]
+        assert sympy.simplify(to_sympy(solution) - (1 + I_UNIT) * (3 - I_UNIT)) == 0
+
+    def test_polar_divide(self) -> None:
+        # (1 + i)/(1 − i) = i.
+        keys, solution = self._run(r"{1+\i}", "complex_polar_divide", r"{1-\i}")
+        assert keys == ["complex_divide_polar"]
+        assert sympy.simplify(to_sympy(solution) - I_UNIT) == 0
+
 
 class TestExplanationKeys:
     def test_keys_exist(self) -> None:

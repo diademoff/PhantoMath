@@ -58,6 +58,33 @@ def complex_power(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> Co
     return result
 
 
+def complex_polar_multiply(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Умножение комплексных чисел через тригонометрическую форму (шаг ``complex_mul_polar``)."""
+    result = _polar_operation(node, args, divide=False)
+    ctx.result.add(Step(left=node, right=result, key="complex_mul_polar", args=[args[0]]))
+    return result
+
+
+def complex_polar_divide(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Деление комплексных чисел через тригонометрическую форму (шаг ``complex_divide_polar``)."""
+    result = _polar_operation(node, args, divide=True)
+    ctx.result.add(Step(left=node, right=result, key="complex_divide_polar", args=[args[0]]))
+    return result
+
+
+def _polar_operation(node: CoreNode, args: list[CoreNode], *, divide: bool) -> CoreNode:
+    """Общий код умножения/деления двух комплексных чисел."""
+    if not args:
+        raise SolveError("нужен второй комплексный множитель")
+    first, second = to_sympy(node), to_sympy(args[0])
+    if first.is_real is True or second.is_real is True:
+        raise SolveError("в полярной форме — комплексные числа")
+    if divide and second == 0:
+        raise SolveError("деление на ноль")
+    value = first / second if divide else first * second
+    return from_sympy(sympy.simplify(value))
+
+
 def complex_roots(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Извлечь корни n-й степени из комплексного числа.
 
@@ -110,6 +137,8 @@ def solve_complex(node: CoreNode, ctx: SolveContext) -> CoreNode:
 
 
 __all__ = [
+    "complex_polar_divide",
+    "complex_polar_multiply",
     "complex_power",
     "complex_roots",
     "contains_imaginary",

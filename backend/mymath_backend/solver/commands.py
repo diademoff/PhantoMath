@@ -22,6 +22,7 @@
 * ``solve_param`` — уравнение с параметрами относительно переменной (``eq_param_write``);
 * ``complex_power`` — степень комплексного числа (``complex_pow_polar_moivre_simple``);
 * ``complex_roots`` — корни n-й степени из комплексного числа (``complex_find_root_polar``);
+* ``complex_polar_multiply``/``complex_polar_divide`` — умножение и деление в полярной форме;
 * ``explicit_formula`` — явная формула общего члена последовательности;
 * ``slope_intercept`` — линейное уравнение в виде y = kx + b (``slope_and_y_intercept``);
 * ``axis_of_symmetry``/``intercept_form`` — ось симметрии и форма по корням параболы;
@@ -56,7 +57,12 @@ from sympy.calculus.util import function_range
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
 from .base import Command, SolveContext, SolveError, Step, boolean_node
-from .complex import complex_power, complex_roots
+from .complex import (
+    complex_polar_divide,
+    complex_polar_multiply,
+    complex_power,
+    complex_roots,
+)
 from .derivatives import nth_derivative
 from .diff_equations import diff_eq
 from .domain import domain, restrictions
@@ -946,6 +952,8 @@ COMMANDS: dict[str, Command] = {
     "slant_asymptote": slant_asymptote,
     "complex_power": complex_power,
     "complex_roots": complex_roots,
+    "complex_polar_multiply": complex_polar_multiply,
+    "complex_polar_divide": complex_polar_divide,
     "explicit_formula": explicit_formula,
     "factor": factor,
     "expand": expand,
@@ -1013,6 +1021,8 @@ __all__ = [
     "area",
     "asymptotes",
     "axis_of_symmetry",
+    "complex_polar_divide",
+    "complex_polar_multiply",
     "complex_power",
     "complex_roots",
     "conic",
