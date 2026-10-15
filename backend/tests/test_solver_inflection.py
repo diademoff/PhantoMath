@@ -36,6 +36,8 @@ class TestInflection:
         source = "{x^3}"
         assert points(source) == ["0"]
         assert step_keys(source) == [
+            "inflection_domain_find",
+            "inflection_domain_snd_find",
             "inflection_sec_der",
             "inflection_find",
             "inflection_the_point",

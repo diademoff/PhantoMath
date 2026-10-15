@@ -9,11 +9,23 @@
       "solution": {
         "type": "EQUALS",
         "children": [
-          {"type": "VARIABLE", "value": "x"},
-          {"type": "CONSTANT", "value": "0"}
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "0"
+          }
         ]
       },
-      "steps": ["inflection_sec_der", "inflection_find", "inflection_the_point"]
+      "steps": [
+        "inflection_domain_find",
+        "inflection_domain_snd_find",
+        "inflection_sec_der",
+        "inflection_find",
+        "inflection_the_point"
+      ]
     },
     {
       "id": "cubic-shifted",
@@ -23,11 +35,23 @@
       "solution": {
         "type": "EQUALS",
         "children": [
-          {"type": "VARIABLE", "value": "x"},
-          {"type": "CONSTANT", "value": "0"}
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "0"
+          }
         ]
       },
-      "steps": ["inflection_sec_der", "inflection_find", "inflection_the_point"]
+      "steps": [
+        "inflection_domain_find",
+        "inflection_domain_snd_find",
+        "inflection_sec_der",
+        "inflection_find",
+        "inflection_the_point"
+      ]
     }
   ]
 }

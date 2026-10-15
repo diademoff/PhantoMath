@@ -514,6 +514,8 @@ def inflection(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreN
     function = to_sympy(expression_node)
     second = sympy.diff(function, symbol, 2)
     candidates = _real_roots(second, symbol)
+    ctx.result.add(Step(left=node, right=None, key="inflection_domain_find"))
+    ctx.result.add(Step(left=node, right=None, key="inflection_domain_snd_find"))
     ctx.result.add(Step(left=node, right=None, key="inflection_sec_der"))
     ctx.result.add(Step(left=node, right=None, key="inflection_find"))
 
