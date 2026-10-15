@@ -241,6 +241,16 @@ def fold_semantically(node: CoreNode, ctx: SolveContext) -> CoreNode:
     return folded
 
 
+def boolean_node(value: bool) -> CoreNode:
+    """Ответ-истинность: ``TEXT[TEXT_KEY("true"/"false")]`` как в APK.
+
+    Первый ребёнок ``TEXT`` задаёт ключ текста, который клиент подставляет
+    («Истина»/«Ложь»); ``TEXT_KEY`` — носитель ключа.
+    """
+    key = "true" if value else "false"
+    return CoreNode.node(CoreNodeType.TEXT, CoreNode(type=CoreNodeType.TEXT_KEY, value=key))
+
+
 def build_solver_data(
     node: CoreNode,
     result: SolveResult,
@@ -292,6 +302,7 @@ __all__ = [
     "SolveResult",
     "Solver",
     "Step",
+    "boolean_node",
     "build_solver_data",
     "fold_semantically",
     "registered_types",

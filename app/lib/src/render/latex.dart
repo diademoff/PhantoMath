@@ -318,6 +318,10 @@ String _nodeBody(CoreNode node) {
     case CoreNodeType.textKey:
       return _escape(node.value ?? '');
 
+    // ── упорядочивание ──────────────────────────────────────────────
+    case CoreNodeType.order:
+      return _delimited(node, '', '', r',\ ');
+
     // ── составные ───────────────────────────────────────────────────
     case CoreNodeType.list:
       if (node.children.isEmpty) return _placeholder;

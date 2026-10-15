@@ -28,6 +28,7 @@ from .base import (
     solver_for,
 )
 from .combinatorics import solve_arrangement, solve_choose, solve_factorial
+from .comparison import COMPARABLE, solve_comparison, solve_order
 from .complex import contains_imaginary, solve_complex, solve_imaginary_arithmetic
 from .derivatives import solve_derivative
 from .equations import solve_equation, solve_methods
@@ -73,6 +74,12 @@ def solve(
     if command is not None and command != "solve":
         solution = commands.apply(command, node, ctx, args)
         result.set_solution(solution)
+        return build_solver_data(node, result)
+
+    if not ctx.variables and node.type in COMPARABLE:
+        # Утверждение без переменных (``2 < 3``, ``2 = 2``) — не уравнение, а
+        # сравнение: ответ «Истина»/«Ложь». С переменными работает неравенство.
+        result.set_solution(solve_comparison(node, ctx))
         return build_solver_data(node, result)
 
     if node.type is CoreNodeType.EQUALS:
@@ -179,6 +186,7 @@ __all__ = [
     "solve_angle_unit",
     "solve_arrangement",
     "solve_choose",
+    "solve_comparison",
     "solve_complex",
     "solve_derivative",
     "solve_determinant",
@@ -194,6 +202,7 @@ __all__ = [
     "solve_logarithm",
     "solve_matrix",
     "solve_membership",
+    "solve_order",
     "solve_root",
     "solve_series",
     "solve_set_operation",

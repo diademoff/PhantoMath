@@ -56,6 +56,7 @@ enum CoreNodeType {
   properSuperset('PROPER_SUPERSET'),
   notProperSuperset('NOT_PROPER_SUPERSET'),
   textKey('TEXT_KEY'),
+  order('ORDER'),
   cot('COT'),
   sec('SEC'),
   csc('CSC'),

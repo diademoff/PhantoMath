@@ -175,6 +175,11 @@ void main() {
       expect(nodeToLatex(node), 'true');
     });
 
+    test('упорядоченный список', () {
+      final node = CoreNode(type: CoreNodeType.order, children: [c2, c3]);
+      expect(nodeToLatex(node), r'2,\ 3');
+    });
+
     test('гиперболические функции', () {
       expect(
         nodeToLatex(CoreNode(type: CoreNodeType.sech, children: [c2])),
@@ -292,6 +297,7 @@ void main() {
           CoreNode(type: CoreNodeType.set, children: [c2, c3]),
         ),
         bin(CoreNodeType.difference, c2, c3),
+        CoreNode(type: CoreNodeType.order, children: [c2, c3]),
         CoreNode(type: CoreNodeType.text, children: [
           CoreNode(type: CoreNodeType.textKey, value: 'true'),
         ]),

@@ -20,7 +20,7 @@ import sympy
 
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
-from .base import SolveContext, SolveError, Step, fold_semantically, solver_for
+from .base import SolveContext, SolveError, Step, boolean_node, fold_semantically, solver_for
 from .sympy_bridge import from_sympy, to_sympy
 
 _SET_OPS = (T.SET, T.UNION, T.INTERSECTION, T.DIFFERENCE)
@@ -63,7 +63,7 @@ def solve_membership(node: CoreNode, ctx: SolveContext) -> CoreNode:
     if contains not in (True, False):
         raise SolveError("вхождение не определено")
     value = not contains if node.type is T.ELEMENT_NOT_OF else contains
-    return _boolean(value)
+    return boolean_node(value)
 
 
 @solver_for(*_INCLUSION)
@@ -75,7 +75,7 @@ def solve_inclusion(node: CoreNode, ctx: SolveContext) -> CoreNode:
     value = _inclusion_value(node.type, left, right)
     if value not in (True, False):
         raise SolveError("включение не определено")
-    return _boolean(value)
+    return boolean_node(value)
 
 
 def _inclusion_value(node_type: T, left: sympy.Set, right: sympy.Set) -> bool | None:
@@ -107,12 +107,6 @@ def _negate(value: bool | None) -> bool | None:
     if value is None:
         return None
     return not value
-
-
-def _boolean(value: bool) -> CoreNode:
-    """Ответ-истинность: ``TEXT[TEXT_KEY("true"/"false")]`` как в APK."""
-    key = "true" if value else "false"
-    return CoreNode.node(T.TEXT, CoreNode(type=T.TEXT_KEY, value=key))
 
 
 __all__ = [

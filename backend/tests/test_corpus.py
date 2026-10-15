@@ -178,6 +178,7 @@ def test_corpus_covers_every_module() -> None:
         "systems",
         "intervals",
         "sets",
+        "comparison",
         "matrices",
         "matrix_ops",
         "derivatives",
