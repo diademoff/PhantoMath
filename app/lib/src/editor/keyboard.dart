@@ -261,6 +261,18 @@ final KeyboardPanel _combinatoricsPanel = KeyboardPanel(
   ],
 );
 
+/// Структуры: системы уравнений и определители.
+final KeyboardPanel _structurePanel = KeyboardPanel(
+  title: '{}',
+  rows: [
+    [
+      MathKey.template(ENodeKind.system2),
+      MathKey.template(ENodeKind.determinant2),
+      MathKey.template(ENodeKind.determinant3),
+    ],
+  ],
+);
+
 /// Все панели в порядке вкладок.
 final List<KeyboardPanel> keyboardPanels = [
   _basePanel,
@@ -269,6 +281,7 @@ final List<KeyboardPanel> keyboardPanels = [
   _relationPanel,
   _variablePanel,
   _calculusPanel,
+  _structurePanel,
   _combinatoricsPanel,
 ];
 

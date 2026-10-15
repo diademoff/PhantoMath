@@ -216,6 +216,40 @@ void main() {
     });
   });
 
+  group('структуры: системы и определители', () {
+    test('система собирается из двух уравнений', () {
+      final c = EditorController();
+      c.insertTemplate(ENodeKind.system2);
+      c.typeVariable('x');
+      c.insertOperator(ENodeKind.add);
+      c.typeDigit('1');
+      c.insertOperator(ENodeKind.equals);
+      c.typeDigit('3');
+      c.moveDown();
+      c.typeVariable('x');
+      c.insertOperator(ENodeKind.subtract);
+      c.typeDigit('1');
+      c.insertOperator(ENodeKind.equals);
+      c.typeDigit('1');
+      final node = c.toCoreNode();
+      expect(node.type, CoreNodeType.system);
+      expect(node.children, hasLength(2));
+      expect(node.children.every((e) => e.type == CoreNodeType.equals), isTrue);
+    });
+
+    test('определитель 2×2 заполняется по слотам', () {
+      final c = EditorController();
+      c.insertTemplate(ENodeKind.determinant2);
+      for (final digit in ['1', '2', '3', '4']) {
+        c.typeDigit(digit);
+        c.moveDown();
+      }
+      final node = c.toCoreNode();
+      expect(node.type, CoreNodeType.determinant2);
+      expect(node.children.map((e) => e.value).toList(), ['1', '2', '3', '4']);
+    });
+  });
+
   group('вид редактора и тап по формуле', () {
     Future<void> pump(WidgetTester tester, EditorController c) async {
       await tester.pumpWidget(

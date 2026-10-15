@@ -112,6 +112,17 @@ void main() {
       expect(latex, contains(r'$x$ = $3$'));
     });
 
+    test('определитель рисуется матрицей', () {
+      final node = CoreNode(
+        type: CoreNodeType.determinant2,
+        children: [c2, c3, c3, c2],
+      );
+      final latex = nodeToLatex(node);
+      expect(latex, contains(r'\begin{vmatrix}'));
+      expect(latex, contains(r'\end{vmatrix}'));
+      expect(latex, contains('&'));
+    });
+
     test('незавершённый узел даёт заглушку, а не пустоту', () {
       final node = CoreNode(type: CoreNodeType.add, children: [c2]);
       expect(nodeToLatex(node), contains(r'\square'));

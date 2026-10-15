@@ -169,6 +169,13 @@ String nodeToLatex(CoreNode node) {
     case CoreNodeType.variation:
       return _wrap(node, r'{}^{$0}A_{$1}');
 
+    // ── матрицы ─────────────────────────────────────────────────────
+    case CoreNodeType.determinant2:
+      return _matrix(node, 2, r'\begin{vmatrix}', r'\end{vmatrix}');
+
+    case CoreNodeType.determinant3:
+      return _matrix(node, 3, r'\begin{vmatrix}', r'\end{vmatrix}');
+
     // ── отношения ───────────────────────────────────────────────────
     case CoreNodeType.equals:
       return _wrap(node, r'$0 = $1');
@@ -204,8 +211,7 @@ String nodeToLatex(CoreNode node) {
 }
 
 /// Подставить детей в шаблон по позиционным плейсхолдерам.
-String _wrap(CoreNode node, String template) {
-  if (node.children.isEmpty) return '';
+String _wrap(CoreNode node, String template) {  if (node.children.isEmpty) return '';
   // Сначала плейсхолдеры без соответствующего ребёнка: иначе на следующем
   // проходе regex начнёт цеплять `$` уже вставленных формул.
   var out = template.replaceAllMapped(
@@ -218,9 +224,29 @@ String _wrap(CoreNode node, String template) {
   return out;
 }
 
+/// Матрица `size×size` из детей в порядке «по строкам».
+///
+/// Элементы идут подряд (строка за строкой) — так же, как в нативном
+/// решателе. Недостающие ячейки показываются заглушкой.
+String _matrix(CoreNode node, int size, String open, String close) {
+  final rows = <String>[];
+  for (var row = 0; row < size; row++) {
+    final cells = <String>[];
+    for (var column = 0; column < size; column++) {
+      final index = row * size + column;
+      cells.add(
+        index < node.children.length
+            ? _asMath(node.children[index])
+            : _placeholder,
+      );
+    }
+    rows.add(cells.join(' & '));
+  }
+  return '$open ${rows.join(r' \\ ')} $close';
+}
+
 /// Обернуть узел в `$…$`, если он ещё не обёрнут.
-String _asMath(CoreNode child) {
-  final latex = nodeToLatex(child);
+String _asMath(CoreNode child) {  final latex = nodeToLatex(child);
   if (latex.isEmpty) return _placeholder;
   if (latex.startsWith(r'$') && latex.endsWith(r'$')) return latex;
   return '\$$latex\$';

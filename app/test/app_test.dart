@@ -115,6 +115,21 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('панель структур показывает систему и определители', (tester) async {
+    // Широкий экран: все вкладки панелей помещаются без прокрутки.
+    final view =
+        TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
+    view.physicalSize = const Size(2400, 2280);
+    await tester.pumpWidget(MaterialApp(home: SolvePage(api: _api())));
+    await tester.pump();
+
+    await tester.tap(find.text('{}'));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('key:|2×2|')), findsOneWidget);
+    expect(find.byKey(const ValueKey('key:|3×3|')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('клавиша дроби поглощает набранное число', (tester) async {
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: _api())));
     await tester.pump();

@@ -161,6 +161,19 @@ class _EditorViewState extends State<EditorView> {
           slots[1],
           Text(')', style: TextStyle(fontSize: _fs, height: 1)),
         ]);
+      case ENodeKind.system2:
+        return _rowOf([
+          Text('{', style: TextStyle(fontSize: _fs * 2.2, height: 1)),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: slots,
+          ),
+        ]);
+      case ENodeKind.determinant2:
+        return _matrixView(2, slots);
+      case ENodeKind.determinant3:
+        return _matrixView(3, slots);
       case ENodeKind.sin:
         return _function('sin', slots[0]);
       case ENodeKind.cos:
@@ -288,9 +301,31 @@ class _EditorViewState extends State<EditorView> {
     );
   }
 
+  /// Матрица `size×size` между вертикальными чертами.
+  Widget _matrixView(int size, List<Widget> slots) {
+    final rows = <Widget>[];
+    for (var row = 0; row < size; row++) {
+      final cells = <Widget>[];
+      for (var column = 0; column < size; column++) {
+        if (column > 0) cells.add(const Text('  '));
+        cells.add(slots[row * size + column]);
+      }
+      rows.add(Row(mainAxisSize: MainAxisSize.min, children: cells));
+    }
+    final bar = TextStyle(fontSize: _fs * size, height: 1);
+    return _rowOf([
+      Text('|', style: bar),
+      Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: rows,
+      ),
+      Text('|', style: bar),
+    ]);
+  }
+
   /// Ограничители: скобки, модуль, пол.
-  Widget _delimited(
-    String left,
+  Widget _delimited(    String left,
     Widget content,
     String right, {
     bool bars = false,

@@ -70,6 +70,8 @@ enum CoreNodeType {
   choose('CHOOSE'),
   partialPermutation('PARTIAL_PERMUTATION_LEFT_SUBSCRIPT_RIGHT_SUBSCRIPT'),
   variation('VARIATION'),
+  determinant2('DETERMINANT2'),
+  determinant3('DETERMINANT3'),
   list('LIST'),
   system('SYSTEM');
 
