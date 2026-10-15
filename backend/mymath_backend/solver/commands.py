@@ -10,7 +10,8 @@
 * ``solve`` — решить/вычислить (поведение по умолчанию, без действия);
 * ``factor`` — разложить на множители (``factorise_call``);
 * ``expand`` — раскрыть (``expand_msg``);
-* ``simplify`` — упростить (``simplify``).
+* ``simplify`` — упростить (``simplify``);
+* ``domain`` — область определения выражения (``domain_find``).
 
 Для уравнения команда применяется к обеим частям.
 """
@@ -24,6 +25,7 @@ import sympy
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
 from .base import Command, SolveContext, SolveError, Step
+from .domain import domain
 from .matrices import MATRIX_COMMANDS
 from .sympy_bridge import from_sympy, to_sympy
 from .vectors import VECTOR_COMMANDS
@@ -70,6 +72,7 @@ COMMANDS: dict[str, Command] = {
     "factor": factor,
     "expand": expand,
     "simplify": simplify,
+    "domain": domain,
     **VECTOR_COMMANDS,
     **MATRIX_COMMANDS,
 }
@@ -92,6 +95,7 @@ __all__ = [
     "COMMANDS",
     "Command",
     "apply",
+    "domain",
     "expand",
     "factor",
     "simplify",

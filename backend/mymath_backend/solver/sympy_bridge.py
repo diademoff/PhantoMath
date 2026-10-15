@@ -241,6 +241,9 @@ def from_sympy(expr: sympy.Expr) -> CoreNode:
         return CoreNode.node(T.EQUALS, from_sympy(expr.lhs), from_sympy(expr.rhs))
     if isinstance(expr, sympy.Interval):
         return _from_interval(expr)
+    if expr is sympy.S.Reals:
+        # Всё множество действительных чисел — промежуток (-∞, +∞).
+        return CoreNode.node(T.OPEN_OPEN_INTERVAL, from_sympy(-sympy.oo), from_sympy(sympy.oo))
     if expr is sympy.EmptySet:
         return CoreNode.empty()
     if isinstance(expr, sympy.FiniteSet):
