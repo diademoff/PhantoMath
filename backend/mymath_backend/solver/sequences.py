@@ -42,12 +42,14 @@ def solve_sequence(node: CoreNode, ctx: SolveContext) -> CoreNode:
     if difference is not None:
         following = _extend(terms[-1], difference, multiply=False)
         key, step_value = _KEY_DIFF, difference
+        ctx.result.add(Step(left=node, right=None, key="seq_check_arithmetic"))
     else:
         ratio = _constant_ratio(terms)
         if ratio is None:
             raise SolveError("последовательность не арифметическая и не геометрическая")
         following = _extend(terms[-1], ratio, multiply=True)
         key, step_value = _KEY_RATIO, ratio
+        ctx.result.add(Step(left=node, right=None, key="seq_check_geometric"))
 
     next_list = CoreNode.node(T.LIST, *(from_sympy(value) for value in following))
     ctx.result.add(Step(left=node, right=None, key=key, args=[from_sympy(step_value)]))

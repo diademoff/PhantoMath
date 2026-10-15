@@ -39,12 +39,20 @@ class TestSequences:
     def test_arithmetic(self) -> None:
         source = "{sequence({2},{4},{6},{8})}"
         assert next_terms(source) == ["10", "12", "14", "16"]
-        assert step_keys(source) == ["seq_state_common_diff", "seq_state_next_four"]
+        assert step_keys(source) == [
+            "seq_check_arithmetic",
+            "seq_state_common_diff",
+            "seq_state_next_four",
+        ]
 
     def test_geometric(self) -> None:
         source = "{sequence({3},{6},{12},{24})}"
         assert next_terms(source) == ["48", "96", "192", "384"]
-        assert step_keys(source) == ["seq_state_common_ratio", "seq_state_next_four"]
+        assert step_keys(source) == [
+            "seq_check_geometric",
+            "seq_state_common_ratio",
+            "seq_state_next_four",
+        ]
 
     def test_fractions(self) -> None:
         # 1, 1/2, 1/4, 1/8 — геометрическая со знаменателем 1/2.
