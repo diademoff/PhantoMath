@@ -26,6 +26,7 @@
 * ``sequence_convergence`` — сходимость последовательности (``seq_lim_conv``);
 * ``ratio_test`` — признак Даламбера для ряда (``series_ratio_test``);
 * ``root_test``/``nth_term_test`` — радикальный и необходимый признаки сходимости ряда;
+* ``radius_of_convergence`` — радиус сходимости степенного ряда;
 * ``partial_fractions`` — разложение на простейшие дроби (``partial_frac``);
 * ``intercepts`` — пересечения графика с осями координат
   (``find_x_intercept``/``find_y_intercept``);
@@ -55,7 +56,7 @@ from .domain import domain, restrictions
 from .integrals import area
 from .matrices import MATRIX_COMMANDS
 from .sequences import explicit_formula, sequence_convergence
-from .series import convergence, nth_term_test, ratio_test, root_test
+from .series import convergence, nth_term_test, radius_of_convergence, ratio_test, root_test
 from .sympy_bridge import from_sympy, to_sympy
 from .vectors import VECTOR_COMMANDS
 
@@ -733,6 +734,7 @@ COMMANDS: dict[str, Command] = {
     "partial_fractions": partial_fractions,
     "periodic_to_frac": periodic_to_frac,
     "range": value_range,
+    "radius_of_convergence": radius_of_convergence,
     "ratio_test": ratio_test,
     "root_test": root_test,
     "nth_term_test": nth_term_test,

@@ -79,6 +79,26 @@ class TestRootTest:
         assert vertical.solution.children[0].value == "true"
 
 
+class TestRadiusOfConvergence:
+    def test_finite_radius(self) -> None:
+        source = "{sigma_def({n},{0},{inf},{frac({x^n},{2^n})})}"
+        vertical = solve(parse_protocol(source), command="radius_of_convergence").result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
+        assert keys == [
+            "convergence_radius_find",
+            "convergence_radius_limit",
+            "convergence_radius_conv",
+        ]
+        assert vertical.solution.value == "2"
+
+    def test_infinite_radius(self) -> None:
+        source = "{sigma_def({n},{0},{inf},{frac({x^n},{factorial({n})})})}"
+        vertical = solve(parse_protocol(source), command="radius_of_convergence").result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        assert vertical.solution.value == "∞"
+
+
 class TestNthTermTest:
     def test_diverges(self) -> None:
         source = "{sigma_def({n},{1},{inf},{frac({n},{n+1})})}"

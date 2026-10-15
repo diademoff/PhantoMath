@@ -180,9 +180,47 @@ def nth_term_test(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> Co
     raise SolveError("необходимый признак сходимости не даёт ответа")
 
 
+def radius_of_convergence(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Радиус сходимости степенного ряда ``Σ aₙ·xⁿ``.
+
+    По признаку Даламбера ``R = lim |aₙ/aₙ₊₁|``. Шаги ``convergence_radius_find``,
+    ``convergence_radius_limit`` и ``convergence_radius_conv``/``_conv_inf``.
+    """
+    del args
+    if node.type is not T.SIGMA_DEFINITE:
+        raise SolveError("радиус сходимости — у степенного ряда (суммы)")
+    index, _, _, expression = _parts(node)
+    symbol = sympy.Symbol(index)
+    variable = next((name for name in ctx.variables if name != index), None)
+    if variable is None:
+        raise SolveError("в степенном ряде нет переменной")
+    xsym = sympy.Symbol(variable)
+
+    term = to_sympy(expression)
+    coefficient = sympy.simplify(term / xsym**symbol)
+    if coefficient.has(xsym):
+        raise SolveError("ряд не степенной: нужен вид aₙ·xⁿ")
+    ratio = sympy.simplify(sympy.Abs(coefficient / coefficient.subs(symbol, symbol + 1)))
+
+    ctx.result.add(Step(left=node, right=None, key="convergence_radius_find"))
+    ctx.result.add(
+        Step(left=node, right=None, key="convergence_radius_limit", args=[from_sympy(ratio)])
+    )
+    radius = sympy.limit(ratio, symbol, sympy.oo)
+    if radius in (sympy.oo, -sympy.oo, sympy.zoo):
+        answer = from_sympy(sympy.oo)
+        key = "convergence_radius_conv_inf"
+    else:
+        answer = from_sympy(radius)
+        key = "convergence_radius_conv"
+    ctx.result.add(Step(left=node, right=answer, key=key, args=[from_sympy(xsym), answer]))
+    return answer
+
+
 __all__ = [
     "convergence",
     "nth_term_test",
+    "radius_of_convergence",
     "ratio_test",
     "root_test",
     "solve_series",
