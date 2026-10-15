@@ -35,6 +35,20 @@
       "steps": ["system_2x2_solve_substitution"]
     },
     {
+      "id": "addition-method",
+      "title": "x + y = 3, x − y = 1 — способ сложения (3-й)",
+      "input": "system({=({x+y},{3})},{=({x-y},{1})})",
+      "method": 2,
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "2"}]},
+          {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "y"}, {"type": "CONSTANT", "value": "1"}]}
+        ]
+      },
+      "steps": ["system_2x2_add_eqs"]
+    },
+    {
       "id": "no-solution",
       "title": "x + y = 1, x + y = 2 — решений нет",
       "input": "system({=({x+y},{1})},{=({x+y},{2})})",

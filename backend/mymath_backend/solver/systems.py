@@ -177,6 +177,39 @@ def _cramer_2x2(node: CoreNode, ctx: SolveContext) -> CoreNode:
     return solution
 
 
+def _addition_2x2(node: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Система 2×2 линейных способом сложения (исключение переменной).
+
+    Уравнения домножаются так, чтобы коэффициенты при первой неизвестной
+    совпали; сложение убирает её, оставшаяся неизвестная находится, вторая —
+    подстановкой. Шаг ``system_2x2_add_eqs``.
+    """
+    first_var, second_var = ctx.variables
+    index = {first_var: 0, second_var: 1}
+    first = _equation_form(node.children[0], index)
+    second = _equation_form(node.children[1], index)
+    a1, b1 = first[0]
+    a2, b2 = second[0]
+    determinant = a1 * b2 - a2 * b1
+    if determinant == 0:
+        raise SolveError("система не имеет единственного решения")
+
+    rhs1, rhs2 = -first[1], -second[1]
+    u = (rhs1 * b2 - rhs2 * b1) / determinant
+    v = (a1 * rhs2 - a2 * rhs1) / determinant
+    solution = CoreNode.node(
+        T.LIST,
+        CoreNode(type=T.EQUALS, children=[CoreNode.variable(first_var), _constant(u)]),
+        CoreNode(type=T.EQUALS, children=[CoreNode.variable(second_var), _constant(v)]),
+    )
+    ctx.result.add(Step(left=node, right=solution, key="system_2x2_add_eqs"), [_HEADER])
+    return solution
+
+
+def _constant(value: Fraction) -> CoreNode:
+    return CoreNode.constant(format_number(value))
+
+
 def _general_system(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Система 3×3 и выше или нелинейная — через ``sympy.solve``."""
     ctx.require(len(ctx.variables) >= 1, "в системе нет неизвестных")
@@ -230,6 +263,9 @@ def system_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
         with contextlib.suppress(SolveError):
             methods.append(_run_system(node, variables, _cramer_2x2))
     methods.append(_run_system(node, variables, _general_system))
+    if len(node.children) == 2 and len(variables) == 2:
+        with contextlib.suppress(SolveError):
+            methods.append(_run_system(node, variables, _addition_2x2))
     return methods
 
 

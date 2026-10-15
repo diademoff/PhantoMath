@@ -213,11 +213,17 @@ class TestMethods:
         data = solve(problem)
         group = data.result.group(ResultGroupType.VERTICAL)
         assert group is not None
-        assert len(group.entries) == 2
+        assert len(group.entries) == 3
         assert group.select_method_text is not None
-        first = CoreSolverVerticalResult.from_contract(group.entries[0].result)
-        keys = [sub.description.type for step in first.steps for sub in step.substeps]
-        assert keys == ["system_2x2_solve_elimination"]
+        keys = []
+        for entry in group.entries:
+            vertical = CoreSolverVerticalResult.from_contract(entry.result)
+            keys.append([sub.description.type for step in vertical.steps for sub in step.substeps])
+        assert keys == [
+            ["system_2x2_solve_elimination"],
+            ["system_2x2_solve_substitution"],
+            ["system_2x2_add_eqs"],
+        ]
 
 
 class TestExplanationKeys:
