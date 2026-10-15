@@ -17,6 +17,7 @@ api = [
 [dependency-groups]
 dev = [
     "pytest>=8.4",
+    "httpx2>=2.13",   # требуется starlette.testclient
     "ruff>=0.15",
     "mypy>=1.18",
 ]

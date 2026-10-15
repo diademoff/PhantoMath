@@ -22,6 +22,20 @@ uv run ruff format .   # форматирование
 uv run mypy mymath_backend
 ```
 
+## Запуск
+
+```bash
+uv sync --python 3.12 --extra api
+uv run uvicorn mymath_backend.api:app --reload
+```
+
+Документация OpenAPI: <http://127.0.0.1:8000/docs>
+
+Путь к словарю объяснений переопределяется переменной
+`MYMATH_EXPLANATIONS`; по умолчанию берётся `truth/data/explanations.json`
+рядом с репозиторием. Если словаря нет, `GET /api/v1/health` отвечает
+`degraded`, а `/solve` работает — просто без текстов пояснений.
+
 ## Состав
 
 | Модуль | Что внутри |
@@ -30,7 +44,25 @@ uv run mypy mymath_backend
 | `mymath_backend/ast.py` | `CoreNode`, `CoreColoredNode`, `CoreAction`, `CoreRichText`; сериализация в формат контракта |
 | `mymath_backend/results.py` | `CoreSolverData` и вся ветка вертикального результата: группы, шаги, подшаги |
 | `mymath_backend/explanations.py` | Резолвер 3252 шаблонов объяснений на 9 языках |
+| `mymath_backend/input.py` | Разбор строки протокола Photomah и AST-JSON в `CoreNode` |
+| `mymath_backend/solver/base.py` | Шаги, накопитель результата, реестр модулей по типам узлов |
+| `mymath_backend/solver/arithmetic.py` | Первый модуль: `+ - * /`, степени, скобки, точные дроби |
+| `mymath_backend/api.py` | FastAPI: `/solve`, `/parse`, `/health` |
 | `scripts/gen_node_types.py` | Генератор `node_types.py` из `truth/data/enums.json` |
+
+## Эндпоинты
+
+| Метод | Путь | Назначение |
+|---|---|---|
+| `POST` | `/api/v1/solve` | Решить `CoreNode`, вернуть `CoreSolverData` |
+| `POST` | `/api/v1/parse` | Разобрать строку протокола Photomath в дерево |
+| `GET` | `/api/v1/health` | Живость и состояние словаря объяснений |
+
+Не решили — `422` с ключом пояснения, а не `500`:
+
+```json
+{"detail": {"message": "деление на ноль", "explanation": "div_with_zero"}}
+```
 
 ## Перегенерация типов
 
@@ -71,21 +103,28 @@ rendered.tail_label  # метка в конце строки, отделённа
 
 ## Тесты
 
-33 теста. Из них часть работает на полном корпусе объяснений и падает при
+122 теста. Часть работает на полном корпусе объяснений и падает при
 расхождении с APK:
 
 - все 143 имени узла совпадают с `truth/data/enums.json`;
 - у всех 3252 ключей есть английский шаблон;
 - арность каждого ключа совпадает с максимальным `ARGn` в шаблоне;
 - все 3020 ключей из `assets/keys.txt` присутствуют (тест пропускается, если
-  APK не распакован).
+  APK не распакован);
+- каждый ключ, который выдаёт решатель, есть в словаре и его арность
+  совпадает с числом `ARG` в шаблоне;
+- названия полей ответа совпадают с оригиналом (`solutionNode`, `headers`,
+  `description`), а `subresult` отсутствует, когда вложенного результата нет —
+  так же ведёт себя Gson, опуская null-поля.
 
 ## Чего ещё нет
 
-- `POST /solve` — сам решатель (этап 3 в `truth/06-plan.md`).
-- Парсер входного формата.
-- Рендер формул — на стороне фронта (`flutter_math`).
-- Анимации — вариант B, микро-анимации через `CoreColoredNode`.
+Решатель умеет только арифметику. Не реализованы буквы, `FRACTION` как
+отдельный узел, функции, уравнения, неравенства — они в следующих модулях
+(этап 3 в `truth/06-plan.md`).
+
+Рендер формул — на стороне фронта (`flutter_math`).
+Анимации — вариант B, микро-анимации через `CoreColoredNode`.
 
 ## Источник истины
 
