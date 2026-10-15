@@ -299,6 +299,14 @@ def radius_of_convergence(node: CoreNode, ctx: SolveContext, args: list[CoreNode
 
     ctx.result.add(Step(left=node, right=None, key="convergence_radius_find"))
     ctx.result.add(
+        Step(
+            left=node,
+            right=None,
+            key="convergence_radius_abs",
+            args=[CoreNode.constant("1")],
+        )
+    )
+    ctx.result.add(
         Step(left=node, right=None, key="convergence_radius_limit", args=[from_sympy(ratio)])
     )
     radius = sympy.limit(ratio, symbol, sympy.oo)

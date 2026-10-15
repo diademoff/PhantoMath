@@ -214,6 +214,7 @@ class TestRadiusOfConvergence:
         keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
         assert keys == [
             "convergence_radius_find",
+            "convergence_radius_abs",
             "convergence_radius_limit",
             "convergence_radius_conv",
         ]

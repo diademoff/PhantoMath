@@ -236,6 +236,7 @@
       },
       "steps": [
         "convergence_radius_find",
+        "convergence_radius_abs",
         "convergence_radius_limit",
         "convergence_radius_conv"
       ]
@@ -251,6 +252,7 @@
       },
       "steps": [
         "convergence_radius_find",
+        "convergence_radius_abs",
         "convergence_radius_limit",
         "convergence_radius_conv_inf"
       ]
