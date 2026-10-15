@@ -8,11 +8,19 @@
       "solution": {
         "type": "EQUALS",
         "children": [
-          {"type": "VARIABLE", "value": "x"},
-          {"type": "CONSTANT", "value": "3"}
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "3"
+          }
         ]
       },
-      "steps": ["eq_trans"]
+      "steps": [
+        "eq_trans"
+      ]
     },
     {
       "id": "log-same-base",
@@ -21,8 +29,14 @@
       "solution": {
         "type": "EQUALS",
         "children": [
-          {"type": "VARIABLE", "value": "x"},
-          {"type": "CONSTANT", "value": "3"}
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "3"
+          }
         ]
       },
       "steps": [
@@ -38,18 +52,30 @@
       "solution": {
         "type": "EQUALS",
         "children": [
-          {"type": "VARIABLE", "value": "x"},
-          {"type": "CONSTANT", "value": "8"}
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "8"
+          }
         ]
       },
-      "steps": ["rel_restrictions_find", "rel_restrictions_log_arg", "eq_trans"]
+      "steps": [
+        "rel_restrictions_find",
+        "rel_restrictions_log_arg",
+        "log_def_solve"
+      ]
     },
     {
       "id": "exponential-no-solution",
       "title": "2^x = −1 — решений нет",
       "input": "{=({2^x},{-1})}",
       "solution": null,
-      "steps": ["false_statement_solve"]
+      "steps": [
+        "false_statement_solve"
+      ]
     }
   ]
 }

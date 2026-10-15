@@ -585,9 +585,9 @@ def _log_exp_transform(left: sympy.Expr, right: sympy.Expr) -> tuple[str, sympy.
     if left_log is not None and right_log is not None and left_log[1] == right_log[1]:
         return "eq_log_equalise", sympy.Eq(left_log[0], right_log[0])
     if left_log is not None and right.is_number:
-        return "eq_trans", sympy.Eq(left_log[0], left_log[1] ** right)
+        return "log_def_solve", sympy.Eq(left_log[0], left_log[1] ** right)
     if right_log is not None and left.is_number:
-        return "eq_trans", sympy.Eq(right_log[0], right_log[1] ** left)
+        return "log_def_solve", sympy.Eq(right_log[0], right_log[1] ** left)
 
     left_pow, right_pow = isinstance(left, sympy.Pow), isinstance(right, sympy.Pow)
     if left_pow and right_pow and left.base == right.base and left.base.is_number:
