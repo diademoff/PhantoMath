@@ -9,12 +9,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from mymath_backend import CoreNode, load_explanations
 from mymath_backend import CoreNodeType as T
 from mymath_backend.explanations import DEFAULT_LOCALE
-from mymath_backend.solver import SolveError, registered_types, solve
+from mymath_backend.solver import registered_types, solve
 
 EXPLANATIONS = Path(__file__).resolve().parents[2] / "truth" / "data" / "explanations.json"
 
@@ -109,8 +107,11 @@ class TestUnsupported:
                 c("2"),
             ),
         )
-        with pytest.raises(SolveError, match="параметрическ"):
-            solve(problem)
+        vertical = solve(problem).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        assert vertical.solution.type is T.EQUALS
+        keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
+        assert keys == ["system_2x2_sol_in_param"]
 
 
 class TestExtended:
@@ -148,6 +149,57 @@ class TestExtended:
             eq(node(T.ADD, var("x"), c("1")), c("3")),
         )
         assert solution_map(problem) == {"x": "2", "y": "1"}
+
+
+class TestParametricAndCheck:
+    def test_parametric(self) -> None:
+        # x + y = 2 и 2x + 2y = 4 — бесконечно много решений (x = 2 − y).
+        problem = system(
+            eq(node(T.ADD, var("x"), var("y")), c("2")),
+            eq(
+                node(
+                    T.ADD,
+                    node(T.MULTIPLY_IMPLICIT, c("2"), var("x")),
+                    node(T.MULTIPLY_IMPLICIT, c("2"), var("y")),
+                ),
+                c("4"),
+            ),
+        )
+        vertical = solve(problem).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        assert vertical.solution.type is T.EQUALS
+        keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
+        assert keys == ["system_2x2_sol_in_param"]
+
+    def test_no_solution(self) -> None:
+        problem = system(
+            eq(node(T.ADD, var("x"), var("y")), c("1")),
+            eq(node(T.ADD, var("x"), var("y")), c("2")),
+        )
+        vertical = solve(problem).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        assert vertical.solution.type is T.EMPTY
+        keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
+        assert keys == ["system_no_sol"]
+
+    def test_check_true(self) -> None:
+        problem = system(
+            eq(node(T.ADD, var("x"), var("y")), c("3")),
+            eq(node(T.SUBTRACT, var("x"), var("y")), c("1")),
+        )
+        vertical = solve(problem, command="system_check", args=[c("2"), c("1")]).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        assert vertical.solution.type is T.TEXT
+        assert vertical.solution.children[0].value == "true"
+
+    def test_check_false(self) -> None:
+        problem = system(
+            eq(node(T.ADD, var("x"), var("y")), c("3")),
+            eq(node(T.SUBTRACT, var("x"), var("y")), c("1")),
+        )
+        vertical = solve(problem, command="system_check", args=[c("1"), c("1")]).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        assert vertical.solution.children[0].value == "false"
 
 
 class TestExplanationKeys:

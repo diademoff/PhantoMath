@@ -193,6 +193,7 @@ def test_corpus_covers_every_module() -> None:
         "ineq_system",
         "restrictions",
         "system_nxn",
+        "system_param",
         "sequences",
         "percentage",
         "periodic",

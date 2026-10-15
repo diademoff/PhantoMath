@@ -19,7 +19,7 @@ import sympy
 from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
 from .arithmetic import as_fraction, format_number
-from .base import SolveContext, SolveError, Step, solver_for
+from .base import SolveContext, SolveError, Step, boolean_node, solver_for
 from .sympy_bridge import from_sympy, to_sympy
 
 _HEADER = CoreRichText(type="system_solve_short")
@@ -190,25 +190,82 @@ def _general_system(node: CoreNode, ctx: SolveContext) -> CoreNode:
         found = sympy.solve(equations, symbols, dict=True)
     except (TypeError, ValueError, NotImplementedError) as error:
         raise SolveError("система не решается") from error
-    if not found:
-        raise SolveError("система не имеет решений")
 
-    answers = [_solution_node(ctx.variables, mapping) for mapping in found]
+    if not found:
+        ctx.result.add(Step(left=node, right=None, key="system_no_sol"), [_HEADER])
+        return CoreNode.empty()
+
+    answers: list[CoreNode] = []
+    parametric = False
+    for mapping in found:
+        parts = _solution_parts(ctx.variables, mapping)
+        if not parts:
+            ctx.result.add(Step(left=node, right=None, key="system_2x2_any_sol_param"), [_HEADER])
+            return CoreNode.empty()
+        if len(parts) < len(ctx.variables):
+            parametric = True
+        answers.append(CoreNode.node(T.LIST, *parts) if len(parts) > 1 else parts[0])
+
     solution = answers[0] if len(answers) == 1 else CoreNode.node(T.LIST, *answers)
-    key = "system_3x3_rem_vars" if len(ctx.variables) >= 3 else "system_2x2_solve_substitution"
+    if parametric:
+        key = "system_2x2_sol_in_param"
+    else:
+        key = "system_3x3_rem_vars" if len(ctx.variables) >= 3 else "system_2x2_solve_substitution"
     ctx.result.add(Step(left=node, right=solution, key=key), [_HEADER])
     return solution
 
 
-def _solution_node(variables: list[str], mapping: dict[sympy.Symbol, sympy.Expr]) -> CoreNode:
-    """Одно решение системы: ``x = …, y = …`` (или ``x = …``)."""
+def _solution_parts(
+    variables: list[str], mapping: dict[sympy.Symbol, sympy.Expr]
+) -> list[CoreNode]:
+    """Известные присваивания ``x = …``; свободные переменные пропускаются."""
     parts: list[CoreNode] = []
     for name in variables:
         value = mapping.get(sympy.Symbol(name))
-        if value is None:
-            raise SolveError("параметрические решения системы пока не поддерживаются")
-        parts.append(CoreNode.node(T.EQUALS, CoreNode.variable(name), from_sympy(value)))
-    return CoreNode.node(T.LIST, *parts) if len(parts) > 1 else parts[0]
+        if value is not None:
+            parts.append(CoreNode.node(T.EQUALS, CoreNode.variable(name), from_sympy(value)))
+    return parts
+
+
+def system_check(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Проверить, является ли набор значений решением системы.
+
+    Аргументы команды — значения переменных по порядку их появления. Шаги
+    ``system_2x2_check``/``system_3x3_check_sol`` и вердикт
+    ``system_2x2_check_t_vert_arg``/``_f_vert_arg`` (или ``system_3x3_check_t``/
+    ``_f``). Ответ — «Истина»/«Ложь».
+    """
+    if node.type is not T.SYSTEM:
+        raise SolveError("проверка решения — у системы")
+    if len(args) != len(ctx.variables):
+        raise SolveError("нужно значение для каждой переменной")
+    substitution = {
+        sympy.Symbol(name): to_sympy(value) for name, value in zip(ctx.variables, args, strict=True)
+    }
+
+    satisfies = True
+    for child in node.children:
+        if child.type is not T.EQUALS or len(child.children) != 2:
+            raise SolveError("в системе должны быть уравнения")
+        left = to_sympy(child.children[0]).subs(substitution)
+        right = to_sympy(child.children[1]).subs(substitution)
+        holds = sympy.simplify(left - right) == 0
+        if not (holds is True or holds is sympy.true):
+            satisfies = False
+            break
+
+    answer = boolean_node(satisfies)
+    if len(ctx.variables) == 2:
+        ctx.result.add(Step(left=node, right=None, key="system_2x2_check"), [_HEADER])
+        key = "system_2x2_check_t_vert_arg" if satisfies else "system_2x2_check_f_vert_arg"
+        ctx.result.add(Step(left=node, right=answer, key=key, args=list(args)), [_HEADER])
+    elif len(ctx.variables) == 3:
+        ctx.result.add(Step(left=node, right=None, key="system_3x3_check_sol"), [_HEADER])
+        key = "system_3x3_check_t" if satisfies else "system_3x3_check_f"
+        ctx.result.add(Step(left=node, right=answer, key=key), [_HEADER])
+    else:
+        raise SolveError("проверка поддерживается для систем 2×2 и 3×3")
+    return answer
 
 
 def _inequality_system(node: CoreNode, ctx: SolveContext) -> CoreNode:
@@ -249,4 +306,5 @@ def _relation(node_type: T, left: sympy.Expr, right: sympy.Expr) -> sympy.Rel:
 
 __all__ = [
     "solve_system",
+    "system_check",
 ]

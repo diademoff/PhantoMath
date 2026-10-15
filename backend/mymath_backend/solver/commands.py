@@ -34,6 +34,7 @@
 * ``ratio_test`` — признак Даламбера для ряда (``series_ratio_test``);
 * ``root_test``/``nth_term_test`` — радикальный и необходимый признаки сходимости ряда;
 * ``integral_test``/``alt_test`` — интегральный признак и признак Лейбница;
+* ``system_check`` — проверка набора значений на решение системы;
 * ``radius_of_convergence`` — радиус сходимости степенного ряда;
 * ``pseries_test``/``geom_series_test`` — признаки обобщённого гармонического
   и геометрического рядов;
@@ -84,6 +85,7 @@ from .series import (
     root_test,
 )
 from .sympy_bridge import from_sympy, to_sympy
+from .systems import system_check
 from .vectors import VECTOR_COMMANDS
 
 
@@ -996,6 +998,7 @@ COMMANDS: dict[str, Command] = {
     "nth_term_test": nth_term_test,
     "sequence_convergence": sequence_convergence,
     "slope_intercept": slope_intercept,
+    "system_check": system_check,
     "solve_param": solve_param,
     "prove": prove,
     "substitute": substitute,
@@ -1063,6 +1066,7 @@ __all__ = [
     "slope_intercept",
     "solve_param",
     "substitute",
+    "system_check",
     "to_degrees",
     "to_fraction",
     "to_mixed",
