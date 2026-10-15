@@ -64,6 +64,7 @@ def _solve_fraction(node: CoreNode, ctx: SolveContext) -> CoreNode:
             colored(CoreNode.constant(format_number(numerator)), crossed=True),
             colored(CoreNode.constant(format_number(denominator)), crossed=True),
         )
+        ctx.result.add(Step(left=crossed, right=None, key="frac_reduce_reduce"))
         ctx.result.add(
             Step(
                 left=crossed,

@@ -68,8 +68,8 @@ class TestFractions:
 
     def test_reduction_uses_gcd_step(self) -> None:
         keys = step_keys(frac(C4, CoreNode.constant("8")))
-        assert keys == ["frac_reduce_out"]
-        assert args_of(frac(C4, CoreNode.constant("8"))) == [["4"]]
+        assert keys == ["frac_reduce_reduce", "frac_reduce_out"]
+        assert args_of(frac(C4, CoreNode.constant("8"))) == [[], ["4"]]
 
     def test_reduction_marks_crossed_parts(self) -> None:
         """Микро-анимация: сокращаемые числитель и знаменатель зачёркнуты."""
@@ -82,7 +82,7 @@ class TestFractions:
     def test_nested_numerator_is_folded_first(self) -> None:
         numerator = CoreNode.node(T.ADD, CoreNode.constant("1"), CoreNode.constant("1"))
         keys = step_keys(frac(numerator, C4))
-        assert keys == ["add", "frac_reduce_out"]
+        assert keys == ["add", "frac_reduce_reduce", "frac_reduce_out"]
         assert value_of(frac(numerator, C4)) == "1/2"
 
     def test_division_by_zero(self) -> None:
