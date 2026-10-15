@@ -245,8 +245,11 @@ def _general_system(node: CoreNode, ctx: SolveContext) -> CoreNode:
     solution = answers[0] if len(answers) == 1 else CoreNode.node(T.LIST, *answers)
     if parametric:
         key = "system_2x2_sol_in_param"
+    elif len(ctx.variables) >= 3:
+        key = "system_3x3_rem_vars"
+        ctx.result.add(Step(left=node, right=None, key="system_3x3_eliminate_var"), [_HEADER])
     else:
-        key = "system_3x3_rem_vars" if len(ctx.variables) >= 3 else "system_2x2_solve_substitution"
+        key = "system_2x2_solve_substitution"
     ctx.result.add(Step(left=node, right=solution, key=key), [_HEADER])
     return solution
 

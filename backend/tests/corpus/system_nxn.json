@@ -50,6 +50,7 @@
         ]
       },
       "steps": [
+        "system_3x3_eliminate_var",
         "system_3x3_rem_vars"
       ]
     },
