@@ -74,9 +74,7 @@ class TestFractions:
     def test_reduction_marks_crossed_parts(self) -> None:
         """Микро-анимация: сокращаемые числитель и знаменатель зачёркнуты."""
         step = next(
-            sub
-            for s in vertical(frac(C4, CoreNode.constant("8"))).steps
-            for sub in s.substeps
+            sub for s in vertical(frac(C4, CoreNode.constant("8"))).steps for sub in s.substeps
         )
         assert step.left is not None
         assert [child.crossed for child in step.left.children] == [True, True]
