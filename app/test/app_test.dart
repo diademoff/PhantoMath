@@ -104,6 +104,59 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('промежуток уходит в запрос', (tester) async {
+    final view =
+        TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
+    view.physicalSize = const Size(2400, 2280);
+    view.devicePixelRatio = 1;
+    Map<String, dynamic>? sent;
+    final api = SolverApi(
+      baseUrl: 'http://test',
+      client: MockClient((request) async {
+        if (request.url.path.endsWith('/parse')) {
+          final source = (jsonDecode(request.body) as Map)['source'] as String;
+          final value = source.replaceAll(RegExp(r'[{}]'), '');
+          return http.Response(
+            jsonEncode({
+              'node': {'type': 'CONSTANT', 'value': value},
+            }),
+            200,
+            headers: const {'content-type': 'application/json; charset=utf-8'},
+          );
+        }
+        sent = jsonDecode(request.body) as Map<String, dynamic>;
+        return http.Response(
+          _solveBody,
+          200,
+          headers: const {'content-type': 'application/json; charset=utf-8'},
+        );
+      }),
+    );
+    await tester.pumpWidget(MaterialApp(home: SolvePage(api: api)));
+    await tester.pump();
+
+    await _key(tester, '2');
+    await tester.tap(find.text('Промежуток'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.enterText(find.byType(TextField).at(0), '0');
+    await tester.enterText(find.byType(TextField).at(1), '1');
+    await tester.tap(find.text('Готово'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.tap(find.byKey(const ValueKey('solve')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(sent?['interval'], {
+      'min': {'type': 'CONSTANT', 'value': '0'},
+      'max': {'type': 'CONSTANT', 'value': '1'},
+    });
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('переключение панелей показывает их клавиши', (tester) async {
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: _api())));
     await tester.pump();

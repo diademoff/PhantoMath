@@ -143,6 +143,8 @@ class SolverApi {
     bool render = true,
     String? command,
     List<CoreNode> args = const [],
+    CoreNode? intervalMin,
+    CoreNode? intervalMax,
   }) async {
     final response = await _client.post(
       Uri.parse('$baseUrl/api/v1/solve'),
@@ -155,6 +157,12 @@ class SolverApi {
           'action': {
             'command': command,
             'args': [for (final arg in args) _toJson(arg)],
+          },
+        // Промежуток отбора корней: применим к тригонометрическим уравнениям.
+        if (intervalMin != null && intervalMax != null)
+          'interval': {
+            'min': _toJson(intervalMin),
+            'max': _toJson(intervalMax),
           },
       }),
     );

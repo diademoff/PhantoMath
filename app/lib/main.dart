@@ -76,6 +76,14 @@ class _SolvePageState extends State<SolvePage> {
   String? _error;
   bool _busy = false;
 
+  /// Промежуток отбора корней: границы в виде узлов и их исходный ввод.
+  CoreNode? _intervalMin;
+  CoreNode? _intervalMax;
+  String _intervalMinText = '';
+  String _intervalMaxText = '';
+
+  bool get _hasInterval => _intervalMin != null && _intervalMax != null;
+
   /// Текущий способ решения (основной или выбранный переключателем).
   SolveResponse? get _current =>
       _methods.isEmpty ? _result : _methods[_methodIndex];
@@ -124,6 +132,8 @@ class _SolvePageState extends State<SolvePage> {
         locale: _locale,
         command: command,
         args: args,
+        intervalMin: _intervalMin,
+        intervalMax: _intervalMax,
       );
       if (!mounted) return;
       setState(() {
@@ -275,6 +285,18 @@ class _SolvePageState extends State<SolvePage> {
                   Padding(
                     padding: const EdgeInsets.only(right: 6),
                     child: ActionChip(
+                      avatar: const Icon(Icons.straighten, size: 16),
+                      label: Text(
+                        _hasInterval
+                            ? 'Промежуток: [$_intervalMinText; $_intervalMaxText]'
+                            : 'Промежуток',
+                      ),
+                      onPressed: _openIntervalDialog,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ActionChip(
                       avatar: const Icon(Icons.show_chart, size: 16),
                       label: const Text('График'),
                       onPressed: _openGraph,
@@ -396,6 +418,48 @@ class _SolvePageState extends State<SolvePage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(err.message)),
+      );
+    }
+  }
+
+  /// Открыть ввод промежутка отбора корней (для тригонометрических уравнений).
+  Future<void> _openIntervalDialog() async {
+    final bounds = await showDialog<({String min, String max})>(
+      context: context,
+      builder: (context) => _IntervalDialog(
+        min: _intervalMinText,
+        max: _intervalMaxText,
+      ),
+    );
+    if (bounds == null) return;
+
+    final minText = bounds.min.trim();
+    final maxText = bounds.max.trim();
+    if (minText.isEmpty || maxText.isEmpty) {
+      setState(() {
+        _intervalMin = null;
+        _intervalMax = null;
+        _intervalMinText = '';
+        _intervalMaxText = '';
+      });
+      return;
+    }
+
+    try {
+      // Границы разбирает бэкенд — тот же протокол, что и для ввода.
+      final minNode = await widget.api.parse('{$minText}');
+      final maxNode = await widget.api.parse('{$maxText}');
+      if (!mounted) return;
+      setState(() {
+        _intervalMin = minNode;
+        _intervalMax = maxNode;
+        _intervalMinText = minText;
+        _intervalMaxText = maxText;
+      });
+    } on SolveFailure catch (err) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Не удалось разобрать границы: ${err.message}')),
       );
     }
   }
@@ -634,6 +698,77 @@ class _Math extends StatelessWidget {
         latex,
         style: TextStyle(color: Theme.of(context).colorScheme.error),
       ),
+    );
+  }
+}
+
+/// Диалог ввода промежутка: левая и правая границы.
+class _IntervalDialog extends StatefulWidget {
+  const _IntervalDialog({required this.min, required this.max});
+
+  final String min;
+  final String max;
+
+  @override
+  State<_IntervalDialog> createState() => _IntervalDialogState();
+}
+
+class _IntervalDialogState extends State<_IntervalDialog> {
+  late final TextEditingController _min = TextEditingController(
+    text: widget.min,
+  );
+  late final TextEditingController _max = TextEditingController(
+    text: widget.max,
+  );
+
+  @override
+  void dispose() {
+    _min.dispose();
+    _max.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Промежуток'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _min,
+            decoration: const InputDecoration(
+              labelText: 'Левая граница',
+              hintText: 'например, 0',
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _max,
+            decoration: const InputDecoration(
+              labelText: 'Правая граница',
+              hintText: 'например, 2π',
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Границы — числа или выражения с π. '
+            'Пустые поля убирают промежуток.',
+            style: TextStyle(fontSize: 12),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Отмена'),
+        ),
+        FilledButton(
+          onPressed: () =>
+              Navigator.of(context).pop((min: _min.text, max: _max.text)),
+          child: const Text('Готово'),
+        ),
+      ],
     );
   }
 }
