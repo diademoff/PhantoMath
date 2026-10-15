@@ -79,6 +79,15 @@ class TestAdvanced:
         denominator = node(T.SUBTRACT, var(), c("1"))
         problem = limit(c("1"), node(T.DIVIDE, numerator, denominator))
         assert value_of(problem) == "2"
+        assert step_keys(problem) == ["limit_lhopital_long", "limit_solve"]
+
+    def test_infinity_over_infinity(self) -> None:
+        # (2x + 1)/(x − 3) при x -> ∞: неопределённость ∞/∞.
+        numerator = node(T.ADD, node(T.MULTIPLY_IMPLICIT, c("2"), var()), c("1"))
+        denominator = node(T.SUBTRACT, var(), c("3"))
+        problem = limit(c("∞"), node(T.DIVIDE, numerator, denominator))
+        assert value_of(problem) == "2"
+        assert step_keys(problem) == ["limit_lhopital_long", "limit_solve"]
 
     def test_limit_at_infinity(self) -> None:
         problem = limit(c("∞"), node(T.POWER, var(), c("2")))

@@ -5,22 +5,37 @@
       "id": "polynomial",
       "title": "предел x^2 при x -> 2",
       "input": "{lim({2},{x^2})}",
-      "solution": {"type": "CONSTANT", "value": "4"},
-      "steps": ["limit_solve"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "4"
+      },
+      "steps": [
+        "limit_solve"
+      ]
     },
     {
       "id": "at-infinity",
       "title": "предел x^2 при x -> ∞",
       "input": "{lim({infty},{x^2})}",
-      "solution": {"type": "CONSTANT", "value": "∞"},
-      "steps": ["limit_solve"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "∞"
+      },
+      "steps": [
+        "limit_solve"
+      ]
     },
     {
       "id": "right-reciprocal",
       "title": "правосторонний предел 1/x при x -> 0+",
       "input": "{lim_right({0},{1/x})}",
-      "solution": {"type": "CONSTANT", "value": "∞"},
-      "steps": ["limit_solve"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "∞"
+      },
+      "steps": [
+        "limit_solve"
+      ]
     },
     {
       "id": "left-reciprocal",
@@ -28,37 +43,68 @@
       "input": "{lim_left({0},{1/x})}",
       "solution": {
         "type": "NEGATIVE",
-        "children": [{"type": "CONSTANT", "value": "∞"}]
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "∞"
+          }
+        ]
       },
-      "steps": ["limit_solve"]
+      "steps": [
+        "limit_solve"
+      ]
     },
     {
       "id": "indeterminate",
       "title": "раскрытие неопределённости: (x^2 - 1)/(x - 1) при x -> 1",
       "input": "{lim({1},{(x^2-1)/(x-1)})}",
-      "solution": {"type": "CONSTANT", "value": "2"},
-      "steps": ["limit_solve"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "2"
+      },
+      "steps": [
+        "limit_lhopital_long",
+        "limit_solve"
+      ]
     },
     {
       "id": "sin-over-x",
       "title": "первый замечательный: sin x / x при x -> 0",
       "input": "{lim({0},{sin({x})/x})}",
-      "solution": {"type": "CONSTANT", "value": "1"},
-      "steps": ["limit_solve"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "1"
+      },
+      "steps": [
+        "limit_lhopital_long",
+        "limit_solve"
+      ]
     },
     {
       "id": "tan-over-x",
       "title": "предел tan x / x при x -> 0",
       "input": "{lim({0},{tan({x})/x})}",
-      "solution": {"type": "CONSTANT", "value": "1"},
-      "steps": ["limit_solve"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "1"
+      },
+      "steps": [
+        "limit_lhopital_long",
+        "limit_solve"
+      ]
     },
     {
       "id": "rational-at-infinity",
       "title": "предел (2x + 1)/(x - 3) при x -> ∞",
       "input": "{lim({infty},{(2x+1)/(x-3)})}",
-      "solution": {"type": "CONSTANT", "value": "2"},
-      "steps": ["limit_solve"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "2"
+      },
+      "steps": [
+        "limit_lhopital_long",
+        "limit_solve"
+      ]
     },
     {
       "id": "right-logarithm",
@@ -66,9 +112,16 @@
       "input": "{lim_right({0},{ln({x})})}",
       "solution": {
         "type": "NEGATIVE",
-        "children": [{"type": "CONSTANT", "value": "∞"}]
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "∞"
+          }
+        ]
       },
-      "steps": ["limit_solve"]
+      "steps": [
+        "limit_solve"
+      ]
     }
   ]
 }

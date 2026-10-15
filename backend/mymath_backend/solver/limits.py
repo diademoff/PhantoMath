@@ -37,13 +37,14 @@ def solve_limit(node: CoreNode, ctx: SolveContext) -> CoreNode:
     ctx.require(len(ctx.variables) <= 1, "поддерживается одно неизвестное")
     var = ctx.variables[0] if ctx.variables else "x"
     point, expression = node.children
+    symbol = sympy.Symbol(var)
+    point_value = to_sympy(point)
+    expression_value = to_sympy(expression)
 
-    value = sympy.limit(
-        to_sympy(expression),
-        sympy.Symbol(var),
-        to_sympy(point),
-        _DIRECTION[node.type],
-    )
+    if _indeterminate(expression_value, symbol, point_value):
+        ctx.result.add(Step(left=node, right=None, key="limit_lhopital_long"))
+
+    value = sympy.limit(expression_value, symbol, point_value, _DIRECTION[node.type])
     if not isinstance(value, sympy.Expr) or value is sympy.nan or value.has(sympy.Limit):
         raise SolveError("предел не существует или не вычисляется")
 
@@ -54,6 +55,21 @@ def solve_limit(node: CoreNode, ctx: SolveContext) -> CoreNode:
         raise SolveError("предел не существует или не вычисляется") from err
     ctx.result.add(Step(left=node, right=result, key="limit_solve"))
     return result
+
+
+def _indeterminate(expression: sympy.Expr, symbol: sympy.Symbol, point: sympy.Expr) -> bool:
+    """Есть ли неопределённость ``0/0`` или ``∞/∞`` (применимо правило Лопиталя)."""
+    numerator, denominator = sympy.fraction(sympy.together(expression))
+    if denominator == 1 or not denominator.has(symbol):
+        return False
+    try:
+        top = sympy.limit(numerator, symbol, point)
+        bottom = sympy.limit(denominator, symbol, point)
+    except (TypeError, ValueError, NotImplementedError):
+        return False
+    zero_over_zero = top == 0 and bottom == 0
+    infinity_over_infinity = top in (sympy.oo, -sympy.oo) and bottom in (sympy.oo, -sympy.oo)
+    return bool(zero_over_zero or infinity_over_infinity)
 
 
 __all__ = [
