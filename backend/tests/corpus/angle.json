@@ -36,6 +36,26 @@
         "children": [{"type": "CONSTANT", "value": "180"}]
       },
       "steps": ["rewrite_deg"]
+    },
+    {
+      "id": "dms-to-degrees",
+      "title": "12°30′ = 12.5°",
+      "input": "{deg_min({12},{30})}",
+      "solution": {
+        "type": "DEGREE",
+        "children": [{"type": "CONSTANT", "value": "25/2"}]
+      },
+      "steps": ["rewrite_deg"]
+    },
+    {
+      "id": "dms-three-parts",
+      "title": "12°30′15″ = 3001/240°",
+      "input": "{deg_min_sec({12},{30},{15})}",
+      "solution": {
+        "type": "DEGREE",
+        "children": [{"type": "CONSTANT", "value": "3001/240"}]
+      },
+      "steps": ["rewrite_deg"]
     }
   ]
 }

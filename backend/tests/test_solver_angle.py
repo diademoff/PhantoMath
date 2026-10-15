@@ -24,6 +24,23 @@ def step_keys(source: str, command: str) -> list[str]:
     ]
 
 
+class TestDms:
+    def test_degree_minute(self) -> None:
+        # 12°30′ = 12.5°.
+        vertical = solve(parse_protocol("{deg_min({12},{30})}")).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        assert vertical.solution.type is T.DEGREE
+        assert vertical.solution.children[0].value == "25/2"
+        keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
+        assert keys == ["rewrite_deg"]
+
+    def test_degree_minute_second(self) -> None:
+        # 12°30′15″ = 12 + 1/2 + 15/3600 = 3001/240.
+        vertical = solve(parse_protocol("{deg_min_sec({12},{30},{15})}")).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        assert vertical.solution.children[0].value == "3001/240"
+
+
 class TestAngle:
     def test_radians_to_degrees(self) -> None:
         answer = _vertical("{frac({pi},{2})}", "to_degrees").solution

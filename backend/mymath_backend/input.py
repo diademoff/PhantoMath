@@ -96,6 +96,8 @@ KEYWORD_TO_TYPE: dict[str, CoreNodeType] = {
     "lcm": T.ABS,
     # единицы угла и комплексные -- постфиксные обёртки (1 ребёнок)
     "deg": T.DEGREE,
+    "deg_min": T.DEGREE_MINUTE,
+    "deg_min_sec": T.DEGREE_MINUTE_SECOND,
     "radian": T.RADIAN,
     "real": T.REAL,
     "imag": T.IMAGINARY,

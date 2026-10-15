@@ -159,6 +159,33 @@ def solve_angle_unit(node: CoreNode, ctx: SolveContext) -> CoreNode:
     return node
 
 
+_DMS_UNITS: dict[T, tuple[tuple[str, tuple[int, int]], ...]] = {
+    T.DEGREE_MINUTE: (("deg", (1, 1)), ("min", (1, 60))),
+    T.DEGREE_MINUTE_SECOND: (("deg", (1, 1)), ("min", (1, 60)), ("sec", (1, 3600))),
+    T.DEGREE_SECOND: (("deg", (1, 1)), ("sec", (1, 3600))),
+    T.MINUTE_SECOND: (("min", (1, 60)), ("sec", (1, 3600))),
+    T.MINUTE: (("min", (1, 60)),),
+    T.SECOND: (("sec", (1, 3600)),),
+}
+
+
+@solver_for(*_DMS_UNITS)
+def solve_dms_angle(node: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Градусы-минуты-секунды в десятичные градусы.
+
+    Дети — компоненты угла в порядке, заданном типом узла (градусы, минуты,
+    секунды); шаг ``rewrite_deg``. Ответ остаётся в градусах (узел ``DEGREE``).
+    """
+    units = _DMS_UNITS[node.type]
+    ctx.require(len(node.children) == len(units), "неполная запись угла в градусах")
+    total = sympy.Integer(0)
+    for (_, (numerator, denominator)), child in zip(units, node.children, strict=True):
+        total += to_sympy(child) * sympy.Rational(numerator, denominator)
+    result = CoreNode.node(T.DEGREE, from_sympy(sympy.simplify(total)))
+    ctx.result.add(Step(left=node, right=result, key="rewrite_deg"))
+    return result
+
+
 @solver_for(*_ALL)
 def solve_function(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Вычислить функцию: чётность, периодичность, затем значение."""
