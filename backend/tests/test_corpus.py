@@ -203,6 +203,7 @@ def test_corpus_covers_every_module() -> None:
         "asymptotes",
         "conic",
         "convergence",
+        "angle",
         "matrices",
         "matrix_ops",
         "derivatives",

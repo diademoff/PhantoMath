@@ -1,0 +1,41 @@
+{
+  "module": "angle",
+  "tasks": [
+    {
+      "id": "half-pi-to-degrees",
+      "title": "π/2 rad → 90°",
+      "input": "{frac({pi},{2})}",
+      "command": "to_degrees",
+      "solution": {
+        "type": "DEGREE",
+        "children": [{"type": "CONSTANT", "value": "90"}]
+      },
+      "steps": ["rewrite_deg"]
+    },
+    {
+      "id": "ninety-to-radians",
+      "title": "90° → π/2 rad",
+      "input": "{deg({90})}",
+      "command": "to_radians",
+      "solution": {
+        "type": "FRACTION",
+        "children": [
+          {"type": "CONSTANT", "value": "π"},
+          {"type": "CONSTANT", "value": "2"}
+        ]
+      },
+      "steps": ["rewrite_rad"]
+    },
+    {
+      "id": "pi-to-degrees",
+      "title": "π rad → 180°",
+      "input": "{pi}",
+      "command": "to_degrees",
+      "solution": {
+        "type": "DEGREE",
+        "children": [{"type": "CONSTANT", "value": "180"}]
+      },
+      "steps": ["rewrite_deg"]
+    }
+  ]
+}

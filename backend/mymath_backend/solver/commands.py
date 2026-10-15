@@ -336,6 +336,23 @@ def _vertical_asymptotes(function: sympy.Expr, symbol: sympy.Symbol) -> list[sym
     return points
 
 
+def to_degrees(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Радианы — в градусы: угол оборачивается узлом ``DEGREE``."""
+    del args
+    degrees = sympy.simplify(to_sympy(node) * 180 / sympy.pi)
+    result = CoreNode.node(T.DEGREE, from_sympy(degrees))
+    ctx.result.add(Step(left=node, right=result, key="rewrite_deg"))
+    return result
+
+
+def to_radians(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Градусы — в радианы (узел ``DEGREE`` переводится в число)."""
+    del args
+    result = from_sympy(sympy.simplify(to_sympy(node)))
+    ctx.result.add(Step(left=node, right=result, key="rewrite_rad"))
+    return result
+
+
 def conic(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Определить тип конического сечения по общему уравнению."""
     del args
@@ -375,6 +392,8 @@ COMMANDS: dict[str, Command] = {
     "area": area,
     "conic": conic,
     "convergence": convergence,
+    "to_degrees": to_degrees,
+    "to_radians": to_radians,
     "asymptotes": asymptotes,
     "even_odd": even_odd,
     "extrema": extrema,
@@ -421,8 +440,10 @@ __all__ = [
     "restrictions",
     "simplify",
     "substitute",
+    "to_degrees",
     "to_fraction",
     "to_mixed",
     "to_percent",
+    "to_radians",
     "to_sci",
 ]
