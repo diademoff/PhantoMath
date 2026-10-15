@@ -159,6 +159,23 @@ class TestRationalInequality:
         assert answer.children[1].type is T.CLOSED_OPEN_INTERVAL
 
 
+class TestCompoundInequality:
+    def test_double_open(self) -> None:
+        # 1 < x < 3 -> (1, 3)
+        problem = node(T.LESS_THAN, c("1"), var("x"), c("3"))
+        answer = solution_of(problem)
+        assert answer.type is T.OPEN_OPEN_INTERVAL
+        assert [child.value for child in answer.children] == ["1", "3"]
+
+    def test_double_linear_expression(self) -> None:
+        # 1 <= 2x+1 <= 7 -> [0, 3]
+        middle = node(T.ADD, muli(c("2"), var("x")), c("1"))
+        problem = node(T.LESS_THAN_EQUAL, c("1"), middle, c("7"))
+        answer = solution_of(problem)
+        assert answer.type is T.CLOSED_CLOSED_INTERVAL
+        assert [child.value for child in answer.children] == ["0", "3"]
+
+
 class TestTranscendentalInequality:
     def test_irrational(self) -> None:
         # sqrt(x+1) < x-1 -> (3, inf)

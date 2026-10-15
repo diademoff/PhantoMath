@@ -20,6 +20,7 @@
 
 from __future__ import annotations
 
+import itertools
 from fractions import Fraction
 
 import sympy
@@ -67,9 +68,14 @@ def _x_term(coefficient: Fraction, var: str) -> CoreNode:
 @solver_for(*_RELATIONS)
 def solve_inequality(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Решить линейное неравенство с одним неизвестным."""
-    ctx.require(len(node.children) == 2, "неравенство связывает две части")
+    ctx.require(len(node.children) >= 2, "неравенство связывает две части")
     ctx.require(len(ctx.variables) == 1, "поддерживается одно неизвестное")
     var = ctx.variables[0]
+    if len(node.children) > 2:
+        compound = _compound_inequality(node, var, ctx)
+        if compound is None:
+            raise SolveError("двойное неравенство не решается")
+        return compound
     lhs, rhs = node.children
 
     try:
@@ -152,6 +158,43 @@ def _rational_inequality(node: CoreNode, var: str, ctx: SolveContext) -> CoreNod
     answer = from_sympy(values)
     ctx.result.add(Step(left=node, right=answer, key=key), [_HEADER])
     return answer
+
+
+def _compound_inequality(node: CoreNode, var: str, ctx: SolveContext) -> CoreNode | None:
+    """Двойное (тройное) неравенство ``a ⋚ x ⋚ b`` — пересечение условий.
+
+    Цепочка из трёх и более детей разбирается в ``And`` отношений; множество
+    решений даёт ``solveset``, ответ — промежуток.
+    """
+    try:
+        values = [to_sympy(child) for child in node.children]
+    except SolveError:
+        return None
+    symbol = sympy.Symbol(var)
+    conditions = [
+        _chain_relation(node.type, left, right) for left, right in itertools.pairwise(values)
+    ]
+    try:
+        pieces = [sympy.solveset(condition, symbol, sympy.S.Reals) for condition in conditions]
+    except (TypeError, ValueError, NotImplementedError):
+        return None
+    result_set = pieces[0] if len(pieces) == 1 else sympy.Intersection(*pieces)
+    answer = from_sympy(sympy.simplify(result_set))
+    ctx.result.add(Step(left=node, right=answer, key="ineq_solve_separate"), [_HEADER])
+    return answer
+
+
+def _chain_relation(node_type: T, left: sympy.Expr, right: sympy.Expr) -> sympy.Rel:
+    """Одно звено цепочки неравенств."""
+    if node_type is T.LESS_THAN:
+        return sympy.Lt(left, right)
+    if node_type is T.LESS_THAN_EQUAL:
+        return sympy.Le(left, right)
+    if node_type is T.GREATER_THAN:
+        return sympy.Gt(left, right)
+    if node_type is T.GREATER_THAN_EQUAL:
+        return sympy.Ge(left, right)
+    return sympy.Ne(left, right)
 
 
 def _irrational_inequality(node: CoreNode, var: str, ctx: SolveContext) -> CoreNode | None:
