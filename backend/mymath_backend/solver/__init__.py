@@ -23,6 +23,7 @@ from .base import (
     solver_for,
 )
 from .equations import solve_equation
+from .fractions import solve_fraction
 
 
 def solve(node: CoreNode) -> CoreSolverData:
@@ -86,5 +87,6 @@ __all__ = [
     "route",
     "solve",
     "solve_equation",
+    "solve_fraction",
     "solver_for",
 ]

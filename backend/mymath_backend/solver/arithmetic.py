@@ -23,7 +23,7 @@ from fractions import Fraction
 from ..ast import CoreNode
 from ..node_types import CoreNodeType
 from ..node_types import CoreNodeType as T
-from .base import SolveContext, SolveError, Step, solver_for
+from .base import SolveContext, SolveError, Step, route, solver_for
 
 KEY_CALCULATE = "calculate_short"
 
@@ -114,7 +114,9 @@ def solve_arithmetic(node: CoreNode, ctx: SolveContext) -> CoreNode:
         _check_leaf(node)
         return node
 
-    folded = [solve_arithmetic(child, ctx) for child in node.children]
+    # Дети сворачиваются через общий реестр: так арифметика складывается с
+    # другими модулями (например, дробь сворачивается своим модулем).
+    folded = [route(child, ctx) for child in node.children]
 
     if node.type is T.BRACKET:
         ctx.require(len(folded) == 1, "в скобках должно быть одно выражение")
