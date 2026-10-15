@@ -35,7 +35,7 @@ from .fractions import solve_fraction
 from .inequalities import solve_inequality
 from .integrals import solve_integral
 from .limits import solve_limit
-from .matrices import solve_determinant
+from .matrices import solve_determinant, solve_matrix
 from .powers import solve_logarithm, solve_root
 from .series import solve_series
 from .sympy_bridge import from_sympy, to_sympy
@@ -195,6 +195,7 @@ __all__ = [
     "solve_integral",
     "solve_limit",
     "solve_logarithm",
+    "solve_matrix",
     "solve_root",
     "solve_series",
     "solve_system",

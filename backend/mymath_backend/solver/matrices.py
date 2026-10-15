@@ -19,10 +19,13 @@ from __future__ import annotations
 from fractions import Fraction
 from math import isqrt
 
+import sympy
+
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
 from .arithmetic import as_fraction, format_number
-from .base import SolveContext, Step, route, solver_for
+from .base import Command, SolveContext, SolveError, Step, route, solver_for
+from .sympy_bridge import from_sympy, to_sympy
 
 _DETERMINANTS = (
     T.DETERMINANT,
@@ -84,6 +87,122 @@ def solve_determinant(node: CoreNode, ctx: SolveContext) -> CoreNode:
     return result
 
 
+@solver_for(T.MATRIX, T.MATRIX_ROW)
+def solve_matrix(node: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Матрица как значение не сворачивается: строки и ячейки остаются."""
+    _ = ctx
+    return node
+
+
+# ── операции над матрицами (команды) ───────────────────────────────────
+# Представление: ``MATRIX``, дети -- строки ``MATRIX_ROW``. Операции --
+# команды, как у векторов: второй операнд приходит в ``action.args``.
+
+
+def _to_matrix(node: CoreNode) -> sympy.Matrix:
+    """Узел ``MATRIX`` в символьную матрицу sympy."""
+    if node.type is not T.MATRIX or not node.children:
+        raise SolveError("ожидалась матрица: узел MATRIX со строками")
+    return to_sympy(node)
+
+
+def _record(node: CoreNode, result: CoreNode, ctx: SolveContext, key: str) -> CoreNode:
+    """Добавить шаг и вернуть результат."""
+    ctx.result.add(Step(left=node, right=result, key=key))
+    return result
+
+
+def _second_matrix(args: list[CoreNode]) -> sympy.Matrix:
+    """Второй операнд команды как матрица."""
+    if not args:
+        raise SolveError("для операции нужен второй операнд -- матрица")
+    return _to_matrix(args[0])
+
+
+def matrix_add(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Сложение матриц одного размера."""
+    left, right = _to_matrix(node), _second_matrix(args)
+    ctx.require(left.shape == right.shape, "матрицы разного размера", "matrix_diff_size_error")
+    return _record(node, from_sympy(left + right), ctx, "matrix_add")
+
+
+def matrix_subtract(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Вычитание матриц одного размера."""
+    left, right = _to_matrix(node), _second_matrix(args)
+    ctx.require(left.shape == right.shape, "матрицы разного размера", "matrix_diff_size_error")
+    return _record(node, from_sympy(left - right), ctx, "matrix_sub")
+
+
+def matrix_multiply(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Умножение матриц: столбцы первой равны строкам второй."""
+    left, right = _to_matrix(node), _second_matrix(args)
+    ctx.require(
+        left.shape[1] == right.shape[0],
+        "число столбцов первой матрицы не равно числу строк второй",
+        "matrix_mul_diff_size_error",
+    )
+    return _record(node, from_sympy(left * right), ctx, "matrix_mul")
+
+
+def matrix_scale(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Умножение матрицы на скаляр."""
+    if not args:
+        raise SolveError("для умножения на скаляр нужен скаляр")
+    scalar = to_sympy(args[0])
+    multiplier = _to_matrix(node) * scalar
+    result = from_sympy(multiplier)
+    ctx.result.add(Step(left=node, right=result, key="matrix_mul_scalar", args=[args[0]]))
+    return result
+
+
+def matrix_transpose(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Транспонирование матрицы."""
+    _ = args
+    return _record(node, from_sympy(_to_matrix(node).T), ctx, "calculate_short")
+
+
+def matrix_inverse(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Обратная матрица: только квадратная и с ненулевым определителем."""
+    _ = args
+    matrix = _to_matrix(node)
+    ctx.require(
+        matrix.rows == matrix.cols,
+        "обратная матрица определена только для квадратной",
+        "matrix_inv_undef",
+    )
+    ctx.require(
+        matrix.det() != 0,
+        "обратной матрицы не существует: определитель равен нулю",
+        "matrix_inv_det_zero",
+    )
+    return _record(node, from_sympy(matrix.inv()), ctx, "matrix_inv_find_smpl")
+
+
+def matrix_determinant(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Определитель матрицы."""
+    _ = args
+    matrix = _to_matrix(node)
+    ctx.require(
+        matrix.rows == matrix.cols,
+        "определитель определён только для квадратной",
+        "matrix_det_undef",
+    )
+    return _record(node, from_sympy(matrix.det()), ctx, "matrix_det_rewrite")
+
+
+MATRIX_COMMANDS: dict[str, Command] = {
+    "matrix_add": matrix_add,
+    "matrix_subtract": matrix_subtract,
+    "matrix_multiply": matrix_multiply,
+    "matrix_scale": matrix_scale,
+    "matrix_transpose": matrix_transpose,
+    "matrix_inverse": matrix_inverse,
+    "matrix_determinant": matrix_determinant,
+}
+
+
 __all__ = [
+    "MATRIX_COMMANDS",
     "solve_determinant",
+    "solve_matrix",
 ]

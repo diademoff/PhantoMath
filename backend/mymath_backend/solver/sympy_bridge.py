@@ -72,6 +72,11 @@ def _number(value: Fraction) -> CoreNode:
     return CoreNode.constant(format_number(value))
 
 
+def _from_matrix_cell(cell: sympy.Expr) -> CoreNode:
+    """Ячейка матрицы: упрощаем значение и переводим в узел."""
+    return from_sympy(sympy.simplify(cell))
+
+
 def to_sympy(node: CoreNode) -> sympy.Expr:
     """Перевести узел в выражение sympy."""
     node_type = node.type
@@ -135,6 +140,13 @@ def to_sympy(node: CoreNode) -> sympy.Expr:
         return sympy.log(to_sympy(node.children[0]), to_sympy(node.children[1]))
     if node_type is T.FACTORIAL:
         return sympy.factorial(to_sympy(node.children[0]))
+    if node_type is T.MATRIX:
+        # Матрица: дети — строки (``MATRIX_ROW``), у строки — ячейки.
+        rows: list[list[sympy.Expr]] = []
+        for row in node.children:
+            cells = row.children if row.type is T.MATRIX_ROW else [row]
+            rows.append([to_sympy(cell) for cell in cells])
+        return sympy.Matrix(rows)
     if node_type is T.EQUALS:
         return sympy.Eq(*(to_sympy(child) for child in node.children))
     if node_type is T.DEGREE:
@@ -153,6 +165,14 @@ def from_sympy(expr: sympy.Expr) -> CoreNode:
     """Перевести выражение sympy обратно в узел."""
     expr = sympy.sympify(expr)
 
+    if isinstance(expr, sympy.MatrixBase):
+        return CoreNode.node(
+            T.MATRIX,
+            *[
+                CoreNode.node(T.MATRIX_ROW, *[_from_matrix_cell(cell) for cell in row])
+                for row in expr.tolist()
+            ],
+        )
     if expr is sympy.oo:
         return CoreNode.constant("∞")
     if expr is -sympy.oo:

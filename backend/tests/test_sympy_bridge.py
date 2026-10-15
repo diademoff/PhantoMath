@@ -56,7 +56,7 @@ class TestToSympy:
 
     def test_unknown_node(self) -> None:
         with pytest.raises(SolveError):
-            to_sympy(node(T.MATRIX, c("1")))
+            to_sympy(node(T.SET, c("1")))
 
 
 class TestFromSympy:

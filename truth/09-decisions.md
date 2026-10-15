@@ -85,6 +85,7 @@
 | 37 | **Формулы:** рендер выдаёт «сырой» LaTeX без `$…$` — `flutter_math` (KaTeX) не принимает `$` внутри формулы | `app/lib/src/render/latex.dart` |
 | 38 | **Модуль/знак/пол** — `ABS`/`SIGN`/`FLOOR` через sympy; структурные правила для заведомо неотрицательного аргумента (`\|x²\| = x²`, `sgn(x²) = 1` вне нуля); ключи `abs`/`abs_pos`, `find_sign`, `calculate_floor` | `solver/absolute.py` |
 | 39 | **Простейшие уравнения с модулем** `\|f(x)\| = a` — две ветви (`f(x)=a`, `f(x)=-a`), корни объединяются; при `a<0` решений нет; ключи `eq_abs_branch`, `quad_final_single` | `solver/absolute.py` |
+| 40 | **Матрицы** — представление `MATRIX` со строками `MATRIX_ROW` (как в APK); операции командами (второй операнд в `args`): `matrix_add`/`matrix_subtract`, `matrix_multiply`, `matrix_scale`, `matrix_transpose`, `matrix_inverse`, `matrix_determinant` | `solver/matrices.py`, `sympy_bridge.py` |
 
 ## Следующее (открыто)
 
