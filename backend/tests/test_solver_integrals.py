@@ -88,6 +88,39 @@ class TestUnsupported:
             solve(problem)
 
 
+class TestMethod:
+    def keys_of(self, problem: CoreNode) -> list[str]:
+        vertical = solve(problem).result.vertical()
+        assert vertical is not None
+        return [sub.description.type for step in vertical.steps for sub in step.substeps]
+
+    def test_table_has_no_method_step(self) -> None:
+        assert self.keys_of(node(T.INTEGRAL, node(T.POWER, var(), c("2")))) == ["integrate_calc"]
+
+    def test_by_parts(self) -> None:
+        # x·e^x — интегрирование по частям.
+        problem = node(T.INTEGRAL, node(T.MULTIPLY, var(), node(T.EXP, var())))
+        assert self.keys_of(problem) == ["integrate_partial", "integrate_calc"]
+
+    def test_substitution(self) -> None:
+        # sin(2x) — замена.
+        argument = node(T.MULTIPLY_IMPLICIT, c("2"), var())
+        problem = node(T.INTEGRAL, node(T.SIN, argument))
+        assert self.keys_of(problem) == ["integrate_using_substitution", "integrate_calc"]
+
+    def test_partial_fractions(self) -> None:
+        # 1/(x^2 - 1) — простейшие дроби.
+        denominator = node(T.SUBTRACT, node(T.POWER, var(), c("2")), c("1"))
+        problem = node(T.INTEGRAL, node(T.FRACTION, c("1"), denominator))
+        assert self.keys_of(problem) == ["integrate_sep_frac_short", "integrate_calc"]
+
+    def test_improper(self) -> None:
+        # ∫_1^∞ 1/x^2 dx — несобственный.
+        denominator = node(T.POWER, var(), c("2"))
+        problem = node(T.INTEGRAL_DEFINITE, c("1"), c("∞"), node(T.FRACTION, c("1"), denominator))
+        assert self.keys_of(problem) == ["integrate_imp_evaluate", "integrate_calc"]
+
+
 class TestExplanationKeys:
     def test_key_exists(self) -> None:
         explanations = load_explanations(str(EXPLANATIONS))

@@ -5,10 +5,17 @@
 первообразная ищется ``integrate``, результат переводится обратно в
 ``CoreNode`` мостом :mod:`~mymath_backend.solver.sympy_bridge`.
 
-Если элементарной первообразной нет (``∫e^{x²}dx``), поднимается
-:class:`SolveError` — это ожидаемый исход, а не сбой.
+Перед вычислением подбирается метод и добавляется шаг-пояснение:
 
-Шаг один — ``integrate_calc``.
+* ``integrate_partial`` — по частям (произведение многочлена с ``exp``/``sin``/
+  ``cos`` либо логарифм/арктангенс);
+* ``integrate_using_substitution`` — замена (сложная функция, ``1/(x+a)``);
+* ``integrate_sep_frac_short`` — простейшие дроби (знаменатель раскладывается);
+* ``integrate_imp_evaluate`` — несобственный (бесконечный предел).
+
+Если элементарной первообразной нет (``∫e^{x²}dx``), поднимается
+:class:`SolveError` — это ожидаемый исход, а не сбой. Финальный шаг —
+``integrate_calc``.
 """
 
 from __future__ import annotations
@@ -32,9 +39,12 @@ def solve_integral(node: CoreNode, ctx: SolveContext) -> CoreNode:
     ctx.require(len(ctx.variables) <= 1, "поддерживается одно неизвестное")
     symbol = _variable(ctx)
 
+    method_key: str | None = None
     if node.type is T.INTEGRAL:
         ctx.require(len(node.children) >= 1, "интеграл без подынтегрального выражения")
-        antiderivative = sympy.integrate(to_sympy(node.children[-1]), symbol)
+        expression = to_sympy(node.children[-1])
+        method_key = _integral_method(expression, symbol)
+        antiderivative = sympy.integrate(expression, symbol)
         if antiderivative.has(sympy.Integral):
             raise SolveError("первообразная не выражается через элементарные функции")
         try:
@@ -45,17 +55,87 @@ def solve_integral(node: CoreNode, ctx: SolveContext) -> CoreNode:
             raise SolveError("первообразная не выражается через элементарные функции") from err
     else:
         ctx.require(len(node.children) == 3, "определённый интеграл: пределы и выражение")
-        lower, upper, expression = node.children
-        value = sympy.integrate(
-            to_sympy(expression),
-            (symbol, to_sympy(lower), to_sympy(upper)),
-        )
-        if value.has(sympy.Integral) or value is sympy.oo:
+        lower, upper, expression_node = node.children
+        lower_value, upper_value = to_sympy(lower), to_sympy(upper)
+        expression = to_sympy(expression_node)
+        if lower_value in (sympy.oo, -sympy.oo) or upper_value in (sympy.oo, -sympy.oo):
+            method_key = "integrate_imp_evaluate"
+        else:
+            method_key = _integral_method(expression, symbol)
+        value = sympy.integrate(expression, (symbol, lower_value, upper_value))
+        if value.has(sympy.Integral) or value is sympy.oo or value is -sympy.oo:
             raise SolveError("определённый интеграл не вычисляется")
         result = from_sympy(sympy.simplify(value))
 
+    if method_key is not None:
+        ctx.result.add(Step(left=node, right=None, key=method_key))
     ctx.result.add(Step(left=node, right=result, key="integrate_calc"))
     return result
+
+
+def _integral_method(expression: sympy.Expr, symbol: sympy.Symbol) -> str | None:
+    """Подходящий метод интегрирования или ``None`` (табличный случай)."""
+    if expression.has(sympy.log) or expression.has(sympy.atan):
+        return "integrate_partial"
+    if _is_rational(expression, symbol):
+        _, denominator = sympy.fraction(expression)
+        degree = _polynomial_degree(denominator, symbol)
+        if (
+            degree is not None
+            and degree >= 2
+            and len(sympy.factor(denominator).as_ordered_factors()) >= 2
+        ):
+            return "integrate_sep_frac_short"
+        return None
+    factors = expression.args if isinstance(expression, sympy.Mul) else (expression,)
+    if _has_polynomial_factor(factors, symbol) and any(
+        factor.has(sympy.exp) or factor.has(sympy.sin) or factor.has(sympy.cos)
+        for factor in factors
+    ):
+        return "integrate_partial"
+    if _has_composite(expression, symbol):
+        return "integrate_using_substitution"
+    return None
+
+
+def _is_rational(expression: sympy.Expr, symbol: sympy.Symbol) -> bool:
+    """Рациональная ли функция (числитель и знаменатель — многочлены)."""
+    numerator, denominator = sympy.fraction(expression)
+    return (
+        _polynomial_degree(numerator, symbol) is not None
+        and _polynomial_degree(denominator, symbol) is not None
+    )
+
+
+def _polynomial_degree(expression: sympy.Expr, symbol: sympy.Symbol) -> int | None:
+    """Степень многочлена или ``None``, если это не многочлен."""
+    try:
+        return int(sympy.degree(expression, symbol))
+    except (TypeError, ValueError, sympy.PolynomialError):
+        return None
+
+
+def _has_polynomial_factor(factors: tuple[sympy.Expr, ...], symbol: sympy.Symbol) -> bool:
+    """Есть ли среди множителей многочлен степени ≥ 1."""
+    for factor in factors:
+        if not factor.has(symbol):
+            continue
+        degree = _polynomial_degree(factor, symbol)
+        if degree is not None and degree >= 1:
+            return True
+    return False
+
+
+def _has_composite(expression: sympy.Expr, symbol: sympy.Symbol) -> bool:
+    """Есть ли вложенная функция (замена): ``sin(2x)``, ``1/(x+1)``."""
+    for function in expression.atoms(sympy.Function):
+        arguments = function.args
+        if arguments and arguments[0] != symbol and arguments[0].has(symbol):
+            return True
+    for power in expression.atoms(sympy.Pow):
+        if power.base != symbol and power.base.has(symbol):
+            return True
+    return False
 
 
 __all__ = [

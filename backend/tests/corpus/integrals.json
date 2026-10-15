@@ -154,6 +154,60 @@
       "input": "{integral_def({1},{2},{1/x})}",
       "solution": {"type": "LN", "children": [{"type": "CONSTANT", "value": "2"}]},
       "steps": ["integrate_calc"]
+    },
+    {
+      "id": "by-parts",
+      "title": "интегрирование по частям: ∫ x·eˣ dx",
+      "input": "{integral({x*exp({x})})}",
+      "solution": {
+        "type": "MULTIPLY",
+        "children": [
+          {
+            "type": "SUBTRACT",
+            "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "1"}]
+          },
+          {"type": "EXP", "children": [{"type": "VARIABLE", "value": "x"}]}
+        ]
+      },
+      "steps": ["integrate_partial", "integrate_calc"]
+    },
+    {
+      "id": "substitution",
+      "title": "замена: ∫ sin 2x dx",
+      "input": "{integral({sin({2x})})}",
+      "solution": {
+        "type": "FRACTION",
+        "children": [
+          {
+            "type": "NEGATIVE",
+            "children": [
+              {"type": "COS", "children": [{"type": "MULTIPLY_IMPLICIT", "children": [{"type": "CONSTANT", "value": "2"}, {"type": "VARIABLE", "value": "x"}]}]}
+            ]
+          },
+          {"type": "CONSTANT", "value": "2"}
+        ]
+      },
+      "steps": ["integrate_using_substitution", "integrate_calc"]
+    },
+    {
+      "id": "partial-fractions",
+      "title": "простейшие дроби: ∫ 1/(x²−1) dx",
+      "input": "{integral({frac({1},{x^2-1})})}",
+      "solution": {
+        "type": "SUBTRACT",
+        "children": [
+          {"type": "FRACTION", "children": [{"type": "LN", "children": [{"type": "SUBTRACT", "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "1"}]}]}, {"type": "CONSTANT", "value": "2"}]},
+          {"type": "FRACTION", "children": [{"type": "LN", "children": [{"type": "ADD", "children": [{"type": "CONSTANT", "value": "1"}, {"type": "VARIABLE", "value": "x"}]}]}, {"type": "CONSTANT", "value": "2"}]}
+        ]
+      },
+      "steps": ["integrate_sep_frac_short", "integrate_calc"]
+    },
+    {
+      "id": "improper",
+      "title": "несобственный: ∫₁^∞ 1/x² dx = 1",
+      "input": "{integral_def({1},{inf},{frac({1},{x^2})})}",
+      "solution": {"type": "CONSTANT", "value": "1"},
+      "steps": ["integrate_imp_evaluate", "integrate_calc"]
     }
   ]
 }
