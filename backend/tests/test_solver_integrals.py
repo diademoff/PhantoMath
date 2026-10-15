@@ -163,13 +163,21 @@ class TestMethod:
     def test_by_parts(self) -> None:
         # x·e^x — интегрирование по частям.
         problem = node(T.INTEGRAL, node(T.MULTIPLY, var(), node(T.EXP, var())))
-        assert self.keys_of(problem) == ["integrate_partial", "integrate_calc"]
+        assert self.keys_of(problem) == [
+            "integrate_by_parts_prepare_simple",
+            "integrate_partial",
+            "integrate_calc",
+        ]
 
     def test_substitution(self) -> None:
         # sin(2x) — замена.
         argument = node(T.MULTIPLY_IMPLICIT, c("2"), var())
         problem = node(T.INTEGRAL, node(T.SIN, argument))
-        assert self.keys_of(problem) == ["integrate_using_substitution", "integrate_calc"]
+        assert self.keys_of(problem) == [
+            "integrate_differential_sub",
+            "integrate_using_substitution",
+            "integrate_calc",
+        ]
 
     def test_partial_fractions(self) -> None:
         # 1/(x^2 - 1) — простейшие дроби.

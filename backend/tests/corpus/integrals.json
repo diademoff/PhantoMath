@@ -313,6 +313,7 @@
         ]
       },
       "steps": [
+        "integrate_by_parts_prepare_simple",
         "integrate_partial",
         "integrate_calc"
       ]
@@ -354,6 +355,7 @@
         ]
       },
       "steps": [
+        "integrate_differential_sub",
         "integrate_using_substitution",
         "integrate_calc"
       ]

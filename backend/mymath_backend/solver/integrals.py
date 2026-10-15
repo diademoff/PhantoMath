@@ -63,10 +63,19 @@ def _indefinite_integral(node: CoreNode, ctx: SolveContext) -> CoreNode:
         # sympy вернул специальную функцию (erfi, Ei, …): элементарной
         # первообразной нет, и в наш AST это не переводится.
         raise SolveError("первообразная не выражается через элементарные функции") from err
+    _prepare_step(node, ctx, method_key)
     if method_key is not None:
         ctx.result.add(Step(left=node, right=None, key=method_key))
     ctx.result.add(Step(left=node, right=result, key="integrate_calc"))
     return result
+
+
+def _prepare_step(node: CoreNode, ctx: SolveContext, method_key: str | None) -> None:
+    """Подготовительный шаг перед методом интегрирования."""
+    if method_key == "integrate_partial":
+        ctx.result.add(Step(left=node, right=None, key="integrate_by_parts_prepare_simple"))
+    elif method_key == "integrate_using_substitution":
+        ctx.result.add(Step(left=node, right=None, key="integrate_differential_sub"))
 
 
 def _definite_integral(node: CoreNode, ctx: SolveContext) -> CoreNode:
