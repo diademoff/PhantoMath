@@ -28,3 +28,9 @@ build/
 *.iml
 .idea/
 pubspec.lock
+
+# ── Flutter: локальные пути SDK и артефакты сборки ────────────────────
+app/android/local.properties
+app/android/.gradle/
+app/android/app/.cxx/
+app/.flutter-plugins-dependencies
