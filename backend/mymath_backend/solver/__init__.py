@@ -26,6 +26,7 @@ from .derivatives import solve_derivative
 from .equations import solve_equation
 from .fractions import solve_fraction
 from .inequalities import solve_inequality
+from .matrices import solve_determinant
 from .powers import solve_logarithm, solve_root
 from .systems import solve_system
 
@@ -91,6 +92,7 @@ __all__ = [
     "route",
     "solve",
     "solve_derivative",
+    "solve_determinant",
     "solve_equation",
     "solve_fraction",
     "solve_inequality",
