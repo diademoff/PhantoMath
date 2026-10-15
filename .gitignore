@@ -34,3 +34,8 @@ app/android/local.properties
 app/android/.gradle/
 app/android/app/.cxx/
 app/.flutter-plugins-dependencies
+
+# ── Встроенный Python на устройстве (генерируется `make python-bundle`) ──
+# mymath_backend и словарь копируются сюда для упаковки serious_python.
+app/python/mymath_backend/
+app/python/assets/

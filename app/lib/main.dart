@@ -8,6 +8,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 
+import 'src/api/embedded_backend.dart';
 import 'src/api/solver_api.dart';
 import 'src/editor/controller.dart';
 import 'src/editor/editor_view.dart';
@@ -18,8 +19,10 @@ import 'src/notebook/notebook_page.dart';
 import 'src/render/graph_view.dart';
 import 'src/render/latex.dart';
 
-void main() {
-  runApp(const MyMathApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final baseUrl = await resolveBaseUrl();
+  runApp(MyMathApp(baseUrl: baseUrl));
 }
 
 /// Адрес бэкенда по умолчанию.
@@ -30,6 +33,15 @@ const String defaultBaseUrl = String.fromEnvironment(
   'MYMATH_API',
   defaultValue: 'http://10.0.2.2:8000',
 );
+
+/// Выбрать бэкенд: явный `MYMATH_API`, иначе встроенный Python (Android),
+/// иначе адрес по умолчанию (эмулятор/десктоп с внешним сервером).
+Future<String> resolveBaseUrl() async {
+  const override = String.fromEnvironment('MYMATH_API');
+  if (override.isNotEmpty) return override;
+  final embedded = await startEmbeddedBackend();
+  return embedded ?? defaultBaseUrl;
+}
 
 /// Языки пояснений. Продукт поддерживает только русский и английский
 /// (решение пользователя, `truth/09-decisions.md`). Английский в данных

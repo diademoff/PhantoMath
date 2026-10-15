@@ -32,23 +32,39 @@ flutter test
 
 ## Сборка
 
+Релизный APK со **встроенным Python-решателем** (см. ниже). Из корня
+репозитория:
+
 ```bash
-flutter build apk --debug
+make apk        # упакует Python (sympy + mymath_backend) и соберёт release APK
+make serve      # раздаст APK по tailnet
 ```
+
+Напрямую через Flutter — только после `make python-bundle`, иначе Python
+в APK не попадёт:
+
+```bash
+make python-bundle
+cd app && flutter build apk --release
+```
+
+Отладочный APK без встроенного Python (нужен внешний бэкенд): `flutter build apk --debug`.
 
 ## Запуск с бэкендом
 
-Бэкенд поднимается отдельно (см. `../backend/README.md`). Адрес передаётся
-при сборке; по умолчанию — `10.0.2.2:8000`, это адрес хоста, видимый с
-эмулятора Android:
+**На Android решатель встроен в приложение.** Проверки не требуют сети:
+при старте поднимается локальный сервер на `127.0.0.1:8770`
+(`lib/src/api/embedded_backend.dart`), а `main()` ждёт его готовности и
+отдаёт адрес клиенту. Если `MYMATH_API` задан, встроенный Python не
+запускается — удобно для разработки на десктопе с внешним FastAPI:
 
 ```bash
-flutter run --dart-define=MYMATH_API=http://10.0.2.2:8000
+flutter run --dart-define=MYMATH_API=http://10.0.2.2:8000   # эмулятор + внешний бэкенд
 ```
 
-На физическом устройстве нужен реальный IP машины, а не `10.0.2.2`.
-Эмулятор также должен видеть бэкенд: `python3 -m http.server` в этом
-режиме не подойдёт, нужен запуск с `--host 0.0.0.0`.
+`10.0.2.2` — адрес хоста, видимый с эмулятора Android. Внешний бэкенд надо
+поднимать с `--host 0.0.0.0`. На физическом устройстве без встроенного
+Python нужен реальный IP машины в tailnet.
 
 ## Состав
 
@@ -57,8 +73,26 @@ flutter run --dart-define=MYMATH_API=http://10.0.2.2:8000
 | `lib/main.dart` | Экран ввода и результата |
 | `lib/src/model/core_node.dart` | `CoreNode` и `CoreNodeType` — зеркало Python-модели |
 | `lib/src/api/solver_api.dart` | HTTP-клиент: `solve`, `parse`, `isHealthy` |
+| `lib/src/api/embedded_backend.dart` | Запуск встроенного Python и ожидание его готовности |
 | `lib/src/render/latex.dart` | `CoreNode` → LaTeX для `flutter_math_fork` |
+| `python/` | Python-программа на устройстве: `main.py` (сервер), `requirements.txt` |
 | `test/model_test.dart` | Разбор ответа, перевод в LaTeX, поведение клиента при ошибках |
+
+## Встроенный Python на устройстве
+
+Решатель — это Python, и он **лежит в APK**. На Android приложение запускает
+CPython (пакет `serious_python`) в фоновом потоке; программа
+`python/main.py` поднимает локальный сервер решателя (`mymath_backend.device`,
+stdlib `http.server`) на `127.0.0.1:8770`, а приложение ходит к нему обычным
+HTTP-клиентом. Ядро бэкенда не тянет `pydantic`/`fastapi` — модели контракта
+dataclasses, а зависимости свелись к чистому `sympy` (см.
+`../truth/09-decisions.md`), поэтому упаковка в APK не требует NDK.
+
+`make python-bundle` копирует `backend/mymath_backend` и
+`truth/data/explanations.json` в `app/python/` (это сгенерированные копии,
+они в `.gitignore`) и упаковывает их вместе с `sympy` через `serious_python`.
+Размер APK растёт заметно (CPython, stdlib и sympy для трёх ABI) — это плата
+за работу без сети.
 
 ## Как это устроено
 
