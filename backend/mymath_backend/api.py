@@ -31,6 +31,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from .ast import CoreAction, CoreNode
 from .concepts import definition as concept_definition
 from .explanations import DEFAULT_LOCALE, Explanations, load_explanations
+from .graph import DEFAULT_SAMPLES
+from .graph import sample as sample_graph
 from .input import ProtocolError, parse_json, parse_protocol
 from .solver import SolveError, solve
 
@@ -109,6 +111,17 @@ class ParseRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     source: str = Field(description="Строка протокола, например {=({2x+3},{7})}")
+
+
+class GraphRequest(BaseModel):
+    """Запрос точек графика ``y = f(x)``."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    node: dict[str, Any] = Field(description="Выражение f(x) в формате CoreNode")
+    x_min: float = Field(default=-10.0, alias="xMin")
+    x_max: float = Field(default=10.0, alias="xMax")
+    samples: int = Field(default=DEFAULT_SAMPLES, description="Число точек на отрезке")
 
 
 class ExplanationView(BaseModel):
@@ -225,7 +238,13 @@ def create_app() -> FastAPI:
         """Список эндпоинтов; открывается при заходе в корень."""
         return {
             "service": "mymath-backend",
-            "endpoints": ["/api/v1/health", "/api/v1/parse", "/api/v1/solve", "/docs"],
+            "endpoints": [
+                "/api/v1/health",
+                "/api/v1/parse",
+                "/api/v1/solve",
+                "/api/v1/graph",
+                "/docs",
+            ],
         }
 
     @app.post("/api/v1/parse")
@@ -236,6 +255,20 @@ def create_app() -> FastAPI:
         except ProtocolError as err:
             raise HTTPException(status_code=400, detail=str(err)) from err
         return {"node": node.to_contract()}
+
+    @app.post("/api/v1/graph")
+    def graph(payload: GraphRequest) -> dict[str, Any]:
+        """Точки графика ``y = f(x)`` для отрисовки на клиенте."""
+        try:
+            node = parse_json(payload.node)
+        except (ValueError, KeyError) as err:
+            raise HTTPException(
+                status_code=422, detail=f"не удалось разобрать узел: {err}"
+            ) from err
+        try:
+            return sample_graph(node, payload.x_min, payload.x_max, payload.samples)
+        except SolveError as err:
+            raise HTTPException(status_code=422, detail=str(err)) from err
 
     @app.post("/api/v1/solve")
     def run_solve(payload: SolveRequest) -> dict[str, Any]:

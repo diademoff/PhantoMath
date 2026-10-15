@@ -258,3 +258,24 @@ class TestCommands:
         )
         assert response.status_code == 200, response.text
         assert response.json()["result"]["solution"]["value"] == "5"
+
+
+class TestGraph:
+    def test_parabola(self, client: TestClient) -> None:
+        node = {"type": "POWER", "children": [var("x"), num("2")]}
+        response = client.post(
+            "/api/v1/graph",
+            json={"node": node, "xMin": -2, "xMax": 2, "samples": 5},
+        )
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["variable"] == "x"
+        assert body["points"][0] == [-2.0, 4.0]
+        assert body["yMin"] == 0.0
+
+    def test_bad_range_is_422(self, client: TestClient) -> None:
+        response = client.post(
+            "/api/v1/graph",
+            json={"node": var("x"), "xMin": 1, "xMax": 1},
+        )
+        assert response.status_code == 422
