@@ -201,3 +201,30 @@ class TestSolveEquations:
         header = steps[0]["headers"][0]
         assert header["explanation"]["text"] == "Решите уравнение"
         assert header["explanation"]["locale"] == "ru"
+
+
+class TestCommands:
+    def test_factor(self, client: TestClient) -> None:
+        node = add(
+            add(
+                {"type": "POWER", "children": [var("x"), num("2")]},
+                mul_implicit(num("2"), var("x")),
+            ),
+            num("1"),
+        )
+        response = client.post(
+            "/api/v1/solve",
+            json={"node": node, "action": {"command": "factor", "args": []}},
+        )
+        assert response.status_code == 200, response.text
+        vertical = response.json()["result"]["groups"][0]["entries"][0]["result"]
+        keys = [s["description"]["type"] for st in vertical["steps"] for s in st["substeps"]]
+        assert keys == ["factorise_call"]
+
+    def test_unknown_command_is_422(self, client: TestClient) -> None:
+        response = client.post(
+            "/api/v1/solve",
+            json={"node": num("1"), "action": {"command": "телепорт", "args": []}},
+        )
+        assert response.status_code == 422
+        assert "команда" in response.json()["detail"]["message"]

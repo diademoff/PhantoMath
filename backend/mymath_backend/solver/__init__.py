@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from ..ast import CoreNode
 from ..results import CoreSolverData
+from . import commands
 from .arithmetic import format_number
 from .base import (
     SolveContext,
@@ -35,8 +36,12 @@ from .series import solve_series
 from .systems import solve_system
 
 
-def solve(node: CoreNode) -> CoreSolverData:
+def solve(node: CoreNode, command: str | None = None) -> CoreSolverData:
     """Решить выражение и вернуть ответ в формате контракта.
+
+    ``command`` — имя действия (``CoreAction.command``): ``None`` или ``solve``
+    решают как обычно, ``factor``/``expand``/``simplify`` применяют
+    соответствующее преобразование (см. ``solver/commands.py``).
 
     Бросает :class:`SolveError`, если задача не решается текущим набором
     модулей. Вызывающий сам решает, что показать пользователю: 404 с
@@ -44,6 +49,12 @@ def solve(node: CoreNode) -> CoreSolverData:
     """
     result = SolveResult()
     ctx = SolveContext(result=result, variables=_free_variables(node))
+
+    if command is not None and command != "solve":
+        solution = commands.apply(command, node, ctx)
+        result.set_solution(solution)
+        return build_solver_data(node, result)
+
     route(node, ctx)
     if not result:
         # Вырожденный ввод — одно число без операций: шага нет, но ответ есть.

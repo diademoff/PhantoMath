@@ -28,7 +28,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
-from .ast import CoreNode
+from .ast import CoreAction, CoreNode
 from .explanations import DEFAULT_LOCALE, Explanations, load_explanations
 from .input import ProtocolError, parse_json, parse_protocol
 from .solver import SolveError, solve
@@ -91,6 +91,10 @@ class SolveRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     node: dict[str, Any] = Field(description="Выражение в формате CoreNode (AST-JSON)")
+    action: CoreAction | None = Field(
+        default=None,
+        description="Действие над выражением (CoreAction): solve/factor/expand/simplify",
+    )
     locale: str = Field(default=DEFAULT_LOCALE, description="Язык пояснений")
     render: bool = Field(
         default=True,
@@ -229,7 +233,7 @@ def create_app() -> FastAPI:
             ) from err
 
         try:
-            data = solve(node)
+            data = solve(node, command=payload.action.command if payload.action else None)
         except SolveError as err:
             # Задачу не решили -- это не поломка сервиса. Отвечаем 422 с
             # понятным текстом и ключом пояснения, если он есть.
