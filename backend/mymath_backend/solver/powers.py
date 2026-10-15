@@ -3,7 +3,8 @@
 Модуль зарегистрирован на узлы ``ROOT2``, ``ROOT``, ``LOG10``, ``LN``,
 ``LOG`` и ``EXP``. Он упрощает их, когда результат точен:
 
-* ``√16 = 4``, ``∛27 = 3`` -- корень из полного квадрата/куба;
+* ``√16 = 4``, ``∛27 = 3``, ``√(4/9) = 2/3`` -- корень из полного
+  квадрата/куба (в том числе из рациональной дроби);
 * ``log₁₀(1000) = 3``, ``log₂(8) = 3``, ``ln(e) = 1``, ``ln(1) = 0``;
 * ``e⁰ = 1``.
 
@@ -18,10 +19,12 @@
 
 from __future__ import annotations
 
+from fractions import Fraction
 from math import isqrt
 
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
+from .arithmetic import format_number
 from .base import SolveContext, SolveError, Step, fold_semantically, solver_for
 
 _KEY_ROOT = "root_simplify"
@@ -65,6 +68,33 @@ def _exact_log(value: int, base: int) -> int | None:
     return exponent if power == value else None
 
 
+def _rational(node: CoreNode) -> Fraction | None:
+    """Рациональное значение константы или ``None``."""
+    if node.type is not T.CONSTANT or node.value is None:
+        return None
+    try:
+        return Fraction(node.value.strip())
+    except (ValueError, ZeroDivisionError):
+        return None
+
+
+def _exact_root(node: CoreNode, degree: int) -> Fraction | None:
+    """Точный корень ``degree``-й степени из рационального числа или ``None``.
+
+    Работает и с дробями: ``√(4/9) = 2/3``, ``√(9/4) = 3/2``. Если корень
+    не извлекается точно (``√(1/2)``) или подкоренное не число, возвращает
+    ``None`` -- вызывающий оставляет узел.
+    """
+    value = _rational(node)
+    if value is None:
+        return None
+    numerator = _perfect_root(value.numerator, degree)
+    denominator = _perfect_root(value.denominator, degree)
+    if numerator is None or denominator in (None, 0):
+        return None
+    return Fraction(numerator, denominator)
+
+
 @solver_for(T.ROOT2, T.ROOT)
 def solve_root(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Упростить корень, если он извлекается нацело.
@@ -88,14 +118,11 @@ def solve_root(node: CoreNode, ctx: SolveContext) -> CoreNode:
             return kept
         degree = degree_value
 
-    value = _integer(radicand)
-    if value is None or value < 0:
-        return kept
-    root = _perfect_root(value, degree)
+    root = _exact_root(radicand, degree)
     if root is None:
         return kept
 
-    result = CoreNode.constant(str(root))
+    result = CoreNode.constant(format_number(root))
     ctx.result.add(Step(left=node, right=result, key=_KEY_ROOT))
     return result
 

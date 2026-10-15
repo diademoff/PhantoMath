@@ -60,6 +60,15 @@ class TestRoots:
         problem = node(T.ROOT2, c("-4"))
         assert solution_of(problem).structural_eq(problem)
 
+    def test_square_root_of_fraction(self) -> None:
+        # √(4/9) = 2/3, √(9/4) = 3/2.
+        assert value_of(node(T.ROOT2, node(T.FRACTION, c("4"), c("9")))) == "2/3"
+        assert value_of(node(T.ROOT2, node(T.FRACTION, c("9"), c("4")))) == "3/2"
+
+    def test_non_square_fraction_is_left(self) -> None:
+        problem = node(T.ROOT2, node(T.FRACTION, c("1"), c("2")))
+        assert solution_of(problem).type is T.ROOT2
+
 
 class TestLogarithms:
     def test_log10(self) -> None:
