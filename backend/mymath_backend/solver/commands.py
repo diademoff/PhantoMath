@@ -27,6 +27,7 @@
 * ``axis_of_symmetry``/``intercept_form`` — ось симметрии и форма по корням параболы;
 * ``slant_asymptote`` — наклонная асимптота рациональной функции;
 * ``x_intercept_count`` — число пересечений параболы с осью x;
+* ``evaluate_function`` — значение функции при данном аргументе (``function_evaluate``);
 * ``sequence_convergence`` — сходимость последовательности (``seq_lim_conv``);
 * ``ratio_test`` — признак Даламбера для ряда (``series_ratio_test``);
 * ``root_test``/``nth_term_test`` — радикальный и необходимый признаки сходимости ряда;
@@ -534,6 +535,22 @@ def partial_fractions(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -
     return result
 
 
+def evaluate_function(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Вычислить значение функции ``f(a)`` (подстановка значения).
+
+    Шаги ``function_evaluate`` и ``function_evaluate_value`` (с значением).
+    """
+    if len(args) != 1:
+        raise SolveError("нужно значение для подстановки")
+    if len(ctx.variables) != 1:
+        raise SolveError("значение функции: поддерживается одна переменная")
+    symbol = sympy.Symbol(ctx.variables[0])
+    result = from_sympy(sympy.simplify(to_sympy(node).subs(symbol, to_sympy(args[0]))))
+    ctx.result.add(Step(left=node, right=None, key="function_evaluate"))
+    ctx.result.add(Step(left=node, right=result, key="function_evaluate_value", args=[args[0]]))
+    return result
+
+
 def x_intercept_count(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Число пересечений параболы с осью x по дискриминанту.
 
@@ -934,6 +951,7 @@ COMMANDS: dict[str, Command] = {
     "expand": expand,
     "simplify": simplify,
     "domain": domain,
+    "evaluate_function": evaluate_function,
     "restrictions": restrictions,
     "area": area,
     "conic": conic,
@@ -1001,6 +1019,7 @@ __all__ = [
     "convergence",
     "diff_eq",
     "domain",
+    "evaluate_function",
     "even_odd",
     "expand",
     "extrema",

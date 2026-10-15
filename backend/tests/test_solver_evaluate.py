@@ -44,3 +44,23 @@ class TestSubstitute:
     def test_requires_value(self) -> None:
         with pytest.raises(SolveError):
             solve(CoreNode.variable("x"), command="substitute")
+
+
+class TestEvaluateFunction:
+    def _run(self, source: str, value: str) -> tuple[list[str], str]:
+        vertical = solve(
+            parse_protocol(source),
+            command="evaluate_function",
+            args=[parse_protocol(value)],
+        ).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
+        return keys, vertical.solution.value or ""
+
+    def test_polynomial(self) -> None:
+        keys, result = self._run("{x^2+1}", "{2}")
+        assert keys == ["function_evaluate", "function_evaluate_value"]
+        assert result == "5"
+
+    def test_fraction(self) -> None:
+        assert self._run("{frac({1},{x+1})}", "{1}")[1] == "1/2"
