@@ -209,9 +209,13 @@ R6 график кусочной функции (`/graph`, признак `piece
 (`series_test_group`), модуль (`abs_separate`), y=kx+b
 (`identify_y_intercept_as_const_term`).
 
+Ещё добавлено (`rel_*`/`trig_*`/`matrix_*`/асимптоты): `rel_restrictions_intersect`
+перед отсевом корней, `trig_find_period` в тригонометрических уравнениях,
+`det2_determinant_rule`/`det3_sarrus_rule`, `def_vert_asymptote`/`def_hor_asymptote`.
+
 Остаётся: R11 (анимации — по решению пользователя отложены), дальнейшая
-глубина R8/R10 и остатки по модулям (`rel_*`, `trig_*`, `frac_*`, `matrix_*`,
-`seq_*`).
+глубина R8/R10 и остатки по модулям (`frac_*`, `seq_*`, `trig_*` дальше,
+`integrate_*`/`limit_*` детали).
 
 ## 11.4. Порядок работ
 
