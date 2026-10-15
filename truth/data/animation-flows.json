@@ -1,0 +1,410 @@
+[
+ {
+  "id": 16,
+  "name": "Additive Inverse",
+  "category": "data",
+  "nodes": 3,
+  "vars": 2,
+  "connections": 2
+ },
+ {
+  "id": 18,
+  "name": "Distance Between 2 Points",
+  "category": "data",
+  "nodes": 11,
+  "vars": 3,
+  "connections": 14
+ },
+ {
+  "id": 20,
+  "name": "Square Number",
+  "category": "data",
+  "nodes": 3,
+  "vars": 2,
+  "connections": 3
+ },
+ {
+  "id": 21,
+  "name": "Midpoint",
+  "category": "data",
+  "nodes": 10,
+  "vars": 3,
+  "connections": 11
+ },
+ {
+  "id": 49,
+  "name": "American notation of the powers of 10",
+  "category": "object",
+  "nodes": 103,
+  "vars": 10,
+  "connections": 174
+ },
+ {
+  "id": 55,
+  "name": "Round to Nearest Whole",
+  "category": "data",
+  "nodes": 19,
+  "vars": 6,
+  "connections": 24
+ },
+ {
+  "id": 59,
+  "name": "Exponentiation",
+  "category": "data",
+  "nodes": 27,
+  "vars": 8,
+  "connections": 37
+ },
+ {
+  "id": 67,
+  "name": "Encircle",
+  "category": "action",
+  "nodes": 16,
+  "vars": 11,
+  "connections": 18
+ },
+ {
+  "id": 69,
+  "name": "Create Repeated Multiplication",
+  "category": "object",
+  "nodes": 39,
+  "vars": 14,
+  "connections": 59
+ },
+ {
+  "id": 85,
+  "name": "Write Repeated Multiplication in Exponential Form",
+  "category": null,
+  "nodes": 161,
+  "vars": 19,
+  "connections": 236
+ },
+ {
+  "id": 90,
+  "name": "Preview for Write Repeated Multiplication in Exponential Form",
+  "category": null,
+  "nodes": 16,
+  "vars": 4,
+  "connections": 23
+ },
+ {
+  "id": 91,
+  "name": "Create Highlight/Placeholder",
+  "category": "object",
+  "nodes": 17,
+  "vars": 8,
+  "connections": 22
+ },
+ {
+  "id": 92,
+  "name": "Write in Exponential Form",
+  "category": null,
+  "nodes": 151,
+  "vars": 13,
+  "connections": 241
+ },
+ {
+  "id": 93,
+  "name": "Initial Alignment",
+  "category": "action",
+  "nodes": 26,
+  "vars": 10,
+  "connections": 31
+ },
+ {
+  "id": 94,
+  "name": "Write in Expanded Form",
+  "category": null,
+  "nodes": 139,
+  "vars": 16,
+  "connections": 215
+ },
+ {
+  "id": 100,
+  "name": "Write in Standard Form",
+  "category": null,
+  "nodes": 285,
+  "vars": 22,
+  "connections": 435
+ },
+ {
+  "id": 104,
+  "name": "Preview for Write in Exponential Form",
+  "category": null,
+  "nodes": 12,
+  "vars": 3,
+  "connections": 19
+ },
+ {
+  "id": 107,
+  "name": "Preview for Write in Expanded Form",
+  "category": null,
+  "nodes": 21,
+  "vars": 4,
+  "connections": 32
+ },
+ {
+  "id": 151,
+  "name": "Create Number in American notation",
+  "category": "object",
+  "nodes": 249,
+  "vars": 14,
+  "connections": 401
+ },
+ {
+  "id": 156,
+  "name": "Arithmetic Mean",
+  "category": "data",
+  "nodes": 5,
+  "vars": 3,
+  "connections": 4
+ },
+ {
+  "id": 189,
+  "name": "Is Prime",
+  "category": "data",
+  "nodes": 20,
+  "vars": 5,
+  "connections": 28
+ },
+ {
+  "id": 196,
+  "name": "Absolute Value",
+  "category": "data",
+  "nodes": 4,
+  "vars": 2,
+  "connections": 4
+ },
+ {
+  "id": 229,
+  "name": "Get Last Digit",
+  "category": "data",
+  "nodes": 16,
+  "vars": 7,
+  "connections": 18
+ },
+ {
+  "id": 230,
+  "name": "Get First Digit",
+  "category": "data",
+  "nodes": 45,
+  "vars": 11,
+  "connections": 61
+ },
+ {
+  "id": 233,
+  "name": "Get Number of Zero Digits",
+  "category": "data",
+  "nodes": 36,
+  "vars": 9,
+  "connections": 44
+ },
+ {
+  "id": 253,
+  "name": "Switch Objects",
+  "category": "action",
+  "nodes": 12,
+  "vars": 6,
+  "connections": 16
+ },
+ {
+  "id": 259,
+  "name": "Preview for Write in Standard Form",
+  "category": null,
+  "nodes": 16,
+  "vars": 4,
+  "connections": 27
+ },
+ {
+  "id": 312,
+  "name": "Centering Final Result_Expended Form Using Exponents",
+  "category": "object",
+  "nodes": 83,
+  "vars": 8,
+  "connections": 134
+ },
+ {
+  "id": 322,
+  "name": "Move Along Axes",
+  "category": "action",
+  "nodes": 37,
+  "vars": 10,
+  "connections": 66
+ },
+ {
+  "id": 337,
+  "name": "Create Binary Operation",
+  "category": "object",
+  "nodes": 34,
+  "vars": 15,
+  "connections": 41
+ },
+ {
+  "id": 385,
+  "name": "Create Alternating Repeated Multiplication",
+  "category": "object",
+  "nodes": 272,
+  "vars": 15,
+  "connections": 422
+ },
+ {
+  "id": 387,
+  "name": "Get Sequence of n Subobjects",
+  "category": "object",
+  "nodes": 8,
+  "vars": 4,
+  "connections": 9
+ },
+ {
+  "id": 393,
+  "name": "Get Number of Digits",
+  "category": "data",
+  "nodes": 36,
+  "vars": 10,
+  "connections": 38
+ },
+ {
+  "id": 396,
+  "name": "Get Digit",
+  "category": "data",
+  "nodes": 20,
+  "vars": 5,
+  "connections": 29
+ },
+ {
+  "id": 397,
+  "name": "Get Sub-Objects Without Each nth Sub-Object",
+  "category": "object",
+  "nodes": 15,
+  "vars": 6,
+  "connections": 19
+ },
+ {
+  "id": 401,
+  "name": "Create Brackets around Object",
+  "category": "object",
+  "nodes": 18,
+  "vars": 9,
+  "connections": 26
+ },
+ {
+  "id": 421,
+  "name": "GCD of 2 values",
+  "category": "data",
+  "nodes": 23,
+  "vars": 6,
+  "connections": 33
+ },
+ {
+  "id": 428,
+  "name": "Replace Object",
+  "category": "action",
+  "nodes": 12,
+  "vars": 8,
+  "connections": 13
+ },
+ {
+  "id": 430,
+  "name": "Check Case_Expended Form Using Exponents",
+  "category": "data",
+  "nodes": 33,
+  "vars": 9,
+  "connections": 48
+ },
+ {
+  "id": 436,
+  "name": "Not Visible_Quotient of Powers Property",
+  "category": "event",
+  "nodes": 69,
+  "vars": 13,
+  "connections": 104
+ },
+ {
+  "id": 451,
+  "name": "Check Case_Quotient of Powers Property",
+  "category": "event",
+  "nodes": 12,
+  "vars": 6,
+  "connections": 12
+ },
+ {
+  "id": 454,
+  "name": "Powers of 10 as String in AN",
+  "category": "data",
+  "nodes": 42,
+  "vars": 7,
+  "connections": 63
+ },
+ {
+  "id": 462,
+  "name": "Powers of 10 as String in AN_Write in Exponential Form",
+  "category": "data",
+  "nodes": 42,
+  "vars": 7,
+  "connections": 63
+ },
+ {
+  "id": 496,
+  "name": "While",
+  "category": "event",
+  "nodes": 6,
+  "vars": 5,
+  "connections": 5
+ },
+ {
+  "id": 546,
+  "name": "Product of Number[] elements",
+  "category": "data",
+  "nodes": 11,
+  "vars": 5,
+  "connections": 15
+ },
+ {
+  "id": 550,
+  "name": "Prime Factorization",
+  "category": "data",
+  "nodes": 26,
+  "vars": 6,
+  "connections": 32
+ },
+ {
+  "id": 565,
+  "name": "Get Every nth Sub-Object",
+  "category": "object",
+  "nodes": 42,
+  "vars": 10,
+  "connections": 60
+ },
+ {
+  "id": 575,
+  "name": "Ceiling  Value",
+  "category": "data",
+  "nodes": 15,
+  "vars": 5,
+  "connections": 20
+ },
+ {
+  "id": 579,
+  "name": "Create & Split Rectangle",
+  "category": "object",
+  "nodes": 103,
+  "vars": 16,
+  "connections": 154
+ },
+ {
+  "id": 592,
+  "name": "Is Natural",
+  "category": "data",
+  "nodes": 15,
+  "vars": 6,
+  "connections": 18
+ },
+ {
+  "id": 617,
+  "name": "Slide Appear",
+  "category": "action",
+  "nodes": 79,
+  "vars": 17,
+  "connections": 112
+ }
+]

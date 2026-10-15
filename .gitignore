@@ -1,0 +1,32 @@
+# ── Источник истины: APK и рабочие артефакты разбора ────────────────────
+# APK — 17 МБ, не коммитим. В README/.truth ссылка на источник.
+.truth/
+
+# Промежуточные артефакты разбора (восстанавливаются скриптами из truth/data/)
+/tmp-analysis/
+resources.json
+pools.json
+allpools.json
+pool.json
+
+# ── Python ──────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ── Flutter / Dart ──────────────────────────────────────────────────────
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+*.iml
+.idea/
+
+# ── Dart-pub (если бэкенд-данные держим в пакете) ───────────────────────
+pubspec.lock
