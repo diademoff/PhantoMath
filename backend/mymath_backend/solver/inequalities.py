@@ -89,6 +89,7 @@ def solve_inequality(node: CoreNode, ctx: SolveContext) -> CoreNode:
         for solver in (
             _rational_inequality,
             _irrational_inequality,
+            _abs_inequality,
             _transcendental_inequality,
         ):
             answer = solver(node, var, ctx)
@@ -205,6 +206,24 @@ def _irrational_inequality(node: CoreNode, var: str, ctx: SolveContext) -> CoreN
     if expression is None or not _has_radical(expression):
         return None
     return _inequality_set(node, expression, "ineq_irr_solve", ctx)
+
+
+def _abs_inequality(node: CoreNode, var: str, ctx: SolveContext) -> CoreNode | None:
+    """Неравенство с модулем: два случая, множество решений — ``solveset``."""
+    expression = _difference(node)
+    if expression is None or not expression.has(sympy.Abs):
+        return None
+    symbol = sympy.Symbol(var)
+    try:
+        values = sympy.solveset(_relational(node.type, expression), symbol, sympy.S.Reals)
+    except (TypeError, ValueError, NotImplementedError):
+        return None
+    answer = from_sympy(values)
+    ctx.result.add(
+        Step(left=node, right=answer, key="ineq_separate_abs", args=[CoreNode.constant("2")]),
+        [_HEADER],
+    )
+    return answer
 
 
 def _transcendental_inequality(node: CoreNode, var: str, ctx: SolveContext) -> CoreNode | None:

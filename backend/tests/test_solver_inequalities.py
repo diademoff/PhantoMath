@@ -159,6 +159,34 @@ class TestRationalInequality:
         assert answer.children[1].type is T.CLOSED_OPEN_INTERVAL
 
 
+class TestAbsInequality:
+    def test_less_than(self) -> None:
+        # |x| < 2 -> (-2, 2).
+        problem = ineq(T.LESS_THAN, node(T.ABS, var("x")), c("2"))
+        answer = solution_of(problem)
+        assert answer.type is T.OPEN_OPEN_INTERVAL
+        assert [child.value for child in answer.children] == ["-2", "2"]
+
+    def test_greater_union(self) -> None:
+        # |x| > 3 -> (-∞, -3) ∪ (3, ∞).
+        problem = ineq(T.GREATER_THAN, node(T.ABS, var("x")), c("3"))
+        assert solution_of(problem).type is T.UNION
+
+    def test_always_true(self) -> None:
+        # |x| ≥ -1 -> вся прямая.
+        problem = ineq(T.GREATER_THAN_EQUAL, node(T.ABS, var("x")), c("-1"))
+        answer = solution_of(problem)
+        assert answer.type is T.OPEN_OPEN_INTERVAL
+        assert answer.children[0].type is T.NEGATIVE
+
+    def test_step_key(self) -> None:
+        problem = ineq(T.LESS_THAN, node(T.ABS, var("x")), c("2"))
+        vertical = solve(problem).result.vertical()
+        assert vertical is not None
+        keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
+        assert keys == ["ineq_separate_abs"]
+
+
 class TestInequalitySystem:
     def test_open_intersection(self) -> None:
         problem = node(

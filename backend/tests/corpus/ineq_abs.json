@@ -1,0 +1,56 @@
+{
+  "module": "ineq_abs",
+  "tasks": [
+    {
+      "id": "less-than",
+      "title": "|x| < 2 → (−2, 2)",
+      "input": "{lt({abs({x})},{2})}",
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "-2"},
+          {"type": "CONSTANT", "value": "2"}
+        ]
+      },
+      "steps": ["ineq_separate_abs"]
+    },
+    {
+      "id": "greater-union",
+      "title": "|x| > 3 → (−∞, −3) ∪ (3, ∞)",
+      "input": "{gt({abs({x})},{3})}",
+      "solution": {
+        "type": "UNION",
+        "children": [
+          {
+            "type": "OPEN_OPEN_INTERVAL",
+            "children": [
+              {"type": "NEGATIVE", "children": [{"type": "CONSTANT", "value": "∞"}]},
+              {"type": "CONSTANT", "value": "-3"}
+            ]
+          },
+          {
+            "type": "OPEN_OPEN_INTERVAL",
+            "children": [
+              {"type": "CONSTANT", "value": "3"},
+              {"type": "CONSTANT", "value": "∞"}
+            ]
+          }
+        ]
+      },
+      "steps": ["ineq_separate_abs"]
+    },
+    {
+      "id": "shifted",
+      "title": "|x−1| ≤ 2 → [−1, 3]",
+      "input": "{lte({abs({x-1})},{2})}",
+      "solution": {
+        "type": "CLOSED_CLOSED_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "-1"},
+          {"type": "CONSTANT", "value": "3"}
+        ]
+      },
+      "steps": ["ineq_separate_abs"]
+    }
+  ]
+}
