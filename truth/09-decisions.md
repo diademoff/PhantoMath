@@ -41,6 +41,7 @@
 | 14 | Действия над выражением — **`CoreAction`** (`POST /solve.action`): `solve`, `factor`, `expand`, `simplify`; имена команд наши | `solver/commands.py`, `api.py` |
 | 15 | Способы решения — **несколько записей** вертикальной ветки + `selectMethodText`; клиент переключает локально, без повторного запроса | `solver/base.py`, `solver/equations.py` |
 | 16 | Ссылки `[label\|uuid]` возвращаются как **`{label, uuid, definition}`**; определения — наш короткий глоссарий (`concepts.py`), не из APK | `api.py`, `concepts.py`, `app/lib/main.dart` |
+| 17 | Комплексные числа: мнимая единица — **`CONSTANT "i"`**; `Re`/`Im`/сопряжение — типы `REAL`/`IMAGINARY`/`CONJUGATE`, арифметика с `i` — через sympy | `solver/complex.py`, `sympy_bridge.py` |
 
 ## Ввод: редактор и клавиатура
 

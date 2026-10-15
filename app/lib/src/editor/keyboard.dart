@@ -219,7 +219,7 @@ final KeyboardPanel _variablePanel = KeyboardPanel(
       MathKey.variable('n'),
       MathKey.variable('k'),
       MathKey.variable('m'),
-      MathKey.variable('i'),
+      MathKey.constant('i'),
     ],
     [
       MathKey.variable(r'\alpha'),
