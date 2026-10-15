@@ -200,6 +200,8 @@ def test_corpus_covers_every_module() -> None:
         "even_odd",
         "extrema",
         "inflection",
+        "asymptotes",
+        "conic",
         "matrices",
         "matrix_ops",
         "derivatives",

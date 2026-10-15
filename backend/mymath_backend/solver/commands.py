@@ -272,6 +272,99 @@ def _sign_changes(expression: sympy.Expr, symbol: sympy.Symbol, point: sympy.Exp
     return (left_value < 0 < right_value) or (right_value < 0 < left_value)
 
 
+def asymptotes(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Найти вертикальные и горизонтальные асимптоты."""
+    del args
+    expression_node = (
+        node.children[1] if node.type is T.EQUALS and len(node.children) == 2 else node
+    )
+    if len(ctx.variables) != 1:
+        raise SolveError("асимптоты: поддерживается одна переменная")
+    var = ctx.variables[0]
+    symbol = sympy.Symbol(var)
+    function = to_sympy(expression_node)
+
+    vertical = _vertical_asymptotes(function, symbol)
+    if vertical:
+        ctx.result.add(Step(left=node, right=None, key="find_vert_asymptote"))
+    else:
+        ctx.result.add(Step(left=node, right=None, key="no_vert_asymptote"))
+
+    plus = sympy.limit(function, symbol, sympy.oo)
+    minus = sympy.limit(function, symbol, -sympy.oo)
+    horizontals = [value for value in (plus, minus) if value.is_finite]
+    if horizontals:
+        ctx.result.add(
+            Step(
+                left=node,
+                right=None,
+                key="find_hor_asymptote",
+                args=[from_sympy(plus), from_sympy(minus)],
+            )
+        )
+    else:
+        ctx.result.add(Step(left=node, right=None, key="no_hor_asymptote"))
+
+    parts: list[CoreNode] = [
+        CoreNode.node(T.EQUALS, CoreNode.variable(var), from_sympy(point)) for point in vertical
+    ]
+    seen: set[str] = set()
+    for value in horizontals:
+        node_value = from_sympy(value)
+        key = node_value.to_contract().__repr__()
+        if key not in seen:
+            seen.add(key)
+            parts.append(CoreNode.node(T.EQUALS, CoreNode.variable("y"), node_value))
+    if not parts:
+        raise SolveError("асимптоты не найдены")
+    if len(parts) == 1:
+        return parts[0]
+    return CoreNode.node(T.LIST, *parts)
+
+
+def _vertical_asymptotes(function: sympy.Expr, symbol: sympy.Symbol) -> list[sympy.Expr]:
+    """Точки, где функция терпит бесконечный разрыв (вертикальные асимптоты)."""
+    _, denominator = sympy.fraction(sympy.together(function))
+    if not denominator.has(symbol):
+        return []
+    points: list[sympy.Expr] = []
+    for root in _real_roots(denominator, symbol):
+        limit = sympy.limit(function, symbol, root)
+        if limit in (sympy.oo, -sympy.oo):
+            points.append(root)
+    return points
+
+
+def conic(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Определить тип конического сечения по общему уравнению."""
+    del args
+    if node.type is not T.EQUALS or len(node.children) != 2:
+        raise SolveError("коника — это уравнение")
+    if len(ctx.variables) != 2:
+        raise SolveError("коника: нужны две переменные")
+    first, second = (sympy.Symbol(name) for name in ctx.variables)
+    expression = to_sympy(node.children[0]) - to_sympy(node.children[1])
+    try:
+        polynomial = sympy.Poly(expression, first, second)
+    except sympy.PolynomialError as error:
+        raise SolveError("не коническое уравнение") from error
+
+    left = polynomial.coeff_monomial(first**2)
+    cross = polynomial.coeff_monomial(first * second)
+    right = polynomial.coeff_monomial(second**2)
+    discriminant = cross * cross - 4 * left * right
+    if discriminant < 0:
+        key = (
+            "conics_classify_circle" if left == right and cross == 0 else "conics_classify_ellipse"
+        )
+    elif discriminant == 0:
+        key = "conics_classify_parabola"
+    else:
+        key = "conics_classify_hyperbola"
+    ctx.result.add(Step(left=node, right=None, key=key))
+    return node
+
+
 COMMANDS: dict[str, Command] = {
     "factor": factor,
     "expand": expand,
@@ -279,6 +372,8 @@ COMMANDS: dict[str, Command] = {
     "domain": domain,
     "restrictions": restrictions,
     "area": area,
+    "conic": conic,
+    "asymptotes": asymptotes,
     "even_odd": even_odd,
     "extrema": extrema,
     "inflection": inflection,
@@ -311,6 +406,8 @@ __all__ = [
     "Command",
     "apply",
     "area",
+    "asymptotes",
+    "conic",
     "domain",
     "even_odd",
     "expand",
