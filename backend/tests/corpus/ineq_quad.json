@@ -1,0 +1,76 @@
+{
+  "module": "ineq_quad",
+  "tasks": [
+    {
+      "id": "less-inside",
+      "title": "x² − 5x + 6 < 0 → (2, 3)",
+      "input": "{lt({x^2-5x+6},{0})}",
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "2"},
+          {"type": "CONSTANT", "value": "3"}
+        ]
+      },
+      "steps": ["ineq_quad_to_eq_quad"]
+    },
+    {
+      "id": "greater-outside",
+      "title": "x² − 5x + 6 > 0 → (−∞, 2) ∪ (3, ∞)",
+      "input": "{gt({x^2-5x+6},{0})}",
+      "solution": {
+        "type": "UNION",
+        "children": [
+          {
+            "type": "OPEN_OPEN_INTERVAL",
+            "children": [
+              {"type": "NEGATIVE", "children": [{"type": "CONSTANT", "value": "∞"}]},
+              {"type": "CONSTANT", "value": "2"}
+            ]
+          },
+          {
+            "type": "OPEN_OPEN_INTERVAL",
+            "children": [
+              {"type": "CONSTANT", "value": "3"},
+              {"type": "CONSTANT", "value": "∞"}
+            ]
+          }
+        ]
+      },
+      "steps": ["ineq_quad_to_eq_quad"]
+    },
+    {
+      "id": "less-equal-closed",
+      "title": "x² − 5x + 6 ≤ 0 → [2, 3]",
+      "input": "{lte({x^2-5x+6},{0})}",
+      "solution": {
+        "type": "CLOSED_CLOSED_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "2"},
+          {"type": "CONSTANT", "value": "3"}
+        ]
+      },
+      "steps": ["ineq_quad_to_eq_quad"]
+    },
+    {
+      "id": "always-true",
+      "title": "x² + 1 > 0 — истинно для всех x",
+      "input": "{gt({x^2+1},{0})}",
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {"type": "NEGATIVE", "children": [{"type": "CONSTANT", "value": "∞"}]},
+          {"type": "CONSTANT", "value": "∞"}
+        ]
+      },
+      "steps": ["ineq_quad_lead_pos_t"]
+    },
+    {
+      "id": "always-false",
+      "title": "x² + 1 < 0 — решений нет",
+      "input": "{lt({x^2+1},{0})}",
+      "solution": {"type": "EMPTY"},
+      "steps": ["ineq_quad_lead_pos_f"]
+    }
+  ]
+}

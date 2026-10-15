@@ -184,6 +184,7 @@ def test_corpus_covers_every_module() -> None:
         "radical",
         "transcendental",
         "polynomial_high",
+        "ineq_quad",
         "matrices",
         "matrix_ops",
         "derivatives",

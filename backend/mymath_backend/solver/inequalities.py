@@ -1,29 +1,31 @@
-"""Линейные неравенства.
+"""Линейные и квадратные неравенства.
 
 Модуль зарегистрирован на знаки отношения ``<``, ``≤``, ``>``, ``≥``, ``≠``.
-Неравенство приводится к виду ``a·x + b ⋚ 0`` (через ``lhs - rhs``), затем
-неизвестное выражается:
+Неравенство приводится к виду ``p(x) ⋚ 0`` (через ``lhs - rhs``), затем:
 
-* при ``a > 0`` знак отношения сохраняется;
-* при ``a < 0`` знак меняется на противоположный (``< ↔ >``, ``≤ ↔ ≥``).
+* степень 1 — неизвестное выражается: при ``a > 0`` знак сохраняется, при
+  ``a < 0`` меняется на противоположный; ответ — ``x < 2``;
+* степень 2 — метод интервалов: находятся корни, знак старшего коэффициента
+  задаёт промежутки; ответ — промежуток или их объединение;
+* степень 0 — утверждение верно для всех или ни для одного значения.
 
-Ответ — то же неравенство с ``x`` слева: ``x < 2``. Шаги: ``move`` для
-переноса свободного члена и ``ineq_linear_div`` / ``ineq_linear_div_neg`` для
-деления на коэффициент.
-
-Поддерживаются только линейные неравенства; квадратные, дробные и системы
-неравенств — следующие модули.
+Ключи: ``ineq_linear_div``/``ineq_linear_div_neg``, ``move``,
+``ineq_quad_to_eq_quad``, ``ineq_quad_lead_*``. Ответ-промежуток — узлы
+``OPEN_*_INTERVAL``/``CLOSED_*_INTERVAL`` и ``UNION``.
 """
 
 from __future__ import annotations
 
 from fractions import Fraction
 
+import sympy
+
 from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
 from .arithmetic import format_number
 from .base import SolveContext, Step, solver_for
-from .equations import poly_of
+from .equations import _poly_expr, poly_of
+from .sympy_bridge import from_sympy
 
 _HEADER = CoreRichText(type="ineq_solve_short")
 
@@ -73,7 +75,11 @@ def solve_inequality(node: CoreNode, ctx: SolveContext) -> CoreNode:
             del poly[degree]
 
     degree = max(poly) if poly else 0
-    ctx.require(degree == 1, "поддерживаются линейные неравенства")
+    if degree == 0:
+        return _constant_inequality(node, poly, ctx)
+    if degree == 2:
+        return _quadratic_inequality(node, var, poly, ctx)
+    ctx.require(degree == 1, "поддерживаются линейные и квадратные неравенства")
 
     a = poly[1]
     b = poly.get(0, Fraction(0))
@@ -93,6 +99,137 @@ def solve_inequality(node: CoreNode, ctx: SolveContext) -> CoreNode:
         key = "ineq_linear_div_neg" if a < 0 else "ineq_linear_div"
         ctx.result.add(Step(left=left, right=solution, key=key, args=[_const(a)]), [_HEADER])
     return solution
+
+
+def _constant_inequality(node: CoreNode, poly: dict[int, Fraction], ctx: SolveContext) -> CoreNode:
+    """Неравенство, где неизвестное сократилось: верно для всех или ни для кого."""
+    value = poly.get(0, Fraction(0))
+    x = CoreNode.variable(ctx.variables[0])
+    if _holds(node.type, negative=value < 0, zero=value == 0):
+        answer = _all_reals()
+        ctx.result.add(Step(left=node, right=answer, key="rel_el_of_r", args=[x]), [_HEADER])
+    else:
+        answer = CoreNode.empty()
+        ctx.result.add(Step(left=node, right=None, key="rel_el_of_zero", args=[x]), [_HEADER])
+    return answer
+
+
+def _quadratic_inequality(
+    node: CoreNode, var: str, poly: dict[int, Fraction], ctx: SolveContext
+) -> CoreNode:
+    """Квадратное неравенство методом интервалов."""
+    a = poly.get(2, Fraction(0))
+    b = poly.get(1, Fraction(0))
+    c = poly.get(0, Fraction(0))
+    x = CoreNode.variable(var)
+    discriminant = b * b - 4 * a * c
+    below = node.type in (T.LESS_THAN, T.LESS_THAN_EQUAL)
+    closed = node.type in (T.LESS_THAN_EQUAL, T.GREATER_THAN_EQUAL)
+
+    if discriminant < 0:
+        # Знак постоянен: его задаёт старший коэффициент. Утверждение верно
+        # для всех, когда требуемый знак совпадает с фактическим.
+        positive = a > 0
+        true_for_all = positive != below
+        key = ("ineq_quad_lead_pos_" if positive else "ineq_quad_lead_neg_") + (
+            "t" if true_for_all else "f"
+        )
+        answer = _all_reals() if true_for_all else CoreNode.empty()
+        ctx.result.add(
+            Step(left=node, right=answer if true_for_all else None, key=key, args=[x, _const(a)]),
+            [_HEADER],
+        )
+        return answer
+
+    expression = _poly_expr(poly, var)
+    symbol = sympy.Symbol(var)
+    roots = sorted(sympy.solve(sympy.Eq(expression, 0), symbol), key=_sort_key)
+    right = CoreNode.node(T.EQUALS, from_sympy(expression), CoreNode.constant("0"))
+    ctx.result.add(Step(left=node, right=right, key="ineq_quad_to_eq_quad", args=[x]), [_HEADER])
+
+    inside = (a > 0) == below
+    return _interval_answer(roots[0], roots[-1], inside=inside, closed=closed)
+
+
+def _interval_answer(lo: sympy.Expr, hi: sympy.Expr, *, inside: bool, closed: bool) -> CoreNode:
+    """Ответ-промежуток по корням ``lo ≤ hi``."""
+    low, high = from_sympy(lo), from_sympy(hi)
+    if _is_zero(lo - hi):
+        if inside and closed:
+            return _interval(low, high, True, True)  # точка [r, r]
+        if inside:
+            return CoreNode.empty()
+        if closed:
+            return _all_reals()
+        return _union(
+            [
+                _interval(_neg_inf(), low, False, False),
+                _interval(high, _pos_inf(), False, False),
+            ]
+        )
+    if inside:
+        return _interval(low, high, closed, closed)
+    return _union(
+        [
+            _interval(_neg_inf(), low, False, closed),
+            _interval(high, _pos_inf(), closed, False),
+        ]
+    )
+
+
+def _holds(node_type: T, *, negative: bool, zero: bool) -> bool:
+    """Верно ли отношение для выражения с известным знаком."""
+    if node_type is T.LESS_THAN:
+        return negative
+    if node_type is T.LESS_THAN_EQUAL:
+        return negative or zero
+    if node_type is T.GREATER_THAN:
+        return not negative and not zero
+    if node_type is T.GREATER_THAN_EQUAL:
+        return not negative
+    return not zero
+
+
+def _interval(start: CoreNode, end: CoreNode, left_closed: bool, right_closed: bool) -> CoreNode:
+    """Узел промежутка по открытости краёв."""
+    node_type = {
+        (True, True): T.CLOSED_CLOSED_INTERVAL,
+        (True, False): T.CLOSED_OPEN_INTERVAL,
+        (False, True): T.OPEN_CLOSED_INTERVAL,
+        (False, False): T.OPEN_OPEN_INTERVAL,
+    }[(left_closed, right_closed)]
+    return CoreNode.node(node_type, start, end)
+
+
+def _all_reals() -> CoreNode:
+    """Вся числовая прямая как промежуток ``(-∞, +∞)``."""
+    return _interval(_neg_inf(), _pos_inf(), False, False)
+
+
+def _neg_inf() -> CoreNode:
+    return CoreNode.node(T.NEGATIVE, CoreNode.constant("∞"))
+
+
+def _pos_inf() -> CoreNode:
+    return CoreNode.constant("∞")
+
+
+def _union(nodes: list[CoreNode]) -> CoreNode:
+    if len(nodes) == 1:
+        return nodes[0]
+    return CoreNode.node(T.UNION, *nodes)
+
+
+def _is_zero(expression: sympy.Expr) -> bool:
+    result = sympy.simplify(expression) == 0
+    return result is True or result is sympy.true
+
+
+def _sort_key(root: sympy.Expr) -> float:
+    try:
+        return float(sympy.N(root))
+    except (TypeError, ValueError):
+        return 0.0
 
 
 __all__ = [

@@ -91,12 +91,50 @@ class TestSolve:
         assert [h.type for h in vertical.steps[0].step_headers] == ["ineq_solve_short"]
 
 
-class TestUnsupported:
-    def test_quadratic(self) -> None:
-        problem = ineq(T.LESS_THAN, node(T.POWER, var("x"), c("2")), c("4"))
-        with pytest.raises(SolveError, match="линейные"):
-            solve(problem)
+class TestQuadratic:
+    def quad(self) -> CoreNode:
+        # x^2 - 5x + 6
+        return node(
+            T.ADD,
+            node(T.POWER, var("x"), c("2")),
+            node(T.NEGATIVE, muli(c("5"), var("x"))),
+            c("6"),
+        )
 
+    def test_less_than_inside(self) -> None:
+        # x^2 - 5x + 6 < 0 -> (2, 3)
+        answer = solution_of(ineq(T.LESS_THAN, self.quad(), c("0")))
+        assert answer.type is T.OPEN_OPEN_INTERVAL
+        assert [child.value for child in answer.children] == ["2", "3"]
+
+    def test_greater_than_outside(self) -> None:
+        # x^2 - 5x + 6 > 0 -> (-inf, 2) ∪ (3, inf)
+        answer = solution_of(ineq(T.GREATER_THAN, self.quad(), c("0")))
+        assert answer.type is T.UNION
+
+    def test_less_equal_closed(self) -> None:
+        answer = solution_of(ineq(T.LESS_THAN_EQUAL, self.quad(), c("0")))
+        assert answer.type is T.CLOSED_CLOSED_INTERVAL
+
+    def test_always_true(self) -> None:
+        # x^2 + 1 > 0 для всех x.
+        problem = ineq(T.GREATER_THAN, node(T.ADD, node(T.POWER, var("x"), c("2")), c("1")), c("0"))
+        answer = solution_of(problem)
+        assert answer.type is T.OPEN_OPEN_INTERVAL
+
+    def test_unary_minus_precedence(self) -> None:
+        # -x^2 - 1 < 0 -> истинно для всех x (проверка приоритета унарного минуса).
+        problem = ineq(
+            T.LESS_THAN,
+            node(T.SUBTRACT, node(T.NEGATIVE, node(T.POWER, var("x"), c("2"))), c("1")),
+            c("0"),
+        )
+        answer = solution_of(problem)
+        assert answer.type is T.OPEN_OPEN_INTERVAL
+        assert answer.children[0].type is T.NEGATIVE
+
+
+class TestUnsupported:
     def test_two_variables(self) -> None:
         problem = ineq(T.LESS_THAN, node(T.ADD, var("x"), var("y")), c("1"))
         with pytest.raises(SolveError, match="одно неизвестное"):
