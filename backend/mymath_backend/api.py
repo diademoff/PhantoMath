@@ -29,6 +29,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
 from .ast import CoreAction, CoreNode
+from .concepts import definition as concept_definition
 from .explanations import DEFAULT_LOCALE, Explanations, load_explanations
 from .input import ProtocolError, parse_json, parse_protocol
 from .solver import SolveError, solve
@@ -139,11 +140,19 @@ def _render_view(key: str, args: list[CoreNode], locale: str) -> dict[str, Any]:
             missing=True,
         ).model_dump()
     rendered = explanations().render(key, args, normalize_locale(locale))
+    used_locale = normalize_locale(locale)
     return ExplanationView(
         key=key,
         text=rendered.text,
         locale=rendered.locale,
-        links=[{"label": link.label, "uuid": link.uuid} for link in rendered.links],
+        links=[
+            {
+                "label": link.label,
+                "uuid": link.uuid,
+                "definition": concept_definition(link.uuid, used_locale) or "",
+            }
+            for link in rendered.links
+        ],
         tail_label=rendered.tail_label,
         missing=rendered.missing_key,
     ).model_dump()

@@ -247,3 +247,5 @@ class TestCommands:
         ][0]
         links = substep["explanation"]["links"]
         assert links and links[0]["label"] and links[0]["uuid"]
+        # Факторинг: определение понятия подставлено из нашего глоссария.
+        assert links[0]["definition"]
