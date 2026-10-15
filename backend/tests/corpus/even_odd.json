@@ -1,0 +1,47 @@
+{
+  "module": "even_odd",
+  "tasks": [
+    {
+      "id": "even",
+      "title": "x² — чётная",
+      "input": "{x^2}",
+      "command": "even_odd",
+      "solution": {
+        "type": "POWER",
+        "children": [
+          {"type": "VARIABLE", "value": "x"},
+          {"type": "CONSTANT", "value": "2"}
+        ]
+      },
+      "steps": ["function_even"]
+    },
+    {
+      "id": "odd",
+      "title": "x³ — нечётная",
+      "input": "{x^3}",
+      "command": "even_odd",
+      "solution": {
+        "type": "POWER",
+        "children": [
+          {"type": "VARIABLE", "value": "x"},
+          {"type": "CONSTANT", "value": "3"}
+        ]
+      },
+      "steps": ["function_odd"]
+    },
+    {
+      "id": "neither",
+      "title": "x² + x — ни чётная, ни нечётная",
+      "input": "{x^2+x}",
+      "command": "even_odd",
+      "solution": {
+        "type": "ADD",
+        "children": [
+          {"type": "POWER", "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "2"}]},
+          {"type": "VARIABLE", "value": "x"}
+        ]
+      },
+      "steps": ["function_not_even_nor_odd"]
+    }
+  ]
+}

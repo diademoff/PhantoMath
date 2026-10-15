@@ -197,6 +197,7 @@ def test_corpus_covers_every_module() -> None:
         "area",
         "prove",
         "evaluate",
+        "even_odd",
         "matrices",
         "matrix_ops",
         "derivatives",

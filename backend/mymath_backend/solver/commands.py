@@ -156,6 +156,27 @@ def substitute(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreN
     return result
 
 
+def even_odd(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Определить чётность/нечётность функции."""
+    del args
+    expression_node = (
+        node.children[1] if node.type is T.EQUALS and len(node.children) == 2 else node
+    )
+    if len(ctx.variables) != 1:
+        raise SolveError("чётность: поддерживается одна переменная")
+    symbol = sympy.Symbol(ctx.variables[0])
+    expression = to_sympy(expression_node)
+    negated = expression.subs(symbol, -symbol)
+    if sympy.simplify(expression - negated) == 0:
+        key = "function_even"
+    elif sympy.simplify(expression + negated) == 0:
+        key = "function_odd"
+    else:
+        key = "function_not_even_nor_odd"
+    ctx.result.add(Step(left=node, right=None, key=key))
+    return expression_node
+
+
 COMMANDS: dict[str, Command] = {
     "factor": factor,
     "expand": expand,
@@ -163,6 +184,7 @@ COMMANDS: dict[str, Command] = {
     "domain": domain,
     "restrictions": restrictions,
     "area": area,
+    "even_odd": even_odd,
     "prove": prove,
     "substitute": substitute,
     "to_fraction": to_fraction,
@@ -193,6 +215,7 @@ __all__ = [
     "apply",
     "area",
     "domain",
+    "even_odd",
     "expand",
     "factor",
     "prove",
