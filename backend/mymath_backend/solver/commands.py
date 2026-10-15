@@ -31,6 +31,7 @@ from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
 from .base import Command, SolveContext, SolveError, Step
 from .domain import domain, restrictions
+from .integrals import area
 from .matrices import MATRIX_COMMANDS
 from .sympy_bridge import from_sympy, to_sympy
 from .vectors import VECTOR_COMMANDS
@@ -136,6 +137,7 @@ COMMANDS: dict[str, Command] = {
     "simplify": simplify,
     "domain": domain,
     "restrictions": restrictions,
+    "area": area,
     "to_fraction": to_fraction,
     "to_mixed": to_mixed,
     "to_percent": to_percent,
@@ -162,6 +164,7 @@ __all__ = [
     "COMMANDS",
     "Command",
     "apply",
+    "area",
     "domain",
     "expand",
     "factor",

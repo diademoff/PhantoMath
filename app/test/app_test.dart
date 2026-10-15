@@ -328,6 +328,8 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: api)));
     await tester.pump();
     await _key(tester, '1');
+    await tester.ensureVisible(find.text('График'));
+    await tester.pump();
     await tester.tap(find.text('График'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));

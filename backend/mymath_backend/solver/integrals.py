@@ -20,6 +20,8 @@
 
 from __future__ import annotations
 
+import itertools
+
 import sympy
 
 from ..ast import CoreNode
@@ -138,6 +140,62 @@ def _has_composite(expression: sympy.Expr, symbol: sympy.Symbol) -> bool:
     return False
 
 
+def area(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Общая площадь под кривой: интеграл модуля функции на отрезке.
+
+    Команда ``area`` принимает определённый интеграл ``∫_a^b f dx`` и считает
+    ``∫_a^b |f| dx``: промежуток разбивается корнями ``f``, на каждом куске
+    берётся модуль интеграла. Ответ — площадь (число/выражение).
+    """
+    del args
+    ctx.require(node.type is T.INTEGRAL_DEFINITE, "площадь берётся у определённого интеграла")
+    ctx.require(len(node.children) == 3, "определённый интеграл: пределы и выражение")
+    ctx.require(len(ctx.variables) <= 1, "поддерживается одно неизвестное")
+    symbol = _variable(ctx)
+
+    lower_node, upper_node, expression_node = node.children
+    lower = to_sympy(lower_node)
+    upper = to_sympy(upper_node)
+    expression = to_sympy(expression_node)
+    if not (lower.is_real is True and upper.is_real is True):
+        raise SolveError("пределы площади должны быть числами")
+    if lower > upper:
+        lower, upper = upper, lower
+
+    breakpoints = [lower, *_roots_inside(expression, symbol, lower, upper), upper]
+    total = sympy.Integer(0)
+    for start, end in itertools.pairwise(breakpoints):
+        piece = sympy.integrate(expression, (symbol, start, end))
+        total += sympy.Abs(piece)
+    result = from_sympy(sympy.simplify(total))
+    ctx.result.add(Step(left=node, right=None, key="total_area"))
+    ctx.result.add(Step(left=node, right=result, key="integrate_calc"))
+    return result
+
+
+def _roots_inside(
+    expression: sympy.Expr, symbol: sympy.Symbol, lower: sympy.Expr, upper: sympy.Expr
+) -> list[sympy.Expr]:
+    """Действительные корни выражения внутри ``(lower, upper)`` по возрастанию."""
+    try:
+        found = sympy.solve(sympy.Eq(expression, 0), symbol)
+    except (TypeError, ValueError, NotImplementedError):
+        return []
+    inside: list[sympy.Expr] = []
+    for root in found:
+        if root.is_real is False:
+            continue
+        try:
+            value = float(sympy.N(root))
+        except (TypeError, ValueError):
+            continue
+        if float(sympy.N(lower)) < value < float(sympy.N(upper)):
+            inside.append(root)
+    inside.sort(key=lambda item: float(sympy.N(item)))
+    return inside
+
+
 __all__ = [
+    "area",
     "solve_integral",
 ]

@@ -175,6 +175,7 @@ class _SolvePageState extends State<SolvePage> {
     ('to_percent', 'В проценты'),
     ('to_sci', '10ⁿ'),
     ('to_mixed', 'Смешанное'),
+    ('area', 'Площадь'),
     ('vector_length', 'Длина'),
   ];
 
