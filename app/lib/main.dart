@@ -81,6 +81,7 @@ class _SolvePageState extends State<SolvePage> {
     ('factor', 'Разложить'),
     ('expand', 'Раскрыть'),
     ('simplify', 'Упростить'),
+    ('vector_length', 'Длина'),
   ];
 
   @override

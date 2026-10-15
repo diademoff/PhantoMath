@@ -115,6 +115,7 @@ class SolverApi {
     String locale = 'default',
     bool render = true,
     String? command,
+    List<CoreNode> args = const [],
   }) async {
     final response = await _client.post(
       Uri.parse('$baseUrl/api/v1/solve'),
@@ -123,7 +124,11 @@ class SolverApi {
         'node': _toJson(node),
         'locale': locale,
         'render': render,
-        if (command != null) 'action': {'command': command, 'args': <Object>[]},
+        if (command != null)
+          'action': {
+            'command': command,
+            'args': [for (final arg in args) _toJson(arg)],
+          },
       }),
     );
 

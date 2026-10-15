@@ -42,6 +42,7 @@
 | 15 | Способы решения — **несколько записей** вертикальной ветки + `selectMethodText`; клиент переключает локально, без повторного запроса | `solver/base.py`, `solver/equations.py` |
 | 16 | Ссылки `[label\|uuid]` возвращаются как **`{label, uuid, definition}`**; определения — наш короткий глоссарий (`concepts.py`), не из APK | `api.py`, `concepts.py`, `app/lib/main.dart` |
 | 17 | Комплексные числа: мнимая единица — **`CONSTANT "i"`**; `Re`/`Im`/сопряжение — типы `REAL`/`IMAGINARY`/`CONJUGATE`, арифметика с `i` — через sympy | `solver/complex.py`, `sympy_bridge.py` |
+| 18 | **Векторы — наше представление**: вектор = узел `LIST` с компонентами; операции — команды с вторым операндом в `CoreAction.args` (в контракте типа вектора нет) | `solver/vectors.py`, `api.py` |
 
 ## Ввод: редактор и клавиатура
 

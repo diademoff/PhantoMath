@@ -178,6 +178,7 @@ final KeyboardPanel _powerPanel = KeyboardPanel(
     [
       MathKey.template(ENodeKind.abs),
       MathKey.template(ENodeKind.bracket),
+      MathKey.template(ENodeKind.vector),
       MathKey.constant('π'),
       MathKey.constant('e'),
     ],

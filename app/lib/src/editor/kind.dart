@@ -46,6 +46,7 @@ enum ENodeKind {
   root2,
   abs,
   bracket,
+  vector,
 
   // ── шаблоны: функции ────────────────────────────────────────────────
   sin,
@@ -95,6 +96,8 @@ extension ENodeKindSpec on ENodeKind {
       case ENodeKind.choose:
       case ENodeKind.permutation:
       case ENodeKind.variation:
+        return 2;
+      case ENodeKind.vector:
         return 2;
       case ENodeKind.integralDefinite:
       case ENodeKind.sigma:
@@ -272,6 +275,8 @@ extension ENodeKindSpec on ENodeKind {
         return core.CoreNodeType.abs;
       case ENodeKind.bracket:
         return core.CoreNodeType.bracket;
+      case ENodeKind.vector:
+        return core.CoreNodeType.list;
       case ENodeKind.sin:
         return core.CoreNodeType.sin;
       case ENodeKind.cos:
@@ -372,6 +377,8 @@ extension ENodeKindSpec on ENodeKind {
         return '|x|';
       case ENodeKind.bracket:
         return '( )';
+      case ENodeKind.vector:
+        return '⟨a,b⟩';
       case ENodeKind.sin:
         return 'sin';
       case ENodeKind.cos:

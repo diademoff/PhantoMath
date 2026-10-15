@@ -153,6 +153,14 @@ class _EditorViewState extends State<EditorView> {
         return _delimited('[', slots[0], ']', bars: true);
       case ENodeKind.bracket:
         return _delimited('(', slots[0], ')');
+      case ENodeKind.vector:
+        return _rowOf([
+          Text('(', style: TextStyle(fontSize: _fs, height: 1)),
+          slots[0],
+          const Text(', '),
+          slots[1],
+          Text(')', style: TextStyle(fontSize: _fs, height: 1)),
+        ]);
       case ENodeKind.sin:
         return _function('sin', slots[0]);
       case ENodeKind.cos:

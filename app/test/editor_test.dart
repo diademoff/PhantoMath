@@ -194,6 +194,17 @@ void main() {
       expect(node.children.single.value, '5');
     });
 
+    test('вектор даёт список LIST', () {
+      final c = EditorController();
+      c.insertTemplate(ENodeKind.vector);
+      c.typeDigit('3');
+      c.moveDown();
+      c.typeDigit('4');
+      final node = c.toCoreNode();
+      expect(node.type, CoreNodeType.list);
+      expect(node.children.map((child) => child.value).toList(), ['3', '4']);
+    });
+
     test('функция без аргумента не теряется', () {
       final c = EditorController();
       c.insertTemplate(ENodeKind.sin);
