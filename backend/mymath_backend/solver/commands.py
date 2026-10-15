@@ -18,6 +18,7 @@
 * ``to_sci`` — число в экспоненциальную запись (``sci_form_msg``);
 * ``to_mixed`` — неправильную дробь в смешанное число (``convert_improper_fraction``);
 * ``approximate`` — приближённое значение с округлением (``round0``…``round4``);
+* ``inverse_function`` — обратная функция (``find_inverse``);
 * ``intercepts`` — пересечения графика с осями координат
   (``find_x_intercept``/``find_y_intercept``);
 * ``range`` — область значений функции (``graph_rt_info_range``);
@@ -426,6 +427,35 @@ def intercepts(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreN
     return CoreNode.node(T.LIST, *points)
 
 
+def inverse_function(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Найти обратную функцию ``y = f⁻¹(x)`` для ``f``.
+
+    Выражение ``f(x)`` (или правая часть ``y = f(x)``) решается относительно
+    ``x``; свободная переменная результата обозначается ``x``. Однозначная
+    обратная функция — один корень; ветвящиеся случаи (``x²``) отклоняются.
+    """
+    del args
+    expression_node = _expression_of(node)
+    if len(ctx.variables) != 1:
+        raise SolveError("обратная функция: поддерживается одна переменная")
+    var = ctx.variables[0]
+    target = sympy.Symbol("_y")
+    try:
+        found = sympy.solve(sympy.Eq(target, to_sympy(expression_node)), sympy.Symbol(var))
+    except (NotImplementedError, TypeError, ValueError) as error:
+        raise SolveError("обратная функция не выражается") from error
+    # Комплексные ветви отбрасываем: у ``x³`` корней три, но действителен один.
+    real = [root for root in found if not root.has(sympy.I)]
+    if not real:
+        raise SolveError("обратная функция не выражается")
+    if len(real) > 1:
+        raise SolveError("обратная функция не однозначна")
+    inverse = from_sympy(real[0].subs(target, sympy.Symbol("x")))
+    result = CoreNode.node(T.EQUALS, CoreNode.variable("y"), inverse)
+    ctx.result.add(Step(left=node, right=result, key="find_inverse"))
+    return result
+
+
 def value_range(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Область значений функции — множество её значений на прямой.
 
@@ -632,6 +662,7 @@ COMMANDS: dict[str, Command] = {
     "extrema": extrema,
     "inflection": inflection,
     "intercepts": intercepts,
+    "inverse_function": inverse_function,
     "nth_derivative": nth_derivative,
     "periodic_to_frac": periodic_to_frac,
     "range": value_range,
@@ -676,6 +707,7 @@ __all__ = [
     "factor",
     "inflection",
     "intercepts",
+    "inverse_function",
     "nth_derivative",
     "periodic_to_frac",
     "polar",

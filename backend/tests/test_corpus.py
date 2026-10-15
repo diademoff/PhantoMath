@@ -198,6 +198,7 @@ def test_corpus_covers_every_module() -> None:
         "area",
         "prove",
         "evaluate",
+        "inverse",
         "even_odd",
         "extrema",
         "inflection",

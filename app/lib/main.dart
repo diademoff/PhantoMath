@@ -173,6 +173,7 @@ class _SolvePageState extends State<SolvePage> {
     ('range', 'Область значений'),
     ('restrictions', 'ОДЗ'),
     ('intercepts', 'Пересечения с осями'),
+    ('inverse_function', 'Обратная функция'),
     ('even_odd', 'Чётность'),
     ('extrema', 'Экстремумы'),
     ('inflection', 'Перегибы'),
