@@ -25,7 +25,7 @@ import sympy
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
 from .base import Command, SolveContext, SolveError, Step
-from .domain import domain
+from .domain import domain, restrictions
 from .matrices import MATRIX_COMMANDS
 from .sympy_bridge import from_sympy, to_sympy
 from .vectors import VECTOR_COMMANDS
@@ -73,6 +73,7 @@ COMMANDS: dict[str, Command] = {
     "expand": expand,
     "simplify": simplify,
     "domain": domain,
+    "restrictions": restrictions,
     **VECTOR_COMMANDS,
     **MATRIX_COMMANDS,
 }

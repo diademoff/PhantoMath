@@ -189,6 +189,7 @@ def test_corpus_covers_every_module() -> None:
         "ineq_transcendental",
         "ineq_compound",
         "ineq_system",
+        "restrictions",
         "matrices",
         "matrix_ops",
         "derivatives",

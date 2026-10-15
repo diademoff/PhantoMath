@@ -1,0 +1,52 @@
+{
+  "module": "restrictions",
+  "tasks": [
+    {
+      "id": "none",
+      "title": "многочлен — недопустимых значений нет",
+      "input": "{x^2+1}",
+      "command": "restrictions",
+      "solution": {"type": "EMPTY"},
+      "steps": ["rel_restrictions_none"]
+    },
+    {
+      "id": "single-pole",
+      "title": "1/(x−1) — недопустимо x = 1",
+      "input": "{frac({1},{x-1})}",
+      "command": "restrictions",
+      "solution": {
+        "type": "SET",
+        "children": [{"type": "CONSTANT", "value": "1"}]
+      },
+      "steps": ["rel_restrictions_find"]
+    },
+    {
+      "id": "two-poles",
+      "title": "1/(x²−1) — недопустимы x = ±1",
+      "input": "{frac({1},{x^2-1})}",
+      "command": "restrictions",
+      "solution": {
+        "type": "SET",
+        "children": [
+          {"type": "CONSTANT", "value": "-1"},
+          {"type": "CONSTANT", "value": "1"}
+        ]
+      },
+      "steps": ["rel_restrictions_find"]
+    },
+    {
+      "id": "square-root",
+      "title": "√(x−2) — недопустимо (−∞, 2)",
+      "input": "{root2({x-2})}",
+      "command": "restrictions",
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {"type": "NEGATIVE", "children": [{"type": "CONSTANT", "value": "∞"}]},
+          {"type": "CONSTANT", "value": "2"}
+        ]
+      },
+      "steps": ["rel_restrictions_find"]
+    }
+  ]
+}

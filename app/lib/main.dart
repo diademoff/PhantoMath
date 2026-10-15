@@ -170,6 +170,7 @@ class _SolvePageState extends State<SolvePage> {
     ('expand', 'Раскрыть'),
     ('simplify', 'Упростить'),
     ('domain', 'Область определения'),
+    ('restrictions', 'ОДЗ'),
     ('vector_length', 'Длина'),
   ];
 

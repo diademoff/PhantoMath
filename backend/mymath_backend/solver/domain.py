@@ -22,6 +22,7 @@ from .base import SolveContext, SolveError, Step
 from .sympy_bridge import from_sympy, to_sympy
 
 _KEY = "domain_find"
+_KEY_RESTRICTIONS = "rel_restrictions_find"
 
 
 def all_reals() -> CoreNode:
@@ -45,6 +46,39 @@ def domain(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     return answer
 
 
+def restrictions(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Найти недопустимые значения выражения (дополнение области определения).
+
+    Знаменатель, аргумент логарифма, подкоренное выражение и т.п. дают
+    значения, при которых выражение не определено. Ответ — множество
+    (промежуток, объединение или конечное множество точек); если таких нет —
+    ``EMPTY``.
+    """
+    del args
+    if node.type is T.EQUALS:
+        raise SolveError("недопустимые значения берутся у выражения, а не у уравнения")
+
+    expression = to_sympy(node)
+    symbols = sorted(expression.free_symbols, key=lambda symbol: symbol.name)
+    if len(symbols) > 1:
+        raise SolveError("недопустимые значения: поддерживается одна переменная")
+
+    forbidden = sympy.EmptySet if not symbols else _forbidden(expression, symbols[0])
+    answer = from_sympy(forbidden)
+    key = "rel_restrictions_none" if answer.type is T.EMPTY else _KEY_RESTRICTIONS
+    ctx.result.add(Step(left=node, right=answer, key=key))
+    return answer
+
+
+def _forbidden(expression: sympy.Expr, symbol: sympy.Symbol) -> sympy.Set:
+    """Множество недопустимых значений: дополнение области определения."""
+    try:
+        allowed = continuous_domain(expression, symbol, sympy.S.Reals)
+        return sympy.simplify(sympy.Complement(sympy.S.Reals, allowed))
+    except (NotImplementedError, ValueError) as error:
+        raise SolveError("недопустимые значения не выражаются") from error
+
+
 def _domain_of(expression: sympy.Expr, symbol: sympy.Symbol) -> CoreNode:
     """Область определения выражения относительно переменной."""
     try:
@@ -59,4 +93,5 @@ def _domain_of(expression: sympy.Expr, symbol: sympy.Symbol) -> CoreNode:
 __all__ = [
     "all_reals",
     "domain",
+    "restrictions",
 ]
