@@ -236,6 +236,12 @@ String _nodeBody(CoreNode node) {
     case CoreNodeType.determinant3:
       return _matrix(node, 3, r'\begin{vmatrix}', r'\end{vmatrix}');
 
+    case CoreNodeType.matrix:
+      return _matrixLatex(node, r'\begin{pmatrix}', r'\end{pmatrix}');
+
+    case CoreNodeType.matrixRow:
+      return node.children.map(_childLatex).join(' & ');
+
     // ── отношения ───────────────────────────────────────────────────
     case CoreNodeType.equals:
       return _wrap(node, r'$0 = $1');
@@ -309,6 +315,17 @@ String _matrix(CoreNode node, int size, String open, String close) {
 String _childLatex(CoreNode child) {
   final latex = nodeToLatex(child);
   return latex.isEmpty ? _placeholder : latex;
+}
+
+/// Матрица переменного размера из строк `MATRIX_ROW`.
+String _matrixLatex(CoreNode node, String open, String close) {
+  if (node.children.isEmpty) return _placeholder;
+  final rows = <String>[];
+  for (final row in node.children) {
+    final cells = row.type == CoreNodeType.matrixRow ? row.children : [row];
+    rows.add(cells.map(_childLatex).join(' & '));
+  }
+  return '$open ${rows.join(r' \\ ')} $close';
 }
 
 /// Экранировать символы, которые LaTeX считает служебными.

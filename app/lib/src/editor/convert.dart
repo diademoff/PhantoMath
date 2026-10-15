@@ -128,9 +128,33 @@ CoreNode _atom(ENode token) {
 
 /// Шаблон: слоты-ряды становятся детьми узла в том же порядке.
 CoreNode _templateToCore(ENode template) {
+  if (template.kind == ENodeKind.matrix2 ||
+      template.kind == ENodeKind.matrix3) {
+    return _matrixToCore(template);
+  }
   final children = [
     for (final slot in template.children)
       slot.kind == ENodeKind.row ? _rowToCore(slot) : _atom(slot),
   ];
   return CoreNode(type: template.kind.coreType, children: children);
+}
+
+/// Матрица: плоские слоты собираются в строки `MATRIX_ROW` (по строкам).
+///
+/// В редакторе матрица — шаблон из `n²` ячеек; в контракте — узел `MATRIX`,
+/// у которого дети — строки `MATRIX_ROW`, а у строки — ячейки.
+CoreNode _matrixToCore(ENode template) {
+  final size = template.kind == ENodeKind.matrix2 ? 2 : 3;
+  final cells = [
+    for (final slot in template.children)
+      slot.kind == ENodeKind.row ? _rowToCore(slot) : _atom(slot),
+  ];
+  final rows = <CoreNode>[
+    for (var row = 0; row < size; row++)
+      CoreNode(
+        type: CoreNodeType.matrixRow,
+        children: [for (var col = 0; col < size; col++) cells[row * size + col]],
+      ),
+  ];
+  return CoreNode(type: CoreNodeType.matrix, children: rows);
 }

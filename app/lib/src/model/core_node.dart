@@ -84,6 +84,8 @@ enum CoreNodeType {
   variation('VARIATION'),
   determinant2('DETERMINANT2'),
   determinant3('DETERMINANT3'),
+  matrix('MATRIX'),
+  matrixRow('MATRIX_ROW'),
   list('LIST'),
   system('SYSTEM');
 

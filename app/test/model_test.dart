@@ -160,6 +160,20 @@ void main() {
       expect(latex, contains('&'));
     });
 
+    test('матрица рисуется pmatrix', () {
+      final node = CoreNode(
+        type: CoreNodeType.matrix,
+        children: [
+          CoreNode(type: CoreNodeType.matrixRow, children: [c2, c3]),
+          CoreNode(type: CoreNodeType.matrixRow, children: [c3, c2]),
+        ],
+      );
+      final latex = nodeToLatex(node);
+      expect(latex, contains(r'\begin{pmatrix}'));
+      expect(latex, contains(r'\end{pmatrix}'));
+      expect(latex, contains('&'));
+    });
+
     test('незавершённый узел даёт заглушку, а не пустоту', () {
       final node = CoreNode(type: CoreNodeType.add, children: [c2]);
       expect(nodeToLatex(node), contains(r'\square'));
@@ -220,6 +234,14 @@ void main() {
         ),
         // Микро-анимация: зачёркнутая часть.
         CoreNode(type: CoreNodeType.constant, value: '8', crossed: true),
+        // Матрица со строками.
+        CoreNode(
+          type: CoreNodeType.matrix,
+          children: [
+            CoreNode(type: CoreNodeType.matrixRow, children: [c2, c3]),
+            CoreNode(type: CoreNodeType.matrixRow, children: [c3, c2]),
+          ],
+        ),
         // Серия общего решения тригонометрического уравнения: x = π/6 + 2πk.
         bin(
           CoreNodeType.equals,

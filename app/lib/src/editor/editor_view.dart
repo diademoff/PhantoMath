@@ -177,6 +177,10 @@ class _EditorViewState extends State<EditorView> {
         return _matrixView(2, slots);
       case ENodeKind.determinant3:
         return _matrixView(3, slots);
+      case ENodeKind.matrix2:
+        return _matrixView(2, slots, left: '[', right: ']');
+      case ENodeKind.matrix3:
+        return _matrixView(3, slots, left: '[', right: ']');
       case ENodeKind.sin:
         return _function('sin', slots[0]);
       case ENodeKind.cos:
@@ -324,8 +328,13 @@ class _EditorViewState extends State<EditorView> {
     );
   }
 
-  /// Матрица `size×size` между вертикальными чертами.
-  Widget _matrixView(int size, List<Widget> slots) {
+  /// Матрица `size×size` между ограничителями (по умолчанию — как определитель).
+  Widget _matrixView(
+    int size,
+    List<Widget> slots, {
+    String left = '|',
+    String right = '|',
+  }) {
     final rows = <Widget>[];
     for (var row = 0; row < size; row++) {
       final cells = <Widget>[];
@@ -337,13 +346,13 @@ class _EditorViewState extends State<EditorView> {
     }
     final bar = TextStyle(fontSize: _fs * size, height: 1);
     return _rowOf([
-      Text('|', style: bar),
+      Text(left, style: bar),
       Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: rows,
       ),
-      Text('|', style: bar),
+      Text(right, style: bar),
     ]);
   }
 

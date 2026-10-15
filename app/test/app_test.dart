@@ -260,6 +260,55 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('шторка матрицы шлёт команду с второй матрицей', (tester) async {
+    final view =
+        TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
+    view.physicalSize = const Size(2400, 2280);
+    view.devicePixelRatio = 1;
+    Map<String, dynamic>? sent;
+    final api = SolverApi(
+      baseUrl: 'http://test',
+      client: MockClient((request) async {
+        sent = jsonDecode(request.body) as Map<String, dynamic>;
+        return http.Response(
+          _solveBody,
+          200,
+          headers: const {'content-type': 'application/json; charset=utf-8'},
+        );
+      }),
+    );
+    await tester.pumpWidget(MaterialApp(home: SolvePage(api: api)));
+    await tester.pump();
+
+    // Матрица 2×2: шаблон, затем цифровая панель.
+    await tester.tap(find.text('{}'));
+    await tester.pump();
+    await _key(tester, '2×2');
+    await tester.tap(find.text('123'));
+    await tester.pump();
+    for (final digit in ['1', '2', '3', '4']) {
+      await _key(tester, digit);
+      await _key(tester, '▼');
+    }
+
+    await tester.tap(find.text('Матрица…'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.enterText(find.byType(TextField).at(0), '5,6;7,8');
+    await tester.tap(find.text('Умножить'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(sent?['action']?['command'], 'matrix_multiply');
+    final args = sent?['action']?['args'] as List<dynamic>?;
+    expect(args, hasLength(1));
+    final second = args!.first as Map;
+    expect(second['type'], 'MATRIX');
+    expect((second['children'] as List).first, isA<Map>());
+    expect((second['children'] as List).first['type'], 'MATRIX_ROW');
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('кнопка «График» показывает график', (tester) async {
     final view =
         TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;

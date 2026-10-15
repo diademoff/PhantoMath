@@ -217,6 +217,77 @@ class _SolvePageState extends State<SolvePage> {
     _solveWith(command: command, args: args);
   }
 
+  /// Разобрать матрицу из строки «1, 2; 3, 4» (строки через `;`, ячейки через `,`).
+  CoreNode? _parseMatrix(String text) {
+    final rows = text
+        .split(';')
+        .map((row) => row.trim())
+        .where((row) => row.isNotEmpty)
+        .toList();
+    if (rows.isEmpty) return null;
+    final matrixRows = <CoreNode>[];
+    var width = -1;
+    for (final rowText in rows) {
+      final cells = rowText
+          .split(',')
+          .map((cell) => cell.trim())
+          .where((cell) => cell.isNotEmpty)
+          .toList();
+      if (cells.isEmpty) return null;
+      if (width == -1) {
+        width = cells.length;
+      } else if (cells.length != width) {
+        return null;
+      }
+      final nodes = <CoreNode>[];
+      for (final cell in cells) {
+        if (double.tryParse(cell) == null) return null;
+        nodes.add(CoreNode(type: CoreNodeType.constant, value: cell));
+      }
+      matrixRows.add(CoreNode(type: CoreNodeType.matrixRow, children: nodes));
+    }
+    return CoreNode(type: CoreNodeType.matrix, children: matrixRows);
+  }
+
+  /// Шторка операций над матрицей: второй операнд и выбор действия.
+  Future<void> _openMatrixSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => _MatrixSheet(onRun: _runMatrixCommand),
+    );
+  }
+
+  /// Выполнить матричную команду с введённым вторым операндом.
+  void _runMatrixCommand(String command, String text) {
+    final List<CoreNode> args;
+    if (command == 'matrix_scale') {
+      if (double.tryParse(text.trim()) == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Скаляр — число')),
+        );
+        return;
+      }
+      args = [CoreNode(type: CoreNodeType.constant, value: text.trim())];
+    } else if (command == 'matrix_transpose' ||
+        command == 'matrix_inverse' ||
+        command == 'matrix_determinant') {
+      args = const [];
+    } else {
+      final matrix = _parseMatrix(text);
+      if (matrix == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Матрица: строки через ;, ячейки через ,')),
+        );
+        return;
+      }
+      args = [matrix];
+    }
+    Navigator.of(context).pop();
+    _solveWith(command: command, args: args);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -288,6 +359,14 @@ class _SolvePageState extends State<SolvePage> {
                       avatar: const Icon(Icons.arrow_outward, size: 16),
                       label: const Text('Вектор…'),
                       onPressed: _openVectorSheet,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ActionChip(
+                      avatar: const Icon(Icons.grid_on, size: 16),
+                      label: const Text('Матрица…'),
+                      onPressed: _openMatrixSheet,
                     ),
                   ),
                   Padding(
@@ -780,6 +859,106 @@ class _IntervalDialogState extends State<_IntervalDialog> {
           child: const Text('Готово'),
         ),
       ],
+    );
+  }
+}
+
+/// Шторка операций над матрицей: второй операнд и выбор действия.
+class _MatrixSheet extends StatefulWidget {
+  const _MatrixSheet({required this.onRun});
+
+  final void Function(String command, String text) onRun;
+
+  @override
+  State<_MatrixSheet> createState() => _MatrixSheetState();
+}
+
+class _MatrixSheetState extends State<_MatrixSheet> {
+  final _second = TextEditingController(text: '5,6;7,8');
+  final _scalar = TextEditingController(text: '2');
+
+  @override
+  void dispose() {
+    _second.dispose();
+    _scalar.dispose();
+    super.dispose();
+  }
+
+  Widget _action(String command, String label, TextEditingController input) {
+    return FilledButton.tonal(
+      onPressed: () => widget.onRun(command, input.text),
+      child: Text(label),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Операции с матрицей',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _second,
+            decoration: const InputDecoration(
+              labelText: 'Вторая матрица (например 5,6;7,8)',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _action('matrix_add', 'Сложить', _second),
+              _action('matrix_subtract', 'Вычесть', _second),
+              _action('matrix_multiply', 'Умножить', _second),
+            ],
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _scalar,
+            decoration: const InputDecoration(
+              labelText: 'Скаляр',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: _action('matrix_scale', '× скаляр', _scalar),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FilledButton.tonal(
+                onPressed: () => widget.onRun('matrix_transpose', ''),
+                child: const Text('Транспонировать'),
+              ),
+              FilledButton.tonal(
+                onPressed: () => widget.onRun('matrix_inverse', ''),
+                child: const Text('Обратная'),
+              ),
+              FilledButton.tonal(
+                onPressed: () => widget.onRun('matrix_determinant', ''),
+                child: const Text('Определитель'),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

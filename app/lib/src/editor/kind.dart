@@ -52,6 +52,8 @@ enum ENodeKind {
   system2,
   determinant2,
   determinant3,
+  matrix2,
+  matrix3,
 
   // ── шаблоны: функции ────────────────────────────────────────────────
   sin,
@@ -119,6 +121,10 @@ extension ENodeKindSpec on ENodeKind {
       case ENodeKind.determinant2:
         return 4;
       case ENodeKind.determinant3:
+        return 9;
+      case ENodeKind.matrix2:
+        return 4;
+      case ENodeKind.matrix3:
         return 9;
       case ENodeKind.integralDefinite:
       case ENodeKind.sigma:
@@ -323,6 +329,9 @@ extension ENodeKindSpec on ENodeKind {
         return core.CoreNodeType.determinant2;
       case ENodeKind.determinant3:
         return core.CoreNodeType.determinant3;
+      case ENodeKind.matrix2:
+      case ENodeKind.matrix3:
+        return core.CoreNodeType.matrix;
       case ENodeKind.sin:
         return core.CoreNodeType.sin;
       case ENodeKind.cos:
@@ -455,6 +464,10 @@ extension ENodeKindSpec on ENodeKind {
         return '|2×2|';
       case ENodeKind.determinant3:
         return '|3×3|';
+      case ENodeKind.matrix2:
+        return '2×2';
+      case ENodeKind.matrix3:
+        return '3×3';
       case ENodeKind.sin:
         return 'sin';
       case ENodeKind.cos:
@@ -586,6 +599,9 @@ extension ENodeKindSpec on ENodeKind {
       case ENodeKind.determinant2:
       case ENodeKind.determinant3:
         return 'Определитель';
+      case ENodeKind.matrix2:
+      case ENodeKind.matrix3:
+        return 'Матрица';
       case ENodeKind.degree:
         return 'Градусы';
       case ENodeKind.radian:

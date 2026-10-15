@@ -287,6 +287,10 @@ final KeyboardPanel _structurePanel = KeyboardPanel(
       MathKey.template(ENodeKind.determinant3),
       MathKey.template(ENodeKind.vector),
     ],
+    [
+      MathKey.template(ENodeKind.matrix2),
+      MathKey.template(ENodeKind.matrix3),
+    ],
   ],
 );
 

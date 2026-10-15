@@ -286,6 +286,21 @@ void main() {
       expect(node.type, CoreNodeType.determinant2);
       expect(node.children.map((e) => e.value).toList(), ['1', '2', '3', '4']);
     });
+
+    test('матрица 2×2 собирается в MATRIX со строками', () {
+      final c = EditorController();
+      c.insertTemplate(ENodeKind.matrix2);
+      for (final digit in ['1', '2', '3', '4']) {
+        c.typeDigit(digit);
+        c.moveDown();
+      }
+      final node = c.toCoreNode();
+      expect(node.type, CoreNodeType.matrix);
+      expect(node.children, hasLength(2));
+      expect(node.children.every((r) => r.type == CoreNodeType.matrixRow), isTrue);
+      expect(node.children[0].children.map((e) => e.value).toList(), ['1', '2']);
+      expect(node.children[1].children.map((e) => e.value).toList(), ['3', '4']);
+    });
   });
 
   group('вид редактора и тап по формуле', () {
