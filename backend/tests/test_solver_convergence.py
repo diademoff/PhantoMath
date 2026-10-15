@@ -35,12 +35,12 @@ class TestConvergence:
     def test_p_series(self) -> None:
         source = "{sigma_def({n},{1},{inf},{frac({1},{n^2})})}"
         assert bool_value(source) == "true"
-        assert step_keys(source) == ["convergent"]
+        assert step_keys(source) == ["series_test_group", "convergent"]
 
     def test_harmonic(self) -> None:
         source = "{sigma_def({n},{1},{inf},{frac({1},{n})})}"
         assert bool_value(source) == "false"
-        assert step_keys(source) == ["divergent"]
+        assert step_keys(source) == ["series_test_group", "divergent"]
 
     def test_geometric(self) -> None:
         assert bool_value("{sigma_def({n},{1},{inf},{frac({1},{2^n})})}") == "true"
@@ -91,6 +91,7 @@ class TestIntegralTest:
         source = "{sigma_def({n},{2},{inf},{frac({1},{muli({n},{ln({n})})})})}"
         keys, value = self._run(source, "convergence")
         assert keys == [
+            "series_test_group",
             "series_integral_test",
             "series_integral_test_use_smpl",
             "series_integral_test_diverges",

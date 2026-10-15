@@ -8,49 +8,114 @@
       "command": "convergence",
       "solution": {
         "type": "TEXT",
-        "children": [{"type": "TEXT_KEY", "value": "true"}]
+        "children": [
+          {
+            "type": "TEXT_KEY",
+            "value": "true"
+          }
+        ]
       },
-      "steps": ["convergent"]
+      "steps": [
+        "series_test_group",
+        "convergent"
+      ]
     },
     {
       "id": "ratio-test-converges",
       "title": "Σ 1/2ⁿ — признак Даламбера, сходится",
       "input": "{sigma_def({n},{1},{inf},{frac({1},{2^n})})}",
       "command": "ratio_test",
-      "solution": {"type": "TEXT", "children": [{"type": "TEXT_KEY", "value": "true"}]},
-      "steps": ["series_ratio_test", "series_ratio_test_use", "series_ratio_test_lim_ltone"]
+      "solution": {
+        "type": "TEXT",
+        "children": [
+          {
+            "type": "TEXT_KEY",
+            "value": "true"
+          }
+        ]
+      },
+      "steps": [
+        "series_ratio_test",
+        "series_ratio_test_use",
+        "series_ratio_test_lim_ltone"
+      ]
     },
     {
       "id": "ratio-test-diverges",
       "title": "Σ 2ⁿ/n — признак Даламбера, расходится",
       "input": "{sigma_def({n},{1},{inf},{frac({2^n},{n})})}",
       "command": "ratio_test",
-      "solution": {"type": "TEXT", "children": [{"type": "TEXT_KEY", "value": "false"}]},
-      "steps": ["series_ratio_test", "series_ratio_test_use", "series_ratio_test_lim_gtone"]
+      "solution": {
+        "type": "TEXT",
+        "children": [
+          {
+            "type": "TEXT_KEY",
+            "value": "false"
+          }
+        ]
+      },
+      "steps": [
+        "series_ratio_test",
+        "series_ratio_test_use",
+        "series_ratio_test_lim_gtone"
+      ]
     },
     {
       "id": "root-test",
       "title": "Σ 1/2ⁿ — радикальный признак, сходится",
       "input": "{sigma_def({n},{1},{inf},{frac({1},{2^n})})}",
       "command": "root_test",
-      "solution": {"type": "TEXT", "children": [{"type": "TEXT_KEY", "value": "true"}]},
-      "steps": ["series_root_test", "series_root_test_use", "series_root_test_lim_ltone"]
+      "solution": {
+        "type": "TEXT",
+        "children": [
+          {
+            "type": "TEXT_KEY",
+            "value": "true"
+          }
+        ]
+      },
+      "steps": [
+        "series_root_test",
+        "series_root_test_use",
+        "series_root_test_lim_ltone"
+      ]
     },
     {
       "id": "nth-term-diverges",
       "title": "Σ n/(n+1) — необходимый признак, расходится",
       "input": "{sigma_def({n},{1},{inf},{frac({n},{n+1})})}",
       "command": "nth_term_test",
-      "solution": {"type": "TEXT", "children": [{"type": "TEXT_KEY", "value": "false"}]},
-      "steps": ["series_nth_term_test", "series_nth_term_test_use", "series_nth_term_test_lim_nozero"]
+      "solution": {
+        "type": "TEXT",
+        "children": [
+          {
+            "type": "TEXT_KEY",
+            "value": "false"
+          }
+        ]
+      },
+      "steps": [
+        "series_nth_term_test",
+        "series_nth_term_test_use",
+        "series_nth_term_test_lim_nozero"
+      ]
     },
     {
       "id": "integral-test-not-summable",
       "title": "Σ 1/(n·ln n) — интегральный признак, расходится",
       "input": "{sigma_def({n},{2},{inf},{frac({1},{muli({n},{ln({n})})})})}",
       "command": "convergence",
-      "solution": {"type": "TEXT", "children": [{"type": "TEXT_KEY", "value": "false"}]},
+      "solution": {
+        "type": "TEXT",
+        "children": [
+          {
+            "type": "TEXT_KEY",
+            "value": "false"
+          }
+        ]
+      },
       "steps": [
+        "series_test_group",
         "series_integral_test",
         "series_integral_test_use_smpl",
         "series_integral_test_diverges"
@@ -61,16 +126,37 @@
       "title": "Σ (−1)ⁿ/n — признак Лейбница, сходится",
       "input": "{sigma_def({n},{1},{inf},{frac({(-1)^n},{n})})}",
       "command": "alt_test",
-      "solution": {"type": "TEXT", "children": [{"type": "TEXT_KEY", "value": "true"}]},
-      "steps": ["series_alt_test", "series_alt_test_converges"]
+      "solution": {
+        "type": "TEXT",
+        "children": [
+          {
+            "type": "TEXT_KEY",
+            "value": "true"
+          }
+        ]
+      },
+      "steps": [
+        "series_alt_test",
+        "series_alt_test_converges"
+      ]
     },
     {
       "id": "direct-comparison-test",
       "title": "Σ 1/(n²+n) — признак сравнения с Σ1/n², сходится",
       "input": "{sigma_def({n},{1},{inf},{frac({1},{n^2+n})})}",
       "command": "direct_comparison_test",
-      "args": ["{sigma_def({n},{1},{inf},{frac({1},{n^2})})}"],
-      "solution": {"type": "TEXT", "children": [{"type": "TEXT_KEY", "value": "true"}]},
+      "args": [
+        "{sigma_def({n},{1},{inf},{frac({1},{n^2})})}"
+      ],
+      "solution": {
+        "type": "TEXT",
+        "children": [
+          {
+            "type": "TEXT_KEY",
+            "value": "true"
+          }
+        ]
+      },
       "steps": [
         "series_direct_comp_test",
         "series_direct_comp_test_use",
@@ -82,8 +168,18 @@
       "title": "Σ 1/(n²+n) — предельный признак сравнения, сходится",
       "input": "{sigma_def({n},{1},{inf},{frac({1},{n^2+n})})}",
       "command": "limit_comparison_test",
-      "args": ["{sigma_def({n},{1},{inf},{frac({1},{n^2})})}"],
-      "solution": {"type": "TEXT", "children": [{"type": "TEXT_KEY", "value": "true"}]},
+      "args": [
+        "{sigma_def({n},{1},{inf},{frac({1},{n^2})})}"
+      ],
+      "solution": {
+        "type": "TEXT",
+        "children": [
+          {
+            "type": "TEXT_KEY",
+            "value": "true"
+          }
+        ]
+      },
       "steps": [
         "series_limit_test",
         "series_limit_test_use_conv",
@@ -95,32 +191,69 @@
       "title": "Σ 1/n² — признак обобщённого гармонического ряда, сходится",
       "input": "{sigma_def({n},{1},{inf},{frac({1},{n^2})})}",
       "command": "pseries_test",
-      "solution": {"type": "TEXT", "children": [{"type": "TEXT_KEY", "value": "true"}]},
-      "steps": ["series_pseries_test", "series_pseries_test_use", "series_pseries_test_converges"]
+      "solution": {
+        "type": "TEXT",
+        "children": [
+          {
+            "type": "TEXT_KEY",
+            "value": "true"
+          }
+        ]
+      },
+      "steps": [
+        "series_pseries_test",
+        "series_pseries_test_use",
+        "series_pseries_test_converges"
+      ]
     },
     {
       "id": "geometric-test",
       "title": "Σ 1/2ⁿ — признак геометрического ряда, сходится",
       "input": "{sigma_def({n},{1},{inf},{frac({1},{2^n})})}",
       "command": "geom_series_test",
-      "solution": {"type": "TEXT", "children": [{"type": "TEXT_KEY", "value": "true"}]},
-      "steps": ["series_geom_series_test", "series_geom_series_test_converges"]
+      "solution": {
+        "type": "TEXT",
+        "children": [
+          {
+            "type": "TEXT_KEY",
+            "value": "true"
+          }
+        ]
+      },
+      "steps": [
+        "series_geom_series_test",
+        "series_geom_series_test_converges"
+      ]
     },
     {
       "id": "radius-finite",
       "title": "Σ xⁿ/2ⁿ — радиус сходимости 2",
       "input": "{sigma_def({n},{0},{inf},{frac({x^n},{2^n})})}",
       "command": "radius_of_convergence",
-      "solution": {"type": "CONSTANT", "value": "2"},
-      "steps": ["convergence_radius_find", "convergence_radius_limit", "convergence_radius_conv"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "2"
+      },
+      "steps": [
+        "convergence_radius_find",
+        "convergence_radius_limit",
+        "convergence_radius_conv"
+      ]
     },
     {
       "id": "radius-infinite",
       "title": "Σ xⁿ/n! — радиус сходимости ∞",
       "input": "{sigma_def({n},{0},{inf},{frac({x^n},{factorial({n})})})}",
       "command": "radius_of_convergence",
-      "solution": {"type": "CONSTANT", "value": "∞"},
-      "steps": ["convergence_radius_find", "convergence_radius_limit", "convergence_radius_conv_inf"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "∞"
+      },
+      "steps": [
+        "convergence_radius_find",
+        "convergence_radius_limit",
+        "convergence_radius_conv_inf"
+      ]
     },
     {
       "id": "harmonic-diverges",
@@ -129,9 +262,17 @@
       "command": "convergence",
       "solution": {
         "type": "TEXT",
-        "children": [{"type": "TEXT_KEY", "value": "false"}]
+        "children": [
+          {
+            "type": "TEXT_KEY",
+            "value": "false"
+          }
+        ]
       },
-      "steps": ["divergent"]
+      "steps": [
+        "series_test_group",
+        "divergent"
+      ]
     },
     {
       "id": "geometric-converges",
@@ -140,9 +281,17 @@
       "command": "convergence",
       "solution": {
         "type": "TEXT",
-        "children": [{"type": "TEXT_KEY", "value": "true"}]
+        "children": [
+          {
+            "type": "TEXT_KEY",
+            "value": "true"
+          }
+        ]
       },
-      "steps": ["convergent"]
+      "steps": [
+        "series_test_group",
+        "convergent"
+      ]
     }
   ]
 }

@@ -84,6 +84,7 @@ def convergence(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> Core
         raise SolveError("сходимость определяется у ряда (суммы)")
     index, lower, upper, expression = _parts(node)
     symbol = sympy.Symbol(index)
+    ctx.result.add(Step(left=node, right=None, key="series_test_group"))
     value = sympy.summation(to_sympy(expression), (symbol, to_sympy(lower), to_sympy(upper)))
     if value.has(sympy.Sum):
         return _integral_test(node, ctx, expression, lower, symbol)
