@@ -24,19 +24,19 @@ def step_keys(source: str) -> list[str]:
 
 class TestEvenOdd:
     def test_even(self) -> None:
-        assert step_keys("{x^2}") == ["function_even"]
+        assert step_keys("{x^2}") == ["function_even_odd_notation", "function_even"]
 
     def test_odd(self) -> None:
-        assert step_keys("{x^3}") == ["function_odd"]
+        assert step_keys("{x^3}") == ["function_even_odd_notation", "function_odd"]
 
     def test_neither(self) -> None:
-        assert step_keys("{x^2+x}") == ["function_not_even_nor_odd"]
+        assert step_keys("{x^2+x}") == ["function_even_odd_notation", "function_not_even_nor_odd"]
 
     def test_cosine_even(self) -> None:
-        assert step_keys("{cos({x})}") == ["function_even"]
+        assert step_keys("{cos({x})}") == ["function_even_odd_notation", "function_even"]
 
     def test_sine_odd(self) -> None:
-        assert step_keys("{sin({x})}") == ["function_odd"]
+        assert step_keys("{sin({x})}") == ["function_even_odd_notation", "function_odd"]
 
     def test_answer_is_expression(self) -> None:
         answer = _vertical("{x^2}").solution

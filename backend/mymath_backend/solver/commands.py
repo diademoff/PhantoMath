@@ -389,6 +389,7 @@ def even_odd(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNod
         key = "function_odd"
     else:
         key = "function_not_even_nor_odd"
+    ctx.result.add(Step(left=node, right=None, key="function_even_odd_notation"))
     ctx.result.add(Step(left=node, right=None, key=key))
     return expression_node
 
