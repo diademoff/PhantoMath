@@ -140,7 +140,8 @@ KEYWORD_TO_TYPE: dict[str, CoreNodeType] = {
     "no_reduce": T.APPROXIMATE,
 }
 
-# Знаки, которые парсер отдаёт отдельными токенами.
+# Знаки, которые парсер отдаёт отдельными токенами. Скобки сюда не входят:
+# они задают структуру и разбираются в parse_bracket, а не как оператор.
 SYMBOL_TO_TYPE: dict[str, CoreNodeType] = {
     "+": T.ADD,
     "-": T.SUBTRACT,
@@ -153,8 +154,6 @@ SYMBOL_TO_TYPE: dict[str, CoreNodeType] = {
     ">=": T.GREATER_THAN_EQUAL,
     "!=": T.NOT_EQUALS,
     "^": T.POWER,
-    "(": T.BRACKET,
-    ")": T.BRACKET,
 }
 
 NUMBER_RE = re.compile(r"^-?\d+(?:\.\d+)?$")
@@ -301,17 +300,25 @@ class _Parser:
         ``x`` с ``3`` через ``+``.
         """
         open_tok = self.expect("{")
+        items = self._collect_items("}", open_tok)
+        return _items_to_node(items, empty=CoreNode.empty())
+
+    def _collect_items(self, terminator: str, open_tok: _Token) -> list[CoreNode | str]:
+        """Собрать чередующийся список операндов и знаков до терминатора."""
         items: list[CoreNode | str] = []
         while True:
             tok = self.peek()
             if tok is None:
-                raise ProtocolError(f"поз. {open_tok.pos}: не закрыта '{{'")
-            if tok.value == "}":
+                raise ProtocolError(f"поз. {open_tok.pos}: не закрыта {open_tok.value!r}")
+            if tok.value == terminator:
                 self.take()
-                break
+                return items
             if self._is_bare_sign(tok):
                 self.take()
                 items.append(tok.value)
+                continue
+            if tok.value == "(":
+                items.append(self._parse_paren(items))
                 continue
             letters = self._take_split_identifier(tok)
             if letters is not None:
@@ -325,22 +332,14 @@ class _Parser:
                 items.append(IMPLICIT_MUL)
             items.append(part)
 
-        if not items:
-            return CoreNode.empty()
-        if len(items) == 1 and isinstance(items[0], CoreNode):
-            return items[0]
-        return _build_infix(items)
-
     def _is_bare_sign(self, tok: _Token) -> bool:
-        """Знак без скобящихся аргументов -- разделитель операндов.
+        """Знак -- разделитель операндов, а не операнд.
 
-        ``frac(…)`` -- вершина с аргументами, ``+`` -- оператор. Смотрим и на
-        следующий токен: знак, за которым идёт ``(``, -- это уже вызов.
+        Вызов функции в протоколе записывается именем: ``sin({x})``. Знак перед
+        скобкой -- это умножение на скобку: ``2*(3+4)``. Поэтому знаки не
+        различаются по следующему токену.
         """
-        if tok.value not in SYMBOL_TO_TYPE:
-            return False
-        nxt = self.tokens[self.i + 1] if self.i + 1 < len(self.tokens) else None
-        return nxt is None or nxt.value != "("
+        return tok.value in SYMBOL_TO_TYPE
 
     def _take_split_identifier(self, tok: _Token) -> list[str] | None:
         r"""Разбить много-letter идентификатор на отдельные переменные.
@@ -358,6 +357,57 @@ class _Parser:
             return None
         self.take()
         return list(tok.value)
+
+    def _parse_paren(self, items: list[CoreNode | str]) -> CoreNode:
+        """Разобрать ``( … )``.
+
+        Круглые скобки несут два разных смысла, и смысл определяет то,
+        что стояло перед ними:
+
+        - после **знака отношения** (``=``, ``<``, …) -- список аргументов:
+          ``=({2x+3},{7})``. Знак отношения не бывает инфиксным перед
+          скобкой, поэтому двусмысленности нет;
+        - после **арифметического** знака -- группировка, если внутри не
+          фигурные скобки: ``2*(3+4)``; список аргументов, если скобки
+          внутри есть: ``2*({3+4})``;
+        - после операнда -- всегда группировка.
+        """
+        last = items[-1] if items else None
+        nxt = self.tokens[self.i + 1] if self.i + 1 < len(self.tokens) else None
+        if isinstance(last, str) and last in _PRECEDENCE:
+            if last in _RELATIONAL:
+                # Знак поглощается списком операндов: он уже не разделитель.
+                items.pop()
+                return self._parse_operand_list(last)
+            if nxt is not None and nxt.value == "{":
+                raise ProtocolError(
+                    f"поз. {nxt.pos}: список операндов через фигурные скобки "
+                    f"допустим только для знаков отношения, а не для {last!r}; "
+                    f"скобки группировки пишутся круглыми: ({last}(…))"
+                )
+        return self.parse_bracket()
+
+    def _parse_operand_list(self, sign: str) -> CoreNode:
+        """Разобрать список операндов бинарного оператора ``sign( … , … )``."""
+        self.take()  # '('
+        args = [self.parse_group()]
+        while (tok := self.peek()) and tok.value == ",":
+            self.take()
+            args.append(self.parse_group())
+        self.expect(")")
+        return CoreNode(type=_operator_type(sign), children=args)
+
+    def parse_bracket(self) -> CoreNode:
+        """Разобрать ``( … )`` как узел ``BRACKET``.
+
+        В отличие от аргументов вершины, скобки содержат строку без фигурных
+        скобок: ``2*(3+4)`` -- умножение на результат скобок. Отдельный тип
+        ``BRACKET`` позволяет решателю сохранить скобки при копировании.
+        """
+        open_tok = self.take()
+        items = self._collect_items(")", open_tok)
+        inner = _items_to_node(items, empty=CoreNode.empty())
+        return CoreNode(type=T.BRACKET, children=[inner])
 
     def parse_name(self) -> CoreNode:
         """Разобрать ``имя`` или ``имя({арг},{арг})``."""
@@ -408,7 +458,22 @@ _PRECEDENCE: dict[str, int] = {
     "^": 5,
 }
 IMPLICIT_MUL = "·"
+# Знаки отношения: в протоколе они всегда записываются со списком операндов
+# в скобках, поэтому ``(`` после них однозначно означает аргументы.
+_RELATIONAL = frozenset({"=", "<", "<=", ">", ">=", "!="})
 _UNARY_PRECEDENCE = 4
+
+
+def _items_to_node(items: list[CoreNode | str], empty: CoreNode) -> CoreNode:
+    """Превратить собранные операнды и знаки в узел.
+
+    Пустая группа даёт ``empty`` -- так помечается незаполненный слот.
+    """
+    if not items:
+        return empty
+    if len(items) == 1 and isinstance(items[0], CoreNode):
+        return items[0]
+    return _build_infix(items)
 
 
 def _build_infix(items: list[CoreNode | str]) -> CoreNode:
