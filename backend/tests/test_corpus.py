@@ -202,6 +202,7 @@ def test_corpus_covers_every_module() -> None:
         "inflection",
         "asymptotes",
         "conic",
+        "convergence",
         "matrices",
         "matrix_ops",
         "derivatives",

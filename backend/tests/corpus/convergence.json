@@ -1,0 +1,38 @@
+{
+  "module": "convergence",
+  "tasks": [
+    {
+      "id": "p-series",
+      "title": "Σ 1/n² — сходится",
+      "input": "{sigma_def({n},{1},{inf},{frac({1},{n^2})})}",
+      "command": "convergence",
+      "solution": {
+        "type": "TEXT",
+        "children": [{"type": "TEXT_KEY", "value": "true"}]
+      },
+      "steps": ["convergent"]
+    },
+    {
+      "id": "harmonic-diverges",
+      "title": "Σ 1/n — расходится",
+      "input": "{sigma_def({n},{1},{inf},{frac({1},{n})})}",
+      "command": "convergence",
+      "solution": {
+        "type": "TEXT",
+        "children": [{"type": "TEXT_KEY", "value": "false"}]
+      },
+      "steps": ["divergent"]
+    },
+    {
+      "id": "geometric-converges",
+      "title": "Σ 1/2ⁿ — сходится",
+      "input": "{sigma_def({n},{1},{inf},{frac({1},{2^n})})}",
+      "command": "convergence",
+      "solution": {
+        "type": "TEXT",
+        "children": [{"type": "TEXT_KEY", "value": "true"}]
+      },
+      "steps": ["convergent"]
+    }
+  ]
+}

@@ -33,6 +33,7 @@ from .base import Command, SolveContext, SolveError, Step, boolean_node
 from .domain import domain, restrictions
 from .integrals import area
 from .matrices import MATRIX_COMMANDS
+from .series import convergence
 from .sympy_bridge import from_sympy, to_sympy
 from .vectors import VECTOR_COMMANDS
 
@@ -373,6 +374,7 @@ COMMANDS: dict[str, Command] = {
     "restrictions": restrictions,
     "area": area,
     "conic": conic,
+    "convergence": convergence,
     "asymptotes": asymptotes,
     "even_odd": even_odd,
     "extrema": extrema,
@@ -408,6 +410,7 @@ __all__ = [
     "area",
     "asymptotes",
     "conic",
+    "convergence",
     "domain",
     "even_odd",
     "expand",
