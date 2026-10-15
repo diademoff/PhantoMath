@@ -68,11 +68,86 @@ def sample(
         "yMin": min(ys),
         "yMax": max(ys),
         "points": points,
+        "annotations": graph_annotations(node, x_min, x_max),
     }
+
+
+def graph_annotations(node: CoreNode, x_min: float, x_max: float) -> dict[str, Any]:
+    """Опорные точки графика: корни, пересечение с осью y, экстремумы, асимптоты.
+
+    Соответствует меткам ``graph_rt_info_*`` Photomath. Значения вещественные и
+    конечные; при неудаче соответствующая группа остаётся пустой.
+    """
+    variable = free_variable(node)
+    symbol = sympy.Symbol(variable)
+    expression = to_sympy(node)
+    result: dict[str, Any] = {
+        "roots": [],
+        "yIntercept": None,
+        "maxima": [],
+        "minima": [],
+        "verticalAsymptotes": [],
+        "horizontalAsymptotes": [],
+    }
+
+    for root in _real_values(sympy.solve(sympy.Eq(expression, 0), symbol)):
+        if x_min <= root <= x_max:
+            result["roots"].append([root, 0.0])
+
+    at_zero = _real_value(expression.subs(symbol, 0))
+    if at_zero is not None:
+        result["yIntercept"] = [0.0, at_zero]
+
+    derivative = sympy.diff(expression, symbol)
+    for point in _real_values(sympy.solve(sympy.Eq(derivative, 0), symbol)):
+        if not x_min <= point <= x_max:
+            continue
+        second = _real_value(sympy.diff(derivative, symbol).subs(symbol, point))
+        value = _real_value(expression.subs(symbol, point))
+        if second is None or value is None:
+            continue
+        if second < 0:
+            result["maxima"].append([point, value])
+        elif second > 0:
+            result["minima"].append([point, value])
+
+    _, denominator = sympy.fraction(sympy.together(expression))
+    for point in _real_values(sympy.solve(sympy.Eq(denominator, 0), symbol)):
+        limit = sympy.limit(expression, symbol, point)
+        if limit in (sympy.oo, -sympy.oo):
+            result["verticalAsymptotes"].append(point)
+
+    for bound in (sympy.oo, -sympy.oo):
+        value = _real_value(sympy.limit(expression, symbol, bound))
+        if value is not None and value not in result["horizontalAsymptotes"]:
+            result["horizontalAsymptotes"].append(value)
+    return result
+
+
+def _real_values(values: list[sympy.Expr]) -> list[float]:
+    """Действительные конечные числа из списка выражений."""
+    result: list[float] = []
+    for value in values:
+        number = _real_value(value)
+        if number is not None:
+            result.append(number)
+    return result
+
+
+def _real_value(expression: sympy.Expr) -> float | None:
+    """Числовое значение выражения или ``None``, если оно не вещественное."""
+    try:
+        number = float(sympy.N(expression))
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if not math.isfinite(number):
+        return None
+    return number
 
 
 __all__ = [
     "DEFAULT_SAMPLES",
     "free_variable",
+    "graph_annotations",
     "sample",
 ]

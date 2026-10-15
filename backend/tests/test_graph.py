@@ -6,7 +6,7 @@ import pytest
 
 from mymath_backend import CoreNode
 from mymath_backend import CoreNodeType as T
-from mymath_backend.graph import free_variable, sample
+from mymath_backend.graph import free_variable, graph_annotations, sample
 from mymath_backend.solver.base import SolveError
 
 
@@ -40,6 +40,31 @@ class TestSample:
     def test_free_variable_defaults_to_x(self) -> None:
         assert free_variable(c("5")) == "x"
         assert free_variable(node(T.ADD, var("t"), c("1"))) == "t"
+
+
+class TestAnnotations:
+    def test_parabola(self) -> None:
+        data = graph_annotations(node(T.POWER, var(), c("2")), -5.0, 5.0)
+        assert data["roots"] == [[0.0, 0.0]]
+        assert data["yIntercept"] == [0.0, 0.0]
+        assert data["minima"] == [[0.0, 0.0]]
+
+    def test_shifted_parabola(self) -> None:
+        expression = node(T.SUBTRACT, node(T.POWER, var(), c("2")), c("4"))
+        data = graph_annotations(expression, -5.0, 5.0)
+        assert [point[0] for point in data["roots"]] == [-2.0, 2.0]
+        assert data["minima"] == [[0.0, -4.0]]
+
+    def test_hyperbola_asymptotes(self) -> None:
+        expression = node(T.DIVIDE, c("1"), node(T.SUBTRACT, var(), c("2")))
+        data = graph_annotations(expression, -5.0, 5.0)
+        assert data["verticalAsymptotes"] == [2.0]
+        assert data["horizontalAsymptotes"] == [0.0]
+
+    def test_included_in_sample(self) -> None:
+        data = sample(node(T.POWER, var(), c("2")), -2.0, 2.0, samples=5)
+        assert "annotations" in data
+        assert data["annotations"]["minima"] == [[0.0, 0.0]]
 
 
 class TestErrors:
