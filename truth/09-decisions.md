@@ -38,6 +38,7 @@
 | 11 | Репозиторий: `backend/` + `app/` + `truth/`; APK не коммитим | `.gitignore` |
 | 12 | Проверки: backend — pytest + ruff + mypy strict; app — `flutter analyze` + `flutter test` | `backend/pyproject.toml`, `app/analysis_options.yaml` |
 | 13 | Не указывать сроки и оценки времени — только приоритеты и сложность | все документы |
+| 14 | Действия над выражением — **`CoreAction`** (`POST /solve.action`): `solve`, `factor`, `expand`, `simplify`; имена команд наши | `solver/commands.py`, `api.py` |
 
 ## Ввод: редактор и клавиатура
 

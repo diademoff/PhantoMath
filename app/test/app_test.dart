@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -53,7 +55,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: _api())));
     await tester.pump();
     expect(tester.takeException(), isNull);
-    expect(find.text('Решить'), findsOneWidget);
+    expect(find.byKey(const ValueKey('solve')), findsOneWidget);
   });
 
   testWidgets('набор с клавиатуры и решение', (tester) async {
@@ -65,11 +67,38 @@ void main() {
     await _key(tester, '3');
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.text('Решить'));
+    await tester.tap(find.byKey(const ValueKey('solve')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('Сложите числа'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('выбранная команда уходит в action', (tester) async {
+    Map<String, dynamic>? sent;
+    final api = SolverApi(
+      baseUrl: 'http://test',
+      client: MockClient((request) async {
+        sent = jsonDecode(request.body) as Map<String, dynamic>;
+        return http.Response(
+          _solveBody,
+          200,
+          headers: const {'content-type': 'application/json; charset=utf-8'},
+        );
+      }),
+    );
+    await tester.pumpWidget(MaterialApp(home: SolvePage(api: api)));
+    await tester.pump();
+
+    await _key(tester, '2');
+    await tester.tap(find.text('Разложить'));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('solve')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(sent?['action'], {'command': 'factor', 'args': <Object>[]});
     expect(tester.takeException(), isNull);
   });
 

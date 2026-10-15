@@ -63,10 +63,19 @@ class SolvePage extends StatefulWidget {
 class _SolvePageState extends State<SolvePage> {
   final _editor = EditorController();
   String _locale = 'ru';
+  String? _command;
 
   SolveResponse? _result;
   String? _error;
   bool _busy = false;
+
+  /// Команды действий над выражением (совпадают с `CoreAction.command`).
+  static const List<(String?, String)> _commands = [
+    (null, 'Решить'),
+    ('factor', 'Разложить'),
+    ('expand', 'Раскрыть'),
+    ('simplify', 'Упростить'),
+  ];
 
   @override
   void dispose() {
@@ -88,6 +97,7 @@ class _SolvePageState extends State<SolvePage> {
       final answer = await widget.api.solve(
         _editor.toCoreNode(),
         locale: _locale,
+        command: _command,
       );
       if (!mounted) return;
       setState(() => _result = answer);
@@ -143,11 +153,30 @@ class _SolvePageState extends State<SolvePage> {
             Expanded(child: _buildBody(theme)),
             const Divider(height: 1),
             EditorView(controller: _editor),
+            SizedBox(
+              height: 40,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                children: [
+                  for (final (command, label) in _commands)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: ChoiceChip(
+                        label: Text(label),
+                        selected: _command == command,
+                        onSelected: (_) => setState(() => _command = command),
+                      ),
+                    ),
+                ],
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
+                  key: const ValueKey('solve'),
                   onPressed: _busy ? null : _solve,
                   icon: _busy
                       ? const SizedBox(
