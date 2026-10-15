@@ -1,0 +1,47 @@
+{
+  "module": "range",
+  "tasks": [
+    {
+      "id": "parabola-up",
+      "title": "x² — область значений [0, +∞)",
+      "input": "{x^2}",
+      "command": "range",
+      "solution": {
+        "type": "CLOSED_OPEN_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "0"},
+          {"type": "CONSTANT", "value": "∞"}
+        ]
+      },
+      "steps": ["graph_rt_info_range"]
+    },
+    {
+      "id": "parabola-down",
+      "title": "−x² — область значений (−∞, 0]",
+      "input": "{-x^2}",
+      "command": "range",
+      "solution": {
+        "type": "OPEN_CLOSED_INTERVAL",
+        "children": [
+          {"type": "NEGATIVE", "children": [{"type": "CONSTANT", "value": "∞"}]},
+          {"type": "CONSTANT", "value": "0"}
+        ]
+      },
+      "steps": ["graph_rt_info_range"]
+    },
+    {
+      "id": "sine",
+      "title": "sin x — область значений [−1, 1]",
+      "input": "{sin({x})}",
+      "command": "range",
+      "solution": {
+        "type": "CLOSED_CLOSED_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "-1"},
+          {"type": "CONSTANT", "value": "1"}
+        ]
+      },
+      "steps": ["graph_rt_info_range"]
+    }
+  ]
+}

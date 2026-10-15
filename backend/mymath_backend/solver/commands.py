@@ -16,7 +16,10 @@
 * ``to_fraction`` — десятичную дробь в обыкновенную (``dec_to_frac``);
 * ``to_percent`` — число в проценты (``rewrite_as_percent``);
 * ``to_sci`` — число в экспоненциальную запись (``sci_form_msg``);
-* ``to_mixed`` — неправильную дробь в смешанное число (``convert_improper_fraction``).
+* ``to_mixed`` — неправильную дробь в смешанное число (``convert_improper_fraction``);
+* ``intercepts`` — пересечения графика с осями координат
+  (``find_x_intercept``/``find_y_intercept``);
+* ``range`` — область значений функции (``graph_rt_info_range``).
 
 Для уравнения команда применяется к обеим частям.
 """
@@ -26,6 +29,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 import sympy
+from sympy.calculus.util import function_range
 
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
@@ -273,6 +277,89 @@ def _sign_changes(expression: sympy.Expr, symbol: sympy.Symbol, point: sympy.Exp
     return (left_value < 0 < right_value) or (right_value < 0 < left_value)
 
 
+def _expression_of(node: CoreNode) -> CoreNode:
+    """Выражение функции: правая часть ``y = f(x)`` или сам узел."""
+    if node.type is T.EQUALS and len(node.children) == 2:
+        return node.children[1]
+    return node
+
+
+def intercepts(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Найти пересечения графика функции с осями координат.
+
+    С осью x — корни ``f(x) = 0`` (``find_x_intercept``, подстановка ``y = 0``);
+    с осью y — значение ``f(0)`` (``find_y_intercept``, подстановка ``x = 0``).
+    Ответ — список ``x = …`` / ``y = …``; несуществующего пересечения нет в
+    списке и о нём сообщает ``no_x_intercept``/``no_y_intercept``.
+    """
+    del args
+    expression_node = _expression_of(node)
+    if len(ctx.variables) != 1:
+        raise SolveError("пересечения с осями: поддерживается одна переменная")
+    var = ctx.variables[0]
+    symbol = sympy.Symbol(var)
+    function = to_sympy(expression_node)
+    axis_x = CoreNode.variable(var)
+    axis_y = CoreNode.variable("y")
+
+    ctx.result.add(Step(left=node, right=None, key="find_x_intercept", args=[axis_x]))
+    ctx.result.add(
+        Step(
+            left=node,
+            right=None,
+            key="x_intercept_substitute",
+            args=[axis_x, CoreNode.node(T.EQUALS, axis_y, CoreNode.constant("0"))],
+        )
+    )
+    points: list[CoreNode] = [
+        CoreNode.node(T.EQUALS, axis_x, from_sympy(root)) for root in _real_roots(function, symbol)
+    ]
+    if not points:
+        ctx.result.add(Step(left=node, right=None, key="no_x_intercept", args=[axis_x]))
+
+    ctx.result.add(Step(left=node, right=None, key="find_y_intercept", args=[axis_y]))
+    ctx.result.add(
+        Step(
+            left=node,
+            right=None,
+            key="y_intercept_substitute",
+            args=[axis_y, CoreNode.node(T.EQUALS, axis_x, CoreNode.constant("0"))],
+        )
+    )
+    at_zero = function.subs(symbol, sympy.Integer(0))
+    if at_zero.is_finite:
+        points.append(CoreNode.node(T.EQUALS, axis_y, from_sympy(at_zero)))
+    else:
+        ctx.result.add(Step(left=node, right=None, key="no_y_intercept", args=[axis_y]))
+
+    if not points:
+        raise SolveError("пересечений с осями координат нет")
+    if len(points) == 1:
+        return points[0]
+    return CoreNode.node(T.LIST, *points)
+
+
+def value_range(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Область значений функции — множество её значений на прямой.
+
+    Считает sympy (``function_range``): для непрерывной функции это промежуток
+    или объединение промежутков, ответ отдаётся узлом-множеством.
+    """
+    del args
+    expression_node = _expression_of(node)
+    if len(ctx.variables) != 1:
+        raise SolveError("область значений: поддерживается одна переменная")
+    symbol = sympy.Symbol(ctx.variables[0])
+    function = to_sympy(expression_node)
+    try:
+        values = function_range(function, symbol, sympy.S.Reals)
+    except (NotImplementedError, TypeError, ValueError) as error:
+        raise SolveError("область значений не определена") from error
+    result = from_sympy(values)
+    ctx.result.add(Step(left=node, right=result, key="graph_rt_info_range"))
+    return result
+
+
 def asymptotes(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Найти вертикальные и горизонтальные асимптоты."""
     del args
@@ -455,6 +542,8 @@ COMMANDS: dict[str, Command] = {
     "even_odd": even_odd,
     "extrema": extrema,
     "inflection": inflection,
+    "intercepts": intercepts,
+    "range": value_range,
     "prove": prove,
     "substitute": substitute,
     "to_fraction": to_fraction,
@@ -493,6 +582,7 @@ __all__ = [
     "extrema",
     "factor",
     "inflection",
+    "intercepts",
     "polar",
     "prove",
     "rationalize",
@@ -505,5 +595,6 @@ __all__ = [
     "to_percent",
     "to_radians",
     "to_sci",
+    "value_range",
     "vertex",
 ]

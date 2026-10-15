@@ -200,6 +200,8 @@ def test_corpus_covers_every_module() -> None:
         "even_odd",
         "extrema",
         "inflection",
+        "intercepts",
+        "range",
         "asymptotes",
         "conic",
         "convergence",
