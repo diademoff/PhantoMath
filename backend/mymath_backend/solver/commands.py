@@ -34,6 +34,7 @@
 * ``ratio_test`` — признак Даламбера для ряда (``series_ratio_test``);
 * ``root_test``/``nth_term_test`` — радикальный и необходимый признаки сходимости ряда;
 * ``integral_test``/``alt_test`` — интегральный признак и признак Лейбница;
+* ``direct_comparison_test``/``limit_comparison_test`` — сравнение с рядом-эталоном;
 * ``system_check`` — проверка набора значений на решение системы;
 * ``extrema_on_interval`` — наибольшее и наименьшее значение на отрезке;
 * ``gcd``/``lcm``/``mod`` — НОД/НОК/остаток; ``prime_factorization``, ``round_place``;
@@ -82,8 +83,10 @@ from .sequences import explicit_formula, sequence_convergence
 from .series import (
     alt_test,
     convergence,
+    direct_comparison_test,
     geom_series_test,
     integral_test,
+    limit_comparison_test,
     nth_term_test,
     pseries_test,
     radius_of_convergence,
@@ -1130,6 +1133,8 @@ COMMANDS: dict[str, Command] = {
     "range": value_range,
     "alt_test": alt_test,
     "integral_test": integral_test,
+    "direct_comparison_test": direct_comparison_test,
+    "limit_comparison_test": limit_comparison_test,
     "geom_series_test": geom_series_test,
     "pseries_test": pseries_test,
     "radius_of_convergence": radius_of_convergence,
@@ -1194,6 +1199,7 @@ __all__ = [
     "intercepts",
     "inverse_function",
     "lcm",
+    "limit_comparison_test",
     "modulo",
     "nth_derivative",
     "nth_term_test",

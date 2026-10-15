@@ -65,6 +65,32 @@
       "steps": ["series_alt_test", "series_alt_test_converges"]
     },
     {
+      "id": "direct-comparison-test",
+      "title": "Σ 1/(n²+n) — признак сравнения с Σ1/n², сходится",
+      "input": "{sigma_def({n},{1},{inf},{frac({1},{n^2+n})})}",
+      "command": "direct_comparison_test",
+      "args": ["{sigma_def({n},{1},{inf},{frac({1},{n^2})})}"],
+      "solution": {"type": "TEXT", "children": [{"type": "TEXT_KEY", "value": "true"}]},
+      "steps": [
+        "series_direct_comp_test",
+        "series_direct_comp_test_use",
+        "series_direct_comp_test_converges"
+      ]
+    },
+    {
+      "id": "limit-comparison-test",
+      "title": "Σ 1/(n²+n) — предельный признак сравнения, сходится",
+      "input": "{sigma_def({n},{1},{inf},{frac({1},{n^2+n})})}",
+      "command": "limit_comparison_test",
+      "args": ["{sigma_def({n},{1},{inf},{frac({1},{n^2})})}"],
+      "solution": {"type": "TEXT", "children": [{"type": "TEXT_KEY", "value": "true"}]},
+      "steps": [
+        "series_limit_test",
+        "series_limit_test_use_conv",
+        "series_limit_test_converges"
+      ]
+    },
+    {
       "id": "p-series-test",
       "title": "Σ 1/n² — признак обобщённого гармонического ряда, сходится",
       "input": "{sigma_def({n},{1},{inf},{frac({1},{n^2})})}",

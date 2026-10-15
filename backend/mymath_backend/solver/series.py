@@ -346,11 +346,104 @@ def geom_series_test(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) ->
     return answer
 
 
+def _series_converges(expression: CoreNode, symbol: sympy.Symbol, lower: CoreNode) -> bool | None:
+    """Сходится ли ряд с данным общим членом (``None`` — не определить)."""
+    term = to_sympy(expression)
+    value = sympy.summation(term, (symbol, to_sympy(lower), sympy.oo))
+    if not value.has(sympy.Sum):
+        if value.is_finite is True:
+            return True
+        if value in (sympy.oo, -sympy.oo, sympy.zoo) or value.is_finite is False:
+            return False
+        return None
+    variable = sympy.Symbol("t") if str(symbol) != "t" else sympy.Symbol("u")
+    integral = sympy.integrate(term.subs(symbol, variable), (variable, to_sympy(lower), sympy.oo))
+    if integral.is_finite is True:
+        return True
+    if integral in (sympy.oo, -sympy.oo, sympy.zoo) or integral.is_finite is False:
+        return False
+    return None
+
+
+def _reference(node: CoreNode) -> tuple[CoreNode, sympy.Symbol]:
+    """Ряд-эталон из аргумента команды."""
+    if node.type is not T.SIGMA_DEFINITE:
+        raise SolveError("ряд-эталон — это сумма")
+    index, _, _, expression = _parts(node)
+    return expression, sympy.Symbol(index)
+
+
+def direct_comparison_test(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Признак сравнения: почленное сравнение с рядом-эталоном (аргумент)."""
+    if node.type is not T.SIGMA_DEFINITE:
+        raise SolveError("признак сравнения применяется к ряду (сумме)")
+    ctx.require(len(args) == 1, "нужен ряд-эталон")
+    index, lower, _, expression = _parts(node)
+    symbol = sympy.Symbol(index)
+    reference_expression, _ = _reference(args[0])
+    reference_converges = _series_converges(reference_expression, sympy.Symbol(index), lower)
+    ctx.require(reference_converges is not None, "ряд-эталон не исследован")
+
+    ratio = sympy.limit(to_sympy(expression) / to_sympy(reference_expression), symbol, sympy.oo)
+    ctx.require(ratio.is_number is True, "сравнение членов не установлено")
+    if reference_converges:
+        ctx.require(
+            (ratio <= 1) is sympy.true,
+            "сравнение членов не выполнено: aₙ не меньше bₙ",
+        )
+    else:
+        ctx.require(
+            (ratio >= 1) is sympy.true,
+            "сравнение членов не выполнено: aₙ не больше bₙ",
+        )
+    ctx.result.add(Step(left=node, right=None, key="series_direct_comp_test"))
+    ctx.result.add(Step(left=node, right=None, key="series_direct_comp_test_use", args=[args[0]]))
+    if reference_converges:
+        key, converges = "series_direct_comp_test_converges", True
+    else:
+        key, converges = "series_direct_comp_test_diverges", False
+    answer = boolean_node(converges)
+    ctx.result.add(Step(left=node, right=answer, key=key, args=[args[0]]))
+    return answer
+
+
+def limit_comparison_test(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Предельный признак сравнения с рядом-эталоном (аргумент)."""
+    if node.type is not T.SIGMA_DEFINITE:
+        raise SolveError("предельный признак сравнения применяется к ряду (сумме)")
+    ctx.require(len(args) == 1, "нужен ряд-эталон")
+    index, lower, _, expression = _parts(node)
+    symbol = sympy.Symbol(index)
+    reference_expression, _ = _reference(args[0])
+    reference_converges = _series_converges(reference_expression, symbol, lower)
+    ctx.require(reference_converges is not None, "ряд-эталон не исследован")
+
+    ratio = sympy.limit(to_sympy(expression) / to_sympy(reference_expression), symbol, sympy.oo)
+    ctx.require(
+        ratio.is_finite is True and ratio.is_positive is True,
+        "предельное отношение не конечно и не положительно",
+    )
+    ctx.result.add(Step(left=node, right=None, key="series_limit_test"))
+    if reference_converges:
+        key, converges = "series_limit_test_converges", True
+        ctx.result.add(
+            Step(left=node, right=None, key="series_limit_test_use_conv", args=[args[0]])
+        )
+    else:
+        key, converges = "series_limit_test_diverges", False
+        ctx.result.add(Step(left=node, right=None, key="series_limit_test_use_div", args=[args[0]]))
+    answer = boolean_node(converges)
+    ctx.result.add(Step(left=node, right=answer, key=key, args=[args[0]]))
+    return answer
+
+
 __all__ = [
     "alt_test",
     "convergence",
+    "direct_comparison_test",
     "geom_series_test",
     "integral_test",
+    "limit_comparison_test",
     "nth_term_test",
     "pseries_test",
     "radius_of_convergence",

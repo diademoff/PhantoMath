@@ -124,6 +124,51 @@ class TestAltTest:
         assert value == "false"
 
 
+class TestComparisonTests:
+    def _run(self, source: str, reference: str, command: str) -> tuple[list[str], str]:
+        vertical = solve(
+            parse_protocol(source),
+            command=command,
+            args=[parse_protocol(reference)],
+        ).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
+        return keys, vertical.solution.children[0].value or ""
+
+    def test_direct_converges(self) -> None:
+        source = "{sigma_def({n},{1},{inf},{frac({1},{n^2+n})})}"
+        reference = "{sigma_def({n},{1},{inf},{frac({1},{n^2})})}"
+        keys, value = self._run(source, reference, "direct_comparison_test")
+        assert keys == [
+            "series_direct_comp_test",
+            "series_direct_comp_test_use",
+            "series_direct_comp_test_converges",
+        ]
+        assert value == "true"
+
+    def test_limit_converges(self) -> None:
+        source = "{sigma_def({n},{1},{inf},{frac({1},{n^2+n})})}"
+        reference = "{sigma_def({n},{1},{inf},{frac({1},{n^2})})}"
+        keys, value = self._run(source, reference, "limit_comparison_test")
+        assert keys == [
+            "series_limit_test",
+            "series_limit_test_use_conv",
+            "series_limit_test_converges",
+        ]
+        assert value == "true"
+
+    def test_direct_requires_comparison(self) -> None:
+        # 1/n ≥ 1/n², поэтому сравнение с 1/n² не даёт сходимости.
+        source = "{sigma_def({n},{1},{inf},{frac({1},{n})})}"
+        reference = "{sigma_def({n},{1},{inf},{frac({1},{n^2})})}"
+        with pytest.raises(SolveError, match="не меньше"):
+            solve(
+                parse_protocol(source),
+                command="direct_comparison_test",
+                args=[parse_protocol(reference)],
+            )
+
+
 class TestPSeries:
     def _run(self, source: str, command: str) -> tuple[list[str], str]:
         vertical = solve(parse_protocol(source), command=command).result.vertical()
