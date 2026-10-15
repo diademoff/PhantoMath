@@ -65,7 +65,7 @@ class TestIndefinite:
 
     def test_step_key(self) -> None:
         problem = node(T.INTEGRAL, var())
-        assert step_keys(problem) == ["integrate_calc"]
+        assert step_keys(problem) == ["integrate", "integrate_calc"]
 
 
 class TestDefinite:
@@ -93,6 +93,7 @@ class TestImproper:
         )
         assert solution_of(problem).value == "2"
         assert step_keys(problem) == [
+            "integrate_def_rewrite",
             "integrate_imp_find_discon_point",
             "integrate_imp_evaluate",
             "integrate_def_bounds",
@@ -158,12 +159,16 @@ class TestMethod:
         return [sub.description.type for step in vertical.steps for sub in step.substeps]
 
     def test_table_has_no_method_step(self) -> None:
-        assert self.keys_of(node(T.INTEGRAL, node(T.POWER, var(), c("2")))) == ["integrate_calc"]
+        assert self.keys_of(node(T.INTEGRAL, node(T.POWER, var(), c("2")))) == [
+            "integrate",
+            "integrate_calc",
+        ]
 
     def test_by_parts(self) -> None:
         # x·e^x — интегрирование по частям.
         problem = node(T.INTEGRAL, node(T.MULTIPLY, var(), node(T.EXP, var())))
         assert self.keys_of(problem) == [
+            "integrate",
             "integrate_by_parts_prepare_simple",
             "integrate_partial",
             "integrate_calc",
@@ -174,6 +179,7 @@ class TestMethod:
         argument = node(T.MULTIPLY_IMPLICIT, c("2"), var())
         problem = node(T.INTEGRAL, node(T.SIN, argument))
         assert self.keys_of(problem) == [
+            "integrate",
             "integrate_differential_sub",
             "integrate_using_substitution",
             "integrate_calc",
@@ -183,13 +189,18 @@ class TestMethod:
         # 1/(x^2 - 1) — простейшие дроби.
         denominator = node(T.SUBTRACT, node(T.POWER, var(), c("2")), c("1"))
         problem = node(T.INTEGRAL, node(T.FRACTION, c("1"), denominator))
-        assert self.keys_of(problem) == ["integrate_sep_frac_short", "integrate_calc"]
+        assert self.keys_of(problem) == [
+            "integrate",
+            "integrate_sep_frac_short",
+            "integrate_calc",
+        ]
 
     def test_improper(self) -> None:
         # ∫_1^∞ 1/x^2 dx — несобственный.
         denominator = node(T.POWER, var(), c("2"))
         problem = node(T.INTEGRAL_DEFINITE, c("1"), c("∞"), node(T.FRACTION, c("1"), denominator))
         assert self.keys_of(problem) == [
+            "integrate_def_rewrite",
             "integrate_imp_evaluate",
             "integrate_def_bounds",
             "integrate_calc",

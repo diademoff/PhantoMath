@@ -53,6 +53,7 @@ def _indefinite_integral(node: CoreNode, ctx: SolveContext) -> CoreNode:
     symbol = _variable(ctx)
     ctx.require(len(node.children) >= 1, "интеграл без подынтегрального выражения")
     expression = to_sympy(node.children[-1])
+    ctx.result.add(Step(left=node, right=None, key="integrate"))
     method_key = _integral_method(expression, symbol)
     antiderivative = sympy.integrate(expression, symbol)
     if antiderivative.has(sympy.Integral):
@@ -84,6 +85,7 @@ def _definite_integral(node: CoreNode, ctx: SolveContext) -> CoreNode:
     lower, upper, expression_node = node.children
     lower_value, upper_value = to_sympy(lower), to_sympy(upper)
     expression = to_sympy(expression_node)
+    ctx.result.add(Step(left=node, right=None, key="integrate_def_rewrite"))
     infinite = lower_value in (sympy.oo, -sympy.oo) or upper_value in (sympy.oo, -sympy.oo)
     discontinuous = (
         [] if infinite else _real_singularities(expression, symbol, lower_value, upper_value)
