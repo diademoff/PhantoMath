@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mymath_app/src/editor/controller.dart';
 import 'package:mymath_app/src/editor/convert.dart';
+import 'package:mymath_app/src/editor/editor_view.dart';
 import 'package:mymath_app/src/editor/kind.dart';
-import 'package:mymath_app/src/editor/latex.dart';
 import 'package:mymath_app/src/model/core_node.dart';
 
 /// Набрать последовательность цифр.
@@ -206,52 +205,75 @@ void main() {
     });
   });
 
-  group('рендер с курсором', () {
-    String latex(EditorController c) => editorToLatex(c.document, c.cursor);
+  group('вид редактора и тап по формуле', () {
+    Future<void> pump(WidgetTester tester, EditorController c) async {
+      await tester.pumpWidget(
+        MaterialApp(home: Scaffold(body: EditorView(controller: c))),
+      );
+      await tester.pump();
+    }
 
-    test('пустой документ — только курсор', () {
-      expect(latex(EditorController()), contains(r'\cursor{}'));
+    testWidgets('пустой документ показывает курсор', (tester) async {
+      await pump(tester, EditorController());
+      expect(find.byKey(const ValueKey('cursor')), findsOneWidget);
     });
 
-    test('курсор стоит в позиции вставки', () {
+    testWidgets('тап по пустому слоту ставит курсор в него', (tester) async {
+      final c = EditorController();
+      await pump(tester, c);
+      await tester.tap(find.byKey(const ValueKey('slot:')));
+      await tester.pump();
+      expect(c.cursor.steps, isEmpty);
+      expect(c.cursor.offset, 0);
+    });
+
+    testWidgets('тап по терминалу ставит курсор за ним', (tester) async {
       final c = EditorController();
       _digits(c, '2');
-      expect(latex(c), '2 \\cursor{}');
+      c.insertOperator(ENodeKind.add);
+      _digits(c, '3');
       c.moveLeft();
-      expect(latex(c), '\\cursor{} 2');
+      await pump(tester, c);
+      await tester.tap(find.text('2'));
+      await tester.pump();
+      expect(c.cursor.steps, isEmpty);
+      expect(c.cursor.offset, 1);
     });
 
-    test('курсор внутри слота дроби', () {
+    testWidgets('тап по знаменателю дроби заводит курсор в него',
+        (tester) async {
       final c = EditorController();
       _digits(c, '1');
       c.insertTemplate(ENodeKind.fraction);
-      final out = latex(c);
-      expect(out, startsWith(r'\frac{1}'));
-      expect(out, contains(r'\cursor{}'));
-    });
-
-    test('символьные константы идут LaTeX-командами', () {
-      final c = EditorController();
-      c.typeDigit('π');
-      expect(latex(c), contains(r'\pi'));
-      c.typeDigit('∞');
-      expect(latex(c), contains(r'\infty'));
-    });
-
-    testWidgets('макрос курсора понимается flutter_math', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Math.tex(
-              r'2+\cursor{}3',
-              onErrorFallback: (e) => const Text('ERR'),
-            ),
-          ),
-        ),
-      );
+      _digits(c, '3');
+      await pump(tester, c);
+      await tester.tap(find.text('3'));
       await tester.pump();
-      expect(find.text('ERR'), findsNothing);
-      expect(find.byType(Math), findsOneWidget);
+      expect(c.cursor.steps, hasLength(1));
+      expect(c.cursor.steps.single.slot, 1);
+      expect(c.cursor.offset, 1);
+    });
+
+    testWidgets('тап по числителю дроби заводит курсор в него', (tester) async {
+      final c = EditorController();
+      _digits(c, '1');
+      c.insertTemplate(ENodeKind.fraction);
+      await pump(tester, c);
+      await tester.tap(find.text('1'));
+      await tester.pump();
+      expect(c.cursor.steps.single.slot, 0);
+      expect(c.cursor.offset, 1);
+    });
+
+    testWidgets('тап по знаку ставит курсор за ним', (tester) async {
+      final c = EditorController();
+      _digits(c, '2');
+      c.insertOperator(ENodeKind.add);
+      _digits(c, '3');
+      await pump(tester, c);
+      await tester.tap(find.text('+'));
+      await tester.pump();
+      expect(c.cursor.offset, 2);
     });
   });
 }
