@@ -83,6 +83,20 @@ def solve_determinant(node: CoreNode, ctx: SolveContext) -> CoreNode:
     ctx.require(size <= _MAX_SIZE, "матрица слишком большая")
     values = [as_fraction(route(element, ctx)) for element in elements]
 
+    if size == 2:
+        formula = sympy.Rational(
+            values[0].numerator * values[3].numerator,
+            values[0].denominator * values[3].denominator,
+        ) - sympy.Rational(
+            values[1].numerator * values[2].numerator,
+            values[1].denominator * values[2].denominator,
+        )
+        ctx.result.add(
+            Step(left=node, right=None, key="det2_determinant_rule", args=[from_sympy(formula)])
+        )
+    elif size == 3:
+        ctx.result.add(Step(left=node, right=None, key="det3_sarrus_rule"))
+
     result = CoreNode.constant(format_number(_determinant(values, size)))
     ctx.result.add(Step(left=node, right=result, key=_key_for(size)))
     return result

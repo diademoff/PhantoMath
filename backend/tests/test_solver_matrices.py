@@ -46,7 +46,7 @@ class TestDeterminants:
     def test_2x2(self) -> None:
         problem = det(T.DETERMINANT2, c("1"), c("2"), c("3"), c("4"))
         assert value_of(problem) == "-2"
-        assert step_keys(problem) == ["det2_calc"]
+        assert step_keys(problem) == ["det2_determinant_rule", "det2_calc"]
 
     def test_3x3_identity(self) -> None:
         problem = det(
