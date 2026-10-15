@@ -336,6 +336,12 @@ def _vertical_asymptotes(function: sympy.Expr, symbol: sympy.Symbol) -> list[sym
     return points
 
 
+def rationalize(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Убрать иррациональность из знаменателя."""
+    del args
+    return _apply_side(node, ctx, "rationalize_roots", sympy.radsimp)
+
+
 def vertex(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Найти вершину параболы (для квадратичной функции)."""
     del args
@@ -424,6 +430,7 @@ COMMANDS: dict[str, Command] = {
     "to_degrees": to_degrees,
     "to_radians": to_radians,
     "vertex": vertex,
+    "rationalize": rationalize,
     "asymptotes": asymptotes,
     "even_odd": even_odd,
     "extrema": extrema,
@@ -467,6 +474,7 @@ __all__ = [
     "factor",
     "inflection",
     "prove",
+    "rationalize",
     "restrictions",
     "simplify",
     "substitute",
