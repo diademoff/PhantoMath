@@ -40,10 +40,20 @@ _FUNCTIONS: dict[T, str] = {
     T.ACOS: "acos",
     T.ATAN: "atan",
     T.ACOT: "acot",
+    T.ASEC: "asec",
+    T.ACSC: "acsc",
     T.SINH: "sinh",
     T.COSH: "cosh",
     T.TANH: "tanh",
     T.COTH: "coth",
+    T.SECH: "sech",
+    T.CSCH: "csch",
+    T.ASINH: "asinh",
+    T.ACOSH: "acosh",
+    T.ATANH: "atanh",
+    T.ACOTH: "acoth",
+    T.ASECH: "asech",
+    T.ACSCH: "acsch",
 }
 
 _SYMPY_TO_NODE: dict[object, T] = {

@@ -130,6 +130,94 @@ class TestWithArithmetic:
         assert step_keys(problem) == ["trig_table_calc", "add"]
 
 
+class TestInverse:
+    def test_asin_half(self) -> None:
+        assert value_of(node(T.ASIN, c("1/2"))) == sympy.pi / 6
+
+    def test_acos_half(self) -> None:
+        assert value_of(node(T.ACOS, c("1/2"))) == sympy.pi / 3
+
+    def test_atan_one(self) -> None:
+        assert value_of(node(T.ATAN, c("1"))) == sympy.pi / 4
+
+    def test_acot_one(self) -> None:
+        assert value_of(node(T.ACOT, c("1"))) == sympy.pi / 4
+
+    def test_asec_two(self) -> None:
+        assert value_of(node(T.ASEC, c("2"))) == sympy.pi / 3
+
+    def test_acsc_two(self) -> None:
+        assert value_of(node(T.ACSC, c("2"))) == sympy.pi / 6
+
+    def test_asin_one(self) -> None:
+        assert value_of(node(T.ASIN, c("1"))) == sympy.pi / 2
+
+    def test_angle_written_as_fraction(self) -> None:
+        result = solution_of(node(T.ASIN, c("1/2")))
+        assert result.type is T.FRACTION
+        assert to_sympy(result) == sympy.pi / 6
+
+
+class TestHyperbolic:
+    def test_sinh_zero(self) -> None:
+        assert value_of(node(T.SINH, c("0"))) == 0
+
+    def test_cosh_zero(self) -> None:
+        assert value_of(node(T.COSH, c("0"))) == 1
+
+    def test_tanh_zero(self) -> None:
+        assert value_of(node(T.TANH, c("0"))) == 0
+
+    def test_sech_zero(self) -> None:
+        assert value_of(node(T.SECH, c("0"))) == 1
+
+    def test_coth_zero_is_undefined(self) -> None:
+        with pytest.raises(SolveError):
+            solve(node(T.COTH, c("0")))
+
+    def test_csch_zero_is_undefined(self) -> None:
+        with pytest.raises(SolveError):
+            solve(node(T.CSCH, c("0")))
+
+
+class TestInverseHyperbolic:
+    def test_asinh_zero(self) -> None:
+        assert value_of(node(T.ASINH, c("0"))) == 0
+
+    def test_acosh_one(self) -> None:
+        assert value_of(node(T.ACOSH, c("1"))) == 0
+
+    def test_atanh_zero(self) -> None:
+        assert value_of(node(T.ATANH, c("0"))) == 0
+
+    def test_asech_one(self) -> None:
+        assert value_of(node(T.ASECH, c("1"))) == 0
+
+    def test_asinh_one_is_logarithm(self) -> None:
+        assert value_of(node(T.ASINH, c("1"))) == sympy.log(1 + sympy.sqrt(2))
+
+    def test_acsch_one_is_logarithm(self) -> None:
+        assert value_of(node(T.ACSCH, c("1"))) == sympy.log(1 + sympy.sqrt(2))
+
+
+class TestMoreSymbolic:
+    def test_asin_of_third_kept(self) -> None:
+        problem = node(T.ASIN, c("1/3"))
+        assert solution_of(problem).structural_eq(problem)
+
+    def test_asin_out_of_domain_kept(self) -> None:
+        problem = node(T.ASIN, c("2"))
+        assert solution_of(problem).structural_eq(problem)
+
+    def test_sinh_of_one_kept(self) -> None:
+        problem = node(T.SINH, c("1"))
+        assert solution_of(problem).structural_eq(problem)
+
+    def test_acosh_two_kept(self) -> None:
+        problem = node(T.ACOSH, c("2"))
+        assert solution_of(problem).structural_eq(problem)
+
+
 class TestErrors:
     def test_tan_90_is_undefined(self) -> None:
         with pytest.raises(SolveError) as info:
@@ -140,16 +228,57 @@ class TestErrors:
         with pytest.raises(SolveError):
             solve(node(T.COT, c("0")))
 
+    def test_acosh_zero_is_undefined(self) -> None:
+        # acosh(0) = i·π/2 -- вне действительной области определения.
+        with pytest.raises(SolveError) as info:
+            solve(node(T.ACOSH, c("0")))
+        assert info.value.explanation_key == "trig_err_undef"
+
+    def test_atanh_one_is_undefined(self) -> None:
+        with pytest.raises(SolveError):
+            solve(node(T.ATANH, c("1")))
+
+    def test_asec_zero_is_undefined(self) -> None:
+        with pytest.raises(SolveError):
+            solve(node(T.ASEC, c("0")))
+
 
 class TestExplanationKeys:
     def test_keys_exist(self) -> None:
         explanations = load_explanations(str(EXPLANATIONS))
-        for key in ("trig_table_calc", "trig_err_undef"):
+        for key in ("trig_table_calc", "trig_func_calc", "trig_err_undef"):
             assert key in explanations
-        assert explanations.arity("trig_table_calc") == 0
-        assert "ARG" not in (explanations.raw_template("trig_table_calc", DEFAULT_LOCALE) or "")
+        for key in ("trig_table_calc", "trig_func_calc"):
+            assert explanations.arity(key) == 0
+            assert "ARG" not in (explanations.raw_template(key, DEFAULT_LOCALE) or "")
 
 
 class TestRegistration:
     def test_registered(self) -> None:
-        assert {T.SIN, T.COS, T.TAN, T.COT, T.SEC, T.CSC, T.DEGREE, T.RADIAN} <= registered_types()
+        functions = {
+            T.SIN,
+            T.COS,
+            T.TAN,
+            T.COT,
+            T.SEC,
+            T.CSC,
+            T.ASIN,
+            T.ACOS,
+            T.ATAN,
+            T.ACOT,
+            T.ASEC,
+            T.ACSC,
+            T.SINH,
+            T.COSH,
+            T.TANH,
+            T.COTH,
+            T.SECH,
+            T.CSCH,
+            T.ASINH,
+            T.ACOSH,
+            T.ATANH,
+            T.ACOTH,
+            T.ASECH,
+            T.ACSCH,
+        }
+        assert functions | {T.DEGREE, T.RADIAN} <= registered_types()

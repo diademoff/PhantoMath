@@ -36,7 +36,7 @@ from .matrices import solve_determinant
 from .powers import solve_logarithm, solve_root
 from .series import solve_series
 from .systems import solve_system
-from .trigonometry import solve_angle_unit, solve_direct
+from .trigonometry import solve_angle_unit, solve_function
 
 
 def solve(
@@ -141,10 +141,10 @@ __all__ = [
     "solve_complex",
     "solve_derivative",
     "solve_determinant",
-    "solve_direct",
     "solve_equation",
     "solve_factorial",
     "solve_fraction",
+    "solve_function",
     "solve_inequality",
     "solve_integral",
     "solve_limit",
