@@ -78,12 +78,20 @@ class TestExplicitFormula:
 
     def test_arithmetic(self) -> None:
         keys, solution = self._run("{sequence({2},{5},{8})}")
-        assert keys == ["seq_write_explicit_formula", "seq_arithmetic_sub_explicit_formula"]
+        assert keys == [
+            "seq_find_first",
+            "seq_write_explicit_formula",
+            "seq_arithmetic_sub_explicit_formula",
+        ]
         assert solution.type is T.SUBTRACT
 
     def test_geometric(self) -> None:
         keys, solution = self._run("{sequence({3},{6},{12})}")
-        assert keys == ["seq_write_explicit_formula", "seq_geometric_sub_explicit_formula"]
+        assert keys == [
+            "seq_find_first",
+            "seq_write_explicit_formula",
+            "seq_geometric_sub_explicit_formula",
+        ]
         assert solution.type is T.MULTIPLY_IMPLICIT
 
 

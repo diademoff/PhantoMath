@@ -91,6 +91,7 @@
         ]
       },
       "steps": [
+        "seq_find_first",
         "seq_write_explicit_formula",
         "seq_arithmetic_sub_explicit_formula"
       ]
@@ -132,6 +133,7 @@
         ]
       },
       "steps": [
+        "seq_find_first",
         "seq_write_explicit_formula",
         "seq_geometric_sub_explicit_formula"
       ]

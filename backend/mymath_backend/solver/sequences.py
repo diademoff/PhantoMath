@@ -75,6 +75,7 @@ def explicit_formula(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) ->
     )
 
     answer = from_sympy(formula)
+    ctx.result.add(Step(left=node, right=None, key="seq_find_first"))
     ctx.result.add(Step(left=node, right=None, key="seq_write_explicit_formula"))
     ctx.result.add(
         Step(
