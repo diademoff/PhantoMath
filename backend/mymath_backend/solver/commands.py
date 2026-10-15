@@ -26,6 +26,7 @@
 * ``slope_intercept`` — линейное уравнение в виде y = kx + b (``slope_and_y_intercept``);
 * ``axis_of_symmetry``/``intercept_form`` — ось симметрии и форма по корням параболы;
 * ``slant_asymptote`` — наклонная асимптота рациональной функции;
+* ``x_intercept_count`` — число пересечений параболы с осью x;
 * ``sequence_convergence`` — сходимость последовательности (``seq_lim_conv``);
 * ``ratio_test`` — признак Даламбера для ряда (``series_ratio_test``);
 * ``root_test``/``nth_term_test`` — радикальный и необходимый признаки сходимости ряда;
@@ -533,6 +534,56 @@ def partial_fractions(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -
     return result
 
 
+def x_intercept_count(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Число пересечений параболы с осью x по дискриминанту.
+
+    Шаги ``function_num_inter_quad`` и ``function_num_inter_quad_empty``/
+    ``_one``/``_pl``; ответ — количество (0, 1 или 2).
+    """
+    del args
+    expression_node = _expression_of(node)
+    if len(ctx.variables) != 1:
+        raise SolveError("число пересечений: поддерживается одна переменная")
+    var = ctx.variables[0]
+    symbol = sympy.Symbol(var)
+    try:
+        polynomial = sympy.Poly(to_sympy(expression_node), symbol)
+    except sympy.PolynomialError as error:
+        raise SolveError("число пересечений — у квадратичной функции") from error
+    if polynomial.degree() != 2:
+        raise SolveError("число пересечений — у квадратичной функции")
+    a = polynomial.coeff_monomial(symbol**2)
+    b = polynomial.coeff_monomial(symbol)
+    c = polynomial.coeff_monomial(1)
+    discriminant = b * b - 4 * a * c
+
+    ctx.result.add(
+        Step(
+            left=node,
+            right=None,
+            key="function_num_inter_quad",
+            args=[CoreNode.variable(var)],
+        )
+    )
+    if discriminant < 0:
+        key, count, step_args = "function_num_inter_quad_empty", 0, [CoreNode.constant("0")]
+    elif discriminant == 0:
+        key, count, step_args = (
+            "function_num_inter_quad_one",
+            1,
+            [CoreNode.constant("0"), CoreNode.constant("1")],
+        )
+    else:
+        key, count, step_args = (
+            "function_num_inter_quad_pl",
+            2,
+            [CoreNode.constant("0"), CoreNode.constant("2")],
+        )
+    answer = CoreNode.constant(str(count))
+    ctx.result.add(Step(left=node, right=answer, key=key, args=step_args))
+    return answer
+
+
 def slant_asymptote(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Наклонная асимптота ``y = kx + b`` рациональной функции.
 
@@ -874,6 +925,7 @@ COMMANDS: dict[str, Command] = {
     "approximate": approximate,
     "axis_of_symmetry": axis_of_symmetry,
     "intercept_form": intercept_form,
+    "x_intercept_count": x_intercept_count,
     "slant_asymptote": slant_asymptote,
     "complex_power": complex_power,
     "complex_roots": complex_roots,
@@ -982,4 +1034,5 @@ __all__ = [
     "to_sci",
     "value_range",
     "vertex",
+    "x_intercept_count",
 ]

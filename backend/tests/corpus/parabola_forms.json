@@ -40,6 +40,14 @@
         ]
       },
       "steps": ["intercept_form"]
+    },
+    {
+      "id": "x-intercepts-count",
+      "title": "x² − 4x + 3 — два пересечения с осью x",
+      "input": "{x^2-4x+3}",
+      "command": "x_intercept_count",
+      "solution": {"type": "CONSTANT", "value": "2"},
+      "steps": ["function_num_inter_quad", "function_num_inter_quad_pl"]
     }
   ]
 }

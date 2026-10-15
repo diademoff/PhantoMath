@@ -41,3 +41,20 @@ class TestInterceptForm:
     def test_no_real_roots(self) -> None:
         _, solution = run("{x^2+1}", "intercept_form")
         assert solution.type is T.ADD
+
+
+class TestXInterceptCount:
+    def test_two(self) -> None:
+        keys, solution = run("{x^2-4x+3}", "x_intercept_count")
+        assert keys == ["function_num_inter_quad", "function_num_inter_quad_pl"]
+        assert solution.value == "2"
+
+    def test_one(self) -> None:
+        keys, solution = run("{x^2-2x+1}", "x_intercept_count")
+        assert keys[-1] == "function_num_inter_quad_one"
+        assert solution.value == "1"
+
+    def test_none(self) -> None:
+        keys, solution = run("{x^2+1}", "x_intercept_count")
+        assert keys[-1] == "function_num_inter_quad_empty"
+        assert solution.value == "0"
