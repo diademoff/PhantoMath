@@ -93,7 +93,7 @@ class TestUnsupported:
 class TestExplanationKeys:
     def test_keys_exist(self) -> None:
         explanations = load_explanations(str(EXPLANATIONS))
-        for key in ("det2_calc", "det3_sarrus_eval", "det3_cofactor_eval"):
+        for key in ("det2_calc", "det3_sarrus_eval", "det_laplace_rule_row_simple"):
             assert key in explanations
             assert explanations.arity(key) == 0
             assert "ARG" not in (explanations.raw_template(key, DEFAULT_LOCALE) or "")

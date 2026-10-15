@@ -20,7 +20,7 @@
       "title": "определитель единичной 4x4",
       "input": "{det4({1},{0},{0},{0},{0},{1},{0},{0},{0},{0},{1},{0},{0},{0},{0},{1})}",
       "solution": {"type": "CONSTANT", "value": "1"},
-      "steps": ["det3_cofactor_eval"]
+      "steps": ["det_laplace_rule_row_simple"]
     },
     {
       "id": "det-rows-form",

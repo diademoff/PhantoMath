@@ -11,7 +11,7 @@
 совпадает с формулой и правилом Саррюса). Элементы должны быть числами.
 
 Ключи шагов: ``det2_calc`` (2×2), ``det3_sarrus_eval`` (3×3),
-``det3_cofactor_eval`` (4×4, 5×5).
+``det_laplace_rule_row_simple`` (4×4, 5×5 -- разложение по первой строке).
 """
 
 from __future__ import annotations
@@ -67,7 +67,8 @@ def _key_for(size: int) -> str:
         return "det2_calc"
     if size == 3:
         return "det3_sarrus_eval"
-    return "det3_cofactor_eval"
+    # 4×4 и выше: разложение по первой строке — «cofactor expansion along a row».
+    return "det_laplace_rule_row_simple"
 
 
 @solver_for(*_DETERMINANTS)
