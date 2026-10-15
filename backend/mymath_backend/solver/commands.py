@@ -37,6 +37,7 @@
 * ``system_check`` — проверка набора значений на решение системы;
 * ``extrema_on_interval`` — наибольшее и наименьшее значение на отрезке;
 * ``gcd``/``lcm``/``mod`` — НОД/НОК/остаток; ``prime_factorization``, ``round_place``;
+* ``piecewise_value`` — значение кусочно-заданной функции (``PIECEWISE_DEFINITION``);
 * ``radius_of_convergence`` — радиус сходимости степенного ряда;
 * ``pseries_test``/``geom_series_test`` — признаки обобщённого гармонического
   и геометрического рядов;
@@ -74,6 +75,7 @@ from .diff_equations import diff_eq
 from .domain import domain, restrictions
 from .integrals import area
 from .matrices import MATRIX_COMMANDS
+from .piecewise import piecewise_value
 from .sequences import explicit_formula, sequence_convergence
 from .series import (
     alt_test,
@@ -1120,6 +1122,7 @@ COMMANDS: dict[str, Command] = {
     "inverse_function": inverse_function,
     "nth_derivative": nth_derivative,
     "partial_fractions": partial_fractions,
+    "piecewise_value": piecewise_value,
     "periodic_to_frac": periodic_to_frac,
     "range": value_range,
     "alt_test": alt_test,
@@ -1192,6 +1195,7 @@ __all__ = [
     "nth_term_test",
     "partial_fractions",
     "periodic_to_frac",
+    "piecewise_value",
     "polar",
     "prime_factorization",
     "prove",

@@ -197,6 +197,7 @@ def test_corpus_covers_every_module() -> None:
         "sequences",
         "percentage",
         "periodic",
+        "piecewise",
         "rewrite",
         "area",
         "partial_fractions",

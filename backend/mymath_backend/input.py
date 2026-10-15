@@ -170,6 +170,7 @@ KEYWORD_TO_TYPE: dict[str, CoreNodeType] = {
     "supset": T.PROPER_SUPERSET,
     "nsupset": T.NOT_PROPER_SUPERSET,
     "function": T.FUNCTION,
+    "pw_def": T.PIECEWISE_DEFINITION,
     "order": T.ORDER,
     "mean": T.MEAN,
     "eval_expr": T.EVALUATE_EXPRESSION,
