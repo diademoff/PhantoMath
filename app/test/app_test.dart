@@ -140,6 +140,52 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('шторка вектора шлёт команду с вторым вектором', (tester) async {
+    final view =
+        TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
+    view.physicalSize = const Size(2400, 2280);
+    view.devicePixelRatio = 1;
+    Map<String, dynamic>? sent;
+    final api = SolverApi(
+      baseUrl: 'http://test',
+      client: MockClient((request) async {
+        sent = jsonDecode(request.body) as Map<String, dynamic>;
+        return http.Response(
+          _solveBody,
+          200,
+          headers: const {'content-type': 'application/json; charset=utf-8'},
+        );
+      }),
+    );
+    await tester.pumpWidget(MaterialApp(home: SolvePage(api: api)));
+    await tester.pump();
+
+    // Вектор ⟨1, 2⟩: шаблон, затем цифровая панель.
+    await tester.tap(find.text('{}'));
+    await tester.pump();
+    await _key(tester, '⟨a,b⟩');
+    await tester.tap(find.text('123'));
+    await tester.pump();
+    await _key(tester, '1');
+    await _key(tester, '▼');
+    await _key(tester, '2');
+
+    // Шторка операций: второй вектор и скалярное произведение.
+    await tester.tap(find.text('Вектор…'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.enterText(find.byType(TextField).at(0), '3, 4');
+    await tester.tap(find.text('Скалярное'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(sent?['action']?['command'], 'vector_dot');
+    final args = sent?['action']?['args'] as List<dynamic>?;
+    expect(args, hasLength(1));
+    expect((args!.first as Map)['type'], 'LIST');
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('ссылка в пояснении открывает определение', (tester) async {
     final api = SolverApi(
       baseUrl: 'http://test',

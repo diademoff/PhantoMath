@@ -12,6 +12,7 @@ import 'src/api/solver_api.dart';
 import 'src/editor/controller.dart';
 import 'src/editor/editor_view.dart';
 import 'src/editor/keyboard.dart';
+import 'src/model/core_node.dart';
 import 'src/render/latex.dart';
 
 void main() {
@@ -91,7 +92,12 @@ class _SolvePageState extends State<SolvePage> {
     super.dispose();
   }
 
-  Future<void> _solve() async {
+  Future<void> _solve() => _solveWith(command: _command);
+
+  Future<void> _solveWith({
+    String? command,
+    List<CoreNode> args = const [],
+  }) async {
     if (_editor.isEmpty) {
       setState(() => _error = 'Введите выражение');
       return;
@@ -104,7 +110,8 @@ class _SolvePageState extends State<SolvePage> {
       final answer = await widget.api.solve(
         _editor.toCoreNode(),
         locale: _locale,
-        command: _command,
+        command: command,
+        args: args,
       );
       if (!mounted) return;
       setState(() {
@@ -121,6 +128,56 @@ class _SolvePageState extends State<SolvePage> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// Второй вектор из строки «3, 4» или скаляр из «2».
+  List<CoreNode>? _parseNumbers(String text) {
+    final parts = text
+        .split(RegExp(r'[,\s]+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return null;
+    final nodes = <CoreNode>[];
+    for (final part in parts) {
+      if (double.tryParse(part) == null) return null;
+      nodes.add(CoreNode(type: CoreNodeType.constant, value: part));
+    }
+    return nodes;
+  }
+
+  /// Шторка операций над вектором: второй операнд и выбор действия.
+  Future<void> _openVectorSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => _VectorSheet(onRun: _runVectorCommand),
+    );
+  }
+
+  /// Выполнить векторную команду с введённым вторым операндом.
+  void _runVectorCommand(String command, String text) {
+    final numbers = _parseNumbers(text);
+    if (numbers == null || numbers.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Введи числа через запятую')),
+      );
+      return;
+    }
+    final List<CoreNode> args;
+    if (command == 'vector_scale') {
+      if (numbers.length != 1) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Скаляр — одно число')),
+        );
+        return;
+      }
+      args = [numbers.first];
+    } else {
+      args = [CoreNode(type: CoreNodeType.list, children: numbers)];
+    }
+    Navigator.of(context).pop();
+    _solveWith(command: command, args: args);
   }
 
   @override
@@ -179,6 +236,14 @@ class _SolvePageState extends State<SolvePage> {
                         onSelected: (_) => setState(() => _command = command),
                       ),
                     ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ActionChip(
+                      avatar: const Icon(Icons.arrow_outward, size: 16),
+                      label: const Text('Вектор…'),
+                      onPressed: _openVectorSheet,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -397,8 +462,89 @@ class _ExplanationText extends StatelessWidget {
   }
 }
 
-/// Формула с защитой от невалидного LaTeX.
-///
+/// Шторка операций над вектором: поле второго операнда и кнопки действий.
+class _VectorSheet extends StatefulWidget {
+  const _VectorSheet({required this.onRun});
+
+  final void Function(String command, String text) onRun;
+
+  @override
+  State<_VectorSheet> createState() => _VectorSheetState();
+}
+
+class _VectorSheetState extends State<_VectorSheet> {
+  final _second = TextEditingController();
+  final _scalar = TextEditingController(text: '2');
+
+  @override
+  void dispose() {
+    _second.dispose();
+    _scalar.dispose();
+    super.dispose();
+  }
+
+  Widget _action(String command, String label, TextEditingController input) {
+    return FilledButton.tonal(
+      onPressed: () => widget.onRun(command, input.text),
+      child: Text(label),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Операции с вектором',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _second,
+            decoration: const InputDecoration(
+              labelText: 'Второй вектор (например 3, 4)',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _action('vector_add', 'Сложить', _second),
+              _action('vector_subtract', 'Вычесть', _second),
+              _action('vector_dot', 'Скалярное', _second),
+              _action('vector_cross', 'Векторное', _second),
+            ],
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _scalar,
+            decoration: const InputDecoration(
+              labelText: 'Скаляр',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: _action('vector_scale', '× скаляр', _scalar),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Формула с защитой от невалидного LaTeX.///
 /// `flutter_math` падает на кривом вводе; пользовательский ввод не должен
 /// ронять экран, поэтому ошибка показывается как есть.
 class _Math extends StatelessWidget {
