@@ -45,7 +45,7 @@ def solve_limit(node: CoreNode, ctx: SolveContext) -> CoreNode:
     if not isinstance(value, sympy.Expr) or value is sympy.nan or value.has(sympy.Limit):
         raise SolveError("предел не существует или не вычисляется")
 
-    classification = _classification(expression_value, symbol, point_value, value)
+    classification = _classification(expression_value, symbol, point_value, value, node.type, var)
     if classification is not None:
         key, classification_args = classification
         ctx.result.add(Step(left=node, right=None, key=key, args=classification_args))
@@ -60,13 +60,26 @@ def solve_limit(node: CoreNode, ctx: SolveContext) -> CoreNode:
 
 
 def _classification(
-    expression: sympy.Expr, symbol: sympy.Symbol, point: sympy.Expr, value: sympy.Expr
+    expression: sympy.Expr,
+    symbol: sympy.Symbol,
+    point: sympy.Expr,
+    value: sympy.Expr,
+    node_type: T,
+    variable: str,
 ) -> tuple[str, list[CoreNode]] | None:
-    """Шаг с видом предела (константа, подстановка, многочлен, Лопиталь)."""
+    """Шаг с видом предела (константа, подстановка, многочлен, односторонний, Лопиталь)."""
     if not expression.has(symbol):
         return "limit_solve_const", []
     if _indeterminate(expression, symbol, point):
         return "limit_lhopital_long", []
+    if node_type in (T.LIMIT_LEFT, T.LIMIT_RIGHT) and value.is_finite is True:
+        key = "limit_common_left" if node_type is T.LIMIT_LEFT else "limit_common_right"
+        return key, [
+            from_sympy(expression),
+            from_sympy(value),
+            CoreNode.variable(variable),
+            from_sympy(point),
+        ]
     if point not in (sympy.oo, -sympy.oo):
         substituted = expression.subs(symbol, point)
         if substituted.is_finite is True:

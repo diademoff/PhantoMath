@@ -48,6 +48,20 @@
       "steps": ["limit_poly_neg_inf_pos_lead_odd", "limit_solve"]
     },
     {
+      "id": "left-linear",
+      "title": "левосторонний предел x + 1 при x → 0 равен 1",
+      "input": "{lim_left({0},{x+1})}",
+      "solution": {"type": "CONSTANT", "value": "1"},
+      "steps": ["limit_common_left", "limit_solve"]
+    },
+    {
+      "id": "right-linear",
+      "title": "правосторонний предел x + 1 при x → 0 равен 1",
+      "input": "{lim_right({0},{x+1})}",
+      "solution": {"type": "CONSTANT", "value": "1"},
+      "steps": ["limit_common_right", "limit_solve"]
+    },
+    {
       "id": "right-reciprocal",
       "title": "правосторонний предел 1/x при x -> 0+",
       "input": "{lim_right({0},{1/x})}",
