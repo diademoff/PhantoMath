@@ -58,9 +58,23 @@ class SolveStep {
   final List<Substep> substeps;
 }
 
+/// Ссылка в тексте пояснения: метка и идентификатор способа/понятия.
+class ExplanationLink {
+  const ExplanationLink({required this.label, required this.uuid});
+
+  final String label;
+  final String uuid;
+}
+
 /// Подшаг: «было → стало» с пояснением.
 class Substep {
-  const Substep({this.left, this.right, this.text, this.explanationKey});
+  const Substep({
+    this.left,
+    this.right,
+    this.text,
+    this.explanationKey,
+    this.links = const [],
+  });
 
   final CoreNode? left;
   final CoreNode? right;
@@ -70,6 +84,9 @@ class Substep {
 
   /// Ключ словаря объяснений — нужен для ссылок «показать другой способ».
   final String? explanationKey;
+
+  /// Ссылки внутри текста (метка + uuid) для навигации.
+  final List<ExplanationLink> links;
 }
 
 /// Клиент решателя.
@@ -236,7 +253,22 @@ class SolverApi {
       text: explanation?['text'] as String? ?? _textOf(description ?? {}),
       explanationKey:
           explanation?['key'] as String? ?? description?['type'] as String?,
+      links: _parseLinks(explanation?['links']),
     );
+  }
+
+  /// Ссылки внутри текста пояснения.
+  List<ExplanationLink> _parseLinks(Object? raw) {
+    final out = <ExplanationLink>[];
+    for (final item in _asList(raw)) {
+      if (item is! Map<String, dynamic>) continue;
+      final label = item['label'] as String?;
+      final uuid = item['uuid'] as String?;
+      if (label != null && uuid != null) {
+        out.add(ExplanationLink(label: label, uuid: uuid));
+      }
+    }
+    return out;
   }
 
   String? _textOf(Map<String, dynamic> description) {

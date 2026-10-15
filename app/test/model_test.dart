@@ -191,6 +191,20 @@ void main() {
       expect(answer.methods[1].steps.single.substeps.single.text, 'разложение');
       api.close();
     });
+
+    test('разбирает ссылки в тексте пояснения', () async {
+      final api = _apiWith(_response(
+        '''{"result":{"groups":[{"type":"VERTICAL","entries":[{"result":{"steps":[
+          {"headers":[],"substeps":[{"description":{"type":"factorise_call"},"explanation":{"key":"factorise_call","text":"Factor","links":[{"label":"Factor","uuid":"1ceef362-dfb4-4ae6-ba5d-46dbd862a37b"}]}}]}]}}]}]}}''',
+        200,
+      ));
+
+      final answer = await api.solve(bin(CoreNodeType.add, c2, c3));
+      final link = answer.steps.single.substeps.single.links.single;
+      expect(link.label, 'Factor');
+      expect(link.uuid, '1ceef362-dfb4-4ae6-ba5d-46dbd862a37b');
+      api.close();
+    });
   });
 }
 

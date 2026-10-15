@@ -118,11 +118,34 @@ void main() {
   testWidgets('клавиша дроби поглощает набранное число', (tester) async {
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: _api())));
     await tester.pump();
-
     await _key(tester, '7');
     await _key(tester, '⁄');
     // Числитель занят числом 7, курсор — в слоте знаменателя.
     expect(find.byKey(const ValueKey('slot:0.1')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('ссылка в пояснении нажимается', (tester) async {
+    final api = SolverApi(
+      baseUrl: 'http://test',
+      client: MockClient(
+        (request) async => http.Response(
+          '{"result":{"groups":[{"type":"VERTICAL","entries":[{"result":{"steps":[{"headers":[],"substeps":[{"description":{"type":"factorise_call"},"explanation":{"key":"factorise_call","text":"Factor","links":[{"label":"Factor","uuid":"1ceef362-dfb4-4ae6-ba5d-46dbd862a37b"}]}}]}]}}]}]}}',
+          200,
+          headers: const {'content-type': 'application/json; charset=utf-8'},
+        ),
+      ),
+    );
+    await tester.pumpWidget(MaterialApp(home: SolvePage(api: api)));
+    await tester.pump();
+    await _key(tester, '2');
+    await tester.tap(find.byKey(const ValueKey('solve')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.tap(find.text('Factor'));
+    await tester.pump();
+    expect(find.textContaining('«Factor»'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

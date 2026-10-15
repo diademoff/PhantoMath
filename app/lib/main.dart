@@ -234,7 +234,7 @@ class _SolvePageState extends State<SolvePage> {
               child: Text(header, style: theme.textTheme.titleSmall),
             ),
           for (final substep in step.substeps)
-            _SubstepCard(substep: substep, theme: theme),
+            _SubstepCard(substep: substep, theme: theme, onLink: _onLink),
         ],
         if (result.solution != null) ...[
           const SizedBox(height: 24),
@@ -263,14 +263,33 @@ class _SolvePageState extends State<SolvePage> {
       ],
     );
   }
+
+  /// Нажатие на ссылку в тексте шага.
+  ///
+  /// Если решатель предложил несколько способов, ссылка переключает на
+  /// следующий; иначе показываем, что понятие пока не раскрыто.
+  void _onLink(ExplanationLink link) {
+    if (_methods.length > 1) {
+      setState(() => _methodIndex = (_methodIndex + 1) % _methods.length);
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('«${link.label}»: пояснение понятия появится позже')),
+    );
+  }
 }
 
 /// Карточка подшага: выражение, стрелка, выражение и пояснение.
 class _SubstepCard extends StatelessWidget {
-  const _SubstepCard({required this.substep, required this.theme});
+  const _SubstepCard({
+    required this.substep,
+    required this.theme,
+    required this.onLink,
+  });
 
   final Substep substep;
   final ThemeData theme;
+  final void Function(ExplanationLink link) onLink;
 
   @override
   Widget build(BuildContext context) {
@@ -296,12 +315,64 @@ class _SubstepCard extends StatelessWidget {
             ),
             if (substep.text != null && substep.text!.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Text(substep.text!, style: theme.textTheme.bodyMedium),
+              _ExplanationText(
+                substep: substep,
+                style: theme.textTheme.bodyMedium ?? const TextStyle(),
+                onLink: onLink,
+              ),
             ],
           ],
         ),
       ),
     );
+  }
+}
+
+/// Текст пояснения со ссылками.
+///
+/// Ссылки приходят как метки (текст уже содержит их), поэтому метки
+/// отыскиваются в строке по порядку следования и становятся нажимаемыми.
+class _ExplanationText extends StatelessWidget {
+  const _ExplanationText({
+    required this.substep,
+    required this.style,
+    required this.onLink,
+  });
+
+  final Substep substep;
+  final TextStyle style;
+  final void Function(ExplanationLink link) onLink;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = substep.text ?? '';
+    final linkStyle = TextStyle(
+      color: Theme.of(context).colorScheme.primary,
+      decoration: TextDecoration.underline,
+    );
+    final spans = <InlineSpan>[];
+    var cursor = 0;
+    for (final link in substep.links) {
+      final index = text.indexOf(link.label, cursor);
+      if (index < 0) continue;
+      if (index > cursor) {
+        spans.add(TextSpan(text: text.substring(cursor, index)));
+      }
+      spans.add(
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: GestureDetector(
+            onTap: () => onLink(link),
+            child: Text(link.label, style: linkStyle),
+          ),
+        ),
+      );
+      cursor = index + link.label.length;
+    }
+    if (cursor < text.length) {
+      spans.add(TextSpan(text: text.substring(cursor)));
+    }
+    return Text.rich(TextSpan(children: spans), style: style);
   }
 }
 
