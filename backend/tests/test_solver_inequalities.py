@@ -159,6 +159,26 @@ class TestRationalInequality:
         assert answer.children[1].type is T.CLOSED_OPEN_INTERVAL
 
 
+class TestInequalitySystem:
+    def test_open_intersection(self) -> None:
+        problem = node(
+            T.SYSTEM,
+            ineq(T.LESS_THAN, var("x"), c("3")),
+            ineq(T.GREATER_THAN, var("x"), c("1")),
+        )
+        answer = solution_of(problem)
+        assert answer.type is T.OPEN_OPEN_INTERVAL
+        assert [child.value for child in answer.children] == ["1", "3"]
+
+    def test_empty(self) -> None:
+        problem = node(
+            T.SYSTEM,
+            ineq(T.GREATER_THAN, var("x"), c("2")),
+            ineq(T.LESS_THAN, var("x"), c("0")),
+        )
+        assert solution_of(problem).type is T.EMPTY
+
+
 class TestCompoundInequality:
     def test_double_open(self) -> None:
         # 1 < x < 3 -> (1, 3)

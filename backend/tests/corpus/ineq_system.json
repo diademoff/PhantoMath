@@ -1,0 +1,38 @@
+{
+  "module": "ineq_system",
+  "tasks": [
+    {
+      "id": "system-open",
+      "title": "x < 3 и x > 1 → (1, 3)",
+      "input": "system({lt({x},{3})},{gt({x},{1})})",
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "1"},
+          {"type": "CONSTANT", "value": "3"}
+        ]
+      },
+      "steps": ["intersection_plural"]
+    },
+    {
+      "id": "system-closed",
+      "title": "x ≤ 3 и x ≥ 1 → [1, 3]",
+      "input": "system({lte({x},{3})},{gte({x},{1})})",
+      "solution": {
+        "type": "CLOSED_CLOSED_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "1"},
+          {"type": "CONSTANT", "value": "3"}
+        ]
+      },
+      "steps": ["intersection_plural"]
+    },
+    {
+      "id": "system-empty",
+      "title": "x > 2 и x < 0 → решений нет",
+      "input": "system({gt({x},{2})},{lt({x},{0})})",
+      "solution": {"type": "EMPTY"},
+      "steps": ["intersection_plural"]
+    }
+  ]
+}

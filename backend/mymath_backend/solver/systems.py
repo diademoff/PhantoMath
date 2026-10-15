@@ -1,14 +1,16 @@
-"""Системы двух линейных уравнений с двумя неизвестными.
+"""Системы: два линейных уравнения 2×2 или система неравенств.
 
-Модуль зарегистрирован на узел ``SYSTEM``. Каждое уравнение приводится к
-линейной форме ``a·u + b·v + c = 0``, система решается правилом Крамера.
-Ответ — список ``x = …, y = …``.
+Модуль зарегистрирован на узел ``SYSTEM``. Если среди элементов есть знак
+отношения, это **система неравенств**: множества решений элементов (через
+``solveset``) пересекаются, ответ — промежуток (шаг ``intersection_plural``).
+Иначе — два линейных уравнения: каждое приводится к форме ``a·u + b·v + c = 0``,
+система решается правилом Крамера; ответ — список ``x = …, y = …``.
 
-Поддерживаются только линейные системы (произведение неизвестных, степени и
-функции отклоняются) и только системы 2×2. Общий случай (метод Гаусса,
-``n×n``, параметрические решения) — следующие модули.
+Поддерживаются линейные системы 2×2 (произведение неизвестных, степени и
+функции отклоняются). Общий случай (метод Гаусса, ``n×n``, параметрические
+решения) — следующие модули.
 
-Шаг один — ключ ``system_2x2_solve_elimination`` с заголовком
+Шаг системы уравнений — ``system_2x2_solve_elimination`` с заголовком
 ``system_solve_short``; при нулевом определителе система не имеет
 единственного решения и это ошибка.
 """
@@ -17,12 +19,24 @@ from __future__ import annotations
 
 from fractions import Fraction
 
+import sympy
+
 from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
 from .arithmetic import as_fraction, format_number
 from .base import SolveContext, SolveError, Step, solver_for
+from .sympy_bridge import from_sympy, to_sympy
 
 _HEADER = CoreRichText(type="system_solve_short")
+
+# Отношения: система из них — система неравенств.
+_RELATIONS = (
+    T.LESS_THAN,
+    T.LESS_THAN_EQUAL,
+    T.GREATER_THAN,
+    T.GREATER_THAN_EQUAL,
+    T.NOT_EQUALS,
+)
 
 # Линейная форма: коэффициенты при неизвестных и свободный член.
 _Form = tuple[list[Fraction], Fraction]
@@ -116,7 +130,10 @@ def _equation_form(equation: CoreNode, index: dict[str, int]) -> _Form:
 
 @solver_for(T.SYSTEM)
 def solve_system(node: CoreNode, ctx: SolveContext) -> CoreNode:
-    """Решить систему 2×2 линейных уравнений."""
+    """Решить систему уравнений или неравенств."""
+    if any(child.type in _RELATIONS for child in node.children):
+        return _inequality_system(node, ctx)
+
     ctx.require(len(node.children) == 2, "поддерживаются системы из двух уравнений")
     ctx.require(
         len(ctx.variables) == 2,
@@ -151,6 +168,42 @@ def solve_system(node: CoreNode, ctx: SolveContext) -> CoreNode:
     )
     ctx.result.add(Step(left=node, right=solution, key="system_2x2_solve_elimination"), [_HEADER])
     return solution
+
+
+def _inequality_system(node: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Система неравенств (и уравнений): пересечение множеств решений."""
+    ctx.require(len(ctx.variables) == 1, "система неравенств: одна неизвестная")
+    symbol = sympy.Symbol(ctx.variables[0])
+    sets = [_relation_set(child, symbol) for child in node.children]
+    combined = sets[0] if len(sets) == 1 else sympy.Intersection(*sets)
+    answer = from_sympy(sympy.simplify(combined))
+    ctx.result.add(Step(left=node, right=answer, key="intersection_plural"), [_HEADER])
+    return answer
+
+
+def _relation_set(child: CoreNode, symbol: sympy.Symbol) -> sympy.Set:
+    """Множество решений одного элемента системы."""
+    if child.type is T.EQUALS and len(child.children) == 2:
+        equation = sympy.Eq(to_sympy(child.children[0]), to_sympy(child.children[1]))
+        return sympy.solveset(equation, symbol, sympy.S.Reals)
+    if child.type in _RELATIONS and len(child.children) == 2:
+        left = to_sympy(child.children[0])
+        right = to_sympy(child.children[1])
+        return sympy.solveset(_relation(child.type, left, right), symbol, sympy.S.Reals)
+    raise SolveError("система содержит неподдерживаемый элемент")
+
+
+def _relation(node_type: T, left: sympy.Expr, right: sympy.Expr) -> sympy.Rel:
+    """Отношение как объект sympy."""
+    if node_type is T.LESS_THAN:
+        return sympy.Lt(left, right)
+    if node_type is T.LESS_THAN_EQUAL:
+        return sympy.Le(left, right)
+    if node_type is T.GREATER_THAN:
+        return sympy.Gt(left, right)
+    if node_type is T.GREATER_THAN_EQUAL:
+        return sympy.Ge(left, right)
+    return sympy.Ne(left, right)
 
 
 __all__ = [
