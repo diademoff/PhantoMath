@@ -34,6 +34,7 @@ from sympy.calculus.util import function_range
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
 from .base import Command, SolveContext, SolveError, Step, boolean_node
+from .diff_equations import diff_eq
 from .domain import domain, restrictions
 from .integrals import area
 from .matrices import MATRIX_COMMANDS
@@ -533,6 +534,7 @@ COMMANDS: dict[str, Command] = {
     "area": area,
     "conic": conic,
     "convergence": convergence,
+    "diff_eq": diff_eq,
     "to_degrees": to_degrees,
     "to_radians": to_radians,
     "vertex": vertex,
@@ -576,6 +578,7 @@ __all__ = [
     "asymptotes",
     "conic",
     "convergence",
+    "diff_eq",
     "domain",
     "even_odd",
     "expand",

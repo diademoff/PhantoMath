@@ -1,0 +1,72 @@
+{
+  "module": "diff_eq",
+  "tasks": [
+    {
+      "id": "separation",
+      "title": "y′ = y — разделяющиеся переменные",
+      "input": "{=({prime({y})},{y})}",
+      "command": "diff_eq",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {"type": "VARIABLE", "value": "y"},
+          {
+            "type": "MULTIPLY",
+            "children": [
+              {"type": "VARIABLE", "value": "C"},
+              {"type": "EXP", "children": [{"type": "VARIABLE", "value": "x"}]}
+            ]
+          }
+        ]
+      },
+      "steps": ["diff_eq_solve_by_separation", "diff_eq_write_general_sol"]
+    },
+    {
+      "id": "linear",
+      "title": "y′ = x + y — линейное уравнение",
+      "input": "{=({prime({y})},{x+y})}",
+      "command": "diff_eq",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {"type": "VARIABLE", "value": "y"},
+          {
+            "type": "SUBTRACT",
+            "children": [
+              {
+                "type": "SUBTRACT",
+                "children": [
+                  {
+                    "type": "MULTIPLY",
+                    "children": [
+                      {"type": "VARIABLE", "value": "C"},
+                      {"type": "EXP", "children": [{"type": "VARIABLE", "value": "x"}]}
+                    ]
+                  },
+                  {"type": "CONSTANT", "value": "1"}
+                ]
+              },
+              {"type": "VARIABLE", "value": "x"}
+            ]
+          }
+        ]
+      },
+      "steps": ["diff_eq_solve_linear", "diff_eq_write_general_sol"]
+    },
+    {
+      "id": "initial-condition",
+      "title": "y′ = y, y(0) = 1 — частное решение",
+      "input": "{=({prime({y})},{y})}",
+      "command": "diff_eq",
+      "args": ["{0}", "{1}"],
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {"type": "VARIABLE", "value": "y"},
+          {"type": "EXP", "children": [{"type": "VARIABLE", "value": "x"}]}
+        ]
+      },
+      "steps": ["diff_eq_use_init_condition", "diff_eq_find_particular"]
+    }
+  ]
+}

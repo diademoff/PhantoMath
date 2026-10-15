@@ -205,6 +205,7 @@ def test_corpus_covers_every_module() -> None:
         "asymptotes",
         "conic",
         "convergence",
+        "diff_eq",
         "angle",
         "vertex",
         "rationalize",
