@@ -30,6 +30,7 @@ from .base import (
 from .combinatorics import solve_arrangement, solve_choose, solve_factorial
 from .comparison import COMPARABLE, solve_comparison, solve_order
 from .complex import contains_imaginary, solve_complex, solve_imaginary_arithmetic
+from .containers import solve_container
 from .derivatives import solve_derivative
 from .equations import solve_equation, solve_methods
 from .evaluate import solve_evaluate_expression, solve_mean
@@ -192,6 +193,7 @@ __all__ = [
     "solve_choose",
     "solve_comparison",
     "solve_complex",
+    "solve_container",
     "solve_derivative",
     "solve_determinant",
     "solve_equation",
