@@ -13,13 +13,24 @@ import 'package:path_provider/path_provider.dart';
 
 import '../model/core_node.dart';
 
-/// Одна запись блокнота.
+/// Одна запись блокнота: условие, ответ и метаданные задачи.
+///
+/// Метаданные повторяют `ResultItemMetadata` из APK: идентификатор записи
+/// (`uuid`), версия формата (`version`), время (`timestamp` = `savedAt`) и
+/// вид результата (`source`, как `PhotoMathResultMetadataType`: `core`).
+/// Дополнительно храним действие и язык — они описывают, чем именно решали.
 @immutable
 class NotebookEntry {
   const NotebookEntry({
     required this.problem,
     this.solution,
     required this.savedAt,
+    this.uuid = '',
+    this.version = 1,
+    this.source = 'core',
+    this.command,
+    this.locale = 'ru',
+    this.methodIndex = 0,
   });
 
   /// Условие задачи.
@@ -30,10 +41,34 @@ class NotebookEntry {
 
   final DateTime savedAt;
 
+  /// Идентификатор записи.
+  final String uuid;
+
+  /// Версия формата записи.
+  final int version;
+
+  /// Вид результата (`core` — обычное решение).
+  final String source;
+
+  /// Действие над выражением (`factor`/`expand`/…), если было.
+  final String? command;
+
+  /// Язык пояснений.
+  final String locale;
+
+  /// Выбранный способ решения (индекс в вертикальной ветке).
+  final int methodIndex;
+
   Map<String, dynamic> toJson() => {
     'problem': problem.toJson(),
     if (solution != null) 'solution': solution!.toJson(),
     'savedAt': savedAt.toIso8601String(),
+    'uuid': uuid,
+    'version': version,
+    'source': source,
+    if (command != null) 'command': command,
+    'locale': locale,
+    'methodIndex': methodIndex,
   };
 
   factory NotebookEntry.fromJson(Map<String, dynamic> json) {
@@ -45,6 +80,12 @@ class NotebookEntry {
           : null,
       savedAt: DateTime.tryParse(json['savedAt'] as String? ?? '') ??
           DateTime.now(),
+      uuid: json['uuid'] as String? ?? '',
+      version: json['version'] as int? ?? 1,
+      source: json['source'] as String? ?? 'core',
+      command: json['command'] as String?,
+      locale: json['locale'] as String? ?? 'ru',
+      methodIndex: json['methodIndex'] as int? ?? 0,
     );
   }
 }
@@ -90,9 +131,24 @@ class Notebook extends ChangeNotifier {
     await _save();
   }
 
-  /// Очистить историю.
-  Future<void> clear() async {
+  /// Очистить историю и вернуть удалённые записи (для отмены).
+  ///
+  /// Возврат списка позволяет интерфейсу показать «История очищена» с кнопкой
+  /// «Отменить» и восстановить записи через [restore] (`clear_history_undo`
+  /// в оригинале).
+  Future<List<NotebookEntry>> clear() async {
+    final removed = List<NotebookEntry>.of(_entries);
     _entries.clear();
+    notifyListeners();
+    await _save();
+    return removed;
+  }
+
+  /// Восстановить ранее удалённые записи (отмена очистки).
+  Future<void> restore(List<NotebookEntry> entries) async {
+    _entries
+      ..clear()
+      ..addAll(entries);
     notifyListeners();
     await _save();
   }

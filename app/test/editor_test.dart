@@ -374,4 +374,38 @@ void main() {
       expect(c.cursor.offset, 2);
     });
   });
+
+  group('быстрые клавиши', () {
+    test('x² даёт POWER со степенью 2', () {
+      final c = EditorController();
+      _digits(c, '3');
+      c.insertTemplate(ENodeKind.powerTwo);
+      final node = editorToCoreNode(c.document);
+      expect(node.type, CoreNodeType.power);
+      expect(node.children, hasLength(2));
+      expect(node.children[1].value, '2');
+    });
+
+    test('x³ даёт POWER со степенью 3', () {
+      final c = EditorController();
+      _digits(c, '2');
+      c.insertTemplate(ENodeKind.powerThree);
+      expect(editorToCoreNode(c.document).children[1].value, '3');
+    });
+
+    test('∛ даёт ROOT с показателем 3', () {
+      final c = EditorController();
+      c.insertTemplate(ENodeKind.rootThree);
+      final node = editorToCoreNode(c.document);
+      expect(node.type, CoreNodeType.root);
+      expect(node.children[0].value, '3');
+    });
+
+    test('смешанное число собирается в FRACTION_MIXED', () {
+      final c = EditorController();
+      _digits(c, '1');
+      c.insertTemplate(ENodeKind.mixedFraction);
+      expect(editorToCoreNode(c.document).type, CoreNodeType.fractionMixed);
+    });
+  });
 }

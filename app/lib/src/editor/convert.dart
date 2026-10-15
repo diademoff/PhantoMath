@@ -132,12 +132,49 @@ CoreNode _templateToCore(ENode template) {
       template.kind == ENodeKind.matrix3) {
     return _matrixToCore(template);
   }
+  // Быстрые клавиши с предзаполненным слотом: `x²`, `x³`, `∛`, `log₂`.
+  // В контракте это обычные `POWER`/`ROOT`/`LOG` с постоянным аргументом.
+  switch (template.kind) {
+    case ENodeKind.powerTwo:
+    case ENodeKind.powerThree:
+      return CoreNode(
+        type: CoreNodeType.power,
+        children: [
+          _slotToCore(template.children[0]),
+          CoreNode(
+            type: CoreNodeType.constant,
+            value: template.kind == ENodeKind.powerTwo ? '2' : '3',
+          ),
+        ],
+      );
+    case ENodeKind.rootThree:
+      return CoreNode(
+        type: CoreNodeType.root,
+        children: [
+          CoreNode(type: CoreNodeType.constant, value: '3'),
+          _slotToCore(template.children[0]),
+        ],
+      );
+    case ENodeKind.log2:
+      return CoreNode(
+        type: CoreNodeType.log,
+        children: [
+          _slotToCore(template.children[0]),
+          CoreNode(type: CoreNodeType.constant, value: '2'),
+        ],
+      );
+    default:
+      break;
+  }
   final children = [
-    for (final slot in template.children)
-      slot.kind == ENodeKind.row ? _rowToCore(slot) : _atom(slot),
+    for (final slot in template.children) _slotToCore(slot),
   ];
   return CoreNode(type: template.kind.coreType, children: children);
 }
+
+/// Один слот шаблона как узел: ряд разбирается, готовый узел берётся как есть.
+CoreNode _slotToCore(ENode slot) =>
+    slot.kind == ENodeKind.row ? _rowToCore(slot) : _atom(slot);
 
 /// Матрица: плоские слоты собираются в строки `MATRIX_ROW` (по строкам).
 ///

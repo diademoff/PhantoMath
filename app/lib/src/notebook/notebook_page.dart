@@ -9,9 +9,16 @@ import 'notebook.dart';
 
 /// Страница истории.
 class NotebookPage extends StatelessWidget {
-  const NotebookPage({super.key, required this.notebook});
+  const NotebookPage({
+    super.key,
+    required this.notebook,
+    this.latexOptions = LatexOptions.standard,
+  });
 
   final Notebook notebook;
+
+  /// Настройки отрисовки формул (разделитель, нотация бинома).
+  final LatexOptions latexOptions;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +28,7 @@ class NotebookPage extends StatelessWidget {
         actions: [
           IconButton(
             tooltip: 'Очистить',
-            onPressed: notebook.isEmpty ? null : notebook.clear,
+            onPressed: notebook.isEmpty ? null : () => _clear(context),
             icon: const Icon(Icons.delete_outline),
           ),
         ],
@@ -45,7 +52,7 @@ class NotebookPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _Formula(latex: nodeToLatex(entry.problem)),
+                      _Formula(latex: nodeToLatex(entry.problem, latexOptions)),
                       if (entry.solution != null) ...[
                         const SizedBox(height: 8),
                         Row(
@@ -53,16 +60,18 @@ class NotebookPage extends StatelessWidget {
                             const Icon(Icons.arrow_forward, size: 16),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: _Formula(latex: nodeToLatex(entry.solution!)),
+                              child: _Formula(
+                                latex: nodeToLatex(
+                                  entry.solution!,
+                                  latexOptions,
+                                ),
+                              ),
                             ),
                           ],
                         ),
                       ],
                       const SizedBox(height: 8),
-                      Text(
-                        _time(entry.savedAt),
-                        style: Theme.of(context).textTheme.labelSmall,
-                      ),
+                      _Metadata(entry: entry),
                     ],
                   ),
                 ),
@@ -71,6 +80,48 @@ class NotebookPage extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+
+  /// Очистить историю с возможностью отмены (`clear_history_message` /
+  /// `clear_history_undo` в оригинале показаны как «История очищена»/«Отменить»).
+  Future<void> _clear(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final removed = await notebook.clear();
+    messenger.showSnackBar(
+      SnackBar(
+        content: const Text('История очищена'),
+        action: SnackBarAction(
+          label: 'Отменить',
+          onPressed: () => notebook.restore(removed),
+        ),
+      ),
+    );
+  }
+}
+
+/// Время и метаданные записи (вид результата, действие, язык).
+class _Metadata extends StatelessWidget {
+  const _Metadata({required this.entry});
+
+  final NotebookEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final chips = <String>[
+      _time(entry.savedAt),
+      if (entry.command != null) entry.command!,
+      entry.locale,
+    ];
+    return Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        for (final chip in chips)
+          Text(chip, style: theme.textTheme.labelSmall),
+      ],
     );
   }
 

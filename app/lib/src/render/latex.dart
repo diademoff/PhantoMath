@@ -19,17 +19,57 @@
 library;
 
 import '../model/core_node.dart';
+import '../settings/settings.dart';
 
 const String _placeholder = r'\square';
+
+/// Настройки отрисовки: десятичный разделитель и нотация биномиального
+/// коэффициента. Значения по умолчанию совпадают с нейтральной записью
+/// (точка, «этажная» запись) — так уже сохранённые тесты не меняются.
+class LatexOptions {
+  const LatexOptions({
+    this.decimalSeparator = DecimalSeparator.point,
+    this.binomialNotation = BinomialNotation.notationOne,
+  });
+
+  final DecimalSeparator decimalSeparator;
+  final BinomialNotation binomialNotation;
+
+  /// Умолчание: точка и «этажная» запись.
+  static const LatexOptions standard = LatexOptions();
+}
+
+/// Текущие настройки отрисовки на время одного вызова [nodeToLatex].
+///
+/// Рендер синхронный и однопоточный, а помощники (`_wrap`, `_childLatex`, …)
+/// вызываются рекурсивно и глубоко; прокидывать параметр через каждый из них
+/// шумно. Поэтому настройки выставляются на входе и восстанавливаются на
+/// выходе.
+LatexOptions _current = LatexOptions.standard;
 
 /// Собрать LaTeX для узла.
 ///
 /// Возвращает пустую строку для листьев без значения и для `EMPTY`:
 /// вызывающий покажет заглушку. Подсветка (`color`) и зачёркивание
 /// (`crossed`) оборачивают результат: это микро-анимация шага.
-String nodeToLatex(CoreNode node) {
-  final latex = _nodeBody(node);
-  return _styled(node, latex);
+String nodeToLatex(CoreNode node, [LatexOptions options = LatexOptions.standard]) {
+  final previous = _current;
+  _current = options;
+  try {
+    return _styled(node, _nodeBody(node));
+  } finally {
+    _current = previous;
+  }
+}
+
+/// Показать число с учётом выбранного десятичного разделителя.
+///
+/// Внутри решателя дробная часть всегда через точку; для показа заменяем
+/// её на выбранный символ (`DecimalSeparator` в профиле Photomath).
+String _number(String value, [LatexOptions? options]) {
+  final separator = (options ?? _current).decimalSeparator;
+  if (separator == DecimalSeparator.comma) return value.replaceAll('.', ',');
+  return value;
 }
 
 /// Обернуть LaTeX подсветкой/зачёркиванием узла.
@@ -49,6 +89,7 @@ String _nodeBody(CoreNode node) {
   switch (node.type) {
     // ── листья ──────────────────────────────────────────────────────
     case CoreNodeType.constant:
+      return _escape(_number(node.value ?? ''));
     case CoreNodeType.variable:
       return _escape(node.value ?? '');
 
@@ -261,7 +302,14 @@ String _nodeBody(CoreNode node) {
 
     // ── комбинаторика ───────────────────────────────────────────────
     case CoreNodeType.choose:
-      return _wrap(node, r'\binom{$0}{$1}');
+      // Нотация биномиального коэффициента из профиля (`BinomialType`):
+      // «этажная» (`\binom`) или строчная `C(n, k)`.
+      return _wrap(
+        node,
+        _current.binomialNotation == BinomialNotation.notationTwo
+            ? r'C\left($0,\ $1\right)'
+            : r'\binom{$0}{$1}',
+      );
 
     case CoreNodeType.partialPermutation:
       return _wrap(node, r'{}^{$0}P_{$1}');
@@ -446,8 +494,11 @@ String _matrix(CoreNode node, int size, String open, String close) {
 }
 
 /// LaTeX ребёнка или заглушка, если узел пуст.
+///
+/// Рендерим в текущих настройках напрямую (не через [nodeToLatex]): иначе
+/// вложенный вызов сбросил бы [_current] к умолчанию.
 String _childLatex(CoreNode child) {
-  final latex = nodeToLatex(child);
+  final latex = _styled(child, _nodeBody(child));
   return latex.isEmpty ? _placeholder : latex;
 }
 

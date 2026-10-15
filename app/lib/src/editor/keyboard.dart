@@ -161,14 +161,16 @@ final KeyboardPanel _functionPanel = KeyboardPanel(
     [
       MathKey.template(ENodeKind.ln),
       MathKey.template(ENodeKind.log10),
+      MathKey.template(ENodeKind.log2),
       MathKey.template(ENodeKind.log),
       MathKey.template(ENodeKind.exp),
-      MathKey.template(ENodeKind.abs),
       MathKey.template(ENodeKind.floor),
     ],
     [
+      MathKey.template(ENodeKind.abs),
       MathKey.template(ENodeKind.sign),
       MathKey.template(ENodeKind.fraction),
+      MathKey.template(ENodeKind.mixedFraction),
       MathKey.operator(ENodeKind.degree),
       MathKey.operator(ENodeKind.radian),
     ],
@@ -184,6 +186,12 @@ final KeyboardPanel _powerPanel = KeyboardPanel(
       MathKey.template(ENodeKind.fraction),
       MathKey.template(ENodeKind.root2),
       MathKey.template(ENodeKind.rootN),
+    ],
+    [
+      MathKey.template(ENodeKind.powerTwo),
+      MathKey.template(ENodeKind.powerThree),
+      MathKey.template(ENodeKind.rootThree),
+      MathKey.template(ENodeKind.mixedFraction),
     ],
     [
       MathKey.digit('2'),
@@ -244,6 +252,20 @@ final KeyboardPanel _variablePanel = KeyboardPanel(
       MathKey.variable(r'\theta'),
       MathKey.constant('π'),
       MathKey.constant('∞'),
+    ],
+    [
+      MathKey.variable('d'),
+      MathKey.variable('f'),
+      MathKey.variable('g'),
+      MathKey.variable('h'),
+      MathKey.constant('e'),
+    ],
+    [
+      MathKey.variable('p'),
+      MathKey.variable('q'),
+      MathKey.variable('r'),
+      MathKey.variable('s'),
+      MathKey.variable('t'),
     ],
   ],
 );

@@ -6,11 +6,13 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 
 import 'src/api/embedded_backend.dart';
 import 'src/api/solver_api.dart';
 import 'src/editor/controller.dart';
+import 'src/editor/convert.dart';
 import 'src/editor/editor_view.dart';
 import 'src/editor/keyboard.dart';
 import 'src/model/core_node.dart';
@@ -18,6 +20,8 @@ import 'src/notebook/notebook.dart';
 import 'src/notebook/notebook_page.dart';
 import 'src/render/graph_view.dart';
 import 'src/render/latex.dart';
+import 'src/settings/settings.dart';
+import 'src/settings/settings_page.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -142,8 +146,16 @@ class SolvePage extends StatefulWidget {
 class _SolvePageState extends State<SolvePage> {
   final _editor = EditorController();
   final _notebook = Notebook();
+  final _settings = AppSettings();
   String _locale = 'ru';
   String? _command;
+
+  /// Настройки отрисовки: десятичный разделитель и нотация биномиального
+  /// коэффициента из профиля.
+  LatexOptions get _latexOptions => LatexOptions(
+    decimalSeparator: _settings.decimalSeparator,
+    binomialNotation: _settings.binomialNotation,
+  );
 
   SolveResponse? _result;
   List<SolveResponse> _methods = const [];
@@ -200,12 +212,21 @@ class _SolvePageState extends State<SolvePage> {
   void initState() {
     super.initState();
     _notebook.load();
+    _settings.load();
+    // Перерисовываем при смене настроек: разделитель и нотация влияют на рендер.
+    _settings.addListener(_onSettingsChanged);
+  }
+
+  void _onSettingsChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    _settings.removeListener(_onSettingsChanged);
     _editor.dispose();
     _notebook.dispose();
+    _settings.dispose();
     widget.api.close();
     super.dispose();
   }
@@ -387,11 +408,28 @@ class _SolvePageState extends State<SolvePage> {
         title: const Text('mymath'),
         actions: [
           IconButton(
+            tooltip: 'Копировать результат',
+            icon: const Icon(Icons.copy_outlined),
+            onPressed: _current == null ? null : _copyResult,
+          ),
+          IconButton(
             tooltip: 'Блокнот',
             icon: const Icon(Icons.book_outlined),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => NotebookPage(notebook: _notebook),
+                builder: (_) => NotebookPage(
+                  notebook: _notebook,
+                  latexOptions: _latexOptions,
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Настройки',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => SettingsPage(settings: _settings),
               ),
             ),
           ),
@@ -428,7 +466,11 @@ class _SolvePageState extends State<SolvePage> {
               ),
             Expanded(child: _buildBody(theme)),
             const Divider(height: 1),
-            EditorView(controller: _editor),
+            _preview(theme),
+            EditorView(
+              controller: _editor,
+              decimalSeparator: _settings.decimalSeparator,
+            ),
             SizedBox(
               height: 40,
               child: SingleChildScrollView(
@@ -536,15 +578,48 @@ class _SolvePageState extends State<SolvePage> {
               child: Text(header, style: theme.textTheme.titleSmall),
             ),
           for (final substep in step.substeps)
-            _SubstepCard(substep: substep, theme: theme, onLink: _onLink),
+            _SubstepCard(
+              substep: substep,
+              theme: theme,
+              options: _latexOptions,
+              onLink: _onLink,
+              onCopy: _copyFormula,
+            ),
         ],
         if (result.solution != null) ...[
           const SizedBox(height: 24),
           Text('Ответ', style: theme.textTheme.titleSmall),
           const SizedBox(height: 8),
-          _Math(latex: nodeToLatex(result.solution!)),
+          _Math(latex: nodeToLatex(result.solution!, _latexOptions)),
         ],
       ],
+    );
+  }
+
+  /// Живой предпросмотр формулы: текущий ввод, собранный в LaTeX.
+  ///
+  /// Редактор рисует структурное дерево; здесь то же выражение показано
+  /// набором (`flutter_math`) — так видно, что именно уйдёт решателю.
+  Widget _preview(ThemeData theme) {
+    return AnimatedBuilder(
+      animation: _editor,
+      builder: (context, _) {
+        if (_editor.isEmpty) return const SizedBox.shrink();
+        final latex = nodeToLatex(
+          editorToCoreNode(_editor.document),
+          _latexOptions,
+        );
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+          alignment: Alignment.centerLeft,
+          child: Math.tex(
+            latex,
+            mathStyle: MathStyle.display,
+            onErrorFallback: (error) => const SizedBox.shrink(),
+          ),
+        );
+      },
     );
   }
 
@@ -642,6 +717,55 @@ class _SolvePageState extends State<SolvePage> {
     }
   }
 
+  /// Скопировать результат: LaTeX ответа, иначе — текст решения.
+  Future<void> _copyResult() async {
+    final result = _current;
+    if (result == null) return;
+    final text = result.solution != null
+        ? nodeToLatex(result.solution!, _latexOptions)
+        : _plainText(result);
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Скопировано')),
+    );
+  }
+
+  /// Текст решения без формул: шаги и пояснения (для копирования).
+  String _plainText(SolveResponse result) {
+    final buffer = StringBuffer();
+    for (final step in result.steps) {
+      for (final header in step.headers) {
+        buffer.writeln(header);
+      }
+      for (final substep in step.substeps) {
+        final left = substep.left == null
+            ? ''
+            : nodeToLatex(substep.left!, _latexOptions);
+        final right = substep.right == null
+            ? ''
+            : nodeToLatex(substep.right!, _latexOptions);
+        if (left.isNotEmpty || right.isNotEmpty) {
+          buffer.writeln('$left → $right');
+        }
+        if (substep.text != null && substep.text!.isNotEmpty) {
+          buffer.writeln(substep.text);
+        }
+      }
+    }
+    return buffer.toString().trim();
+  }
+
+  /// Скопировать одну формулу шага.
+  Future<void> _copyFormula(String latex) async {
+    if (latex.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: latex));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Скопировано')),
+    );
+  }
+
   /// Нажатие на ссылку в тексте шага.
   ///
   /// Если у понятия есть определение — открываем карточку. Иначе, когда
@@ -678,16 +802,23 @@ class _SolvePageState extends State<SolvePage> {
 }
 
 /// Карточка подшага: выражение, стрелка, выражение и пояснение.
+///
+/// Если у подшага есть вложенный результат (`subresult`) — он показывается
+/// раскрываемым блоком «Подробнее»: это углублённое пояснение шага.
 class _SubstepCard extends StatelessWidget {
   const _SubstepCard({
     required this.substep,
     required this.theme,
+    required this.options,
     required this.onLink,
+    required this.onCopy,
   });
 
   final Substep substep;
   final ThemeData theme;
+  final LatexOptions options;
   final void Function(ExplanationLink link) onLink;
+  final void Function(String latex) onCopy;
 
   @override
   Widget build(BuildContext context) {
@@ -701,14 +832,24 @@ class _SubstepCard extends StatelessWidget {
             Row(
               children: [
                 if (substep.left != null)
-                  Expanded(child: _Math(latex: nodeToLatex(substep.left!))),
+                  Expanded(
+                    child: _Math(latex: nodeToLatex(substep.left!, options)),
+                  ),
                 if (substep.left != null && substep.right != null)
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 8),
                     child: Icon(Icons.arrow_forward, size: 18),
                   ),
                 if (substep.right != null)
-                  Expanded(child: _Math(latex: nodeToLatex(substep.right!))),
+                  Expanded(
+                    child: _Math(latex: nodeToLatex(substep.right!, options)),
+                  ),
+                IconButton(
+                  tooltip: 'Копировать шаг',
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Icons.copy_outlined, size: 18),
+                  onPressed: _copyText,
+                ),
               ],
             ),
             if (substep.text != null && substep.text!.isNotEmpty) ...[
@@ -719,8 +860,50 @@ class _SubstepCard extends StatelessWidget {
                 onLink: onLink,
               ),
             ],
+            if (substep.detail.isNotEmpty) _detail(context),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Строка для копирования: `было → стало`.
+  void _copyText() {
+    final left = substep.left == null ? '' : nodeToLatex(substep.left!, options);
+    final right =
+        substep.right == null ? '' : nodeToLatex(substep.right!, options);
+    final text = [left, right].where((part) => part.isNotEmpty).join(' → ');
+    onCopy(text);
+  }
+
+  /// Раскрываемое углублённое пояснение шага (вложенные подшаги).
+  Widget _detail(BuildContext context) {
+    return Theme(
+      data: theme.copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.zero,
+        childrenPadding: const EdgeInsets.only(left: 8),
+        title: Text('Подробнее', style: theme.textTheme.labelLarge),
+        children: [
+          for (final step in substep.detail) ...[
+            for (final header in step.headers)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Text(header, style: theme.textTheme.labelMedium),
+                ),
+              ),
+            for (final nested in step.substeps)
+              _SubstepCard(
+                substep: nested,
+                theme: theme,
+                options: options,
+                onLink: onLink,
+                onCopy: onCopy,
+              ),
+          ],
+        ],
       ),
     );
   }

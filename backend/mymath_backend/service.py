@@ -152,9 +152,12 @@ def attach_text(node: dict[str, Any], locale: str) -> dict[str, Any]:
         value = out.get(key)
         if isinstance(value, list):
             out[key] = [attach_text(v, locale) if isinstance(v, dict) else v for v in value]
-    nested = out.get("result")
-    if isinstance(nested, dict):
-        out["result"] = attach_text(nested, locale)
+    # Вложенные результаты: `result` (группа) и `subresult` (раскрываемое
+    # углублённое пояснение шага) — тоже `CoreSolverVerticalResult`.
+    for key in ("result", "subresult"):
+        nested = out.get(key)
+        if isinstance(nested, dict):
+            out[key] = attach_text(nested, locale)
     return out
 
 

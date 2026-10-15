@@ -81,6 +81,7 @@ class Substep {
     this.text,
     this.explanationKey,
     this.links = const [],
+    this.detail = const [],
   });
 
   final CoreNode? left;
@@ -94,6 +95,10 @@ class Substep {
 
   /// Ссылки внутри текста (метка + uuid) для навигации.
   final List<ExplanationLink> links;
+
+  /// Раскрываемое углублённое пояснение шага (`subresult`): вложенные шаги.
+  /// Пусто, если у шага нет деталей.
+  final List<SolveStep> detail;
 }
 
 /// Точка графика.
@@ -342,6 +347,7 @@ class SolverApi {
       explanationKey:
           explanation?['key'] as String? ?? description?['type'] as String?,
       links: _parseLinks(explanation?['links']),
+      detail: _parseSteps(json['subresult']),
     );
   }
 

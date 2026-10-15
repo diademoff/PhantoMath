@@ -98,6 +98,13 @@ enum ENodeKind {
   choose,
   permutation,
   variation,
+
+  // ── быстрые клавиши из `editor_operators` (полный набор APK) ─────────
+  mixedFraction,
+  powerTwo,
+  powerThree,
+  rootThree,
+  log2,
 }
 
 /// Свойства вида узла: арность, роль в записи и соответствие `CoreNodeType`.
@@ -129,6 +136,13 @@ extension ENodeKindSpec on ENodeKind {
       case ENodeKind.integralDefinite:
       case ENodeKind.sigma:
         return 3;
+      case ENodeKind.mixedFraction:
+        return 3;
+      case ENodeKind.powerTwo:
+      case ENodeKind.powerThree:
+      case ENodeKind.rootThree:
+      case ENodeKind.log2:
+        return 1;
       case ENodeKind.root2:
       case ENodeKind.abs:
       case ENodeKind.bracket:
@@ -230,6 +244,9 @@ extension ENodeKindSpec on ENodeKind {
       case ENodeKind.root2:
       case ENodeKind.abs:
       case ENodeKind.bracket:
+      case ENodeKind.mixedFraction:
+      case ENodeKind.powerTwo:
+      case ENodeKind.powerThree:
         return true;
       default:
         return false;
@@ -252,6 +269,8 @@ extension ENodeKindSpec on ENodeKind {
       case ENodeKind.integralDefinite:
       case ENodeKind.sigma:
         return 2;
+      case ENodeKind.mixedFraction:
+        return 1;
       default:
         return 0;
     }
@@ -408,6 +427,15 @@ extension ENodeKindSpec on ENodeKind {
         return core.CoreNodeType.partialPermutation;
       case ENodeKind.variation:
         return core.CoreNodeType.variation;
+      case ENodeKind.mixedFraction:
+        return core.CoreNodeType.fractionMixed;
+      case ENodeKind.powerTwo:
+      case ENodeKind.powerThree:
+        return core.CoreNodeType.power;
+      case ENodeKind.rootThree:
+        return core.CoreNodeType.root;
+      case ENodeKind.log2:
+        return core.CoreNodeType.log;
       case ENodeKind.row:
         return core.CoreNodeType.empty;
     }
@@ -544,6 +572,16 @@ extension ENodeKindSpec on ENodeKind {
         return 'Aₙᵏ';
       case ENodeKind.variation:
         return 'Vₙᵏ';
+      case ENodeKind.mixedFraction:
+        return '1½';
+      case ENodeKind.powerTwo:
+        return 'x²';
+      case ENodeKind.powerThree:
+        return 'x³';
+      case ENodeKind.rootThree:
+        return '∛';
+      case ENodeKind.log2:
+        return 'log₂';
       default:
         return '';
     }
@@ -626,6 +664,16 @@ extension ENodeKindSpec on ENodeKind {
         return 'Перестановки';
       case ENodeKind.variation:
         return 'Размещения';
+      case ENodeKind.mixedFraction:
+        return 'Смешанное число';
+      case ENodeKind.powerTwo:
+        return 'Квадрат';
+      case ENodeKind.powerThree:
+        return 'Куб';
+      case ENodeKind.rootThree:
+        return 'Кубический корень';
+      case ENodeKind.log2:
+        return 'Логарифм по основанию 2';
       default:
         return label;
     }

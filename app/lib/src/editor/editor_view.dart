@@ -11,18 +11,27 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../settings/settings.dart';
 import 'controller.dart';
 import 'kind.dart';
 import 'model.dart' as ed;
 
 /// Формула ввода с курсором и тапом по элементам.
 class EditorView extends StatefulWidget {
-  const EditorView({super.key, required this.controller, this.fontSize = 30});
+  const EditorView({
+    super.key,
+    required this.controller,
+    this.fontSize = 30,
+    this.decimalSeparator = DecimalSeparator.point,
+  });
 
   final EditorController controller;
 
   /// Размер формулы ввода.
   final double fontSize;
+
+  /// Десятичный разделитель из настроек — для показа чисел.
+  final DecimalSeparator decimalSeparator;
 
   @override
   State<EditorView> createState() => _EditorViewState();
@@ -273,6 +282,20 @@ class _EditorViewState extends State<EditorView> {
         return _rowOf([_sup(slots[0]), const Text('P'), _sub(slots[1])]);
       case ENodeKind.variation:
         return _rowOf([_sup(slots[0]), const Text('A'), _sub(slots[1])]);
+      case ENodeKind.mixedFraction:
+        return _rowOf([slots[0], _fraction(slots[1], slots[2])]);
+      case ENodeKind.powerTwo:
+        return _rowOf([slots[0], _sup(const Text('2'))]);
+      case ENodeKind.powerThree:
+        return _rowOf([slots[0], _sup(const Text('3'))]);
+      case ENodeKind.rootThree:
+        return _radical(const Text('3'), slots[0]);
+      case ENodeKind.log2:
+        return _rowOf([
+          const Text('log'),
+          _sub(const Text('2')),
+          _functionTail(slots[0]),
+        ]);
       default:
         return _rowOf(slots);
     }
@@ -488,6 +511,10 @@ class _EditorViewState extends State<EditorView> {
         case r'\theta':
           return 'θ';
       }
+    }
+    if (node.kind == ENodeKind.constant &&
+        widget.decimalSeparator == DecimalSeparator.comma) {
+      return value.replaceAll('.', ',');
     }
     return value;
   }

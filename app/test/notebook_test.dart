@@ -48,5 +48,36 @@ void main() {
       expect(restored.solution?.value, '5');
       expect(restored.savedAt, entry.savedAt);
     });
+
+    test('очистка возвращает записи, восстановление их возвращает', () async {
+      final notebook = Notebook();
+      await notebook.add(
+        NotebookEntry(problem: num_('2'), savedAt: DateTime(2020)),
+      );
+      final removed = await notebook.clear();
+      expect(notebook.isEmpty, isTrue);
+      expect(removed, hasLength(1));
+      await notebook.restore(removed);
+      expect(notebook.entries, hasLength(1));
+    });
+
+    test('метаданные задачи переживают сериализацию', () {
+      final entry = NotebookEntry(
+        problem: num_('2'),
+        savedAt: DateTime(2020),
+        uuid: 'abc',
+        version: 2,
+        source: 'core',
+        command: 'expand',
+        locale: 'en',
+        methodIndex: 1,
+      );
+      final restored = NotebookEntry.fromJson(entry.toJson());
+      expect(restored.uuid, 'abc');
+      expect(restored.version, 2);
+      expect(restored.command, 'expand');
+      expect(restored.locale, 'en');
+      expect(restored.methodIndex, 1);
+    });
   });
 }
