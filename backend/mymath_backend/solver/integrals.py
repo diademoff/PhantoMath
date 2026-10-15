@@ -42,9 +42,7 @@ def solve_integral(node: CoreNode, ctx: SolveContext) -> CoreNode:
         except SolveError as err:
             # sympy вернул специальную функцию (erfi, Ei, …): элементарной
             # первообразной нет, и в наш AST это не переводится.
-            raise SolveError(
-                "первообразная не выражается через элементарные функции"
-            ) from err
+            raise SolveError("первообразная не выражается через элементарные функции") from err
     else:
         ctx.require(len(node.children) == 3, "определённый интеграл: пределы и выражение")
         lower, upper, expression = node.children

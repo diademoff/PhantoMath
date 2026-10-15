@@ -30,6 +30,7 @@ from .integrals import solve_integral
 from .limits import solve_limit
 from .matrices import solve_determinant
 from .powers import solve_logarithm, solve_root
+from .series import solve_series
 from .systems import solve_system
 
 
@@ -102,6 +103,7 @@ __all__ = [
     "solve_limit",
     "solve_logarithm",
     "solve_root",
+    "solve_series",
     "solve_system",
     "solver_for",
 ]
