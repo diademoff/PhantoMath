@@ -79,6 +79,51 @@ class TestRootTest:
         assert vertical.solution.children[0].value == "true"
 
 
+class TestIntegralTest:
+    def _run(self, source: str, command: str) -> tuple[list[str], str]:
+        vertical = solve(parse_protocol(source), command=command).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
+        return keys, vertical.solution.children[0].value or ""
+
+    def test_not_summable(self) -> None:
+        # Σ 1/(n·ln n) — замкнутой суммы нет, ряд расходится.
+        source = "{sigma_def({n},{2},{inf},{frac({1},{muli({n},{ln({n})})})})}"
+        keys, value = self._run(source, "convergence")
+        assert keys == [
+            "series_integral_test",
+            "series_integral_test_use_smpl",
+            "series_integral_test_diverges",
+        ]
+        assert value == "false"
+
+    def test_converges(self) -> None:
+        source = "{sigma_def({n},{1},{inf},{frac({1},{n^2})})}"
+        keys, value = self._run(source, "integral_test")
+        assert keys[-1] == "series_integral_test_converges"
+        assert value == "true"
+
+
+class TestAltTest:
+    def _run(self, source: str) -> tuple[list[str], str]:
+        vertical = solve(parse_protocol(source), command="alt_test").result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
+        return keys, vertical.solution.children[0].value or ""
+
+    def test_converges(self) -> None:
+        # Σ (−1)ⁿ/n — признак Лейбница.
+        keys, value = self._run("{sigma_def({n},{1},{inf},{frac({(-1)^n},{n})})}")
+        assert keys == ["series_alt_test", "series_alt_test_converges"]
+        assert value == "true"
+
+    def test_diverges(self) -> None:
+        # Σ (−1)ⁿ·n/(n+1) — общий член не стремится к нулю.
+        keys, value = self._run("{sigma_def({n},{1},{inf},{frac({(-1)^n*n},{n+1})})}")
+        assert keys[-1] == "series_nth_term_test_lim_nozero"
+        assert value == "false"
+
+
 class TestPSeries:
     def _run(self, source: str, command: str) -> tuple[list[str], str]:
         vertical = solve(parse_protocol(source), command=command).result.vertical()

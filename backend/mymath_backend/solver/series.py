@@ -52,7 +52,11 @@ def solve_series(node: CoreNode, ctx: SolveContext) -> CoreNode:
 
 
 def convergence(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
-    """Определить, сходится ли ряд (сумма с бесконечным пределом)."""
+    """Определить, сходится ли ряд (сумма с бесконечным пределом).
+
+    Сначала пробуется точная сумма (sympy). Если замкнутой суммы нет —
+    применяется интегральный признак.
+    """
     del args
     if node.type is not T.SIGMA_DEFINITE:
         raise SolveError("сходимость определяется у ряда (суммы)")
@@ -60,10 +64,78 @@ def convergence(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> Core
     symbol = sympy.Symbol(index)
     value = sympy.summation(to_sympy(expression), (symbol, to_sympy(lower), to_sympy(upper)))
     if value.has(sympy.Sum):
-        raise SolveError("сходимость не определена")
+        return _integral_test(node, ctx, expression, lower, symbol)
     converges = value.is_finite is True
     answer = boolean_node(converges)
     ctx.result.add(Step(left=node, right=answer, key="convergent" if converges else "divergent"))
+    return answer
+
+
+def integral_test(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Интегральный признак сходимости (команда ``integral_test``)."""
+    del args
+    if node.type is not T.SIGMA_DEFINITE:
+        raise SolveError("интегральный признак применяется к ряду (сумме)")
+    index, lower, _, expression = _parts(node)
+    return _integral_test(node, ctx, expression, lower, sympy.Symbol(index))
+
+
+def _integral_test(
+    node: CoreNode,
+    ctx: SolveContext,
+    expression: CoreNode,
+    lower: CoreNode,
+    symbol: sympy.Symbol,
+) -> CoreNode:
+    """Интегральный признак: ``∫_N^∞ f(x) dx`` для ``f(x) = a(x)``."""
+    variable = sympy.Symbol("t") if str(symbol) != "t" else sympy.Symbol("u")
+    function = to_sympy(expression).subs(symbol, variable)
+    boundary = to_sympy(lower)
+    ctx.result.add(Step(left=node, right=None, key="series_integral_test"))
+    ctx.result.add(Step(left=node, right=None, key="series_integral_test_use_smpl"))
+    try:
+        value = sympy.integrate(function, (variable, boundary, sympy.oo))
+    except (TypeError, ValueError, NotImplementedError) as error:
+        raise SolveError("интегральный признак не применим") from error
+    if value.is_finite is True:
+        key, converges = "series_integral_test_converges", True
+    elif value in (sympy.oo, -sympy.oo, sympy.zoo) or value.is_finite is False:
+        key, converges = "series_integral_test_diverges", False
+    else:
+        raise SolveError("интегральный признак не применим")
+    answer = boolean_node(converges)
+    ctx.result.add(Step(left=node, right=answer, key=key))
+    return answer
+
+
+def alt_test(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Признак Лейбница для знакочередующегося ряда (команда ``alt_test``)."""
+    del args
+    if node.type is not T.SIGMA_DEFINITE:
+        raise SolveError("признак Лейбница применяется к ряду (сумме)")
+    index, _, _, expression = _parts(node)
+    symbol = sympy.Symbol(index)
+    term = to_sympy(expression)
+    if not term.has((-sympy.Integer(1)) ** symbol):
+        raise SolveError("ряд не знакочередующийся")
+
+    magnitude = sympy.Abs(term)
+    ctx.result.add(Step(left=node, right=None, key="series_alt_test"))
+    decreasing = sympy.limit(magnitude.subs(symbol, symbol + 1) / magnitude, symbol, sympy.oo)
+    limit = sympy.limit(magnitude, symbol, sympy.oo)
+    if limit == 0 and decreasing.is_number and (decreasing <= 1) is sympy.true:
+        answer = boolean_node(True)
+        ctx.result.add(Step(left=node, right=answer, key="series_alt_test_converges"))
+        return answer
+    answer = boolean_node(False)
+    ctx.result.add(
+        Step(
+            left=node,
+            right=answer,
+            key="series_nth_term_test_lim_nozero",
+            args=[CoreNode.constant("0")],
+        )
+    )
     return answer
 
 
@@ -275,8 +347,10 @@ def geom_series_test(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) ->
 
 
 __all__ = [
+    "alt_test",
     "convergence",
     "geom_series_test",
+    "integral_test",
     "nth_term_test",
     "pseries_test",
     "radius_of_convergence",

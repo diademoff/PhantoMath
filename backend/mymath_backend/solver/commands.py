@@ -33,6 +33,7 @@
 * ``sequence_convergence`` — сходимость последовательности (``seq_lim_conv``);
 * ``ratio_test`` — признак Даламбера для ряда (``series_ratio_test``);
 * ``root_test``/``nth_term_test`` — радикальный и необходимый признаки сходимости ряда;
+* ``integral_test``/``alt_test`` — интегральный признак и признак Лейбница;
 * ``radius_of_convergence`` — радиус сходимости степенного ряда;
 * ``pseries_test``/``geom_series_test`` — признаки обобщённого гармонического
   и геометрического рядов;
@@ -72,8 +73,10 @@ from .integrals import area
 from .matrices import MATRIX_COMMANDS
 from .sequences import explicit_formula, sequence_convergence
 from .series import (
+    alt_test,
     convergence,
     geom_series_test,
+    integral_test,
     nth_term_test,
     pseries_test,
     radius_of_convergence,
@@ -983,6 +986,8 @@ COMMANDS: dict[str, Command] = {
     "partial_fractions": partial_fractions,
     "periodic_to_frac": periodic_to_frac,
     "range": value_range,
+    "alt_test": alt_test,
+    "integral_test": integral_test,
     "geom_series_test": geom_series_test,
     "pseries_test": pseries_test,
     "radius_of_convergence": radius_of_convergence,
