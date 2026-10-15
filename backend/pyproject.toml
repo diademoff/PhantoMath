@@ -61,3 +61,8 @@ convention = "google"
 python_version = "3.12"
 strict = true
 warn_unreachable = true
+
+# У sympy нет аннотаций (нет py.typed): считаем его динамическим.
+[[tool.mypy.overrides]]
+module = ["sympy", "sympy.*"]
+ignore_missing_imports = true
