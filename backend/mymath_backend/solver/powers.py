@@ -22,7 +22,7 @@ from math import isqrt
 
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
-from .base import SolveContext, SolveError, Step, solver_for
+from .base import SolveContext, SolveError, Step, route, solver_for
 
 _KEY_ROOT = "root_simplify"
 _KEY_CALCULATE = "calculate_short"
@@ -74,13 +74,13 @@ def solve_root(node: CoreNode, ctx: SolveContext) -> CoreNode:
     else:
         if len(node.children) != 2:
             raise SolveError("корень n-й степени должен иметь степень и подкоренное")
-        degree_value = _integer(node.children[0])
+        degree_value = _integer(route(node.children[0], ctx))
         if degree_value is None or degree_value <= 1:
             return node
         degree = degree_value
         radicand = node.children[1]
 
-    value = _integer(radicand)
+    value = _integer(route(radicand, ctx))
     if value is None or value < 0:
         return node
     root = _perfect_root(value, degree)
@@ -98,24 +98,24 @@ def solve_logarithm(node: CoreNode, ctx: SolveContext) -> CoreNode:
     result: CoreNode | None = None
 
     if node.type is T.LN:
-        argument = node.children[0]
+        argument = route(node.children[0], ctx)
         if argument.type is T.CONSTANT and argument.value == "e":
             result = CoreNode.constant("1")
         elif _integer(argument) == 1:
             result = CoreNode.constant("0")
     elif node.type is T.EXP:
-        if _integer(node.children[0]) == 0:
+        if _integer(route(node.children[0], ctx)) == 0:
             result = CoreNode.constant("1")
     elif node.type is T.LOG10:
-        value = _integer(node.children[0])
+        value = _integer(route(node.children[0], ctx))
         if value is not None:
             exponent = _exact_log(value, 10)
             if exponent is not None:
                 result = CoreNode.constant(str(exponent))
     elif node.type is T.LOG:
         if len(node.children) == 2:
-            value = _integer(node.children[0])
-            base = _integer(node.children[1])
+            value = _integer(route(node.children[0], ctx))
+            base = _integer(route(node.children[1], ctx))
             if value is not None and base is not None:
                 exponent = _exact_log(value, base)
                 if exponent is not None:
