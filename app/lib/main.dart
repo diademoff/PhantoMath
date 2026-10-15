@@ -1038,6 +1038,10 @@ class _MatrixSheetState extends State<_MatrixSheet> {
                 child: const Text('Обратная'),
               ),
               FilledButton.tonal(
+                onPressed: () => widget.onRun('matrix_inverse_gauss', ''),
+                child: const Text('Обратная (Гаусс)'),
+              ),
+              FilledButton.tonal(
                 onPressed: () => widget.onRun('matrix_determinant', ''),
                 child: const Text('Определитель'),
               ),

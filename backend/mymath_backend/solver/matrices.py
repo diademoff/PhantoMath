@@ -191,6 +191,90 @@ def matrix_determinant(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) 
     return _record(node, from_sympy(matrix.det()), ctx, "matrix_det_rewrite")
 
 
+def _contains_variable(node: CoreNode) -> bool:
+    """Есть ли в узле переменная (неизвестная матрица)."""
+    return any(child.type is T.VARIABLE for child in node.walk())
+
+
+def _matrix_product(lhs: CoreNode) -> tuple[sympy.Matrix, sympy.Matrix, bool] | None:
+    """Разобрать ``A·X`` или ``X·A`` в ``(A, X, X-слева)`` или ``None``."""
+    if lhs.type not in (T.MULTIPLY, T.MULTIPLY_IMPLICIT) or len(lhs.children) != 2:
+        return None
+    first, second = lhs.children
+    if _contains_variable(first) and not _contains_variable(second):
+        return _to_matrix(second), _to_matrix(first), True
+    if _contains_variable(second) and not _contains_variable(first):
+        return _to_matrix(first), _to_matrix(second), False
+    return None
+
+
+def matrix_equation(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Решить матричное уравнение ``A·X = B`` (или ``X·A = B``).
+
+    Неизвестная матрица ``X`` — та, что содержит переменные; коэффициентом
+    ``A`` служит числовая матрица. Решение — ``X = A⁻¹B`` (или ``B·A⁻¹``);
+    если ``A`` вырождена, решения нет.
+    """
+    del args
+    if node.type is not T.EQUALS or len(node.children) != 2:
+        raise SolveError("матричное уравнение — это равенство")
+    left, right = node.children
+    parsed = _matrix_product(left)
+    if parsed is None:
+        raise SolveError("нужно произведение числовой и неизвестной матриц")
+    coefficient, unknown, unknown_on_left = parsed
+    target = _to_matrix(right)
+    ctx.require(
+        coefficient.rows == coefficient.cols,
+        "неизвестная матрица должна умножаться на квадратную",
+        "matrix_inv_undef",
+    )
+    ctx.require(
+        coefficient.shape[1] == unknown.rows and unknown.cols == target.cols,
+        "несовместимые размеры матричного уравнения",
+        "matrix_mul_diff_size_error",
+    )
+
+    determinant = coefficient.det()
+    if determinant == 0:
+        ctx.result.add(Step(left=node, right=None, key="matrix_eq_system_no_sol"))
+        return CoreNode.empty()
+    coefficient_inverse = coefficient.inv()
+    solved = target * coefficient_inverse if unknown_on_left else coefficient_inverse * target
+    answer = from_sympy(solved)
+    ctx.result.add(
+        Step(left=node, right=None, key="matrix_eq_mul", args=[from_sympy(coefficient_inverse)])
+    )
+    ctx.result.add(Step(left=node, right=answer, key="matrix_eq_set_elements_equal"))
+    return answer
+
+
+def matrix_inverse_gauss(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Обратная матрица методом Гаусса (элементарных преобразований).
+
+    Строится расширенная матрица ``[A | E]`` и приводится к ступенчатому виду;
+    правая половина — обратная матрица. Вырожденная матрица даёт ответ
+    ``EMPTY`` (обратной не существует).
+    """
+    del args
+    matrix = _to_matrix(node)
+    size = matrix.rows
+    ctx.require(
+        matrix.rows == matrix.cols,
+        "обратная матрица определена только для квадратной",
+        "matrix_inv_undef",
+    )
+    augmented = matrix.row_join(sympy.eye(size))
+    ctx.result.add(Step(left=node, right=None, key="matrix_inv_find_identity"))
+    reduced, pivots = augmented.rref()
+    if tuple(pivots) != tuple(range(size)):
+        ctx.result.add(Step(left=node, right=None, key="matrix_inv_no_inv"))
+        return CoreNode.empty()
+    answer = from_sympy(reduced[:, size:])
+    ctx.result.add(Step(left=node, right=answer, key="matrix_inv_right_is_inv"))
+    return answer
+
+
 MATRIX_COMMANDS: dict[str, Command] = {
     "matrix_add": matrix_add,
     "matrix_subtract": matrix_subtract,
@@ -198,7 +282,9 @@ MATRIX_COMMANDS: dict[str, Command] = {
     "matrix_scale": matrix_scale,
     "matrix_transpose": matrix_transpose,
     "matrix_inverse": matrix_inverse,
+    "matrix_inverse_gauss": matrix_inverse_gauss,
     "matrix_determinant": matrix_determinant,
+    "matrix_equation": matrix_equation,
 }
 
 

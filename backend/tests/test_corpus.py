@@ -212,6 +212,7 @@ def test_corpus_covers_every_module() -> None:
         "polar",
         "matrices",
         "matrix_ops",
+        "matrix_eq",
         "derivatives",
         "limits",
         "integrals",
