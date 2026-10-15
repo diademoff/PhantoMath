@@ -12,7 +12,11 @@
           {"type": "CONSTANT", "value": "4"}
         ]
       },
-      "steps": ["eq_irrational_simple_square"]
+      "steps": [
+        "rel_restrictions_find",
+        "rel_restrictions_root_base_neg",
+        "eq_irrational_simple_square"
+      ]
     },
     {
       "id": "extraneous-root-excluded",
@@ -25,14 +29,25 @@
           {"type": "CONSTANT", "value": "3"}
         ]
       },
-      "steps": ["eq_irrational_simple_square", "eq_quad_solve_in_r", "rel_restrictions_check"]
+      "steps": [
+        "rel_restrictions_find",
+        "rel_restrictions_root_base_neg",
+        "eq_irrational_simple_square",
+        "eq_quad_solve_in_r",
+        "rel_restrictions_check"
+      ]
     },
     {
       "id": "no-solution",
       "title": "√x = −1 — решений нет",
       "input": "{=({root2({x})},{-1})}",
       "solution": null,
-      "steps": ["eq_irrational_simple_square", "rel_restrictions_check"]
+      "steps": [
+        "rel_restrictions_find",
+        "rel_restrictions_root_base_neg",
+        "eq_irrational_simple_square",
+        "rel_restrictions_check"
+      ]
     }
   ]
 }

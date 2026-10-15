@@ -24,7 +24,11 @@
           }
         ]
       },
-      "steps": ["ineq_quotient_lt"]
+      "steps": [
+        "rel_restrictions_find",
+        "rel_restrictions_den_zero",
+        "ineq_quotient_lt"
+      ]
     },
     {
       "id": "variable-over-difference",
@@ -37,7 +41,11 @@
           {"type": "CONSTANT", "value": "3"}
         ]
       },
-      "steps": ["ineq_quotient_gt"]
+      "steps": [
+        "rel_restrictions_find",
+        "rel_restrictions_den_zero",
+        "ineq_quotient_gt"
+      ]
     },
     {
       "id": "pole-excluded-root-included",
@@ -62,7 +70,11 @@
           }
         ]
       },
-      "steps": ["ineq_quotient_gte"]
+      "steps": [
+        "rel_restrictions_find",
+        "rel_restrictions_den_zero",
+        "ineq_quotient_gte"
+      ]
     }
   ]
 }

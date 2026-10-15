@@ -70,6 +70,64 @@ def restrictions(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> Cor
     return answer
 
 
+def add_restriction_steps(
+    node: CoreNode, variables: list[str], ctx: SolveContext, expression: sympy.Expr
+) -> bool:
+    """Добавить шаги ОДЗ (``rel_restrictions_*``) для ограничений выражения.
+
+    Ограничения — знаменатель дроби, подкоренное выражение и аргумент
+    логарифма, зависящие от переменной. Возвращает ``True``, если хотя бы одно
+    найдено (тогда в результат добавлены ``rel_restrictions_find`` и по шагу на
+    каждое условие); ``False`` — выражение ограничений не имеет (например,
+    многочлен), и результат не меняется.
+
+    Нужен модулям уравнений и неравенств: они показывают ОДЗ до решения, а
+    затем отсеивают посторонние корни (``rel_restrictions_check``).
+    """
+    if len(variables) != 1:
+        return False
+    var = variables[0]
+    symbol = sympy.Symbol(var)
+    conditions: list[tuple[str, list[CoreNode]]] = []
+    seen: set[str] = set()
+
+    def remember(key: str, args: list[CoreNode]) -> None:
+        marker = "|".join([key, *(arg.to_contract().__repr__() for arg in args)])
+        if marker not in seen:
+            seen.add(marker)
+            conditions.append((key, args))
+
+    _, denominator = sympy.fraction(sympy.together(expression))
+    if denominator.has(symbol):
+        remember(
+            "rel_restrictions_den_zero",
+            [CoreNode.variable(var), CoreNode.constant("0"), from_sympy(denominator)],
+        )
+    for power in expression.atoms(sympy.Pow):
+        if power.exp == sympy.Rational(1, 2) and power.base.has(symbol):
+            remember(
+                "rel_restrictions_root_base_neg",
+                [CoreNode.variable(var), from_sympy(power.base)],
+            )
+    for logarithm in expression.atoms(sympy.log):
+        if logarithm.args[0].has(symbol):
+            remember(
+                "rel_restrictions_log_arg",
+                [
+                    CoreNode.variable(var),
+                    from_sympy(logarithm.args[0]),
+                    CoreNode.constant("0"),
+                ],
+            )
+
+    if not conditions:
+        return False
+    ctx.result.add(Step(left=node, right=None, key="rel_restrictions_find"))
+    for key, args in conditions:
+        ctx.result.add(Step(left=node, right=None, key=key, args=args))
+    return True
+
+
 def _forbidden(expression: sympy.Expr, symbol: sympy.Symbol) -> sympy.Set:
     """Множество недопустимых значений: дополнение области определения."""
     try:
@@ -91,6 +149,7 @@ def _domain_of(expression: sympy.Expr, symbol: sympy.Symbol) -> CoreNode:
 
 
 __all__ = [
+    "add_restriction_steps",
     "all_reals",
     "domain",
     "restrictions",

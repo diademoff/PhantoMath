@@ -41,7 +41,11 @@ class TestTranscendental:
     def test_log_same_base(self) -> None:
         source = "{=({ln({x})},{ln({3})})}"
         assert right_side(source) == "3"
-        assert step_keys(source) == ["eq_log_equalise"]
+        assert step_keys(source) == [
+            "rel_restrictions_find",
+            "rel_restrictions_log_arg",
+            "eq_log_equalise",
+        ]
 
     def test_log_with_base(self) -> None:
         source = "{=({log({x},{2})},{3})}"

@@ -36,6 +36,7 @@ from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
 from .arithmetic import as_fraction, format_number
 from .base import SolveContext, SolveError, SolveResult, Step, solver_for
+from .domain import add_restriction_steps
 from .sympy_bridge import from_sympy, to_sympy
 
 # Многочлен: степень -> коэффициент. Нулевые коэффициенты не хранятся,
@@ -357,6 +358,7 @@ def _solve_rational(node: CoreNode, variables: list[str], ctx: SolveContext) -> 
     if not denominator.has(sympy.Symbol(var)):
         return None
 
+    add_restriction_steps(node, variables, ctx, combined)
     zero = CoreNode.constant("0")
     one_side = CoreNode.node(T.EQUALS, from_sympy(combined), zero)
     if not one_side.structural_eq(node):
@@ -448,6 +450,7 @@ def _solve_radical(node: CoreNode, variables: list[str], ctx: SolveContext) -> C
     if not (_has_radical(left) or _has_radical(right)):
         return None
 
+    add_restriction_steps(node, variables, ctx, left - right)
     squared = CoreNode.node(T.EQUALS, from_sympy(left**2), from_sympy(right**2))
     if _has_radical(to_sympy(squared)):
         return None  # радикал остался — нужно несколько возведений, не берём
@@ -519,6 +522,7 @@ def _solve_transcendental(
         return None
     key, equation = transformed
 
+    add_restriction_steps(node, variables, ctx, left - right)
     symbol = sympy.Symbol(var)
     try:
         found = sympy.solve(sympy.Eq(left, right), symbol)
@@ -526,16 +530,21 @@ def _solve_transcendental(
         return None
 
     roots: list[sympy.Expr] = []
+    rejected = False
     for root in found:
         if not _is_real_root(root):
             continue
-        if _satisfies(left - right, symbol, from_sympy(root)) and not any(
-            sympy.simplify(root - known) == 0 for known in roots
-        ):
-            roots.append(root)
+        if not _satisfies(left - right, symbol, from_sympy(root)):
+            rejected = True
+            continue
+        if any(sympy.simplify(root - known) == 0 for known in roots):
+            continue
+        roots.append(root)
     roots.sort(key=_sort_key)
 
     ctx.result.add(Step(left=node, right=from_sympy(equation), key=key), [_HEADER])
+    if rejected:
+        ctx.result.add(Step(left=node, right=None, key="rel_restrictions_check"), [_HEADER])
     if not roots:
         return CoreNode.empty()
     return _solutions_node(var, [from_sympy(root) for root in roots])

@@ -29,6 +29,7 @@ from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
 from .arithmetic import format_number
 from .base import SolveContext, SolveError, Step, solver_for
+from .domain import add_restriction_steps
 from .equations import _poly_expr, poly_of
 from .sympy_bridge import from_sympy, to_sympy
 
@@ -155,6 +156,7 @@ def _rational_inequality(node: CoreNode, var: str, ctx: SolveContext) -> CoreNod
     except (TypeError, ValueError, NotImplementedError):
         return None
 
+    add_restriction_steps(node, [var], ctx, expression)
     answer = from_sympy(values)
     ctx.result.add(Step(left=node, right=answer, key=key), [_HEADER])
     return answer
@@ -238,6 +240,7 @@ def _inequality_set(
         values = sympy.solveset(_relational(node.type, expression), symbol, sympy.S.Reals)
     except (TypeError, ValueError, NotImplementedError):
         return None
+    add_restriction_steps(node, ctx.variables, ctx, expression)
     answer = from_sympy(values)
     ctx.result.add(Step(left=node, right=answer, key=key), [_HEADER])
     return answer

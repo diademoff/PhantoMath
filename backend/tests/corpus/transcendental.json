@@ -25,7 +25,11 @@
           {"type": "CONSTANT", "value": "3"}
         ]
       },
-      "steps": ["eq_log_equalise"]
+      "steps": [
+        "rel_restrictions_find",
+        "rel_restrictions_log_arg",
+        "eq_log_equalise"
+      ]
     },
     {
       "id": "log-with-base",
@@ -38,7 +42,7 @@
           {"type": "CONSTANT", "value": "8"}
         ]
       },
-      "steps": ["eq_trans"]
+      "steps": ["rel_restrictions_find", "rel_restrictions_log_arg", "eq_trans"]
     },
     {
       "id": "exponential-no-solution",

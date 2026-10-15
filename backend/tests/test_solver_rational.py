@@ -35,6 +35,8 @@ class TestRational:
         source = "{=({frac({x},{x-2})},{3})}"
         assert root_value(source) == "3"
         assert step_keys(source) == [
+            "rel_restrictions_find",
+            "rel_restrictions_den_zero",
             "eq_trans",
             "eq_linear_frac_zero",
             "move",
@@ -48,7 +50,13 @@ class TestRational:
     def test_pole_is_excluded(self) -> None:
         source = "{=({frac({x^2-1},{x-1})},{0})}"
         assert root_value(source) == "-1"
-        assert "rel_restrictions_check" in step_keys(source)
+        assert step_keys(source) == [
+            "rel_restrictions_find",
+            "rel_restrictions_den_zero",
+            "eq_linear_frac_zero",
+            "eq_quad_solve_in_r",
+            "rel_restrictions_check",
+        ]
 
     def test_no_solution(self) -> None:
         vertical = _vertical("{=({frac({1},{x-1})},{frac({1},{x-2})})}")

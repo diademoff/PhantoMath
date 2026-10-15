@@ -34,7 +34,11 @@ class TestRadical:
     def test_simple(self) -> None:
         source = "{=({root2({x})},{2})}"
         assert root_values(source) == ["4"]
-        assert step_keys(source) == ["eq_irrational_simple_square"]
+        assert step_keys(source) == [
+            "rel_restrictions_find",
+            "rel_restrictions_root_base_neg",
+            "eq_irrational_simple_square",
+        ]
 
     def test_extraneous_root_excluded(self) -> None:
         source = "{=({root2({x+1})},{x-1})}"
@@ -44,7 +48,12 @@ class TestRadical:
     def test_no_solution(self) -> None:
         source = "{=({root2({x})},{-1})}"
         assert _vertical(source).solution is None
-        assert step_keys(source) == ["eq_irrational_simple_square", "rel_restrictions_check"]
+        assert step_keys(source) == [
+            "rel_restrictions_find",
+            "rel_restrictions_root_base_neg",
+            "eq_irrational_simple_square",
+            "rel_restrictions_check",
+        ]
 
     def test_non_radical_untouched(self) -> None:
         assert root_values("{=({2x+3},{7})}") == ["2"]

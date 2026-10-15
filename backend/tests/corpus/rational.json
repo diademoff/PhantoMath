@@ -12,7 +12,14 @@
           {"type": "CONSTANT", "value": "3"}
         ]
       },
-      "steps": ["eq_trans", "eq_linear_frac_zero", "move", "eq_linar_divide_both_sides"]
+      "steps": [
+        "rel_restrictions_find",
+        "rel_restrictions_den_zero",
+        "eq_trans",
+        "eq_linear_frac_zero",
+        "move",
+        "eq_linar_divide_both_sides"
+      ]
     },
     {
       "id": "fraction-equals-number",
@@ -25,7 +32,14 @@
           {"type": "CONSTANT", "value": "3/2"}
         ]
       },
-      "steps": ["eq_trans", "eq_linear_frac_zero", "move", "eq_linar_divide_both_sides"]
+      "steps": [
+        "rel_restrictions_find",
+        "rel_restrictions_den_zero",
+        "eq_trans",
+        "eq_linear_frac_zero",
+        "move",
+        "eq_linar_divide_both_sides"
+      ]
     },
     {
       "id": "pole-excluded",
@@ -38,14 +52,26 @@
           {"type": "CONSTANT", "value": "-1"}
         ]
       },
-      "steps": ["eq_linear_frac_zero", "eq_quad_solve_in_r", "rel_restrictions_check"]
+      "steps": [
+        "rel_restrictions_find",
+        "rel_restrictions_den_zero",
+        "eq_linear_frac_zero",
+        "eq_quad_solve_in_r",
+        "rel_restrictions_check"
+      ]
     },
     {
       "id": "no-solution",
       "title": "1/(x−1) = 1/(x−2) — решений нет",
       "input": "{=({frac({1},{x-1})},{frac({1},{x-2})})}",
       "solution": null,
-      "steps": ["eq_trans", "eq_linear_frac_zero", "false_statement_solve"]
+      "steps": [
+        "rel_restrictions_find",
+        "rel_restrictions_den_zero",
+        "eq_trans",
+        "eq_linear_frac_zero",
+        "false_statement_solve"
+      ]
     }
   ]
 }
