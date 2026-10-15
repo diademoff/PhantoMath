@@ -157,6 +157,14 @@ def to_sympy(node: CoreNode) -> sympy.Expr:
         return sympy.Matrix(rows)
     if node_type is T.EQUALS:
         return sympy.Eq(*(to_sympy(child) for child in node.children))
+    if node_type is T.SET:
+        return sympy.FiniteSet(*(to_sympy(child) for child in node.children))
+    if node_type is T.UNION:
+        return sympy.Union(*(to_sympy(child) for child in node.children))
+    if node_type is T.INTERSECTION:
+        return sympy.Intersection(*(to_sympy(child) for child in node.children))
+    if node_type is T.DIFFERENCE:
+        return sympy.Complement(to_sympy(node.children[0]), to_sympy(node.children[1]))
     if node_type in INTERVALS:
         left_open, right_open = INTERVALS[node_type]
         return sympy.Interval(
@@ -235,6 +243,14 @@ def from_sympy(expr: sympy.Expr) -> CoreNode:
         return _from_interval(expr)
     if expr is sympy.EmptySet:
         return CoreNode.empty()
+    if isinstance(expr, sympy.FiniteSet):
+        return CoreNode.node(T.SET, *(from_sympy(item) for item in expr.args))
+    if isinstance(expr, sympy.Complement):
+        return CoreNode.node(T.DIFFERENCE, from_sympy(expr.args[0]), from_sympy(expr.args[1]))
+    if isinstance(expr, sympy.Union):
+        return _from_set_operation(T.UNION, expr.args)
+    if isinstance(expr, sympy.Intersection):
+        return _from_set_operation(T.INTERSECTION, expr.args)
     complex_node = _COMPLEX_CLASSES.get(type(expr).__name__)
     if complex_node is not None:
         return CoreNode.node(complex_node, from_sympy(expr.args[0]))
@@ -345,6 +361,13 @@ def _from_interval(expr: sympy.Interval) -> CoreNode:
     else:
         node_type = T.CLOSED_CLOSED_INTERVAL
     return CoreNode.node(node_type, from_sympy(expr.start), from_sympy(expr.end))
+
+
+def _from_set_operation(node_type: T, args: tuple[sympy.Basic, ...]) -> CoreNode:
+    """Объединение/пересечение sympy -> узел; один операнд разворачивается."""
+    if len(args) == 1:
+        return from_sympy(args[0])
+    return CoreNode.node(node_type, *(from_sympy(arg) for arg in args))
 
 
 def simplify_node(node: CoreNode) -> CoreNode:

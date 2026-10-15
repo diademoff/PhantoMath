@@ -143,6 +143,38 @@ void main() {
       );
     });
 
+    test('множества и отношения', () {
+      expect(
+        nodeToLatex(CoreNode(type: CoreNodeType.set, children: [c2, c3])),
+        r'\left\{ 2,\ 3 \right\}',
+      );
+      expect(
+        nodeToLatex(CoreNode(type: CoreNodeType.union, children: [c2, c3])),
+        r'2 \cup 3',
+      );
+      expect(
+        nodeToLatex(CoreNode(type: CoreNodeType.intersection, children: [c2, c3])),
+        r'2 \cap 3',
+      );
+      expect(
+        nodeToLatex(bin(CoreNodeType.difference, c2, c3)),
+        r'2 \setminus 3',
+      );
+      expect(nodeToLatex(bin(CoreNodeType.elementOf, c2, c3)), r'2 \in 3');
+      expect(nodeToLatex(bin(CoreNodeType.elementNotOf, c2, c3)), r'2 \notin 3');
+      expect(
+        nodeToLatex(bin(CoreNodeType.subsetOrEquals, c2, c3)),
+        r'2 \subseteq 3',
+      );
+    });
+
+    test('текстовый ответ по ключу', () {
+      final node = CoreNode(type: CoreNodeType.text, children: [
+        CoreNode(type: CoreNodeType.textKey, value: 'true'),
+      ]);
+      expect(nodeToLatex(node), 'true');
+    });
+
     test('гиперболические функции', () {
       expect(
         nodeToLatex(CoreNode(type: CoreNodeType.sech, children: [c2])),
@@ -253,6 +285,16 @@ void main() {
         ),
         bin(CoreNodeType.openClosedInterval, c2, c3),
         bin(CoreNodeType.closedOpenInterval, c2, c3),
+        CoreNode(type: CoreNodeType.set, children: [c2, c3]),
+        bin(
+          CoreNodeType.elementOf,
+          c2,
+          CoreNode(type: CoreNodeType.set, children: [c2, c3]),
+        ),
+        bin(CoreNodeType.difference, c2, c3),
+        CoreNode(type: CoreNodeType.text, children: [
+          CoreNode(type: CoreNodeType.textKey, value: 'true'),
+        ]),
         // Микро-анимация: зачёркнутая часть.
         CoreNode(type: CoreNodeType.constant, value: '8', crossed: true),
         // Матрица со строками.

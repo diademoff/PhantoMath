@@ -39,6 +39,7 @@ from .limits import solve_limit
 from .matrices import solve_determinant, solve_matrix
 from .powers import solve_logarithm, solve_root
 from .series import solve_series
+from .sets import solve_inclusion, solve_membership, solve_set_operation
 from .sympy_bridge import from_sympy, to_sympy
 from .systems import solve_system
 from .trig_equations import Interval, solve_trig_equation
@@ -185,14 +186,17 @@ __all__ = [
     "solve_factorial",
     "solve_fraction",
     "solve_function",
+    "solve_inclusion",
     "solve_inequality",
     "solve_integral",
     "solve_interval",
     "solve_limit",
     "solve_logarithm",
     "solve_matrix",
+    "solve_membership",
     "solve_root",
     "solve_series",
+    "solve_set_operation",
     "solve_system",
     "solve_trig_equation",
     "solve_value_function",

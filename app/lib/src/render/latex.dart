@@ -50,7 +50,6 @@ String _nodeBody(CoreNode node) {
     // ── листья ──────────────────────────────────────────────────────
     case CoreNodeType.constant:
     case CoreNodeType.variable:
-    case CoreNodeType.text:
       return _escape(node.value ?? '');
 
     // ── знаки ───────────────────────────────────────────────────────
@@ -274,6 +273,51 @@ String _nodeBody(CoreNode node) {
     case CoreNodeType.closedClosedInterval:
       return _wrap(node, r'\left[$0, $1\right]');
 
+    // ── множества ───────────────────────────────────────────────────
+    case CoreNodeType.set:
+      return _delimited(node, r'\left\{', r'\right\}', r',\ ');
+
+    case CoreNodeType.union:
+      return _delimited(node, '', '', r' \cup ');
+
+    case CoreNodeType.intersection:
+      return _delimited(node, '', '', r' \cap ');
+
+    case CoreNodeType.difference:
+      return _wrap(node, r'$0 \setminus $1');
+
+    case CoreNodeType.elementOf:
+      return _wrap(node, r'$0 \in $1');
+
+    case CoreNodeType.elementNotOf:
+      return _wrap(node, r'$0 \notin $1');
+
+    case CoreNodeType.subsetOrEquals:
+      return _wrap(node, r'$0 \subseteq $1');
+
+    case CoreNodeType.properSubset:
+      return _wrap(node, r'$0 \subset $1');
+
+    case CoreNodeType.notProperSubset:
+      return _wrap(node, r'$0 \not\subset $1');
+
+    case CoreNodeType.supersetOrEquals:
+      return _wrap(node, r'$0 \supseteq $1');
+
+    case CoreNodeType.properSuperset:
+      return _wrap(node, r'$0 \supset $1');
+
+    case CoreNodeType.notProperSuperset:
+      return _wrap(node, r'$0 \not\supset $1');
+
+    // ── текст ───────────────────────────────────────────────────────
+    case CoreNodeType.text:
+      if (node.children.isEmpty) return _escape(node.value ?? '');
+      return node.children.map(_childLatex).join();
+
+    case CoreNodeType.textKey:
+      return _escape(node.value ?? '');
+
     // ── составные ───────────────────────────────────────────────────
     case CoreNodeType.list:
       if (node.children.isEmpty) return _placeholder;
@@ -339,6 +383,14 @@ String _matrixLatex(CoreNode node, String open, String close) {
     rows.add(cells.map(_childLatex).join(' & '));
   }
   return '$open ${rows.join(r' \\ ')} $close';
+}
+
+/// Соединить детей разделителем, при необходимости обернув в скобки.
+String _delimited(CoreNode node, String open, String close, String separator) {
+  if (node.children.isEmpty) return _placeholder;
+  final body = node.children.map(_childLatex).join(separator);
+  if (open.isEmpty && close.isEmpty) return body;
+  return '$open $body $close';
 }
 
 /// Экранировать символы, которые LaTeX считает служебными.
