@@ -52,6 +52,7 @@ class TestRadical:
             "rel_restrictions_find",
             "rel_restrictions_root_base_neg",
             "eq_irrational_simple_square",
+            "rel_restrictions_intersect",
             "rel_restrictions_check",
         ]
 

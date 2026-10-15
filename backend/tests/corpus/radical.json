@@ -49,6 +49,7 @@
         "eq_quad_disc",
         "eq_quad_disc_calculate",
         "eq_quad_solve_in_r",
+        "rel_restrictions_intersect",
         "rel_restrictions_check"
       ]
     },
@@ -61,6 +62,7 @@
         "rel_restrictions_find",
         "rel_restrictions_root_base_neg",
         "eq_irrational_simple_square",
+        "rel_restrictions_intersect",
         "rel_restrictions_check"
       ]
     }

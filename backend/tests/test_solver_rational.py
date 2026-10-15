@@ -58,6 +58,7 @@ class TestRational:
             "eq_quad_disc",
             "eq_quad_disc_calculate",
             "eq_quad_solve_in_r",
+            "rel_restrictions_intersect",
             "rel_restrictions_check",
         ]
 

@@ -415,6 +415,7 @@ def _exclude_poles(
     if not excluded:
         return answer
 
+    ctx.result.add(Step(left=answer, right=None, key="rel_restrictions_intersect"), [_HEADER])
     filtered = _solutions_node(var, kept)
     ctx.result.add(Step(left=answer, right=filtered, key="rel_restrictions_check"), [_HEADER])
     return filtered
@@ -496,6 +497,7 @@ def _verify_roots(answer: CoreNode, residual: sympy.Expr, var: str, ctx: SolveCo
     if not excluded:
         return answer
 
+    ctx.result.add(Step(left=answer, right=None, key="rel_restrictions_intersect"), [_HEADER])
     filtered = _solutions_node(var, kept)
     ctx.result.add(Step(left=answer, right=filtered, key="rel_restrictions_check"), [_HEADER])
     return filtered
