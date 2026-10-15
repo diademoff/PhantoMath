@@ -103,7 +103,12 @@ class TestQuadratic:
         vertical = vertical_of("{=({x^2-2},{0})}")
         assert vertical.solution is not None
         assert vertical.solution.type is T.LIST
-        assert step_keys("{=({x^2-2},{0})}") == ["eq_quad_solve_in_r"]
+        assert step_keys("{=({x^2-2},{0})}") == [
+            "eq_quad_coeff_identify",
+            "eq_quad_disc",
+            "eq_quad_disc_calculate",
+            "eq_quad_solve_in_r",
+        ]
 
     def test_zero_b_keeps_both_signs(self) -> None:
         # x^2 - 2 = 0: корни -√2 и +√2, а не √2 дважды.
@@ -183,8 +188,18 @@ class TestMethods:
 
     def test_first_method_is_formula_second_factoring(self) -> None:
         group = _group("{=({x^2-5x+6},{0})}")
-        assert _method_keys(group.entries[0]) == ["eq_quad_solve_in_r"]
-        assert _method_keys(group.entries[1]) == ["solve_by_factoring"]
+        assert _method_keys(group.entries[0]) == [
+            "eq_quad_coeff_identify",
+            "eq_quad_disc",
+            "eq_quad_disc_calculate",
+            "eq_quad_solve_in_r",
+        ]
+        assert _method_keys(group.entries[1]) == [
+            "eq_quad_coeff_identify",
+            "eq_quad_disc",
+            "eq_quad_disc_calculate",
+            "solve_by_factoring",
+        ]
 
     def test_irrational_quadratic_has_one_method(self) -> None:
         group = _group("{=({x^2-2},{0})}")

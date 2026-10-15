@@ -293,6 +293,25 @@ def _quadratic_solution(
             _equation(var, _quad_root(-b, root, 2 * a, plus=True)),
         )
 
+    ctx.result.add(
+        Step(
+            left=node,
+            right=None,
+            key="eq_quad_coeff_identify",
+            args=[_const(a), _const(b), _const(c)],
+        ),
+        [_HEADER],
+    )
+    ctx.result.add(Step(left=node, right=None, key="eq_quad_disc"), [_HEADER])
+    ctx.result.add(
+        Step(
+            left=node,
+            right=None,
+            key="eq_quad_disc_calculate",
+            args=[_const(discriminant)],
+        ),
+        [_HEADER],
+    )
     key = "solve_by_factoring" if factoring else "eq_quad_solve_in_r"
     ctx.result.add(Step(left=node, right=solution, key=key), [_HEADER])
     return solution

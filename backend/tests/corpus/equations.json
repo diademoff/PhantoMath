@@ -8,11 +8,20 @@
       "solution": {
         "type": "EQUALS",
         "children": [
-          {"type": "VARIABLE", "value": "x"},
-          {"type": "CONSTANT", "value": "2"}
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          }
         ]
       },
-      "steps": ["move", "eq_linar_divide_both_sides"]
+      "steps": [
+        "move",
+        "eq_linar_divide_both_sides"
+      ]
     },
     {
       "id": "variables-both-sides",
@@ -21,11 +30,19 @@
       "solution": {
         "type": "EQUALS",
         "children": [
-          {"type": "VARIABLE", "value": "x"},
-          {"type": "CONSTANT", "value": "5"}
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "5"
+          }
         ]
       },
-      "steps": ["move"]
+      "steps": [
+        "move"
+      ]
     },
     {
       "id": "linear-divide-first",
@@ -35,11 +52,20 @@
       "solution": {
         "type": "EQUALS",
         "children": [
-          {"type": "VARIABLE", "value": "x"},
-          {"type": "CONSTANT", "value": "2"}
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          }
         ]
       },
-      "steps": ["eq_linar_divide_both_sides", "move"]
+      "steps": [
+        "eq_linar_divide_both_sides",
+        "move"
+      ]
     },
     {
       "id": "quadratic-two-roots",
@@ -51,20 +77,37 @@
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
-              {"type": "CONSTANT", "value": "2"}
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
             ]
           },
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
-              {"type": "CONSTANT", "value": "3"}
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "3"
+              }
             ]
           }
         ]
       },
-      "steps": ["eq_quad_solve_in_r"]
+      "steps": [
+        "eq_quad_coeff_identify",
+        "eq_quad_disc",
+        "eq_quad_disc_calculate",
+        "eq_quad_solve_in_r"
+      ]
     },
     {
       "id": "quadratic-double-root",
@@ -73,11 +116,22 @@
       "solution": {
         "type": "EQUALS",
         "children": [
-          {"type": "VARIABLE", "value": "x"},
-          {"type": "CONSTANT", "value": "2"}
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          }
         ]
       },
-      "steps": ["eq_quad_solve_in_r"]
+      "steps": [
+        "eq_quad_coeff_identify",
+        "eq_quad_disc",
+        "eq_quad_disc_calculate",
+        "eq_quad_solve_in_r"
+      ]
     },
     {
       "id": "quadratic-factoring",
@@ -90,34 +144,55 @@
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
-              {"type": "CONSTANT", "value": "2"}
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
             ]
           },
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
-              {"type": "CONSTANT", "value": "3"}
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "3"
+              }
             ]
           }
         ]
       },
-      "steps": ["solve_by_factoring"]
+      "steps": [
+        "eq_quad_coeff_identify",
+        "eq_quad_disc",
+        "eq_quad_disc_calculate",
+        "solve_by_factoring"
+      ]
     },
     {
       "id": "identity",
       "title": "тождество: x = x — бесконечно много решений",
       "input": "{=({x},{x})}",
       "solution": null,
-      "steps": ["solutions_inf_many"]
+      "steps": [
+        "solutions_inf_many"
+      ]
     },
     {
       "id": "contradiction",
       "title": "противоречие: x + 1 = x + 2 — решений нет",
       "input": "{=({x+1},{x+2})}",
       "solution": null,
-      "steps": ["false_statement_solve"]
+      "steps": [
+        "false_statement_solve"
+      ]
     },
     {
       "id": "quadratic-zero-b-irrational",
@@ -129,15 +204,31 @@
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
               {
                 "type": "FRACTION",
                 "children": [
                   {
                     "type": "NEGATIVE",
-                    "children": [{"type": "ROOT2", "children": [{"type": "CONSTANT", "value": "8"}]}]
+                    "children": [
+                      {
+                        "type": "ROOT2",
+                        "children": [
+                          {
+                            "type": "CONSTANT",
+                            "value": "8"
+                          }
+                        ]
+                      }
+                    ]
                   },
-                  {"type": "CONSTANT", "value": "2"}
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
                 ]
               }
             ]
@@ -145,19 +236,38 @@
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
               {
                 "type": "FRACTION",
                 "children": [
-                  {"type": "ROOT2", "children": [{"type": "CONSTANT", "value": "8"}]},
-                  {"type": "CONSTANT", "value": "2"}
+                  {
+                    "type": "ROOT2",
+                    "children": [
+                      {
+                        "type": "CONSTANT",
+                        "value": "8"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
                 ]
               }
             ]
           }
         ]
       },
-      "steps": ["eq_quad_solve_in_r"]
+      "steps": [
+        "eq_quad_coeff_identify",
+        "eq_quad_disc",
+        "eq_quad_disc_calculate",
+        "eq_quad_solve_in_r"
+      ]
     },
     {
       "id": "linear-fraction-root",
@@ -166,11 +276,19 @@
       "solution": {
         "type": "EQUALS",
         "children": [
-          {"type": "VARIABLE", "value": "x"},
-          {"type": "CONSTANT", "value": "1/3"}
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "1/3"
+          }
         ]
       },
-      "steps": ["eq_linar_divide_both_sides"]
+      "steps": [
+        "eq_linar_divide_both_sides"
+      ]
     }
   ]
 }

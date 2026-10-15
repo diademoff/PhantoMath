@@ -54,6 +54,9 @@ class TestRational:
             "rel_restrictions_find",
             "rel_restrictions_den_zero",
             "eq_linear_frac_zero",
+            "eq_quad_coeff_identify",
+            "eq_quad_disc",
+            "eq_quad_disc_calculate",
             "eq_quad_solve_in_r",
             "rel_restrictions_check",
         ]
@@ -69,4 +72,4 @@ class TestStillPolynomial:
         assert root_value("{=({2x+3},{7})}") == "2"
 
     def test_quadratic_unchanged(self) -> None:
-        assert step_keys("{=({x^2-5x+6},{0})}")[0] == "eq_quad_solve_in_r"
+        assert step_keys("{=({x^2-5x+6},{0})}")[0] == "eq_quad_coeff_identify"

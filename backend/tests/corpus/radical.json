@@ -8,8 +8,14 @@
       "solution": {
         "type": "EQUALS",
         "children": [
-          {"type": "VARIABLE", "value": "x"},
-          {"type": "CONSTANT", "value": "4"}
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "4"
+          }
         ]
       },
       "steps": [
@@ -25,14 +31,23 @@
       "solution": {
         "type": "EQUALS",
         "children": [
-          {"type": "VARIABLE", "value": "x"},
-          {"type": "CONSTANT", "value": "3"}
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "3"
+          }
         ]
       },
       "steps": [
         "rel_restrictions_find",
         "rel_restrictions_root_base_neg",
         "eq_irrational_simple_square",
+        "eq_quad_coeff_identify",
+        "eq_quad_disc",
+        "eq_quad_disc_calculate",
         "eq_quad_solve_in_r",
         "rel_restrictions_check"
       ]

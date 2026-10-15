@@ -8,8 +8,14 @@
       "solution": {
         "type": "EQUALS",
         "children": [
-          {"type": "VARIABLE", "value": "x"},
-          {"type": "CONSTANT", "value": "3"}
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "3"
+          }
         ]
       },
       "steps": [
@@ -28,8 +34,14 @@
       "solution": {
         "type": "EQUALS",
         "children": [
-          {"type": "VARIABLE", "value": "x"},
-          {"type": "CONSTANT", "value": "3/2"}
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "3/2"
+          }
         ]
       },
       "steps": [
@@ -48,14 +60,23 @@
       "solution": {
         "type": "EQUALS",
         "children": [
-          {"type": "VARIABLE", "value": "x"},
-          {"type": "CONSTANT", "value": "-1"}
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "-1"
+          }
         ]
       },
       "steps": [
         "rel_restrictions_find",
         "rel_restrictions_den_zero",
         "eq_linear_frac_zero",
+        "eq_quad_coeff_identify",
+        "eq_quad_disc",
+        "eq_quad_disc_calculate",
         "eq_quad_solve_in_r",
         "rel_restrictions_check"
       ]
