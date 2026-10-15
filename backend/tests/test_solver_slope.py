@@ -26,7 +26,11 @@ class TestSlopeIntercept:
     def test_general_form(self) -> None:
         # 2x + 3y = 6 -> y = 2 − 2x/3.
         keys, solution = run("{=({2x+3y},{6})}")
-        assert keys == ["rewrite_in_slope_intercept_form", "slope_and_y_intercept"]
+        assert keys == [
+            "rewrite_in_slope_intercept_form",
+            "identify_y_intercept_as_const_term",
+            "slope_and_y_intercept",
+        ]
         assert solution.type is T.EQUALS and solution.children[0].value == "y"
 
     def test_slope_form(self) -> None:

@@ -897,6 +897,14 @@ def slope_intercept(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> 
     ctx.result.add(
         Step(
             left=node,
+            right=None,
+            key="identify_y_intercept_as_const_term",
+            args=[CoreNode.variable(dependent)],
+        )
+    )
+    ctx.result.add(
+        Step(
+            left=node,
             right=answer,
             key="slope_and_y_intercept",
             args=[

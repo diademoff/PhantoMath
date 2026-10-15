@@ -9,29 +9,48 @@
       "solution": {
         "type": "EQUALS",
         "children": [
-          {"type": "VARIABLE", "value": "y"},
+          {
+            "type": "VARIABLE",
+            "value": "y"
+          },
           {
             "type": "SUBTRACT",
             "children": [
-              {"type": "CONSTANT", "value": "2"},
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              },
               {
                 "type": "FRACTION",
                 "children": [
                   {
                     "type": "MULTIPLY_IMPLICIT",
                     "children": [
-                      {"type": "CONSTANT", "value": "2"},
-                      {"type": "VARIABLE", "value": "x"}
+                      {
+                        "type": "CONSTANT",
+                        "value": "2"
+                      },
+                      {
+                        "type": "VARIABLE",
+                        "value": "x"
+                      }
                     ]
                   },
-                  {"type": "CONSTANT", "value": "3"}
+                  {
+                    "type": "CONSTANT",
+                    "value": "3"
+                  }
                 ]
               }
             ]
           }
         ]
       },
-      "steps": ["rewrite_in_slope_intercept_form", "slope_and_y_intercept"]
+      "steps": [
+        "rewrite_in_slope_intercept_form",
+        "identify_y_intercept_as_const_term",
+        "slope_and_y_intercept"
+      ]
     },
     {
       "id": "slope-form",
@@ -41,23 +60,39 @@
       "solution": {
         "type": "EQUALS",
         "children": [
-          {"type": "VARIABLE", "value": "y"},
+          {
+            "type": "VARIABLE",
+            "value": "y"
+          },
           {
             "type": "ADD",
             "children": [
-              {"type": "CONSTANT", "value": "3"},
+              {
+                "type": "CONSTANT",
+                "value": "3"
+              },
               {
                 "type": "MULTIPLY_IMPLICIT",
                 "children": [
-                  {"type": "CONSTANT", "value": "2"},
-                  {"type": "VARIABLE", "value": "x"}
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  },
+                  {
+                    "type": "VARIABLE",
+                    "value": "x"
+                  }
                 ]
               }
             ]
           }
         ]
       },
-      "steps": ["rewrite_in_slope_intercept_form", "slope_and_y_intercept"]
+      "steps": [
+        "rewrite_in_slope_intercept_form",
+        "identify_y_intercept_as_const_term",
+        "slope_and_y_intercept"
+      ]
     }
   ]
 }
