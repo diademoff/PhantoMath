@@ -182,6 +182,7 @@ class _SolvePageState extends State<SolvePage> {
     ('slant_asymptote', 'Наклонная асимптота'),
     ('vertex', 'Вершина'),
     ('conic', 'Тип коники'),
+    ('conic_details', 'Свойства коники'),
     ('convergence', 'Сходимость'),
     ('to_fraction', 'В дробь'),
     ('to_percent', 'В проценты'),

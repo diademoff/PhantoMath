@@ -23,6 +23,7 @@
 * ``complex_power`` — степень комплексного числа (``complex_pow_polar_moivre_simple``);
 * ``complex_roots`` — корни n-й степени из комплексного числа (``complex_find_root_polar``);
 * ``complex_polar_multiply``/``complex_polar_divide`` — умножение и деление в полярной форме;
+* ``conic_details`` — полный разбор коники (центр, фокусы, вершины, директриса, радиус);
 * ``explicit_formula`` — явная формула общего члена последовательности;
 * ``slope_intercept`` — линейное уравнение в виде y = kx + b (``slope_and_y_intercept``);
 * ``axis_of_symmetry``/``intercept_form`` — ось симметрии и форма по корням параболы;
@@ -63,6 +64,7 @@ from .complex import (
     complex_power,
     complex_roots,
 )
+from .conics import conic_details
 from .derivatives import nth_derivative
 from .diff_equations import diff_eq
 from .domain import domain, restrictions
@@ -954,6 +956,7 @@ COMMANDS: dict[str, Command] = {
     "complex_roots": complex_roots,
     "complex_polar_multiply": complex_polar_multiply,
     "complex_polar_divide": complex_polar_divide,
+    "conic_details": conic_details,
     "explicit_formula": explicit_formula,
     "factor": factor,
     "expand": expand,

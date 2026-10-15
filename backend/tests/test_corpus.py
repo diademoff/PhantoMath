@@ -212,6 +212,7 @@ def test_corpus_covers_every_module() -> None:
         "asymptotes",
         "slant",
         "conic",
+        "conic_details",
         "convergence",
         "slope",
         "diff_eq",
