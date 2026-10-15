@@ -1,0 +1,19 @@
+{
+  "module": "evaluate_expr",
+  "tasks": [
+    {
+      "id": "polynomial",
+      "title": "вычислить значение x² + 1 при x = 2",
+      "input": "{eval_expr({x^2+1},{2})}",
+      "solution": {"type": "CONSTANT", "value": "5"},
+      "steps": ["function_evaluate_expr"]
+    },
+    {
+      "id": "linear",
+      "title": "вычислить значение 2x + 3 при x = 5",
+      "input": "{evaluate_expr({2x+3},{5})}",
+      "solution": {"type": "CONSTANT", "value": "13"},
+      "steps": ["function_evaluate_expr"]
+    }
+  ]
+}

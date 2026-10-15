@@ -201,6 +201,7 @@ def test_corpus_covers_every_module() -> None:
         "partial_fractions",
         "prove",
         "evaluate",
+        "evaluate_expr",
         "inverse",
         "even_odd",
         "extrema",

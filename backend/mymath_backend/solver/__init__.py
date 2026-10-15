@@ -32,6 +32,7 @@ from .comparison import COMPARABLE, solve_comparison, solve_order
 from .complex import contains_imaginary, solve_complex, solve_imaginary_arithmetic
 from .derivatives import solve_derivative
 from .equations import solve_equation, solve_methods
+from .evaluate import solve_evaluate_expression
 from .fractions import solve_fraction
 from .inequalities import solve_inequality
 from .integrals import solve_integral
@@ -194,6 +195,7 @@ __all__ = [
     "solve_derivative",
     "solve_determinant",
     "solve_equation",
+    "solve_evaluate_expression",
     "solve_factorial",
     "solve_fraction",
     "solve_function",
