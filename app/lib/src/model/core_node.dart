@@ -89,6 +89,7 @@ enum CoreNodeType {
   floor('FLOOR'),
   abs('ABS'),
   degree('DEGREE'),
+  periodic('PERIODIC'),
   radian('RADIAN'),
   percentage('PERCENTAGE'),
   derivation('DERIVATION'),

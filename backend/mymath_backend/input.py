@@ -44,6 +44,7 @@ KEYWORD_TO_TYPE: dict[str, CoreNodeType] = {
     "pow": T.POWER,
     "factorial": T.FACTORIAL,
     "percent": T.PERCENTAGE,
+    "periodic": T.PERIODIC,
     "frac": T.FRACTION,
     "mfrac": T.FRACTION_MIXED,
     "root": T.ROOT,

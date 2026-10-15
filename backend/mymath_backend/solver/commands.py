@@ -19,7 +19,8 @@
 * ``to_mixed`` — неправильную дробь в смешанное число (``convert_improper_fraction``);
 * ``intercepts`` — пересечения графика с осями координат
   (``find_x_intercept``/``find_y_intercept``);
-* ``range`` — область значений функции (``graph_rt_info_range``).
+* ``range`` — область значений функции (``graph_rt_info_range``);
+* ``periodic_to_frac`` — периодическую дробь в обыкновенную (``periodic_to_frac``).
 
 Для уравнения команда применяется к обеим частям.
 """
@@ -27,6 +28,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from fractions import Fraction
 
 import sympy
 from sympy.calculus.util import function_range
@@ -135,6 +137,51 @@ def to_mixed(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNod
     )
     ctx.result.add(Step(left=node, right=result, key="convert_improper_fraction"))
     return result
+
+
+def periodic_to_frac(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Периодическую десятичную дробь — в обыкновенную.
+
+    Узел ``PERIODIC[цифры, период]``: ``цифры`` — дробная часть без точки,
+    ``период`` — сколько последних цифр повторяются. Для ``0.s(rep)`` со
+    ``p`` неповторяющимися цифрами значение равно ``(s − s[:p]) / (10ⁿ − 10ᵖ)``.
+    """
+    del args
+    if node.type is not T.PERIODIC or len(node.children) != 2:
+        raise SolveError("периодическая дробь — узел PERIODIC с двумя детьми")
+    digits = _periodic_digits(node.children[0])
+    repeating = _repeating_length(node.children[1])
+    if not 0 < repeating <= len(digits):
+        raise SolveError("число повторяющихся цифр больше длины дроби")
+    nonrepeating = len(digits) - repeating
+    numerator = int(digits) - int(digits[:nonrepeating] or "0")
+    denominator = 10 ** len(digits) - 10**nonrepeating
+    result = from_sympy(sympy.Rational(numerator, denominator))
+    ctx.result.add(Step(left=node, right=result, key="periodic_to_frac"))
+    return result
+
+
+def _periodic_digits(node: CoreNode) -> str:
+    """Цифры дробной части без разделителей."""
+    if node.type is not T.CONSTANT or node.value is None:
+        raise SolveError("цифры периодической дроби должны быть числом")
+    digits = "".join(symbol for symbol in node.value if symbol.isdigit())
+    if not digits:
+        raise SolveError("некорректная периодическая дробь")
+    return digits
+
+
+def _repeating_length(node: CoreNode) -> int:
+    """Сколько последних цифр повторяются."""
+    if node.type is not T.CONSTANT or node.value is None:
+        raise SolveError("период должен быть числом")
+    try:
+        number = Fraction(node.value)
+    except ValueError as error:
+        raise SolveError("период должен быть целым числом") from error
+    if number.denominator != 1:
+        raise SolveError("период должен быть целым числом")
+    return number.numerator
 
 
 def prove(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
@@ -545,6 +592,7 @@ COMMANDS: dict[str, Command] = {
     "extrema": extrema,
     "inflection": inflection,
     "intercepts": intercepts,
+    "periodic_to_frac": periodic_to_frac,
     "range": value_range,
     "prove": prove,
     "substitute": substitute,
@@ -586,6 +634,7 @@ __all__ = [
     "factor",
     "inflection",
     "intercepts",
+    "periodic_to_frac",
     "polar",
     "prove",
     "rationalize",

@@ -88,6 +88,9 @@ String _nodeBody(CoreNode node) {
     case CoreNodeType.radian:
       return _wrap(node, r'{$0}\ \mathrm{rad}');
 
+    case CoreNodeType.periodic:
+      return _periodic(node);
+
     // ── многочленные конструкции ────────────────────────────────────
     case CoreNodeType.fraction:
       return _wrap(node, r'\frac{$0}{$1}');
@@ -335,6 +338,18 @@ String _nodeBody(CoreNode node) {
     case CoreNodeType.empty:
       return '';
   }
+}
+
+/// Периодическая дробь: цифры и длина периода во втором ребёнке.
+String _periodic(CoreNode node) {
+  final digits = node.children.isNotEmpty ? (node.children[0].value ?? '') : '';
+  final declared = node.children.length > 1
+      ? int.tryParse(node.children[1].value ?? '')
+      : null;
+  final period = declared ?? digits.length;
+  final split = digits.length - period;
+  if (split <= 0) return '0{,}\\overline{$digits}';
+  return '0{,}${digits.substring(0, split)}\\overline{${digits.substring(split)}}';
 }
 
 /// Подставить детей в шаблон по позиционным плейсхолдерам.
