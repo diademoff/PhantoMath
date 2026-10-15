@@ -92,6 +92,8 @@ enum CoreNodeType {
   periodic('PERIODIC'),
   radian('RADIAN'),
   percentage('PERCENTAGE'),
+  approximate('APPROXIMATE'),
+  approximateSign('APPROXIMATE_SIGN'),
   derivation('DERIVATION'),
   derivation1('DERIVATION1'),
   integral('INTEGRAL'),

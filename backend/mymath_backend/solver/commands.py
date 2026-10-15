@@ -17,6 +17,7 @@
 * ``to_percent`` — число в проценты (``rewrite_as_percent``);
 * ``to_sci`` — число в экспоненциальную запись (``sci_form_msg``);
 * ``to_mixed`` — неправильную дробь в смешанное число (``convert_improper_fraction``);
+* ``approximate`` — приближённое значение с округлением (``round0``…``round4``);
 * ``intercepts`` — пересечения графика с осями координат
   (``find_x_intercept``/``find_y_intercept``);
 * ``range`` — область значений функции (``graph_rt_info_range``);
@@ -89,6 +90,41 @@ def to_fraction(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> Core
     """Десятичную дробь — в обыкновенную."""
     del args
     return _apply_side(node, ctx, "dec_to_frac", sympy.nsimplify)
+
+
+def approximate(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Приближённое значение выражения с округлением.
+
+    Аргумент — число знаков после запятой (по умолчанию 0). Ответ — узел
+    ``APPROXIMATE[выражение, округлённое значение]``; шаг ``round0``…``round4``
+    по числу знаков (дальше — общий ``round``).
+    """
+    value = to_sympy(node)
+    if value.is_number is not True or value.is_finite is False:
+        raise SolveError("приближённое значение берётся у числа")
+    digits = _rounding_digits(args)
+    # Округление через Python: sympy.Float.round() округляет по двоичной
+    # мантиссе и даёт 0.3330078125 вместо 0.333.
+    text = f"{float(sympy.N(value, 20)):.{digits}f}"
+    result = CoreNode.node(T.APPROXIMATE, from_sympy(value), CoreNode.constant(text))
+    key = f"round{digits}" if 0 <= digits <= 4 else "round"
+    ctx.result.add(Step(left=node, right=result, key=key))
+    return result
+
+
+def _rounding_digits(args: list[CoreNode]) -> int:
+    """Число знаков округления из аргументов команды."""
+    if not args:
+        return 0
+    if len(args) != 1 or args[0].type is not T.CONSTANT or args[0].value is None:
+        raise SolveError("число знаков округления — целое")
+    try:
+        number = Fraction(args[0].value)
+    except ValueError as error:
+        raise SolveError("число знаков округления — целое") from error
+    if number.denominator != 1 or number.numerator < 0:
+        raise SolveError("число знаков округления — целое")
+    return number.numerator
 
 
 def to_percent(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
@@ -576,6 +612,7 @@ def conic(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
 
 
 COMMANDS: dict[str, Command] = {
+    "approximate": approximate,
     "factor": factor,
     "expand": expand,
     "simplify": simplify,
@@ -626,6 +663,7 @@ __all__ = [
     "COMMANDS",
     "Command",
     "apply",
+    "approximate",
     "area",
     "asymptotes",
     "conic",

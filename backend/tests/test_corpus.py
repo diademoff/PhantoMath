@@ -208,6 +208,7 @@ def test_corpus_covers_every_module() -> None:
         "convergence",
         "diff_eq",
         "angle",
+        "approximate",
         "vertex",
         "rationalize",
         "polar",

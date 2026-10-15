@@ -204,6 +204,12 @@ String _nodeBody(CoreNode node) {
     case CoreNodeType.percentage:
       return _wrap(node, r'{$0}\,\%');
 
+    case CoreNodeType.approximate:
+      return _wrap(node, r'$0 \approx $1');
+
+    case CoreNodeType.approximateSign:
+      return _wrap(node, r'\approx $0');
+
     // ── исчисление ──────────────────────────────────────────────────
     case CoreNodeType.derivation:
     case CoreNodeType.derivation1:
