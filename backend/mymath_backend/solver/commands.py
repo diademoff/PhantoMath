@@ -36,6 +36,7 @@
 * ``integral_test``/``alt_test`` — интегральный признак и признак Лейбница;
 * ``system_check`` — проверка набора значений на решение системы;
 * ``extrema_on_interval`` — наибольшее и наименьшее значение на отрезке;
+* ``gcd``/``lcm``/``mod`` — НОД/НОК/остаток; ``prime_factorization``, ``round_place``;
 * ``radius_of_convergence`` — радиус сходимости степенного ряда;
 * ``pseries_test``/``geom_series_test`` — признаки обобщённого гармонического
   и геометрического рядов;
@@ -131,6 +132,80 @@ def to_fraction(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> Core
     """Десятичную дробь — в обыкновенную."""
     del args
     return _apply_side(node, ctx, "dec_to_frac", sympy.nsimplify)
+
+
+def _integer_values(node: CoreNode) -> list[int]:
+    """Целые значения из узла ``SEQUENCE``."""
+    values: list[int] = []
+    for child in node.children:
+        value = to_sympy(child)
+        if value.is_Integer is not True:
+            raise SolveError("ожидались целые числа")
+        values.append(int(value))
+    if len(values) < 2:
+        raise SolveError("нужно хотя бы два числа")
+    return values
+
+
+def gcd(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Наибольший общий делитель чисел (``SEQUENCE``)."""
+    del args
+    values = _integer_values(node)
+    result = from_sympy(sympy.Integer(sympy.gcd(values)))
+    ctx.result.add(Step(left=node, right=result, key="calculate_short"))
+    return result
+
+
+def lcm(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Наименьшее общее кратное чисел (``SEQUENCE``)."""
+    del args
+    values = _integer_values(node)
+    result = from_sympy(sympy.Integer(sympy.lcm(values)))
+    ctx.result.add(Step(left=node, right=result, key="calculate_short"))
+    return result
+
+
+def modulo(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Остаток от деления: ``a mod b`` (``SEQUENCE`` из двух чисел)."""
+    del args
+    values = _integer_values(node)
+    if len(values) != 2 or values[1] == 0:
+        raise SolveError("остаток: делимое и ненулевой делитель")
+    result = from_sympy(sympy.Integer(values[0] % values[1]))
+    ctx.result.add(Step(left=node, right=result, key="calculate_short"))
+    return result
+
+
+def prime_factorization(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Разложение натурального числа на простые множители."""
+    del args
+    value = to_sympy(node)
+    if value.is_Integer is not True or value <= 1:
+        raise SolveError("разложение на простые — у натурального числа > 1")
+    factors = sympy.factorint(int(value))
+    terms = [
+        sympy.Pow(sympy.Integer(prime), power, evaluate=False)
+        if power > 1
+        else sympy.Integer(prime)
+        for prime, power in sorted(factors.items())
+    ]
+    product = terms[0] if len(terms) == 1 else sympy.Mul(*terms, evaluate=False)
+    result = from_sympy(product)
+    ctx.result.add(Step(left=node, right=result, key="factorise_call"))
+    return result
+
+
+def round_place(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Округлить число до заданного разряда (аргумент — степень десяти)."""
+    value = to_sympy(node)
+    if value.is_number is not True or value.is_finite is False:
+        raise SolveError("округление берётся у числа")
+    place = _rounding_digits(args)
+    factor = 10**place
+    rounded = round(float(sympy.N(value, 20)) / factor) * factor
+    result = from_sympy(sympy.Integer(rounded))
+    ctx.result.add(Step(left=node, right=result, key="round"))
+    return result
 
 
 def approximate(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
@@ -1015,6 +1090,11 @@ COMMANDS: dict[str, Command] = {
     "complex_polar_multiply": complex_polar_multiply,
     "complex_polar_divide": complex_polar_divide,
     "conic_details": conic_details,
+    "gcd": gcd,
+    "lcm": lcm,
+    "mod": modulo,
+    "prime_factorization": prime_factorization,
+    "round_place": round_place,
     "explicit_formula": explicit_formula,
     "factor": factor,
     "expand": expand,
@@ -1100,16 +1180,20 @@ __all__ = [
     "extrema",
     "extrema_on_interval",
     "factor",
+    "gcd",
     "geom_series_test",
     "inflection",
     "intercept_form",
     "intercepts",
     "inverse_function",
+    "lcm",
+    "modulo",
     "nth_derivative",
     "nth_term_test",
     "partial_fractions",
     "periodic_to_frac",
     "polar",
+    "prime_factorization",
     "prove",
     "pseries_test",
     "radius_of_convergence",
@@ -1117,6 +1201,7 @@ __all__ = [
     "rationalize",
     "restrictions",
     "root_test",
+    "round_place",
     "simplify",
     "slope_intercept",
     "solve_param",

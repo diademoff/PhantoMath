@@ -204,6 +204,7 @@ def test_corpus_covers_every_module() -> None:
         "evaluate",
         "evaluate_expr",
         "mean",
+        "numbers",
         "inverse",
         "even_odd",
         "extrema",

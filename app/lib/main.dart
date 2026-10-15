@@ -175,6 +175,7 @@ class _SolvePageState extends State<SolvePage> {
     ('intercepts', 'Пересечения с осями'),
     ('inverse_function', 'Обратная функция'),
     ('partial_fractions', 'Простейшие дроби'),
+    ('prime_factorization', 'Простые множители'),
     ('even_odd', 'Чётность'),
     ('extrema', 'Экстремумы'),
     ('inflection', 'Перегибы'),

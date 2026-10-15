@@ -92,8 +92,9 @@ KEYWORD_TO_TYPE: dict[str, CoreNodeType] = {
     "exp": T.EXP,
     "floor": T.FLOOR,
     "ceil": T.FLOOR,
-    "gcd": T.ABS,
-    "lcm": T.ABS,
+    "gcd": T.SEQUENCE,
+    "lcm": T.SEQUENCE,
+    "mod": T.SEQUENCE,
     # единицы угла и комплексные -- постфиксные обёртки (1 ребёнок)
     "deg": T.DEGREE,
     "deg_min": T.DEGREE_MINUTE,
