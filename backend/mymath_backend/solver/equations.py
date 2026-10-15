@@ -1,4 +1,4 @@
-"""Решение уравнений: линейные и квадратные, одно неизвестное.
+"""Решение уравнений: линейные, квадратные и рациональные, одно неизвестное.
 
 Модуль зарегистрирован на узел ``EQUALS``. Уравнение сначала приводится к
 виду ``p(x) = 0``, где ``p`` -- многочлен с рациональными коэффициентами;
@@ -7,9 +7,12 @@
 * степень 1 -- переносим свободный член, затем делим на коэффициент при ``x``;
 * степень 2 -- дискриминант и корни (точные рациональные, если возможно,
   иначе через знак корня);
-* степень 0 -- либо нет решений, либо решений бесконечно много (сейчас это
-  ошибка: отдельного узла ответа для этих случаев ещё нет);
+* степень 0 -- либо нет решений, либо решений бесконечно много;
 * степень 3 и выше -- не решается (модули многочленов идут следующими).
+
+Если многочлен не строится, а неизвестное стоит в знаменателе, уравнение
+решается как **рациональное**: приводится к виду ``числитель / знаменатель =
+0``, решается числитель, корни-полюсы исключаются.
 
 Ключи шагов берутся из ``truth/data/explanations.json``: ``move``,
 ``eq_linar_divide_both_sides``, ``eq_quad_solve_in_r``, заголовок
@@ -22,10 +25,13 @@ from collections.abc import Callable
 from fractions import Fraction
 from math import isqrt
 
+import sympy
+
 from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
 from .arithmetic import as_fraction, format_number
 from .base import SolveContext, SolveError, SolveResult, Step, solver_for
+from .sympy_bridge import from_sympy, to_sympy
 
 # Многочлен: степень -> коэффициент. Нулевые коэффициенты не хранятся,
 # поэтому пустой словарь -- это тождественный ноль.
@@ -307,6 +313,104 @@ def _quad_root(
     return CoreNode(type=T.FRACTION, children=[numerator, _const(denominator)])
 
 
+def _rational_result(node: CoreNode, variables: list[str]) -> SolveResult | None:
+    """Решить рациональное уравнение отдельным способом; ``None`` — не оно."""
+    result = SolveResult()
+    ctx = SolveContext(result=result, variables=list(variables))
+    answer = _solve_rational(node, variables, ctx)
+    if answer is None:
+        return None
+    if answer.type is T.EMPTY:
+        # Нет решений: ответ-узла нет, как и у других уравнений (решение #19).
+        return result
+    result.set_solution(answer)
+    return result
+
+
+def _solve_rational(node: CoreNode, variables: list[str], ctx: SolveContext) -> CoreNode | None:
+    """Решить уравнение с неизвестным в знаменателе.
+
+    Приводит к виду ``числитель / знаменатель = 0``, приравнивает числитель к
+    нулю и решает его как многочлен, после чего исключает корни, обращающие
+    знаменатель в ноль. Возвращает ``None``, если знаменатель не зависит от
+    неизвестного (это не рациональное уравнение).
+    """
+    var = variables[0]
+    lhs, rhs = node.children
+    try:
+        combined = sympy.together(to_sympy(lhs) - to_sympy(rhs))
+        numerator, denominator = sympy.fraction(combined)
+    except SolveError:
+        return None
+    if not denominator.has(sympy.Symbol(var)):
+        return None
+
+    zero = CoreNode.constant("0")
+    one_side = CoreNode.node(T.EQUALS, from_sympy(combined), zero)
+    if not one_side.structural_eq(node):
+        ctx.result.add(Step(left=node, right=one_side, key="eq_trans"), [_HEADER])
+
+    numerator_eq = CoreNode.node(T.EQUALS, from_sympy(numerator), zero)
+    ctx.result.add(
+        Step(left=one_side, right=numerator_eq, key="eq_linear_frac_zero", args=[zero]),
+        [_HEADER],
+    )
+    answer = solve_equation(numerator_eq, ctx)
+    return _exclude_poles(answer, denominator, var, ctx)
+
+
+def _exclude_poles(
+    answer: CoreNode, denominator: sympy.Expr, var: str, ctx: SolveContext
+) -> CoreNode:
+    """Убрать корни, обращающие знаменатель в ноль."""
+    symbol = sympy.Symbol(var)
+    roots = _roots_of(answer, var)
+    if not roots:
+        return answer
+
+    kept: list[CoreNode] = []
+    excluded = False
+    for value in roots:
+        try:
+            pole = denominator.subs(symbol, to_sympy(value)) == 0
+        except (TypeError, ValueError):
+            pole = False
+        if pole is True:
+            excluded = True
+        else:
+            kept.append(value)
+    if not excluded:
+        return answer
+
+    filtered = _solutions_node(var, kept)
+    ctx.result.add(Step(left=answer, right=filtered, key="rel_restrictions_check"), [_HEADER])
+    return filtered
+
+
+def _roots_of(answer: CoreNode, var: str) -> list[CoreNode]:
+    """Значения из ответа ``x = …`` или списка таких равенств."""
+    if answer.type is T.EMPTY:
+        return []
+    items = answer.children if answer.type is T.LIST else [answer]
+    roots: list[CoreNode] = []
+    for item in items:
+        if item.type is not T.EQUALS or len(item.children) != 2:
+            continue
+        left, right = item.children
+        if left.type is T.VARIABLE and left.value == var:
+            roots.append(right)
+    return roots
+
+
+def _solutions_node(var: str, values: list[CoreNode]) -> CoreNode:
+    """Собрать ответ из значений: одно решение, список или ``EMPTY``."""
+    if not values:
+        return CoreNode.empty()
+    if len(values) == 1:
+        return _equation(var, values[0])
+    return CoreNode.node(T.LIST, *[_equation(var, value) for value in values])
+
+
 @solver_for(T.EQUALS)
 def solve_equation(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Решить уравнение с одним неизвестным.
@@ -325,7 +429,13 @@ def solve_equation(node: CoreNode, ctx: SolveContext) -> CoreNode:
     var = ctx.variables[0]
     lhs, rhs = node.children
 
-    poly = _sub(poly_of(lhs, var), poly_of(rhs, var))
+    try:
+        poly = _sub(poly_of(lhs, var), poly_of(rhs, var))
+    except SolveError:
+        rational = _solve_rational(node, ctx.variables, ctx)
+        if rational is None:
+            raise
+        return rational
     degree = _degree(poly)
 
     if degree == 0:
@@ -356,12 +466,19 @@ def solve_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
     Линейное уравнение решается переносом и делением, а если коэффициент при
     ``x`` не единица и есть свободный член — ещё и делением до переноса.
     Квадратное — формулой и, если корни рациональны, разложением на множители.
+    Рациональное — приведением к общему знаменателю и решением числителя.
     """
     if len(node.children) != 2 or len(variables) != 1:
         raise SolveError("поддерживается одно неизвестное")
     var = variables[0]
     lhs, rhs = node.children
-    poly = _sub(poly_of(lhs, var), poly_of(rhs, var))
+    try:
+        poly = _sub(poly_of(lhs, var), poly_of(rhs, var))
+    except SolveError:
+        rational = _rational_result(node, variables)
+        if rational is None:
+            raise
+        return [rational]
     degree = _degree(poly)
 
     if degree == 0:

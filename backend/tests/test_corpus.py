@@ -180,6 +180,7 @@ def test_corpus_covers_every_module() -> None:
         "sets",
         "comparison",
         "domain",
+        "rational",
         "matrices",
         "matrix_ops",
         "derivatives",

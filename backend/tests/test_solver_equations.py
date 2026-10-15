@@ -127,9 +127,9 @@ class TestUnsupported:
         with pytest.raises(SolveError, match="одно неизвестное"):
             solve(parse_protocol("{=({x+y},{1})}"))
 
-    def test_variable_in_denominator(self) -> None:
-        with pytest.raises(SolveError, match="неизвестным"):
-            solve(parse_protocol("{=({1/x},{2})}"))
+    def test_rational_equation_is_solved(self) -> None:
+        # 1/x = 2 -> x = 1/2; рациональные уравнения поддержаны (A1).
+        assert roots_of("{=({1/x},{2})}") == ["1/2"]
 
 
 class TestExplanationKeys:
