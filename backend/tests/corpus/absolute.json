@@ -5,29 +5,49 @@
       "id": "abs-negative-five",
       "title": "модуль отрицательного числа",
       "input": "{abs({-5})}",
-      "solution": {"type": "CONSTANT", "value": "5"},
-      "steps": ["abs"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "5"
+      },
+      "steps": [
+        "abs"
+      ]
     },
     {
       "id": "sign-five",
       "title": "знак положительного числа",
       "input": "{sign({5})}",
-      "solution": {"type": "CONSTANT", "value": "1"},
-      "steps": ["find_sign"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "1"
+      },
+      "steps": [
+        "find_sign"
+      ]
     },
     {
       "id": "floor-2.7",
       "title": "целая часть положительного дробного",
       "input": "{floor({2.7})}",
-      "solution": {"type": "CONSTANT", "value": "2"},
-      "steps": ["calculate_floor"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "2"
+      },
+      "steps": [
+        "calculate_floor"
+      ]
     },
     {
       "id": "floor-negative",
       "title": "целая часть отрицательного: floor(-1.5) = -2",
       "input": "{floor({-1.5})}",
-      "solution": {"type": "CONSTANT", "value": "-2"},
-      "steps": ["calculate_floor"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "-2"
+      },
+      "steps": [
+        "calculate_floor"
+      ]
     },
     {
       "id": "abs-square",
@@ -36,18 +56,31 @@
       "solution": {
         "type": "POWER",
         "children": [
-          {"type": "VARIABLE", "value": "x"},
-          {"type": "CONSTANT", "value": "2"}
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          }
         ]
       },
-      "steps": ["abs_pos"]
+      "steps": [
+        "abs_pos"
+      ]
     },
     {
       "id": "sign-square",
       "title": "знак квадрата равен 1",
       "input": "{sign({x^2})}",
-      "solution": {"type": "CONSTANT", "value": "1"},
-      "steps": ["find_sign"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "1"
+      },
+      "steps": [
+        "find_sign"
+      ]
     },
     {
       "id": "floor-integer-shift",
@@ -56,11 +89,24 @@
       "solution": {
         "type": "ADD",
         "children": [
-          {"type": "CONSTANT", "value": "2"},
-          {"type": "FLOOR", "children": [{"type": "VARIABLE", "value": "x"}]}
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          },
+          {
+            "type": "FLOOR",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              }
+            ]
+          }
         ]
       },
-      "steps": ["calculate_floor"]
+      "steps": [
+        "calculate_floor"
+      ]
     },
     {
       "id": "abs-equation",
@@ -72,20 +118,36 @@
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
-              {"type": "CONSTANT", "value": "-3"}
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "-3"
+              }
             ]
           },
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
-              {"type": "CONSTANT", "value": "3"}
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "3"
+              }
             ]
           }
         ]
       },
-      "steps": ["eq_abs_branch", "quad_final_single"]
+      "steps": [
+        "abs_separate",
+        "eq_abs_branch",
+        "quad_final_single"
+      ]
     },
     {
       "id": "abs-equation-linear",
@@ -97,27 +159,47 @@
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
-              {"type": "CONSTANT", "value": "-1"}
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "-1"
+              }
             ]
           },
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
-              {"type": "CONSTANT", "value": "4"}
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "4"
+              }
             ]
           }
         ]
       },
-      "steps": ["eq_abs_branch", "quad_final_single"]
+      "steps": [
+        "abs_separate",
+        "eq_abs_branch",
+        "quad_final_single"
+      ]
     },
     {
       "id": "abs-equation-negative-right",
       "title": "|x| = -2 — решений нет",
       "input": "{=({abs({x})},{-2})}",
-      "solution": {"type": "EMPTY"},
-      "steps": ["false_statement_solve"]
+      "solution": {
+        "type": "EMPTY"
+      },
+      "steps": [
+        "false_statement_solve"
+      ]
     },
     {
       "id": "abs-equation-variable-right",
@@ -126,11 +208,21 @@
       "solution": {
         "type": "EQUALS",
         "children": [
-          {"type": "VARIABLE", "value": "x"},
-          {"type": "CONSTANT", "value": "1/2"}
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "1/2"
+          }
         ]
       },
-      "steps": ["eq_abs_branch", "quad_final_single"]
+      "steps": [
+        "abs_separate",
+        "eq_abs_branch",
+        "quad_final_single"
+      ]
     },
     {
       "id": "abs-equation-quadratic-right",
@@ -142,20 +234,36 @@
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
-              {"type": "CONSTANT", "value": "-2"}
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "-2"
+              }
             ]
           },
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
-              {"type": "CONSTANT", "value": "2"}
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
             ]
           }
         ]
       },
-      "steps": ["eq_abs_branch", "quad_final_single"]
+      "steps": [
+        "abs_separate",
+        "eq_abs_branch",
+        "quad_final_single"
+      ]
     }
   ]
 }

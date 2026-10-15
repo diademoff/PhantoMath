@@ -154,7 +154,7 @@ class TestAbsEquations:
     def test_two_roots(self) -> None:
         problem = node(T.EQUALS, node(T.ABS, var()), c("3"))
         assert self.roots_of(problem) == {-3, 3}
-        assert step_keys(problem) == ["eq_abs_branch", "quad_final_single"]
+        assert step_keys(problem) == ["abs_separate", "eq_abs_branch", "quad_final_single"]
 
     def test_fraction_root(self) -> None:
         problem = node(T.EQUALS, node(T.ABS, var()), node(T.FRACTION, c("1"), c("2")))

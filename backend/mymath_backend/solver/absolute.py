@@ -154,6 +154,7 @@ def solve_abs_equation(node: CoreNode, variables: list[str]) -> SolveResult | No
     branch_node = _list_node(
         CoreNode.node(T.EQUALS, abs_argument, from_sympy(target)) for target in targets
     )
+    result.add(Step(left=node, right=None, key="abs_separate", args=[abs_argument]))
     result.add(Step(left=node, right=branch_node, key=_KEY_ABS_BRANCH))
     if not roots:
         result.add(Step(left=branch_node, right=None, key=_KEY_NO_SOLUTION))
