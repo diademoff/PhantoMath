@@ -90,6 +90,20 @@
       "input": "{root2({-4})}",
       "solution": {"type": "ROOT2", "children": [{"type": "CONSTANT", "value": "-4"}]},
       "steps": ["calculate_short"]
+    },
+    {
+      "id": "ln-e",
+      "title": "натуральный логарифм числа e",
+      "input": "{ln({\\e})}",
+      "solution": {"type": "CONSTANT", "value": "1"},
+      "steps": ["calculate_short"]
+    },
+    {
+      "id": "euler-number",
+      "title": "число e как ответ",
+      "input": "{\\e}",
+      "solution": {"type": "CONSTANT", "value": "e"},
+      "steps": []
     }
   ]
 }
