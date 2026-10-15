@@ -23,6 +23,7 @@
 * ``complex_power`` — степень комплексного числа (``complex_pow_polar_moivre_simple``);
 * ``complex_roots`` — корни n-й степени из комплексного числа (``complex_find_root_polar``);
 * ``explicit_formula`` — явная формула общего члена последовательности;
+* ``slope_intercept`` — линейное уравнение в виде y = kx + b (``slope_and_y_intercept``);
 * ``sequence_convergence`` — сходимость последовательности (``seq_lim_conv``);
 * ``ratio_test`` — признак Даламбера для ряда (``series_ratio_test``);
 * ``root_test``/``nth_term_test`` — радикальный и необходимый признаки сходимости ряда;
@@ -530,6 +531,54 @@ def partial_fractions(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -
     return result
 
 
+def slope_intercept(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Записать линейное уравнение в виде ``y = kx + b`` и назвать ``k`` и ``b``.
+
+    Из двух неизвестных зависимой считается ``y`` (иначе вторая), независимой —
+    оставшаяся. Шаги ``rewrite_in_slope_intercept_form`` и
+    ``slope_and_y_intercept`` (угловой коэффициент и пересечение с осью).
+    """
+    del args
+    if node.type is not T.EQUALS or len(node.children) != 2:
+        raise SolveError("угловой коэффициент — у линейного уравнения")
+    if len(ctx.variables) != 2:
+        raise SolveError("нужны две переменные: независимая и зависимая")
+    dependent = "y" if "y" in ctx.variables else ctx.variables[1]
+    independent = next(name for name in ctx.variables if name != dependent)
+    dependent_symbol = sympy.Symbol(dependent)
+    independent_symbol = sympy.Symbol(independent)
+
+    lhs, rhs = to_sympy(node.children[0]), to_sympy(node.children[1])
+    found = sympy.solve(sympy.Eq(lhs, rhs), dependent_symbol)
+    if len(found) != 1:
+        raise SolveError("не удалось выразить зависимую переменную")
+    expression = sympy.simplify(found[0])
+    try:
+        polynomial = sympy.Poly(expression, independent_symbol)
+    except sympy.PolynomialError as error:
+        raise SolveError("уравнение не линейное") from error
+    if polynomial.degree() > 1:
+        raise SolveError("уравнение не линейное")
+    slope = polynomial.coeff_monomial(independent_symbol)
+    intercept = polynomial.coeff_monomial(1)
+
+    answer = CoreNode.node(T.EQUALS, CoreNode.variable(dependent), from_sympy(expression))
+    ctx.result.add(Step(left=node, right=None, key="rewrite_in_slope_intercept_form"))
+    ctx.result.add(
+        Step(
+            left=node,
+            right=answer,
+            key="slope_and_y_intercept",
+            args=[
+                from_sympy(slope),
+                CoreNode.variable(dependent),
+                from_sympy(intercept),
+            ],
+        )
+    )
+    return answer
+
+
 def value_range(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Область значений функции — множество её значений на прямой.
 
@@ -751,6 +800,7 @@ COMMANDS: dict[str, Command] = {
     "root_test": root_test,
     "nth_term_test": nth_term_test,
     "sequence_convergence": sequence_convergence,
+    "slope_intercept": slope_intercept,
     "solve_param": solve_param,
     "prove": prove,
     "substitute": substitute,
