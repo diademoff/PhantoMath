@@ -206,6 +206,7 @@ def test_corpus_covers_every_module() -> None:
         "angle",
         "vertex",
         "rationalize",
+        "polar",
         "matrices",
         "matrix_ops",
         "derivatives",

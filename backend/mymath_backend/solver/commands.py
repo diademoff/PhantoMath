@@ -342,6 +342,25 @@ def rationalize(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> Core
     return _apply_side(node, ctx, "rationalize_roots", sympy.radsimp)
 
 
+def polar(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Записать комплексное число в полярной форме ``r(cos φ + i sin φ)``."""
+    del args
+    value = to_sympy(node)
+    if value.is_number is not True or value.is_real is True:
+        raise SolveError("полярная форма — у комплексного числа")
+    radius = from_sympy(sympy.simplify(sympy.Abs(value)))
+    angle = from_sympy(sympy.simplify(sympy.arg(value)))
+    imaginary = CoreNode.constant("i")
+    trig = CoreNode.node(
+        T.ADD,
+        CoreNode.node(T.COS, angle),
+        CoreNode.node(T.MULTIPLY_IMPLICIT, imaginary, CoreNode.node(T.SIN, angle)),
+    )
+    result = CoreNode.node(T.MULTIPLY_IMPLICIT, radius, CoreNode.node(T.BRACKET, trig))
+    ctx.result.add(Step(left=node, right=result, key="write_polar_form"))
+    return result
+
+
 def vertex(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Найти вершину параболы (для квадратичной функции)."""
     del args
@@ -431,6 +450,7 @@ COMMANDS: dict[str, Command] = {
     "to_radians": to_radians,
     "vertex": vertex,
     "rationalize": rationalize,
+    "polar": polar,
     "asymptotes": asymptotes,
     "even_odd": even_odd,
     "extrema": extrema,
@@ -473,6 +493,7 @@ __all__ = [
     "extrema",
     "factor",
     "inflection",
+    "polar",
     "prove",
     "rationalize",
     "restrictions",

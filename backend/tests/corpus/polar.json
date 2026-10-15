@@ -1,0 +1,148 @@
+{
+  "module": "polar",
+  "tasks": [
+    {
+      "id": "case0",
+      "title": "1+2i",
+      "input": "{1+2*\\i}",
+      "command": "polar",
+      "solution": {
+        "type": "MULTIPLY_IMPLICIT",
+        "children": [
+          {
+            "type": "ROOT2",
+            "children": [
+              {
+                "type": "CONSTANT",
+                "value": "5"
+              }
+            ]
+          },
+          {
+            "type": "BRACKET",
+            "children": [
+              {
+                "type": "ADD",
+                "children": [
+                  {
+                    "type": "COS",
+                    "children": [
+                      {
+                        "type": "ATAN",
+                        "children": [
+                          {
+                            "type": "CONSTANT",
+                            "value": "2"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "MULTIPLY_IMPLICIT",
+                    "children": [
+                      {
+                        "type": "CONSTANT",
+                        "value": "i"
+                      },
+                      {
+                        "type": "SIN",
+                        "children": [
+                          {
+                            "type": "ATAN",
+                            "children": [
+                              {
+                                "type": "CONSTANT",
+                                "value": "2"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "write_polar_form"
+      ]
+    },
+    {
+      "id": "case1",
+      "title": "i",
+      "input": "{\\i}",
+      "command": "polar",
+      "solution": {
+        "type": "MULTIPLY_IMPLICIT",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "1"
+          },
+          {
+            "type": "BRACKET",
+            "children": [
+              {
+                "type": "ADD",
+                "children": [
+                  {
+                    "type": "COS",
+                    "children": [
+                      {
+                        "type": "FRACTION",
+                        "children": [
+                          {
+                            "type": "CONSTANT",
+                            "value": "π"
+                          },
+                          {
+                            "type": "CONSTANT",
+                            "value": "2"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "MULTIPLY_IMPLICIT",
+                    "children": [
+                      {
+                        "type": "CONSTANT",
+                        "value": "i"
+                      },
+                      {
+                        "type": "SIN",
+                        "children": [
+                          {
+                            "type": "FRACTION",
+                            "children": [
+                              {
+                                "type": "CONSTANT",
+                                "value": "π"
+                              },
+                              {
+                                "type": "CONSTANT",
+                                "value": "2"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "write_polar_form"
+      ]
+    }
+  ]
+}
