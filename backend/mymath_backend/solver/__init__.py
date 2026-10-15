@@ -25,6 +25,7 @@ from .base import (
 from .derivatives import solve_derivative
 from .equations import solve_equation
 from .fractions import solve_fraction
+from .systems import solve_system
 
 
 def solve(node: CoreNode) -> CoreSolverData:
@@ -90,5 +91,6 @@ __all__ = [
     "solve_derivative",
     "solve_equation",
     "solve_fraction",
+    "solve_system",
     "solver_for",
 ]
