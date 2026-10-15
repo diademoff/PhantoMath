@@ -1,7 +1,12 @@
-"""HTTP-слой: FastAPI-приложение поверх решателя.
+"""HTTP-слой: FastAPI-приложение поверх логики сервиса.
 
 Наружу отдаётся контракт Photomath (см. ``truth/03-solver-contract.md``),
 поэтому фронт получает тот же JSON, что и в оригинальном приложении.
+
+Вся работа -- в :mod:`mymath_backend.service`; этот модуль только разбирает
+запрос pydantic-моделями и расставляет HTTP-коды. Так одна и та же логика
+работает и на десктопе (FastAPI), и на устройстве (``device.py``), где
+``fastapi``/``pydantic`` не нужны.
 
 Эндпоинты:
 
@@ -10,7 +15,7 @@
     ``CoreSolverData``.
 
 ``POST /api/v1/parse``
-    Диагностика ввода: та же строка протокола Photomah, но ответом --
+    Диагностика ввода: та же строка протокола Photomath, но ответом --
     разобранное дерево. Нужен для отладки фронта и для проверки, что
     мы читаем протокол так же, как оригинал.
 
@@ -20,67 +25,16 @@
 
 from __future__ import annotations
 
-import os
-from functools import lru_cache
-from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
-from .ast import CoreAction, CoreNode
-from .concepts import definition as concept_definition
-from .explanations import DEFAULT_LOCALE, Explanations, load_explanations
+from . import service
+from .explanations import DEFAULT_LOCALE
 from .graph import DEFAULT_SAMPLES
-from .graph import sample as sample_graph
-from .input import ProtocolError, parse_json, parse_protocol
-from .solver import SolveError, solve
-
-# Продукт поддерживает только два языка (решение пользователя, см.
-# truth/09-decisions.md). В данных английский хранится как `default`.
-SUPPORTED_LOCALES: tuple[str, ...] = ("ru", "en")
-
-
-def normalize_locale(locale: str) -> str:
-    """Привести язык к поддерживаемому: `ru` или английский (`default`).
-
-    Любой другой язык (в том числе диалект вида `ru-RU`) откатывается к
-    английскому. Так решение «только ru/en» действует и для старых клиентов,
-    а в словаре остаются все 9 языков как исследовательский артефакт.
-    """
-    base = locale.strip().lower().split("-")[0]
-    if base == "ru":
-        return "ru"
-    return DEFAULT_LOCALE
-
-
-# Словарь лежит в truth/data рядом с пакетом. Путь можно переопределить
-# переменной окружения, иначе бэкенд не запустится вне монорепозитория.
-# mymath_backend/api.py -> mymath_backend -> backend -> корень репозитория
-_DEFAULT_EXPLANATIONS = Path(__file__).resolve().parents[2] / "truth" / "data" / "explanations.json"
-
-
-def _explanations_path() -> Path:
-    """Путь к словарю: MYMATH_EXPLANATIONS имеет приоритет над умолчанием."""
-    return Path(os.environ.get("MYMATH_EXPLANATIONS", str(_DEFAULT_EXPLANATIONS)))
-
-
-@lru_cache(maxsize=1)
-def explanations() -> Explanations:
-    """Словарь объяснений; читается один раз за процесс."""
-    return load_explanations(str(_explanations_path()))
-
-
-def _explanations_loaded() -> bool:
-    """Есть ли словарь. Без него ответы отдаются с ключами, но без текстов."""
-    try:
-        explanations()
-    except OSError:
-        return False
-    return True
-
-
-# ── схемы запросов и ответа ────────────────────────────────────────────
+from .input import ProtocolError
+from .solver import SolveError
 
 
 class IntervalRequest(BaseModel):
@@ -141,94 +95,6 @@ class GraphRequest(BaseModel):
     samples: int = Field(default=DEFAULT_SAMPLES, description="Число точек на отрезке")
 
 
-class ExplanationView(BaseModel):
-    """Пояснение, готовое к показу."""
-
-    key: str = Field(description="Ключ словаря")
-    text: str = Field(description="Текст с подставленными аргументами")
-    locale: str
-    links: list[dict[str, str]] = Field(
-        default_factory=list, description="Ссылки: метка и uuid способа/понятия"
-    )
-    tail_label: str | None = Field(default=None, description="Метка в конце строки")
-    missing: bool = Field(default=False, description="Ключа нет ни в одном языке")
-
-
-def _render_view(key: str, args: list[CoreNode], locale: str) -> dict[str, Any]:
-    """Развернуть один ключ пояснения.
-
-    Без словаря отдаём только ключ: ответ остаётся валидным, фронт покажет
-    его как есть, а health сообщит о проблеме.
-    """
-    if not _explanations_loaded():
-        return ExplanationView(
-            key=key,
-            text="",
-            locale=normalize_locale(locale),
-            links=[],
-            tail_label=None,
-            missing=True,
-        ).model_dump()
-    rendered = explanations().render(key, args, normalize_locale(locale))
-    used_locale = normalize_locale(locale)
-    return ExplanationView(
-        key=key,
-        text=rendered.text,
-        locale=rendered.locale,
-        links=[
-            {
-                "label": link.label,
-                "uuid": link.uuid,
-                "definition": concept_definition(link.uuid, used_locale) or "",
-            }
-            for link in rendered.links
-        ],
-        tail_label=rendered.tail_label,
-        missing=rendered.missing_key,
-    ).model_dump()
-
-
-def _render_rich(rich: dict[str, Any], locale: str) -> dict[str, Any]:
-    """Развернуть `CoreRichText` (`{"type","args"}`) в текстовую вьюху."""
-    args = [CoreNode.from_contract(a) for a in rich.get("args", [])]
-    return _render_view(rich["type"], args, locale)
-
-
-def _attach_text(node: dict[str, Any], locale: str) -> dict[str, Any]:
-    """Дописать тексты пояснений в узлы ответа.
-
-    Мутирует копию ответа: фронт получает и дерево, и готовые строки,
-    не разбирая шаблоны у себя. Исходный формат остаётся валидным --
-    лишний ключ ``explanation`` просто игнорируется.
-    """
-    out = dict(node)
-    description = out.get("description")
-    if isinstance(description, dict) and "type" in description:
-        out["explanation"] = _render_rich(description, locale)
-    # Заголовки шагов — тоже `CoreRichText`, но лежат списком, а не под
-    # ключом `description`, поэтому разворачиваются отдельно.
-    headers = out.get("headers")
-    if isinstance(headers, list):
-        out["headers"] = [
-            {**h, "explanation": _render_rich(h, locale)}
-            if isinstance(h, dict) and "type" in h
-            else h
-            for h in headers
-        ]
-    # Подпись переключателя способов решения — тоже `CoreRichText`.
-    select = out.get("selectMethodText")
-    if isinstance(select, dict) and "type" in select:
-        out["selectMethodText"] = {**select, "explanation": _render_rich(select, locale)}
-    for key in ("children", "substeps", "steps", "entries"):
-        value = out.get(key)
-        if isinstance(value, list):
-            out[key] = [_attach_text(v, locale) if isinstance(v, dict) else v for v in value]
-    nested = out.get("result")
-    if isinstance(nested, dict):
-        out["result"] = _attach_text(nested, locale)
-    return out
-
-
 def create_app() -> FastAPI:
     """Собрать приложение."""
     app = FastAPI(
@@ -240,15 +106,7 @@ def create_app() -> FastAPI:
     @app.get("/api/v1/health")
     def health() -> dict[str, Any]:
         """Живость сервиса и состояние словаря объяснений."""
-        try:
-            size = len(explanations())
-        except OSError as err:
-            return {"status": "degraded", "explanations": 0, "detail": str(err)}
-        return {
-            "status": "ok",
-            "explanations": size,
-            "locales": list(SUPPORTED_LOCALES),
-        }
+        return service.health()
 
     @app.get("/")
     def index() -> dict[str, Any]:
@@ -268,62 +126,38 @@ def create_app() -> FastAPI:
     def parse(payload: ParseRequest) -> dict[str, Any]:
         """Разобрать строку протокола Photomath в дерево."""
         try:
-            node = parse_protocol(payload.source)
+            return service.parse(payload.source)
         except ProtocolError as err:
             raise HTTPException(status_code=400, detail=str(err)) from err
-        return {"node": node.to_contract()}
 
     @app.post("/api/v1/graph")
     def graph(payload: GraphRequest) -> dict[str, Any]:
         """Точки графика ``y = f(x)`` для отрисовки на клиенте."""
         try:
-            node = parse_json(payload.node)
+            return service.graph(payload.node, payload.x_min, payload.x_max, payload.samples)
         except (ValueError, KeyError) as err:
             raise HTTPException(
                 status_code=422, detail=f"не удалось разобрать узел: {err}"
             ) from err
-        try:
-            return sample_graph(node, payload.x_min, payload.x_max, payload.samples)
         except SolveError as err:
             raise HTTPException(status_code=422, detail=str(err)) from err
 
     @app.post("/api/v1/solve")
     def run_solve(payload: SolveRequest) -> dict[str, Any]:
         """Решить выражение."""
+        interval = payload.interval.model_dump() if payload.interval else None
         try:
-            node = parse_json(payload.node)
+            return service.solve_request(
+                payload.node,
+                action_data=payload.action,
+                interval_data=interval,
+                locale=payload.locale,
+                render=payload.render,
+            )
         except (ValueError, KeyError) as err:
             raise HTTPException(
                 status_code=422, detail=f"не удалось разобрать узел: {err}"
             ) from err
-
-        interval = None
-        if payload.interval is not None:
-            try:
-                interval = (
-                    parse_json(payload.interval.min),
-                    parse_json(payload.interval.max),
-                )
-            except (ValueError, KeyError) as err:
-                raise HTTPException(
-                    status_code=422,
-                    detail=f"не удалось разобрать границы промежутка: {err}",
-                ) from err
-
-        try:
-            action = CoreAction.from_contract(payload.action) if payload.action else None
-        except (KeyError, ValueError) as err:
-            raise HTTPException(
-                status_code=422, detail=f"не удалось разобрать действие: {err}"
-            ) from err
-
-        try:
-            data = solve(
-                node,
-                command=action.command if action else None,
-                args=action.args if action else None,
-                interval=interval,
-            )
         except SolveError as err:
             # Задачу не решили -- это не поломка сервиса. Отвечаем 422 с
             # понятным текстом и ключом пояснения, если он есть.
@@ -331,16 +165,6 @@ def create_app() -> FastAPI:
                 status_code=422,
                 detail={"message": str(err), "explanation": err.explanation_key},
             ) from err
-
-        out = data.to_contract()
-        if payload.render:
-            result = out.get("result")
-            groups = result.get("groups") if isinstance(result, dict) else None
-            if isinstance(groups, list):
-                for index, group in enumerate(groups):
-                    if isinstance(group, dict):
-                        groups[index] = _attach_text(group, payload.locale)
-        return out
 
     return app
 
