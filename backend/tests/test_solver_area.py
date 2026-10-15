@@ -35,7 +35,12 @@ class TestArea:
     def test_sign_change(self) -> None:
         source = "{integral_def({-1},{1},{x^3})}"
         assert value_of(source) == "1/2"
-        assert step_keys(source) == ["total_area", "integrate_calc"]
+        assert step_keys(source) == [
+            "total_area_fun",
+            "total_area_x_intercept",
+            "total_area",
+            "integrate_calc",
+        ]
 
     def test_no_sign_change(self) -> None:
         assert value_of("{integral_def({0},{2},{x^2})}") == "8/3"

@@ -6,24 +6,48 @@
       "title": "площадь ∫₋₁¹ x³ dx = 1/2 (знак меняется)",
       "input": "{integral_def({-1},{1},{x^3})}",
       "command": "area",
-      "solution": {"type": "CONSTANT", "value": "1/2"},
-      "steps": ["total_area", "integrate_calc"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "1/2"
+      },
+      "steps": [
+        "total_area_fun",
+        "total_area_x_intercept",
+        "total_area",
+        "integrate_calc"
+      ]
     },
     {
       "id": "sine-two-periods",
       "title": "площадь ∫₀^2π sin x dx = 4",
       "input": "{integral_def({0},{2*pi},{sin({x})})}",
       "command": "area",
-      "solution": {"type": "CONSTANT", "value": "4"},
-      "steps": ["total_area", "integrate_calc"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "4"
+      },
+      "steps": [
+        "total_area_fun",
+        "total_area_x_intercept",
+        "total_area",
+        "integrate_calc"
+      ]
     },
     {
       "id": "no-sign-change",
       "title": "площадь ∫₀² x² dx = 8/3",
       "input": "{integral_def({0},{2},{x^2})}",
       "command": "area",
-      "solution": {"type": "CONSTANT", "value": "8/3"},
-      "steps": ["total_area", "integrate_calc"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "8/3"
+      },
+      "steps": [
+        "total_area_fun",
+        "total_area_x_intercept",
+        "total_area",
+        "integrate_calc"
+      ]
     }
   ]
 }

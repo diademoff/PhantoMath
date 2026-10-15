@@ -279,6 +279,15 @@ def area(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     if lower > upper:
         lower, upper = upper, lower
 
+    ctx.result.add(Step(left=node, right=None, key="total_area_fun"))
+    ctx.result.add(
+        Step(
+            left=node,
+            right=None,
+            key="total_area_x_intercept",
+            args=[CoreNode.variable(str(symbol))],
+        )
+    )
     breakpoints = [lower, *_roots_inside(expression, symbol, lower, upper), upper]
     total = sympy.Integer(0)
     for start, end in itertools.pairwise(breakpoints):
