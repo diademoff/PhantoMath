@@ -46,7 +46,7 @@ from .sequences import solve_sequence
 from .series import solve_series
 from .sets import solve_inclusion, solve_membership, solve_set_operation
 from .sympy_bridge import from_sympy, to_sympy
-from .systems import solve_system
+from .systems import solve_system, system_methods
 from .trig_equations import Interval, solve_trig_equation
 from .trigonometry import solve_angle_unit, solve_function
 from .vertical import solve_vertical
@@ -96,6 +96,17 @@ def solve(
             return build_solver_data(node, trig)
         # Уравнение решается несколькими способами; первый — основной.
         methods = solve_methods(node, ctx.variables)
+        alternatives = methods[1:]
+        return build_solver_data(
+            node,
+            methods[0],
+            alternatives=alternatives,
+            select_method_text="select_method" if alternatives else None,
+        )
+
+    if node.type is CoreNodeType.SYSTEM:
+        # Система решается несколькими способами (Крамер, подстановка).
+        methods = system_methods(node, ctx.variables)
         alternatives = methods[1:]
         return build_solver_data(
             node,

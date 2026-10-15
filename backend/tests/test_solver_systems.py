@@ -12,6 +12,7 @@ from pathlib import Path
 from mymath_backend import CoreNode, load_explanations
 from mymath_backend import CoreNodeType as T
 from mymath_backend.explanations import DEFAULT_LOCALE
+from mymath_backend.results import CoreSolverVerticalResult, ResultGroupType
 from mymath_backend.solver import registered_types, solve
 
 EXPLANATIONS = Path(__file__).resolve().parents[2] / "truth" / "data" / "explanations.json"
@@ -200,6 +201,23 @@ class TestParametricAndCheck:
         vertical = solve(problem, command="system_check", args=[c("1"), c("1")]).result.vertical()
         assert vertical is not None and vertical.solution is not None
         assert vertical.solution.children[0].value == "false"
+
+
+class TestMethods:
+    def test_two_solution_methods(self) -> None:
+        # 2×2 линейная: Крамер и подстановка — две записи и переключатель.
+        problem = system(
+            eq(node(T.ADD, var("x"), var("y")), c("3")),
+            eq(node(T.SUBTRACT, var("x"), var("y")), c("1")),
+        )
+        data = solve(problem)
+        group = data.result.group(ResultGroupType.VERTICAL)
+        assert group is not None
+        assert len(group.entries) == 2
+        assert group.select_method_text is not None
+        first = CoreSolverVerticalResult.from_contract(group.entries[0].result)
+        keys = [sub.description.type for step in first.steps for sub in step.substeps]
+        assert keys == ["system_2x2_solve_elimination"]
 
 
 class TestExplanationKeys:

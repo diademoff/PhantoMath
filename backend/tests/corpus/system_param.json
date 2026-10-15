@@ -21,6 +21,20 @@
       "steps": ["system_2x2_sol_in_param"]
     },
     {
+      "id": "substitution-method",
+      "title": "x + y = 3, x − y = 1 — способ подстановки (2-й)",
+      "input": "system({=({x+y},{3})},{=({x-y},{1})})",
+      "method": 1,
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "2"}]},
+          {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "y"}, {"type": "CONSTANT", "value": "1"}]}
+        ]
+      },
+      "steps": ["system_2x2_solve_substitution"]
+    },
+    {
       "id": "no-solution",
       "title": "x + y = 1, x + y = 2 — решений нет",
       "input": "system({=({x+y},{1})},{=({x+y},{2})})",

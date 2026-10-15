@@ -12,6 +12,8 @@
 
 from __future__ import annotations
 
+import contextlib
+from collections.abc import Callable
 from fractions import Fraction
 
 import sympy
@@ -19,7 +21,7 @@ import sympy
 from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
 from .arithmetic import as_fraction, format_number
-from .base import SolveContext, SolveError, Step, boolean_node, solver_for
+from .base import SolveContext, SolveError, SolveResult, Step, boolean_node, solver_for
 from .sympy_bridge import from_sympy, to_sympy
 
 _HEADER = CoreRichText(type="system_solve_short")
@@ -215,6 +217,33 @@ def _general_system(node: CoreNode, ctx: SolveContext) -> CoreNode:
     return solution
 
 
+def system_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
+    """Способы решения системы: Крамер (2×2 линейная) и подстановка (sympy).
+
+    Система неравенств решается единственным способом. Первый способ — основной,
+    дальше — альтернативы (переключатель ``selectMethodText``).
+    """
+    if any(child.type in _RELATIONS for child in node.children):
+        return [_run_system(node, variables, solve_system)]
+    methods: list[SolveResult] = []
+    if len(node.children) == 2 and len(variables) == 2:
+        with contextlib.suppress(SolveError):
+            methods.append(_run_system(node, variables, _cramer_2x2))
+    methods.append(_run_system(node, variables, _general_system))
+    return methods
+
+
+def _run_system(
+    node: CoreNode, variables: list[str], action: Callable[[CoreNode, SolveContext], CoreNode]
+) -> SolveResult:
+    """Выполнить способ решения системы в отдельном накопителе."""
+    result = SolveResult()
+    ctx = SolveContext(result=result, variables=list(variables))
+    result.set_solution(action(node, ctx))
+    result.header = "system_solve_short"
+    return result
+
+
 def _solution_parts(
     variables: list[str], mapping: dict[sympy.Symbol, sympy.Expr]
 ) -> list[CoreNode]:
@@ -307,4 +336,5 @@ def _relation(node_type: T, left: sympy.Expr, right: sympy.Expr) -> sympy.Rel:
 __all__ = [
     "solve_system",
     "system_check",
+    "system_methods",
 ]
