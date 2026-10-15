@@ -68,6 +68,7 @@
         ]
       },
       "steps": [
+        "complex_calculate_polar",
         "write_polar_form"
       ]
     },
@@ -141,6 +142,7 @@
         ]
       },
       "steps": [
+        "complex_calculate_polar",
         "write_polar_form"
       ]
     }

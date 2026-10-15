@@ -1024,6 +1024,7 @@ def polar(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
         CoreNode.node(T.MULTIPLY_IMPLICIT, imaginary, CoreNode.node(T.SIN, angle)),
     )
     result = CoreNode.node(T.MULTIPLY_IMPLICIT, radius, CoreNode.node(T.BRACKET, trig))
+    ctx.result.add(Step(left=node, right=None, key="complex_calculate_polar"))
     ctx.result.add(Step(left=node, right=result, key="write_polar_form"))
     return result
 
