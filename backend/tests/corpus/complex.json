@@ -5,15 +5,27 @@
       "id": "real-part",
       "title": "действительная часть Re(1 + 2i)",
       "input": "{real({1+2\\i})}",
-      "solution": {"type": "CONSTANT", "value": "1"},
-      "steps": ["complex_rewrite"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "1"
+      },
+      "steps": [
+        "complex_find_parts",
+        "complex_rewrite"
+      ]
     },
     {
       "id": "imaginary-part",
       "title": "мнимая часть Im(1 + 2i)",
       "input": "{imag({1+2\\i})}",
-      "solution": {"type": "CONSTANT", "value": "2"},
-      "steps": ["complex_rewrite"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "2"
+      },
+      "steps": [
+        "complex_find_parts",
+        "complex_rewrite"
+      ]
     },
     {
       "id": "conjugate",
@@ -22,17 +34,28 @@
       "solution": {
         "type": "SUBTRACT",
         "children": [
-          {"type": "CONSTANT", "value": "1"},
+          {
+            "type": "CONSTANT",
+            "value": "1"
+          },
           {
             "type": "MULTIPLY_IMPLICIT",
             "children": [
-              {"type": "CONSTANT", "value": "2"},
-              {"type": "CONSTANT", "value": "i"}
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "i"
+              }
             ]
           }
         ]
       },
-      "steps": ["complex_conjugate"]
+      "steps": [
+        "complex_conjugate"
+      ]
     },
     {
       "id": "product",
@@ -41,31 +64,52 @@
       "solution": {
         "type": "ADD",
         "children": [
-          {"type": "CONSTANT", "value": "5"},
+          {
+            "type": "CONSTANT",
+            "value": "5"
+          },
           {
             "type": "MULTIPLY_IMPLICIT",
             "children": [
-              {"type": "CONSTANT", "value": "5"},
-              {"type": "CONSTANT", "value": "i"}
+              {
+                "type": "CONSTANT",
+                "value": "5"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "i"
+              }
             ]
           }
         ]
       },
-      "steps": ["complex_convert_std_form"]
+      "steps": [
+        "complex_convert_std_form"
+      ]
     },
     {
       "id": "modulus",
       "title": "модуль комплексного числа |3 + 4i|",
       "input": "{abs({3+4\\i})}",
-      "solution": {"type": "CONSTANT", "value": "5"},
-      "steps": ["complex_convert_std_form"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "5"
+      },
+      "steps": [
+        "complex_convert_std_form"
+      ]
     },
     {
       "id": "i-squared",
       "title": "мнимая единица в квадрате: i^2 = -1",
       "input": "{\\i^2}",
-      "solution": {"type": "CONSTANT", "value": "-1"},
-      "steps": ["complex_convert_std_form"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "-1"
+      },
+      "steps": [
+        "complex_convert_std_form"
+      ]
     },
     {
       "id": "square",
@@ -74,11 +118,19 @@
       "solution": {
         "type": "MULTIPLY_IMPLICIT",
         "children": [
-          {"type": "CONSTANT", "value": "2"},
-          {"type": "CONSTANT", "value": "i"}
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "i"
+          }
         ]
       },
-      "steps": ["complex_convert_std_form"]
+      "steps": [
+        "complex_convert_std_form"
+      ]
     },
     {
       "id": "difference",
@@ -87,17 +139,28 @@
       "solution": {
         "type": "ADD",
         "children": [
-          {"type": "CONSTANT", "value": "1"},
+          {
+            "type": "CONSTANT",
+            "value": "1"
+          },
           {
             "type": "MULTIPLY_IMPLICIT",
             "children": [
-              {"type": "CONSTANT", "value": "4"},
-              {"type": "CONSTANT", "value": "i"}
+              {
+                "type": "CONSTANT",
+                "value": "4"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "i"
+              }
             ]
           }
         ]
       },
-      "steps": ["complex_convert_std_form"]
+      "steps": [
+        "complex_convert_std_form"
+      ]
     },
     {
       "id": "conjugate-of-i",
@@ -105,9 +168,16 @@
       "input": "{conj({\\i})}",
       "solution": {
         "type": "NEGATIVE",
-        "children": [{"type": "CONSTANT", "value": "i"}]
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "i"
+          }
+        ]
       },
-      "steps": ["complex_conjugate"]
+      "steps": [
+        "complex_conjugate"
+      ]
     }
   ]
 }

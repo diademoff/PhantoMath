@@ -131,6 +131,8 @@ def solve_complex(node: CoreNode, ctx: SolveContext) -> CoreNode:
     else:
         computed = sympy.conjugate(value)
 
+    if node.type in (T.REAL, T.IMAGINARY):
+        ctx.result.add(Step(left=node, right=None, key="complex_find_parts"))
     result = from_sympy(sympy.simplify(computed))
     ctx.result.add(Step(left=node, right=result, key=_KEY[node.type]))
     return result

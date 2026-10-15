@@ -58,7 +58,7 @@ class TestParts:
     def test_real_part(self) -> None:
         problem = node(T.REAL, Z)
         assert solution_of(problem).value == "1"
-        assert step_keys(problem) == ["complex_rewrite"]
+        assert step_keys(problem) == ["complex_find_parts", "complex_rewrite"]
 
     def test_imaginary_part(self) -> None:
         assert solution_of(node(T.IMAGINARY, Z)).value == "2"
