@@ -168,6 +168,23 @@ class TestConstantsAndUnits:
         assert node.type is T.VARIABLE
         assert node.value == "i"
 
+    def test_euler_number_is_constant(self) -> None:
+        r"""Число Эйлера — явный токен `\e` (CONSTANT_E в редакторе)."""
+        node = parse_protocol("{\\e}")
+        assert node.type is T.CONSTANT
+        assert node.value == "e"
+
+    def test_plain_e_stays_variable(self) -> None:
+        node = parse_protocol("{e}")
+        assert node.type is T.VARIABLE
+        assert node.value == "e"
+
+    def test_natural_log_of_e(self) -> None:
+        node = parse_protocol("{ln({\\e})}")
+        assert node.type is T.LN
+        assert node.children[0].type is T.CONSTANT
+        assert node.children[0].value == "e"
+
     @pytest.mark.parametrize(
         ("source", "expected"),
         [
