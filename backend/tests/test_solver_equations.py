@@ -119,9 +119,9 @@ class TestQuadratic:
 
 
 class TestUnsupported:
-    def test_degree_above_two(self) -> None:
-        with pytest.raises(SolveError, match="второй степени"):
-            solve(parse_protocol("{=({x^3},{1})}"))
+    def test_degree_above_two_is_solved(self) -> None:
+        # Кубические уравнения поддержаны (A4): x^3 = 1 -> x = 1.
+        assert roots_of("{=({x^3},{1})}") == ["1"]
 
     def test_two_variables(self) -> None:
         with pytest.raises(SolveError, match="одно неизвестное"):

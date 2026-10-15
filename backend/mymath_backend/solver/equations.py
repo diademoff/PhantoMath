@@ -8,7 +8,8 @@
 * степень 2 -- дискриминант и корни (точные рациональные, если возможно,
   иначе через знак корня);
 * степень 0 -- либо нет решений, либо решений бесконечно много;
-* степень 3 и выше -- не решается (модули многочленов идут следующими).
+* степень 3 и выше -- разложение на множители (``solve_by_factoring``),
+  корни берёт sympy (только действительные, по возрастанию).
 
 Если многочлен не строится, а неизвестное стоит в знаменателе, уравнение
 решается как **рациональное**: приводится к виду ``числитель / знаменатель =
@@ -526,7 +527,7 @@ def _solve_transcendental(
 
     roots: list[sympy.Expr] = []
     for root in found:
-        if root.is_real is False:
+        if not _is_real_root(root):
             continue
         if _satisfies(left - right, symbol, from_sympy(root)) and not any(
             sympy.simplify(root - known) == 0 for known in roots
@@ -598,6 +599,59 @@ def _log_base(logarithm: sympy.Expr) -> sympy.Expr:
     return logarithm.args[1] if len(logarithm.args) > 1 else sympy.E
 
 
+def _poly_expr(poly: Poly, var: str) -> sympy.Expr:
+    """Многочлен из словаря коэффициентов в выражение sympy."""
+    symbol = sympy.Symbol(var)
+    terms = [
+        sympy.Rational(coeff.numerator, coeff.denominator) * symbol**degree
+        for degree, coeff in poly.items()
+    ]
+    return sympy.Add(*terms)
+
+
+def _solve_high_degree(node: CoreNode, var: str, poly: Poly, ctx: SolveContext) -> CoreNode:
+    """Решить уравнение степени выше второй.
+
+    Показывается разложение многочлена на множители (``solve_by_factoring``),
+    корни берёт sympy (действительные, по возрастанию). Алгебраические корни
+    (``∛``, ``√``) остаются точными узлами.
+    """
+    expression = _poly_expr(poly, var)
+    symbol = sympy.Symbol(var)
+    factored = sympy.factor(expression)
+    factored_equation = CoreNode.node(T.EQUALS, from_sympy(factored), CoreNode.constant("0"))
+    if not factored_equation.structural_eq(node):
+        ctx.result.add(
+            Step(left=node, right=factored_equation, key="solve_by_factoring"), [_HEADER]
+        )
+
+    try:
+        found = sympy.solve(sympy.Eq(expression, 0), symbol)
+    except (TypeError, ValueError, NotImplementedError) as error:
+        raise SolveError("уравнение выше второй степени не решается") from error
+    roots = [root for root in found if _is_real_root(root)]
+    if not roots:
+        raise SolveError("уравнение не имеет действительных корней", "eq_quad_disc_no_solution")
+    roots.sort(key=_sort_key)
+    return _solutions_node(var, [from_sympy(root) for root in roots])
+
+
+def _is_real_root(root: sympy.Expr) -> bool:
+    """Действительный ли корень.
+
+    ``is_real`` у алгебраических выражений может быть ``None``, поэтому
+    сомнительные корни проверяются численно по мнимой части.
+    """
+    if root.is_real is True:
+        return True
+    if root.is_real is False:
+        return False
+    try:
+        return abs(complex(sympy.N(root)).imag) < 1e-9
+    except (TypeError, ValueError):
+        return False
+
+
 @solver_for(T.EQUALS)
 def solve_equation(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Решить уравнение с одним неизвестным.
@@ -635,7 +689,7 @@ def solve_equation(node: CoreNode, ctx: SolveContext) -> CoreNode:
         return _linear_solution(node, lhs, rhs, var, poly, ctx)
     if degree == 2:
         return _quadratic_solution(node, var, poly, ctx)
-    raise SolveError("уравнения выше второй степени пока не решаются")
+    return _solve_high_degree(node, var, poly, ctx)
 
 
 def _run(
@@ -704,7 +758,10 @@ def solve_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
                 )
             )
         return methods
-    raise SolveError("уравнения выше второй степени пока не решаются")
+    result = SolveResult()
+    high_ctx = SolveContext(result=result, variables=list(variables))
+    result.set_solution(_solve_high_degree(node, var, poly, high_ctx))
+    return [result]
 
 
 __all__ = [
