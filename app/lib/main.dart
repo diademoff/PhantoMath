@@ -171,6 +171,8 @@ class _SolvePageState extends State<SolvePage> {
     ('simplify', 'Упростить'),
     ('domain', 'Область определения'),
     ('restrictions', 'ОДЗ'),
+    ('to_fraction', 'В дробь'),
+    ('to_percent', 'В проценты'),
     ('vector_length', 'Длина'),
   ];
 

@@ -11,7 +11,10 @@
 * ``factor`` — разложить на множители (``factorise_call``);
 * ``expand`` — раскрыть (``expand_msg``);
 * ``simplify`` — упростить (``simplify``);
-* ``domain`` — область определения выражения (``domain_find``).
+* ``domain`` — область определения выражения (``domain_find``);
+* ``restrictions`` — недопустимые значения выражения (``rel_restrictions_find``);
+* ``to_fraction`` — десятичную дробь в обыкновенную (``dec_to_frac``);
+* ``to_percent`` — число в проценты (``rewrite_as_percent``).
 
 Для уравнения команда применяется к обеим частям.
 """
@@ -68,12 +71,28 @@ def simplify(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNod
     return _apply_side(node, ctx, "simplify", sympy.simplify)
 
 
+def to_fraction(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Десятичную дробь — в обыкновенную."""
+    del args
+    return _apply_side(node, ctx, "dec_to_frac", sympy.nsimplify)
+
+
+def to_percent(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Число — в проценты."""
+    del args
+    result = CoreNode.node(T.PERCENTAGE, from_sympy(sympy.sympify(to_sympy(node)) * 100))
+    ctx.result.add(Step(left=node, right=result, key="rewrite_as_percent"))
+    return result
+
+
 COMMANDS: dict[str, Command] = {
     "factor": factor,
     "expand": expand,
     "simplify": simplify,
     "domain": domain,
     "restrictions": restrictions,
+    "to_fraction": to_fraction,
+    "to_percent": to_percent,
     **VECTOR_COMMANDS,
     **MATRIX_COMMANDS,
 }
@@ -99,5 +118,8 @@ __all__ = [
     "domain",
     "expand",
     "factor",
+    "restrictions",
     "simplify",
+    "to_fraction",
+    "to_percent",
 ]
