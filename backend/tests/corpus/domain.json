@@ -9,11 +9,25 @@
       "solution": {
         "type": "OPEN_OPEN_INTERVAL",
         "children": [
-          {"type": "NEGATIVE", "children": [{"type": "CONSTANT", "value": "∞"}]},
-          {"type": "CONSTANT", "value": "∞"}
+          {
+            "type": "NEGATIVE",
+            "children": [
+              {
+                "type": "CONSTANT",
+                "value": "∞"
+              }
+            ]
+          },
+          {
+            "type": "CONSTANT",
+            "value": "∞"
+          }
         ]
       },
-      "steps": ["domain_find"]
+      "steps": [
+        "domain_poly_real",
+        "domain_find"
+      ]
     },
     {
       "id": "rational-two-intervals",
@@ -26,20 +40,40 @@
           {
             "type": "OPEN_OPEN_INTERVAL",
             "children": [
-              {"type": "NEGATIVE", "children": [{"type": "CONSTANT", "value": "∞"}]},
-              {"type": "CONSTANT", "value": "1"}
+              {
+                "type": "NEGATIVE",
+                "children": [
+                  {
+                    "type": "CONSTANT",
+                    "value": "∞"
+                  }
+                ]
+              },
+              {
+                "type": "CONSTANT",
+                "value": "1"
+              }
             ]
           },
           {
             "type": "OPEN_OPEN_INTERVAL",
             "children": [
-              {"type": "CONSTANT", "value": "1"},
-              {"type": "CONSTANT", "value": "∞"}
+              {
+                "type": "CONSTANT",
+                "value": "1"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "∞"
+              }
             ]
           }
         ]
       },
-      "steps": ["domain_find"]
+      "steps": [
+        "domain_rational",
+        "domain_find"
+      ]
     },
     {
       "id": "square-root",
@@ -49,11 +83,20 @@
       "solution": {
         "type": "CLOSED_OPEN_INTERVAL",
         "children": [
-          {"type": "CONSTANT", "value": "2"},
-          {"type": "CONSTANT", "value": "∞"}
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "∞"
+          }
         ]
       },
-      "steps": ["domain_find"]
+      "steps": [
+        "domain_even_root",
+        "domain_find"
+      ]
     },
     {
       "id": "logarithm",
@@ -63,11 +106,20 @@
       "solution": {
         "type": "OPEN_OPEN_INTERVAL",
         "children": [
-          {"type": "CONSTANT", "value": "0"},
-          {"type": "CONSTANT", "value": "∞"}
+          {
+            "type": "CONSTANT",
+            "value": "0"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "∞"
+          }
         ]
       },
-      "steps": ["domain_find"]
+      "steps": [
+        "domain_log",
+        "domain_find"
+      ]
     }
   ]
 }

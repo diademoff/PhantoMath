@@ -41,9 +41,40 @@ def domain(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     if len(symbols) > 1:
         raise SolveError("область определения: поддерживается одна переменная")
 
+    if symbols:
+        classification = _classification(expression, symbols[0])
+        if classification is not None:
+            key, classification_args = classification
+            ctx.result.add(Step(left=node, right=None, key=key, args=classification_args))
+
     answer = all_reals() if not symbols else _domain_of(expression, symbols[0])
     ctx.result.add(Step(left=node, right=answer, key=_KEY))
     return answer
+
+
+def _classification(
+    expression: sympy.Expr, symbol: sympy.Symbol
+) -> tuple[str, list[CoreNode]] | None:
+    """Шаг с видом ограничения области определения (или ``None``)."""
+    variable = CoreNode.variable(str(symbol))
+    zero = CoreNode.constant("0")
+    if any(
+        isinstance(power, sympy.Pow)
+        and power.exp == sympy.Rational(1, 2)
+        and power.base.has(symbol)
+        for power in expression.atoms(sympy.Pow)
+    ):
+        return "domain_even_root", [variable, zero]
+    if any(logarithm.args[0].has(symbol) for logarithm in expression.atoms(sympy.log)):
+        return "domain_log", [variable]
+    _, denominator = sympy.fraction(sympy.together(expression))
+    if denominator.has(symbol):
+        return "domain_rational", [variable, zero]
+    try:
+        sympy.Poly(expression, symbol)
+    except sympy.PolynomialError:
+        return None
+    return "domain_poly_real", []
 
 
 def restrictions(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
