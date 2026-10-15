@@ -208,6 +208,24 @@
       "input": "{integral_def({1},{inf},{frac({1},{x^2})})}",
       "solution": {"type": "CONSTANT", "value": "1"},
       "steps": ["integrate_imp_evaluate", "integrate_calc"]
+    },
+    {
+      "id": "improper-discontinuity",
+      "title": "разрыв в пределе: ∫₀¹ 1/√x dx = 2",
+      "input": "{integral_def({0},{1},{frac({1},{root2({x})})})}",
+      "solution": {"type": "CONSTANT", "value": "2"},
+      "steps": [
+        "integrate_imp_find_discon_point",
+        "integrate_imp_evaluate",
+        "integrate_calc"
+      ]
+    },
+    {
+      "id": "iterated",
+      "title": "повторный: ∫₀¹∫₀² x·y² dy dx = 4/3",
+      "input": "{integral_def({0},{1},{integral_def({0},{2},{muli({x},{y^2})})})}",
+      "solution": {"type": "CONSTANT", "value": "4/3"},
+      "steps": ["integrate_iterated", "integrate_iterated_inner", "integrate_calc"]
     }
   ]
 }

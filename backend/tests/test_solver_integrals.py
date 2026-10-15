@@ -81,6 +81,55 @@ class TestDefinite:
         assert solution_of(problem).value == "2"
 
 
+class TestImproper:
+    def test_convergent_discontinuity(self) -> None:
+        # ∫_0^1 1/√x dx = 2: разрыв в нижнем пределе.
+        problem = node(
+            T.INTEGRAL_DEFINITE,
+            c("0"),
+            c("1"),
+            node(T.FRACTION, c("1"), node(T.ROOT2, var())),
+        )
+        assert solution_of(problem).value == "2"
+        assert step_keys(problem) == [
+            "integrate_imp_find_discon_point",
+            "integrate_imp_evaluate",
+            "integrate_calc",
+        ]
+
+    def test_divergent(self) -> None:
+        # ∫_{-1}^1 1/x² dx расходится.
+        denominator = node(T.POWER, var(), c("2"))
+        problem = node(
+            T.INTEGRAL_DEFINITE,
+            c("-1"),
+            c("1"),
+            node(T.FRACTION, c("1"), denominator),
+        )
+        with pytest.raises(SolveError, match="расходится"):
+            solve(problem)
+
+
+class TestIterated:
+    def test_double(self) -> None:
+        # ∫_0^1 ∫_0^2 x·y² dy dx = 4/3 (внутренняя переменная — y).
+        integrand = node(T.MULTIPLY_IMPLICIT, var("x"), node(T.POWER, var("y"), c("2")))
+        inner = node(T.INTEGRAL_DEFINITE, c("0"), c("2"), integrand)
+        problem = node(T.INTEGRAL_DEFINITE, c("0"), c("1"), inner)
+        assert solution_of(problem).value == "4/3"
+        assert step_keys(problem) == [
+            "integrate_iterated",
+            "integrate_iterated_inner",
+            "integrate_calc",
+        ]
+
+    def test_single_variable(self) -> None:
+        inner = node(T.INTEGRAL_DEFINITE, c("0"), c("1"), var("x"))
+        problem = node(T.INTEGRAL_DEFINITE, c("0"), c("1"), inner)
+        with pytest.raises(SolveError, match="две переменные"):
+            solve(problem)
+
+
 class TestUnsupported:
     def test_no_elementary_antiderivative(self) -> None:
         problem = node(T.INTEGRAL, node(T.EXP, node(T.POWER, var(), c("2"))))

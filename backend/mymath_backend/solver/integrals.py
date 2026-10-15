@@ -38,41 +38,128 @@ def _variable(ctx: SolveContext) -> sympy.Symbol:
 @solver_for(T.INTEGRAL, T.INTEGRAL_DEFINITE)
 def solve_integral(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Взять интеграл через sympy."""
-    ctx.require(len(ctx.variables) <= 1, "поддерживается одно неизвестное")
-    symbol = _variable(ctx)
-
-    method_key: str | None = None
     if node.type is T.INTEGRAL:
-        ctx.require(len(node.children) >= 1, "интеграл без подынтегрального выражения")
-        expression = to_sympy(node.children[-1])
-        method_key = _integral_method(expression, symbol)
-        antiderivative = sympy.integrate(expression, symbol)
-        if antiderivative.has(sympy.Integral):
-            raise SolveError("первообразная не выражается через элементарные функции")
-        try:
-            result = from_sympy(sympy.simplify(antiderivative))
-        except SolveError as err:
-            # sympy вернул специальную функцию (erfi, Ei, …): элементарной
-            # первообразной нет, и в наш AST это не переводится.
-            raise SolveError("первообразная не выражается через элементарные функции") from err
-    else:
-        ctx.require(len(node.children) == 3, "определённый интеграл: пределы и выражение")
-        lower, upper, expression_node = node.children
-        lower_value, upper_value = to_sympy(lower), to_sympy(upper)
-        expression = to_sympy(expression_node)
-        if lower_value in (sympy.oo, -sympy.oo) or upper_value in (sympy.oo, -sympy.oo):
-            method_key = "integrate_imp_evaluate"
-        else:
-            method_key = _integral_method(expression, symbol)
-        value = sympy.integrate(expression, (symbol, lower_value, upper_value))
-        if value.has(sympy.Integral) or value is sympy.oo or value is -sympy.oo:
-            raise SolveError("определённый интеграл не вычисляется")
-        result = from_sympy(sympy.simplify(value))
+        ctx.require(len(ctx.variables) <= 1, "поддерживается одно неизвестное")
+        return _indefinite_integral(node, ctx)
+    ctx.require(len(node.children) == 3, "определённый интеграл: пределы и выражение")
+    if node.children[2].type is T.INTEGRAL_DEFINITE:
+        return _iterated_integral(node, ctx)
+    ctx.require(len(ctx.variables) <= 1, "поддерживается одно неизвестное")
+    return _definite_integral(node, ctx)
 
+
+def _indefinite_integral(node: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Неопределённый интеграл: первообразная."""
+    symbol = _variable(ctx)
+    ctx.require(len(node.children) >= 1, "интеграл без подынтегрального выражения")
+    expression = to_sympy(node.children[-1])
+    method_key = _integral_method(expression, symbol)
+    antiderivative = sympy.integrate(expression, symbol)
+    if antiderivative.has(sympy.Integral):
+        raise SolveError("первообразная не выражается через элементарные функции")
+    try:
+        result = from_sympy(sympy.simplify(antiderivative))
+    except SolveError as err:
+        # sympy вернул специальную функцию (erfi, Ei, …): элементарной
+        # первообразной нет, и в наш AST это не переводится.
+        raise SolveError("первообразная не выражается через элементарные функции") from err
     if method_key is not None:
         ctx.result.add(Step(left=node, right=None, key=method_key))
     ctx.result.add(Step(left=node, right=result, key="integrate_calc"))
     return result
+
+
+def _definite_integral(node: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Определённый интеграл; несобственный — с разрывом или бесконечным пределом."""
+    symbol = _variable(ctx)
+    lower, upper, expression_node = node.children
+    lower_value, upper_value = to_sympy(lower), to_sympy(upper)
+    expression = to_sympy(expression_node)
+    infinite = lower_value in (sympy.oo, -sympy.oo) or upper_value in (sympy.oo, -sympy.oo)
+    discontinuous = (
+        [] if infinite else _real_singularities(expression, symbol, lower_value, upper_value)
+    )
+    improper = infinite or bool(discontinuous)
+    method_key = "integrate_imp_evaluate" if improper else _integral_method(expression, symbol)
+    if discontinuous:
+        ctx.result.add(Step(left=node, right=None, key="integrate_imp_find_discon_point"))
+    try:
+        value = sympy.integrate(expression, (symbol, lower_value, upper_value))
+    except (TypeError, ValueError, NotImplementedError) as error:
+        raise SolveError("определённый интеграл не вычисляется") from error
+    if value.has(sympy.Integral):
+        raise SolveError("определённый интеграл не вычисляется")
+    if _diverges(value):
+        if improper:
+            ctx.result.add(Step(left=node, right=None, key="integrate_imp_evaluate"))
+            ctx.result.add(Step(left=node, right=None, key="integrate_imp_diverges_simple"))
+            raise SolveError("несобственный интеграл расходится", "integrate_imp_diverges_simple")
+        raise SolveError("определённый интеграл не вычисляется")
+    result = from_sympy(sympy.simplify(value))
+    if method_key is not None:
+        ctx.result.add(Step(left=node, right=None, key=method_key))
+    ctx.result.add(Step(left=node, right=result, key="integrate_calc"))
+    return result
+
+
+def _iterated_integral(node: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Повторный (двойной) интеграл: внутренний, затем внешний.
+
+    Порядок переменных задаёт появление в дереве: внешняя — первая, внутренняя
+    — последняя (``∫∫ f dy dx`` при обнаружении ``x``, затем ``y``). Это
+    ограничение представления: дифференциалы в узле не хранятся.
+    """
+    ctx.require(len(ctx.variables) == 2, "повторный интеграл: две переменные")
+    outer_var = sympy.Symbol(ctx.variables[0])
+    inner_var = sympy.Symbol(ctx.variables[1])
+    outer_lower, outer_upper, inner = node.children
+    inner_lower, inner_upper, inner_expression = inner.children
+    expression = to_sympy(inner_expression)
+    inner_value = sympy.integrate(
+        expression, (inner_var, to_sympy(inner_lower), to_sympy(inner_upper))
+    )
+    ctx.result.add(Step(left=node, right=None, key="integrate_iterated"))
+    ctx.result.add(Step(left=node, right=None, key="integrate_iterated_inner"))
+    value = sympy.integrate(inner_value, (outer_var, to_sympy(outer_lower), to_sympy(outer_upper)))
+    if _diverges(value) or value.has(sympy.Integral):
+        raise SolveError("повторный интеграл не вычисляется")
+    result = from_sympy(sympy.simplify(value))
+    ctx.result.add(Step(left=node, right=result, key="integrate_calc"))
+    return result
+
+
+def _real_singularities(
+    expression: sympy.Expr, symbol: sympy.Symbol, lower: sympy.Expr, upper: sympy.Expr
+) -> list[sympy.Expr]:
+    """Действительные точки разрыва внутри ``[lower, upper]``."""
+    try:
+        found = sympy.singularities(expression, symbol)
+    except (TypeError, ValueError, NotImplementedError):
+        return []
+    if not isinstance(found, sympy.FiniteSet):
+        return []
+    points: list[sympy.Expr] = []
+    try:
+        low, high = float(sympy.N(lower)), float(sympy.N(upper))
+    except (TypeError, ValueError):
+        return []
+    for point in found:
+        if point.is_real is not True:
+            continue
+        try:
+            value = float(sympy.N(point))
+        except (TypeError, ValueError):
+            continue
+        if low <= value <= high:
+            points.append(point)
+    return points
+
+
+def _diverges(value: sympy.Expr) -> bool:
+    """Расходится ли значение интеграла (бесконечность или не число)."""
+    if value is sympy.nan or value in (sympy.oo, -sympy.oo, sympy.zoo):
+        return True
+    return value.is_real is False
 
 
 def _integral_method(expression: sympy.Expr, symbol: sympy.Symbol) -> str | None:
