@@ -144,6 +144,18 @@ def prove(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     return answer
 
 
+def substitute(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Подставить значение переменной в выражение."""
+    if len(args) != 1:
+        raise SolveError("нужно одно значение для подстановки")
+    if len(ctx.variables) != 1:
+        raise SolveError("подстановка: поддерживается одна переменная")
+    symbol = sympy.Symbol(ctx.variables[0])
+    result = from_sympy(sympy.simplify(to_sympy(node).subs(symbol, to_sympy(args[0]))))
+    ctx.result.add(Step(left=node, right=result, key="substitute_value"))
+    return result
+
+
 COMMANDS: dict[str, Command] = {
     "factor": factor,
     "expand": expand,
@@ -152,6 +164,7 @@ COMMANDS: dict[str, Command] = {
     "restrictions": restrictions,
     "area": area,
     "prove": prove,
+    "substitute": substitute,
     "to_fraction": to_fraction,
     "to_mixed": to_mixed,
     "to_percent": to_percent,
@@ -185,6 +198,7 @@ __all__ = [
     "prove",
     "restrictions",
     "simplify",
+    "substitute",
     "to_fraction",
     "to_mixed",
     "to_percent",
