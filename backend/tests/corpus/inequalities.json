@@ -65,6 +65,19 @@
         ]
       },
       "steps": []
+    },
+    {
+      "id": "greater-than-move",
+      "title": "перенос в строгом неравенстве: x + 3 > 5",
+      "input": "{>({x+3},{5})}",
+      "solution": {
+        "type": "GREATER_THAN",
+        "children": [
+          {"type": "VARIABLE", "value": "x"},
+          {"type": "CONSTANT", "value": "2"}
+        ]
+      },
+      "steps": ["move"]
     }
   ]
 }

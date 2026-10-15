@@ -42,6 +42,20 @@
       "input": "{variation({5},{2})}",
       "solution": {"type": "CONSTANT", "value": "20"},
       "steps": ["variation_not_allowed_calculate"]
+    },
+    {
+      "id": "choose-6-3",
+      "title": "биномиальный коэффициент C(6, 3)",
+      "input": "{choose({6},{3})}",
+      "solution": {"type": "CONSTANT", "value": "20"},
+      "steps": ["choose_calculate"]
+    },
+    {
+      "id": "permutation-3-3",
+      "title": "перестановки P(3, 3) = 3!",
+      "input": "{permutation({3},{3})}",
+      "solution": {"type": "CONSTANT", "value": "6"},
+      "steps": ["permutation_calculate"]
     }
   ]
 }

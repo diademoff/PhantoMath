@@ -78,6 +78,46 @@
         ]
       },
       "steps": ["calculate_short"]
+    },
+    {
+      "id": "length-2d-surd",
+      "title": "длина вектора (1, 1) = √2",
+      "input": "{list({1},{1})}",
+      "command": "vector_length",
+      "solution": {"type": "ROOT2", "children": [{"type": "CONSTANT", "value": "2"}]},
+      "steps": ["calculate_short"]
+    },
+    {
+      "id": "length-3d",
+      "title": "длина вектора (2, 3, 6)",
+      "input": "{list({2},{3},{6})}",
+      "command": "vector_length",
+      "solution": {"type": "CONSTANT", "value": "7"},
+      "steps": ["calculate_short"]
+    },
+    {
+      "id": "scale-fraction",
+      "title": "умножение вектора (2, 4) на 1/2",
+      "input": "{list({2},{4})}",
+      "command": "vector_scale",
+      "args": ["{1/2}"],
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {"type": "CONSTANT", "value": "1"},
+          {"type": "CONSTANT", "value": "2"}
+        ]
+      },
+      "steps": ["calculate_short"]
+    },
+    {
+      "id": "dot-product-vectors",
+      "title": "скалярное произведение (1, 2, 3)·(4, 5, 6)",
+      "input": "{list({1},{2},{3})}",
+      "command": "vector_dot",
+      "args": ["{list({4},{5},{6})}"],
+      "solution": {"type": "CONSTANT", "value": "32"},
+      "steps": ["calculate_short"]
     }
   ]
 }

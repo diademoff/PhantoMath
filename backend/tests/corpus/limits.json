@@ -38,6 +38,37 @@
       "input": "{lim({1},{(x^2-1)/(x-1)})}",
       "solution": {"type": "CONSTANT", "value": "2"},
       "steps": ["limit_solve"]
+    },
+    {
+      "id": "sin-over-x",
+      "title": "первый замечательный: sin x / x при x -> 0",
+      "input": "{lim({0},{sin({x})/x})}",
+      "solution": {"type": "CONSTANT", "value": "1"},
+      "steps": ["limit_solve"]
+    },
+    {
+      "id": "tan-over-x",
+      "title": "предел tan x / x при x -> 0",
+      "input": "{lim({0},{tan({x})/x})}",
+      "solution": {"type": "CONSTANT", "value": "1"},
+      "steps": ["limit_solve"]
+    },
+    {
+      "id": "rational-at-infinity",
+      "title": "предел (2x + 1)/(x - 3) при x -> ∞",
+      "input": "{lim({infty},{(2x+1)/(x-3)})}",
+      "solution": {"type": "CONSTANT", "value": "2"},
+      "steps": ["limit_solve"]
+    },
+    {
+      "id": "right-logarithm",
+      "title": "предел ln x при x -> 0+",
+      "input": "{lim_right({0},{ln({x})})}",
+      "solution": {
+        "type": "NEGATIVE",
+        "children": [{"type": "CONSTANT", "value": "∞"}]
+      },
+      "steps": ["limit_solve"]
     }
   ]
 }

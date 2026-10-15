@@ -28,6 +28,20 @@
       "input": "{det({mat_row({2},{0})},{mat_row({0},{3})})}",
       "solution": {"type": "CONSTANT", "value": "6"},
       "steps": ["det2_calc"]
+    },
+    {
+      "id": "det-5x5-identity",
+      "title": "определитель единичной 5x5",
+      "input": "{det5({1},{0},{0},{0},{0},{0},{1},{0},{0},{0},{0},{0},{1},{0},{0},{0},{0},{0},{1},{0},{0},{0},{0},{0},{1})}",
+      "solution": {"type": "CONSTANT", "value": "1"},
+      "steps": ["det_laplace_rule_row_simple"]
+    },
+    {
+      "id": "det-3x3-zero-row",
+      "title": "определитель с нулевой строкой равен нулю",
+      "input": "{det3({1},{2},{3},{0},{0},{0},{4},{5},{6})}",
+      "solution": {"type": "CONSTANT", "value": "0"},
+      "steps": ["det3_sarrus_eval"]
     }
   ]
 }

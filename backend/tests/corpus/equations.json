@@ -118,6 +118,59 @@
       "input": "{=({x+1},{x+2})}",
       "solution": null,
       "steps": ["false_statement_solve"]
+    },
+    {
+      "id": "quadratic-zero-b-irrational",
+      "title": "квадратное x^2 - 2 = 0: корни ±√2",
+      "input": "{=({x^2-2},{0})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {"type": "VARIABLE", "value": "x"},
+              {
+                "type": "FRACTION",
+                "children": [
+                  {
+                    "type": "NEGATIVE",
+                    "children": [{"type": "ROOT2", "children": [{"type": "CONSTANT", "value": "8"}]}]
+                  },
+                  {"type": "CONSTANT", "value": "2"}
+                ]
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {"type": "VARIABLE", "value": "x"},
+              {
+                "type": "FRACTION",
+                "children": [
+                  {"type": "ROOT2", "children": [{"type": "CONSTANT", "value": "8"}]},
+                  {"type": "CONSTANT", "value": "2"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": ["eq_quad_solve_in_r"]
+    },
+    {
+      "id": "linear-fraction-root",
+      "title": "линейное с дробным корнем: 3x = 1",
+      "input": "{=({3x},{1})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {"type": "VARIABLE", "value": "x"},
+          {"type": "CONSTANT", "value": "1/3"}
+        ]
+      },
+      "steps": ["eq_linar_divide_both_sides"]
     }
   ]
 }

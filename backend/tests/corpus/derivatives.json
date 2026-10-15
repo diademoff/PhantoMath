@@ -101,6 +101,67 @@
         ]
       },
       "steps": ["find_derivative"]
+    },
+    {
+      "id": "cube",
+      "title": "производная x^3",
+      "input": "{derivation_prime({x^3})}",
+      "solution": {
+        "type": "MULTIPLY_IMPLICIT",
+        "children": [
+          {"type": "CONSTANT", "value": "3"},
+          {
+            "type": "POWER",
+            "children": [
+              {"type": "VARIABLE", "value": "x"},
+              {"type": "CONSTANT", "value": "2"}
+            ]
+          }
+        ]
+      },
+      "steps": ["find_derivative"]
+    },
+    {
+      "id": "product-rule",
+      "title": "производная x·sin x (правило произведения)",
+      "input": "{derivation_prime({x*sin({x})})}",
+      "solution": {
+        "type": "ADD",
+        "children": [
+          {"type": "SIN", "children": [{"type": "VARIABLE", "value": "x"}]},
+          {
+            "type": "MULTIPLY",
+            "children": [
+              {"type": "COS", "children": [{"type": "VARIABLE", "value": "x"}]},
+              {"type": "VARIABLE", "value": "x"}
+            ]
+          }
+        ]
+      },
+      "steps": ["find_derivative"]
+    },
+    {
+      "id": "natural-log",
+      "title": "производная ln x",
+      "input": "{derivation_prime({ln({x})})}",
+      "solution": {
+        "type": "FRACTION",
+        "children": [
+          {"type": "CONSTANT", "value": "1"},
+          {"type": "VARIABLE", "value": "x"}
+        ]
+      },
+      "steps": ["find_derivative"]
+    },
+    {
+      "id": "cosine",
+      "title": "производная cos x",
+      "input": "{derivation_prime({cos({x})})}",
+      "solution": {
+        "type": "NEGATIVE",
+        "children": [{"type": "SIN", "children": [{"type": "VARIABLE", "value": "x"}]}]
+      },
+      "steps": ["find_derivative"]
     }
   ]
 }

@@ -104,6 +104,41 @@
       "input": "{\\e}",
       "solution": {"type": "CONSTANT", "value": "e"},
       "steps": []
+    },
+    {
+      "id": "sqrt-of-fraction",
+      "title": "корень из полной дроби: √(4/9) = 2/3",
+      "input": "{root2({frac({4},{9})})}",
+      "solution": {"type": "CONSTANT", "value": "2/3"},
+      "steps": ["root_simplify"]
+    },
+    {
+      "id": "non-square-fraction-kept",
+      "title": "корень неполной дроби остаётся: √(1/2)",
+      "input": "{root2({frac({1},{2})})}",
+      "solution": {"type": "ROOT2", "children": [{"type": "CONSTANT", "value": "1/2"}]},
+      "steps": []
+    },
+    {
+      "id": "sqrt-zero",
+      "title": "корень из нуля",
+      "input": "{root2({0})}",
+      "solution": {"type": "CONSTANT", "value": "0"},
+      "steps": ["root_simplify"]
+    },
+    {
+      "id": "log10-one",
+      "title": "логарифм единицы по основанию 10",
+      "input": "{log10({1})}",
+      "solution": {"type": "CONSTANT", "value": "0"},
+      "steps": ["calculate_short"]
+    },
+    {
+      "id": "fourth-root-16",
+      "title": "корень четвёртой степени из 16",
+      "input": "{root({4},{16})}",
+      "solution": {"type": "CONSTANT", "value": "2"},
+      "steps": ["root_simplify"]
     }
   ]
 }

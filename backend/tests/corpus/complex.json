@@ -52,6 +52,62 @@
         ]
       },
       "steps": ["complex_convert_std_form"]
+    },
+    {
+      "id": "modulus",
+      "title": "модуль комплексного числа |3 + 4i|",
+      "input": "{abs({3+4\\i})}",
+      "solution": {"type": "CONSTANT", "value": "5"},
+      "steps": ["complex_convert_std_form"]
+    },
+    {
+      "id": "i-squared",
+      "title": "мнимая единица в квадрате: i^2 = -1",
+      "input": "{\\i^2}",
+      "solution": {"type": "CONSTANT", "value": "-1"},
+      "steps": ["complex_convert_std_form"]
+    },
+    {
+      "id": "square",
+      "title": "квадрат (1 + i)^2 = 2i",
+      "input": "{(1+\\i)^2}",
+      "solution": {
+        "type": "MULTIPLY_IMPLICIT",
+        "children": [
+          {"type": "CONSTANT", "value": "2"},
+          {"type": "CONSTANT", "value": "i"}
+        ]
+      },
+      "steps": ["complex_convert_std_form"]
+    },
+    {
+      "id": "difference",
+      "title": "разность (2 + i) - (1 - 3i) = 1 + 4i",
+      "input": "{(2+\\i)-(1-3\\i)}",
+      "solution": {
+        "type": "ADD",
+        "children": [
+          {"type": "CONSTANT", "value": "1"},
+          {
+            "type": "MULTIPLY_IMPLICIT",
+            "children": [
+              {"type": "CONSTANT", "value": "4"},
+              {"type": "CONSTANT", "value": "i"}
+            ]
+          }
+        ]
+      },
+      "steps": ["complex_convert_std_form"]
+    },
+    {
+      "id": "conjugate-of-i",
+      "title": "сопряжение мнимой единицы: conj(i) = -i",
+      "input": "{conj({\\i})}",
+      "solution": {
+        "type": "NEGATIVE",
+        "children": [{"type": "CONSTANT", "value": "i"}]
+      },
+      "steps": ["complex_conjugate"]
     }
   ]
 }

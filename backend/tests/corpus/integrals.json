@@ -76,6 +76,84 @@
       "input": "{integral_def({0},{pi},{sin({x})})}",
       "solution": {"type": "CONSTANT", "value": "2"},
       "steps": ["integrate_calc"]
+    },
+    {
+      "id": "constant",
+      "title": "первообразная константы 2",
+      "input": "{integral({2})}",
+      "solution": {
+        "type": "MULTIPLY_IMPLICIT",
+        "children": [
+          {"type": "CONSTANT", "value": "2"},
+          {"type": "VARIABLE", "value": "x"}
+        ]
+      },
+      "steps": ["integrate_calc"]
+    },
+    {
+      "id": "linear-3x",
+      "title": "первообразная 3x",
+      "input": "{integral({3x})}",
+      "solution": {
+        "type": "FRACTION",
+        "children": [
+          {
+            "type": "MULTIPLY_IMPLICIT",
+            "children": [
+              {"type": "CONSTANT", "value": "3"},
+              {
+                "type": "POWER",
+                "children": [
+                  {"type": "VARIABLE", "value": "x"},
+                  {"type": "CONSTANT", "value": "2"}
+                ]
+              }
+            ]
+          },
+          {"type": "CONSTANT", "value": "2"}
+        ]
+      },
+      "steps": ["integrate_calc"]
+    },
+    {
+      "id": "cosine",
+      "title": "первообразная cos x",
+      "input": "{integral({cos({x})})}",
+      "solution": {"type": "SIN", "children": [{"type": "VARIABLE", "value": "x"}]},
+      "steps": ["integrate_calc"]
+    },
+    {
+      "id": "power-three",
+      "title": "первообразная x^3",
+      "input": "{integral({x^3})}",
+      "solution": {
+        "type": "FRACTION",
+        "children": [
+          {
+            "type": "POWER",
+            "children": [
+              {"type": "VARIABLE", "value": "x"},
+              {"type": "CONSTANT", "value": "4"}
+            ]
+          },
+          {"type": "CONSTANT", "value": "4"}
+        ]
+      },
+      "steps": ["integrate_calc"]
+    },
+    {
+      "id": "definite-x-squared",
+      "title": "определённый интеграл x^2 от 0 до 2",
+      "input": "{integral_def({0},{2},{x^2})}",
+      "solution": {"type": "CONSTANT", "value": "8/3"},
+      "steps": ["integrate_calc"]
+    },
+    {
+      "id": "definite-reciprocal",
+      "title": "определённый интеграл 1/x от 1 до 2",
+      "input": "{integral_def({1},{2},{1/x})}",
+      "solution": {"type": "LN", "children": [{"type": "CONSTANT", "value": "2"}]},
+      "steps": ["integrate_calc"]
     }
   ]
 }
