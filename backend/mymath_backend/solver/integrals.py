@@ -98,6 +98,7 @@ def _definite_integral(node: CoreNode, ctx: SolveContext) -> CoreNode:
     result = from_sympy(sympy.simplify(value))
     if method_key is not None:
         ctx.result.add(Step(left=node, right=None, key=method_key))
+    ctx.result.add(Step(left=node, right=None, key="integrate_def_bounds"))
     ctx.result.add(Step(left=node, right=result, key="integrate_calc"))
     return result
 

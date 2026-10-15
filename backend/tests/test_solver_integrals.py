@@ -95,6 +95,7 @@ class TestImproper:
         assert step_keys(problem) == [
             "integrate_imp_find_discon_point",
             "integrate_imp_evaluate",
+            "integrate_def_bounds",
             "integrate_calc",
         ]
 
@@ -180,7 +181,11 @@ class TestMethod:
         # ∫_1^∞ 1/x^2 dx — несобственный.
         denominator = node(T.POWER, var(), c("2"))
         problem = node(T.INTEGRAL_DEFINITE, c("1"), c("∞"), node(T.FRACTION, c("1"), denominator))
-        assert self.keys_of(problem) == ["integrate_imp_evaluate", "integrate_calc"]
+        assert self.keys_of(problem) == [
+            "integrate_imp_evaluate",
+            "integrate_def_bounds",
+            "integrate_calc",
+        ]
 
 
 class TestExplanationKeys:

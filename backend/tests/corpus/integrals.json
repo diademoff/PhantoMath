@@ -11,14 +11,25 @@
           {
             "type": "POWER",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
-              {"type": "CONSTANT", "value": "3"}
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "3"
+              }
             ]
           },
-          {"type": "CONSTANT", "value": "3"}
+          {
+            "type": "CONSTANT",
+            "value": "3"
+          }
         ]
       },
-      "steps": ["integrate_calc"]
+      "steps": [
+        "integrate_calc"
+      ]
     },
     {
       "id": "sine",
@@ -26,23 +37,55 @@
       "input": "{integral({sin({x})})}",
       "solution": {
         "type": "NEGATIVE",
-        "children": [{"type": "COS", "children": [{"type": "VARIABLE", "value": "x"}]}]
+        "children": [
+          {
+            "type": "COS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              }
+            ]
+          }
+        ]
       },
-      "steps": ["integrate_calc"]
+      "steps": [
+        "integrate_calc"
+      ]
     },
     {
       "id": "reciprocal",
       "title": "первообразная 1/x",
       "input": "{integral({1/x})}",
-      "solution": {"type": "LN", "children": [{"type": "VARIABLE", "value": "x"}]},
-      "steps": ["integrate_calc"]
+      "solution": {
+        "type": "LN",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          }
+        ]
+      },
+      "steps": [
+        "integrate_calc"
+      ]
     },
     {
       "id": "exponential",
       "title": "первообразная exp(x)",
       "input": "{integral({exp({x})})}",
-      "solution": {"type": "EXP", "children": [{"type": "VARIABLE", "value": "x"}]},
-      "steps": ["integrate_calc"]
+      "solution": {
+        "type": "EXP",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          }
+        ]
+      },
+      "steps": [
+        "integrate_calc"
+      ]
     },
     {
       "id": "linear",
@@ -54,28 +97,51 @@
           {
             "type": "POWER",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
-              {"type": "CONSTANT", "value": "2"}
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
             ]
           },
-          {"type": "CONSTANT", "value": "2"}
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          }
         ]
       },
-      "steps": ["integrate_calc"]
+      "steps": [
+        "integrate_calc"
+      ]
     },
     {
       "id": "definite-linear",
       "title": "определённый интеграл x от 0 до 1",
       "input": "{integral_def({0},{1},{x})}",
-      "solution": {"type": "CONSTANT", "value": "1/2"},
-      "steps": ["integrate_calc"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "1/2"
+      },
+      "steps": [
+        "integrate_def_bounds",
+        "integrate_calc"
+      ]
     },
     {
       "id": "definite-sine",
       "title": "определённый интеграл sin x от 0 до π",
       "input": "{integral_def({0},{pi},{sin({x})})}",
-      "solution": {"type": "CONSTANT", "value": "2"},
-      "steps": ["integrate_calc"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "2"
+      },
+      "steps": [
+        "integrate_def_bounds",
+        "integrate_calc"
+      ]
     },
     {
       "id": "constant",
@@ -84,11 +150,19 @@
       "solution": {
         "type": "MULTIPLY_IMPLICIT",
         "children": [
-          {"type": "CONSTANT", "value": "2"},
-          {"type": "VARIABLE", "value": "x"}
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          },
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          }
         ]
       },
-      "steps": ["integrate_calc"]
+      "steps": [
+        "integrate_calc"
+      ]
     },
     {
       "id": "linear-3x",
@@ -100,27 +174,51 @@
           {
             "type": "MULTIPLY_IMPLICIT",
             "children": [
-              {"type": "CONSTANT", "value": "3"},
+              {
+                "type": "CONSTANT",
+                "value": "3"
+              },
               {
                 "type": "POWER",
                 "children": [
-                  {"type": "VARIABLE", "value": "x"},
-                  {"type": "CONSTANT", "value": "2"}
+                  {
+                    "type": "VARIABLE",
+                    "value": "x"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
                 ]
               }
             ]
           },
-          {"type": "CONSTANT", "value": "2"}
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          }
         ]
       },
-      "steps": ["integrate_calc"]
+      "steps": [
+        "integrate_calc"
+      ]
     },
     {
       "id": "cosine",
       "title": "первообразная cos x",
       "input": "{integral({cos({x})})}",
-      "solution": {"type": "SIN", "children": [{"type": "VARIABLE", "value": "x"}]},
-      "steps": ["integrate_calc"]
+      "solution": {
+        "type": "SIN",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          }
+        ]
+      },
+      "steps": [
+        "integrate_calc"
+      ]
     },
     {
       "id": "power-three",
@@ -132,28 +230,56 @@
           {
             "type": "POWER",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
-              {"type": "CONSTANT", "value": "4"}
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "4"
+              }
             ]
           },
-          {"type": "CONSTANT", "value": "4"}
+          {
+            "type": "CONSTANT",
+            "value": "4"
+          }
         ]
       },
-      "steps": ["integrate_calc"]
+      "steps": [
+        "integrate_calc"
+      ]
     },
     {
       "id": "definite-x-squared",
       "title": "определённый интеграл x^2 от 0 до 2",
       "input": "{integral_def({0},{2},{x^2})}",
-      "solution": {"type": "CONSTANT", "value": "8/3"},
-      "steps": ["integrate_calc"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "8/3"
+      },
+      "steps": [
+        "integrate_def_bounds",
+        "integrate_calc"
+      ]
     },
     {
       "id": "definite-reciprocal",
       "title": "определённый интеграл 1/x от 1 до 2",
       "input": "{integral_def({1},{2},{1/x})}",
-      "solution": {"type": "LN", "children": [{"type": "CONSTANT", "value": "2"}]},
-      "steps": ["integrate_calc"]
+      "solution": {
+        "type": "LN",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          }
+        ]
+      },
+      "steps": [
+        "integrate_def_bounds",
+        "integrate_calc"
+      ]
     },
     {
       "id": "by-parts",
@@ -164,12 +290,32 @@
         "children": [
           {
             "type": "SUBTRACT",
-            "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "1"}]
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "1"
+              }
+            ]
           },
-          {"type": "EXP", "children": [{"type": "VARIABLE", "value": "x"}]}
+          {
+            "type": "EXP",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              }
+            ]
+          }
         ]
       },
-      "steps": ["integrate_partial", "integrate_calc"]
+      "steps": [
+        "integrate_partial",
+        "integrate_calc"
+      ]
     },
     {
       "id": "substitution",
@@ -181,13 +327,36 @@
           {
             "type": "NEGATIVE",
             "children": [
-              {"type": "COS", "children": [{"type": "MULTIPLY_IMPLICIT", "children": [{"type": "CONSTANT", "value": "2"}, {"type": "VARIABLE", "value": "x"}]}]}
+              {
+                "type": "COS",
+                "children": [
+                  {
+                    "type": "MULTIPLY_IMPLICIT",
+                    "children": [
+                      {
+                        "type": "CONSTANT",
+                        "value": "2"
+                      },
+                      {
+                        "type": "VARIABLE",
+                        "value": "x"
+                      }
+                    ]
+                  }
+                ]
+              }
             ]
           },
-          {"type": "CONSTANT", "value": "2"}
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          }
         ]
       },
-      "steps": ["integrate_using_substitution", "integrate_calc"]
+      "steps": [
+        "integrate_using_substitution",
+        "integrate_calc"
+      ]
     },
     {
       "id": "partial-fractions",
@@ -196,27 +365,93 @@
       "solution": {
         "type": "SUBTRACT",
         "children": [
-          {"type": "FRACTION", "children": [{"type": "LN", "children": [{"type": "SUBTRACT", "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "1"}]}]}, {"type": "CONSTANT", "value": "2"}]},
-          {"type": "FRACTION", "children": [{"type": "LN", "children": [{"type": "ADD", "children": [{"type": "CONSTANT", "value": "1"}, {"type": "VARIABLE", "value": "x"}]}]}, {"type": "CONSTANT", "value": "2"}]}
+          {
+            "type": "FRACTION",
+            "children": [
+              {
+                "type": "LN",
+                "children": [
+                  {
+                    "type": "SUBTRACT",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "x"
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "1"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "type": "FRACTION",
+            "children": [
+              {
+                "type": "LN",
+                "children": [
+                  {
+                    "type": "ADD",
+                    "children": [
+                      {
+                        "type": "CONSTANT",
+                        "value": "1"
+                      },
+                      {
+                        "type": "VARIABLE",
+                        "value": "x"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
+            ]
+          }
         ]
       },
-      "steps": ["integrate_sep_frac_short", "integrate_calc"]
+      "steps": [
+        "integrate_sep_frac_short",
+        "integrate_calc"
+      ]
     },
     {
       "id": "improper",
       "title": "несобственный: ∫₁^∞ 1/x² dx = 1",
       "input": "{integral_def({1},{inf},{frac({1},{x^2})})}",
-      "solution": {"type": "CONSTANT", "value": "1"},
-      "steps": ["integrate_imp_evaluate", "integrate_calc"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "1"
+      },
+      "steps": [
+        "integrate_imp_evaluate",
+        "integrate_def_bounds",
+        "integrate_calc"
+      ]
     },
     {
       "id": "improper-discontinuity",
       "title": "разрыв в пределе: ∫₀¹ 1/√x dx = 2",
       "input": "{integral_def({0},{1},{frac({1},{root2({x})})})}",
-      "solution": {"type": "CONSTANT", "value": "2"},
+      "solution": {
+        "type": "CONSTANT",
+        "value": "2"
+      },
       "steps": [
         "integrate_imp_find_discon_point",
         "integrate_imp_evaluate",
+        "integrate_def_bounds",
         "integrate_calc"
       ]
     },
@@ -224,15 +459,27 @@
       "id": "iterated",
       "title": "повторный: ∫₀¹∫₀² x·y² dy dx = 4/3",
       "input": "{integral_def({0},{1},{integral_def({0},{2},{muli({x},{y^2})})})}",
-      "solution": {"type": "CONSTANT", "value": "4/3"},
-      "steps": ["integrate_iterated", "integrate_iterated_inner", "integrate_calc"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "4/3"
+      },
+      "steps": [
+        "integrate_iterated",
+        "integrate_iterated_inner",
+        "integrate_calc"
+      ]
     },
     {
       "id": "right-dash",
       "title": "подстановка пределов: x²|₀¹ = 1",
       "input": "{integralrightdash({x^2},{0},{1})}",
-      "solution": {"type": "CONSTANT", "value": "1"},
-      "steps": ["integrate_def_bounds"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "1"
+      },
+      "steps": [
+        "integrate_def_bounds"
+      ]
     }
   ]
 }
