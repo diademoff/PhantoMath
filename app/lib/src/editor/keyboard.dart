@@ -122,7 +122,7 @@ final KeyboardPanel _basePanel = KeyboardPanel(
   ],
 );
 
-/// Функции.
+/// Функции: прямые, обратные и гиперболические.
 final KeyboardPanel _functionPanel = KeyboardPanel(
   title: 'f(x)',
   rows: [
@@ -131,30 +131,44 @@ final KeyboardPanel _functionPanel = KeyboardPanel(
       MathKey.template(ENodeKind.cos),
       MathKey.template(ENodeKind.tan),
       MathKey.template(ENodeKind.cot),
-    ],
-    [
-      MathKey.template(ENodeKind.ln),
-      MathKey.template(ENodeKind.log10),
-      MathKey.template(ENodeKind.log),
-      MathKey.template(ENodeKind.exp),
-    ],
-    [
-      MathKey.template(ENodeKind.abs),
-      MathKey.template(ENodeKind.floor),
-      MathKey.template(ENodeKind.sign),
-      MathKey.template(ENodeKind.fraction),
+      MathKey.template(ENodeKind.sec),
+      MathKey.template(ENodeKind.csc),
     ],
     [
       MathKey.template(ENodeKind.asin),
       MathKey.template(ENodeKind.acos),
       MathKey.template(ENodeKind.atan),
       MathKey.template(ENodeKind.acot),
+      MathKey.template(ENodeKind.asec),
+      MathKey.template(ENodeKind.acsc),
     ],
     [
       MathKey.template(ENodeKind.sinh),
       MathKey.template(ENodeKind.cosh),
       MathKey.template(ENodeKind.tanh),
       MathKey.template(ENodeKind.coth),
+      MathKey.template(ENodeKind.sech),
+      MathKey.template(ENodeKind.csch),
+    ],
+    [
+      MathKey.template(ENodeKind.asinh),
+      MathKey.template(ENodeKind.acosh),
+      MathKey.template(ENodeKind.atanh),
+      MathKey.template(ENodeKind.acoth),
+      MathKey.template(ENodeKind.asech),
+      MathKey.template(ENodeKind.acsch),
+    ],
+    [
+      MathKey.template(ENodeKind.ln),
+      MathKey.template(ENodeKind.log10),
+      MathKey.template(ENodeKind.log),
+      MathKey.template(ENodeKind.exp),
+      MathKey.template(ENodeKind.abs),
+      MathKey.template(ENodeKind.floor),
+    ],
+    [
+      MathKey.template(ENodeKind.sign),
+      MathKey.template(ENodeKind.fraction),
       MathKey.operator(ENodeKind.degree),
       MathKey.operator(ENodeKind.radian),
     ],

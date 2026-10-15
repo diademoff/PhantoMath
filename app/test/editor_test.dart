@@ -223,6 +223,15 @@ void main() {
       expect(node.children.single.children.single.value, '30');
     });
 
+    test('обратная гиперболическая функция собирается', () {
+      final c = EditorController();
+      c.insertTemplate(ENodeKind.asinh);
+      _digits(c, '1');
+      final node = solve(c);
+      expect(node.type, CoreNodeType.asinh);
+      expect(node.children.single.value, '1');
+    });
+
     test('вектор даёт список LIST', () {
       final c = EditorController();
       c.insertTemplate(ENodeKind.vector);

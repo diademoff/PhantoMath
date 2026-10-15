@@ -194,6 +194,10 @@ class _EditorViewState extends State<EditorView> {
         return _function('atan', slots[0]);
       case ENodeKind.acot:
         return _function('acot', slots[0]);
+      case ENodeKind.asec:
+        return _function('asec', slots[0]);
+      case ENodeKind.acsc:
+        return _function('acsc', slots[0]);
       case ENodeKind.sinh:
         return _function('sinh', slots[0]);
       case ENodeKind.cosh:
@@ -202,6 +206,22 @@ class _EditorViewState extends State<EditorView> {
         return _function('tanh', slots[0]);
       case ENodeKind.coth:
         return _function('coth', slots[0]);
+      case ENodeKind.sech:
+        return _function('sech', slots[0]);
+      case ENodeKind.csch:
+        return _function('csch', slots[0]);
+      case ENodeKind.asinh:
+        return _function('asinh', slots[0]);
+      case ENodeKind.acosh:
+        return _function('acosh', slots[0]);
+      case ENodeKind.atanh:
+        return _function('atanh', slots[0]);
+      case ENodeKind.acoth:
+        return _function('acoth', slots[0]);
+      case ENodeKind.asech:
+        return _function('asech', slots[0]);
+      case ENodeKind.acsch:
+        return _function('acsch', slots[0]);
       case ENodeKind.ln:
         return _function('ln', slots[0]);
       case ENodeKind.log10:

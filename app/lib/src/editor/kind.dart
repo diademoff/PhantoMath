@@ -64,10 +64,20 @@ enum ENodeKind {
   acos,
   atan,
   acot,
+  asec,
+  acsc,
   sinh,
   cosh,
   tanh,
   coth,
+  sech,
+  csch,
+  asinh,
+  acosh,
+  atanh,
+  acoth,
+  asech,
+  acsch,
   ln,
   log10,
   log,
@@ -126,10 +136,20 @@ extension ENodeKindSpec on ENodeKind {
       case ENodeKind.acos:
       case ENodeKind.atan:
       case ENodeKind.acot:
+      case ENodeKind.asec:
+      case ENodeKind.acsc:
       case ENodeKind.sinh:
       case ENodeKind.cosh:
       case ENodeKind.tanh:
       case ENodeKind.coth:
+      case ENodeKind.sech:
+      case ENodeKind.csch:
+      case ENodeKind.asinh:
+      case ENodeKind.acosh:
+      case ENodeKind.atanh:
+      case ENodeKind.acoth:
+      case ENodeKind.asech:
+      case ENodeKind.acsch:
       case ENodeKind.ln:
       case ENodeKind.log10:
       case ENodeKind.exp:
@@ -323,6 +343,10 @@ extension ENodeKindSpec on ENodeKind {
         return core.CoreNodeType.atan;
       case ENodeKind.acot:
         return core.CoreNodeType.acot;
+      case ENodeKind.asec:
+        return core.CoreNodeType.asec;
+      case ENodeKind.acsc:
+        return core.CoreNodeType.acsc;
       case ENodeKind.sinh:
         return core.CoreNodeType.sinh;
       case ENodeKind.cosh:
@@ -331,6 +355,22 @@ extension ENodeKindSpec on ENodeKind {
         return core.CoreNodeType.tanh;
       case ENodeKind.coth:
         return core.CoreNodeType.coth;
+      case ENodeKind.sech:
+        return core.CoreNodeType.sech;
+      case ENodeKind.csch:
+        return core.CoreNodeType.csch;
+      case ENodeKind.asinh:
+        return core.CoreNodeType.asinh;
+      case ENodeKind.acosh:
+        return core.CoreNodeType.acosh;
+      case ENodeKind.atanh:
+        return core.CoreNodeType.atanh;
+      case ENodeKind.acoth:
+        return core.CoreNodeType.acoth;
+      case ENodeKind.asech:
+        return core.CoreNodeType.asech;
+      case ENodeKind.acsch:
+        return core.CoreNodeType.acsch;
       case ENodeKind.ln:
         return core.CoreNodeType.ln;
       case ENodeKind.log10:
@@ -435,6 +475,10 @@ extension ENodeKindSpec on ENodeKind {
         return 'tan⁻¹';
       case ENodeKind.acot:
         return 'cot⁻¹';
+      case ENodeKind.asec:
+        return 'sec⁻¹';
+      case ENodeKind.acsc:
+        return 'csc⁻¹';
       case ENodeKind.sinh:
         return 'sinh';
       case ENodeKind.cosh:
@@ -443,6 +487,22 @@ extension ENodeKindSpec on ENodeKind {
         return 'tanh';
       case ENodeKind.coth:
         return 'coth';
+      case ENodeKind.sech:
+        return 'sech';
+      case ENodeKind.csch:
+        return 'csch';
+      case ENodeKind.asinh:
+        return 'sinh⁻¹';
+      case ENodeKind.acosh:
+        return 'cosh⁻¹';
+      case ENodeKind.atanh:
+        return 'tanh⁻¹';
+      case ENodeKind.acoth:
+        return 'coth⁻¹';
+      case ENodeKind.asech:
+        return 'sech⁻¹';
+      case ENodeKind.acsch:
+        return 'csch⁻¹';
       case ENodeKind.ln:
         return 'ln';
       case ENodeKind.log10:

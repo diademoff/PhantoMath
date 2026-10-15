@@ -109,6 +109,17 @@ void main() {
       );
     });
 
+    test('гиперболические функции', () {
+      expect(
+        nodeToLatex(CoreNode(type: CoreNodeType.sech, children: [c2])),
+        r'\mathrm{sech}\left($2$\right)',
+      );
+      expect(
+        nodeToLatex(CoreNode(type: CoreNodeType.asinh, children: [c2])),
+        r'\mathrm{asinh}\left($2$\right)',
+      );
+    });
+
     test('список решений через запятую', () {
       final node = CoreNode(
         type: CoreNodeType.list,

@@ -116,6 +116,12 @@ String nodeToLatex(CoreNode node) {
     case CoreNodeType.acot:
       return _wrap(node, r'\mathrm{acot}\left($0\right)');
 
+    case CoreNodeType.asec:
+      return _wrap(node, r'\mathrm{asec}\left($0\right)');
+
+    case CoreNodeType.acsc:
+      return _wrap(node, r'\mathrm{acsc}\left($0\right)');
+
     case CoreNodeType.sinh:
       return _wrap(node, r'\sinh\left($0\right)');
 
@@ -127,6 +133,30 @@ String nodeToLatex(CoreNode node) {
 
     case CoreNodeType.coth:
       return _wrap(node, r'\coth\left($0\right)');
+
+    case CoreNodeType.sech:
+      return _wrap(node, r'\mathrm{sech}\left($0\right)');
+
+    case CoreNodeType.csch:
+      return _wrap(node, r'\mathrm{csch}\left($0\right)');
+
+    case CoreNodeType.asinh:
+      return _wrap(node, r'\mathrm{asinh}\left($0\right)');
+
+    case CoreNodeType.acosh:
+      return _wrap(node, r'\mathrm{acosh}\left($0\right)');
+
+    case CoreNodeType.atanh:
+      return _wrap(node, r'\mathrm{atanh}\left($0\right)');
+
+    case CoreNodeType.acoth:
+      return _wrap(node, r'\mathrm{acoth}\left($0\right)');
+
+    case CoreNodeType.asech:
+      return _wrap(node, r'\mathrm{asech}\left($0\right)');
+
+    case CoreNodeType.acsch:
+      return _wrap(node, r'\mathrm{acsch}\left($0\right)');
 
     case CoreNodeType.log:
       return _wrap(node, r'\log_{$1}\left($0\right)');
