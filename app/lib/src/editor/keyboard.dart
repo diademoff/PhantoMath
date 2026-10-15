@@ -93,6 +93,7 @@ final KeyboardPanel _basePanel = KeyboardPanel(
       MathKey.digit('9'),
       MathKey.operator(ENodeKind.divide),
       MathKey.template(ENodeKind.bracket),
+      MathKey.template(ENodeKind.fraction),
     ],
     [
       MathKey.digit('4'),
@@ -100,20 +101,23 @@ final KeyboardPanel _basePanel = KeyboardPanel(
       MathKey.digit('6'),
       MathKey.operator(ENodeKind.multiply),
       MathKey.template(ENodeKind.power),
+      MathKey.operator(ENodeKind.subtract),
     ],
     [
       MathKey.digit('1'),
       MathKey.digit('2'),
       MathKey.digit('3'),
-      MathKey.operator(ENodeKind.subtract),
+      MathKey.operator(ENodeKind.add),
       MathKey.template(ENodeKind.root2),
+      MathKey.template(ENodeKind.abs),
     ],
     [
       MathKey.digit('0'),
       MathKey.digit('.'),
       MathKey.variable('x'),
-      MathKey.operator(ENodeKind.add),
       MathKey.operator(ENodeKind.equals),
+      MathKey.constant('π'),
+      MathKey.variable('e'),
     ],
   ],
 );
@@ -374,7 +378,11 @@ class _MathKeyboardState extends State<MathKeyboard> {
             flex: key.flex,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: _KeyButton(mathKey: key, onPressed: () => _press(key)),
+              child: _KeyButton(
+                key: ValueKey('key:${key.label}'),
+                mathKey: key,
+                onPressed: () => _press(key),
+              ),
             ),
           ),
       ],
@@ -384,7 +392,7 @@ class _MathKeyboardState extends State<MathKeyboard> {
 
 /// Кнопка одной клавиши.
 class _KeyButton extends StatelessWidget {
-  const _KeyButton({required this.mathKey, required this.onPressed});
+  const _KeyButton({super.key, required this.mathKey, required this.onPressed});
 
   final MathKey mathKey;
   final VoidCallback onPressed;
