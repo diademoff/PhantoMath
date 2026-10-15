@@ -26,6 +26,7 @@
       },
       "steps": [
         "domain_poly_real",
+        "domain_find_defined",
         "domain_find"
       ]
     },
@@ -72,6 +73,7 @@
       },
       "steps": [
         "domain_rational",
+        "domain_find_defined",
         "domain_find"
       ]
     },
@@ -95,6 +97,7 @@
       },
       "steps": [
         "domain_even_root",
+        "domain_find_defined",
         "domain_find"
       ]
     },
@@ -118,6 +121,7 @@
       },
       "steps": [
         "domain_log",
+        "domain_find_defined",
         "domain_find"
       ]
     }

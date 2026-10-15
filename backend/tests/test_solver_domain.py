@@ -48,7 +48,11 @@ class TestDomain:
     def test_polynomial_is_all_reals(self) -> None:
         source = "{x^2+1}"
         assert solution_of(source).structural_eq(all_reals())
-        assert step_keys(source) == ["domain_poly_real", "domain_find"]
+        assert step_keys(source) == [
+            "domain_poly_real",
+            "domain_find_defined",
+            "domain_find",
+        ]
 
     def test_constant_is_all_reals(self) -> None:
         assert solution_of("{5}").structural_eq(all_reals())

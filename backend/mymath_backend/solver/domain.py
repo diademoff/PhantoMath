@@ -48,6 +48,8 @@ def domain(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
             ctx.result.add(Step(left=node, right=None, key=key, args=classification_args))
 
     answer = all_reals() if not symbols else _domain_of(expression, symbols[0])
+    if symbols:
+        ctx.result.add(Step(left=node, right=None, key="domain_find_defined"))
     ctx.result.add(Step(left=node, right=answer, key=_KEY))
     return answer
 
