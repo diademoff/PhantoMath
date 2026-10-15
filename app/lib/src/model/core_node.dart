@@ -123,7 +123,9 @@ enum CoreNodeType {
   verticalMultiply('VERTICAL_MULTIPLY'),
   horizontalMultiply('HORIZONTAL_MULTIPLY'),
   list('LIST'),
-  system('SYSTEM');
+  system('SYSTEM'),
+  function('FUNCTION'),
+  functionInverse('FUNCTION_INVERSE');
 
   const CoreNodeType(this.wire);
 

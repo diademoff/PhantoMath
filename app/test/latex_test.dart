@@ -29,6 +29,23 @@ void main() {
       expect(nodeToLatex(node, stacked), contains('C'));
     });
 
+    test('функция как объект', () {
+      CoreNode variable(String name) =>
+          CoreNode(type: CoreNodeType.variable, value: name);
+      final node = CoreNode(
+        type: CoreNodeType.function,
+        value: 'f',
+        children: [variable('x')],
+      );
+      expect(nodeToLatex(node), r'f\left(x\right)');
+      final inverse = CoreNode(
+        type: CoreNodeType.functionInverse,
+        value: 'f',
+        children: [variable('x')],
+      );
+      expect(nodeToLatex(inverse), r'f^{-1}\left(x\right)');
+    });
+
     test('настройки не влияют на вложенные вызовы', () {
       // Разделитель применяется и к детям, а не сбрасывается на умолчание.
       final node = CoreNode(

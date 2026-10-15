@@ -296,6 +296,10 @@ class _EditorViewState extends State<EditorView> {
           _sub(const Text('2')),
           _functionTail(slots[0]),
         ]);
+      case ENodeKind.functionF:
+        return _function('f', slots[0]);
+      case ENodeKind.functionG:
+        return _function('g', slots[0]);
       default:
         return _rowOf(slots);
     }

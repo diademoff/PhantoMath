@@ -317,6 +317,13 @@ String _nodeBody(CoreNode node) {
     case CoreNodeType.variation:
       return _wrap(node, r'{}^{$0}A_{$1}');
 
+    // ── функции как объекты ─────────────────────────────────────────
+    case CoreNodeType.function:
+      return _wrap(node, '${_escape(node.value ?? 'f')}\\left(\$0\\right)');
+
+    case CoreNodeType.functionInverse:
+      return _wrap(node, '${_escape(node.value ?? 'f')}^{-1}\\left(\$0\\right)');
+
     // ── матрицы ─────────────────────────────────────────────────────
     case CoreNodeType.determinant2:
       return _matrix(node, 2, r'\begin{vmatrix}', r'\end{vmatrix}');

@@ -163,6 +163,14 @@ CoreNode _templateToCore(ENode template) {
           CoreNode(type: CoreNodeType.constant, value: '2'),
         ],
       );
+    // Функции как объекты: имя в `value`, аргумент — в детях.
+    case ENodeKind.functionF:
+    case ENodeKind.functionG:
+      return CoreNode(
+        type: CoreNodeType.function,
+        value: template.kind == ENodeKind.functionF ? 'f' : 'g',
+        children: [_slotToCore(template.children[0])],
+      );
     default:
       break;
   }

@@ -105,6 +105,10 @@ enum ENodeKind {
   powerThree,
   rootThree,
   log2,
+
+  // ── функции как объекты (OPERATOR_FUNCTION[_F|_G]) ──────────────────
+  functionF,
+  functionG,
 }
 
 /// Свойства вида узла: арность, роль в записи и соответствие `CoreNodeType`.
@@ -142,6 +146,8 @@ extension ENodeKindSpec on ENodeKind {
       case ENodeKind.powerThree:
       case ENodeKind.rootThree:
       case ENodeKind.log2:
+      case ENodeKind.functionF:
+      case ENodeKind.functionG:
         return 1;
       case ENodeKind.root2:
       case ENodeKind.abs:
@@ -436,6 +442,9 @@ extension ENodeKindSpec on ENodeKind {
         return core.CoreNodeType.root;
       case ENodeKind.log2:
         return core.CoreNodeType.log;
+      case ENodeKind.functionF:
+      case ENodeKind.functionG:
+        return core.CoreNodeType.function;
       case ENodeKind.row:
         return core.CoreNodeType.empty;
     }
@@ -582,6 +591,10 @@ extension ENodeKindSpec on ENodeKind {
         return '∛';
       case ENodeKind.log2:
         return 'log₂';
+      case ENodeKind.functionF:
+        return 'f(x)';
+      case ENodeKind.functionG:
+        return 'g(x)';
       default:
         return '';
     }
@@ -674,6 +687,10 @@ extension ENodeKindSpec on ENodeKind {
         return 'Кубический корень';
       case ENodeKind.log2:
         return 'Логарифм по основанию 2';
+      case ENodeKind.functionF:
+        return 'Функция f';
+      case ENodeKind.functionG:
+        return 'Функция g';
       default:
         return label;
     }

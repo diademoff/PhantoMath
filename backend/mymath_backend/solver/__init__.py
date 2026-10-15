@@ -35,6 +35,7 @@ from .derivatives import solve_derivative
 from .equations import solve_equation
 from .evaluate import solve_evaluate_expression, solve_mean
 from .fractions import solve_fraction
+from .functions import solve_function_node
 from .inequalities import solve_inequality
 from .integrals import solve_integral
 from .intervals import solve_interval
@@ -215,6 +216,7 @@ __all__ = [
     "solve_factorial",
     "solve_fraction",
     "solve_function",
+    "solve_function_node",
     "solve_inclusion",
     "solve_inequality",
     "solve_integral",

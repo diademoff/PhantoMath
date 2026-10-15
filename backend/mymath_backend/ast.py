@@ -26,6 +26,11 @@ Color = int
 
 _MAX_COLOR = 0xFFFFFFFF
 
+# Типы, у которых допустимо и ``value``, и дети: имя функции хранится в
+# ``value``, а её аргумент — в ``children`` (``f(x)``, ``f⁻¹(x)``). У остальных
+# узлов это взаимоисключающие поля.
+_VALUE_WITH_CHILDREN = frozenset({CoreNodeType.FUNCTION, CoreNodeType.FUNCTION_INVERSE})
+
 
 def _coerce_type(value: CoreNodeType | str) -> CoreNodeType:
     """Привести тип узла к ``CoreNodeType``.
@@ -63,7 +68,7 @@ class CoreNode:
             self.value = str(self.value)
         if self.color is not None and not 0 <= self.color <= _MAX_COLOR:
             raise ValueError(f"цвет вне диапазона ARGB: {self.color}")
-        if self.value is not None and self.children:
+        if self.value is not None and self.children and self.type not in _VALUE_WITH_CHILDREN:
             raise ValueError(
                 f"узел типа {self.type}: нельзя одновременно иметь value "
                 f"({self.value!r}) и потомков"

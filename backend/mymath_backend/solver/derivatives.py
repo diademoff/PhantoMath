@@ -24,7 +24,7 @@ import sympy
 from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
 from .arithmetic import format_number
-from .base import SolveContext, SolveError, Step, solver_for
+from .base import SolveContext, SolveError, SolveResult, Step, solver_for
 from .sympy_bridge import from_sympy, to_sympy
 
 _HEADER = CoreRichText(type="derive_short")
@@ -300,8 +300,40 @@ def solve_derivative(node: CoreNode, ctx: SolveContext) -> CoreNode:
     rule = _rule_step(node, expression, result)
     if rule is not None:
         ctx.result.add(rule, [_HEADER])
-    ctx.result.add(Step(left=node, right=result, key="find_derivative"), [_HEADER])
+    ctx.result.add(
+        Step(
+            left=node,
+            right=result,
+            key="find_derivative",
+            subresult=_derivative_detail(expression, ctx),
+        ),
+        [_HEADER],
+    )
     return result
+
+
+def _derivative_detail(expression: CoreNode, ctx: SolveContext) -> SolveResult | None:
+    """Почленные производные — раскрываемое пояснение для суммы и произведения.
+
+    Для ``(u ± v)'`` и ``(u·v)'`` правило применяется покомпонентно, поэтому
+    под шагом видно производную каждого слагаемого/множителя отдельно.
+    """
+    if expression.type not in (T.ADD, T.SUBTRACT, T.MULTIPLY, T.MULTIPLY_IMPLICIT):
+        return None
+    if len(expression.children) < 2:
+        return None
+    detail = SolveResult()
+    detail_ctx = SolveContext(result=detail, variables=list(ctx.variables))
+    for child in expression.children:
+        try:
+            derived = _diff(child, detail_ctx)
+        except SolveError:
+            try:
+                derived = _sympy_derivative(child, detail_ctx)
+            except SolveError:
+                continue
+        detail_ctx.step(CoreNode.node(T.DERIVATION1, child), derived, "find_derivative")
+    return detail if detail else None
 
 
 def _rule_step(node: CoreNode, expression: CoreNode, result: CoreNode) -> Step | None:

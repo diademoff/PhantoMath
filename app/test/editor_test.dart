@@ -407,5 +407,22 @@ void main() {
       c.insertTemplate(ENodeKind.mixedFraction);
       expect(editorToCoreNode(c.document).type, CoreNodeType.fractionMixed);
     });
+
+    test('f(x) собирается в FUNCTION', () {
+      final c = EditorController();
+      c.insertTemplate(ENodeKind.functionF);
+      c.typeVariable('x');
+      final node = editorToCoreNode(c.document);
+      expect(node.type, CoreNodeType.function);
+      expect(node.value, 'f');
+      expect(node.children.single.value, 'x');
+    });
+
+    test('g(x) собирается в FUNCTION с именем g', () {
+      final c = EditorController();
+      c.insertTemplate(ENodeKind.functionG);
+      c.typeVariable('t');
+      expect(editorToCoreNode(c.document).value, 'g');
+    });
   });
 }

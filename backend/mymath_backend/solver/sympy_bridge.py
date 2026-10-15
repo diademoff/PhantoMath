@@ -23,6 +23,7 @@ from __future__ import annotations
 from fractions import Fraction
 
 import sympy
+from sympy.core.function import AppliedUndef
 
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
@@ -179,6 +180,11 @@ def to_sympy(node: CoreNode) -> sympy.Expr:
     if node_type is T.RADIAN:
         # Радианы -- единица записи без изменения числового значения.
         return to_sympy(node.children[0])
+    if node_type in (T.FUNCTION, T.FUNCTION_INVERSE):
+        name = node.value or "f"
+        if node_type is T.FUNCTION_INVERSE:
+            name = f"{name}_inverse"
+        return sympy.Function(name)(*(to_sympy(child) for child in node.children))
     if node_type in _FUNCTIONS:
         function = getattr(sympy, _FUNCTIONS[node_type])
         return function(to_sympy(node.children[0]))
@@ -215,6 +221,14 @@ def from_sympy(expr: sympy.Expr) -> CoreNode:
         return CoreNode.constant(str(float(expr)))
     if expr.is_Symbol:
         return CoreNode.variable(str(expr))
+    if isinstance(expr, AppliedUndef):
+        arguments = [from_sympy(a) for a in expr.args]
+        name = str(expr.func)
+        if name.endswith("_inverse"):
+            return CoreNode(
+                type=T.FUNCTION_INVERSE, value=name[: -len("_inverse")], children=arguments
+            )
+        return CoreNode(type=T.FUNCTION, value=name, children=arguments)
 
     if isinstance(expr, sympy.Add):
         return _from_add(expr)

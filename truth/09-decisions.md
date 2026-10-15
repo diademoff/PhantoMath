@@ -121,7 +121,8 @@
 
 | # | Решение | Где в коде |
 |---|---|---|
-| 59 | **Раскрываемое углублённое пояснение шага** — контрактное поле `subresult` (вложение `CoreSolverVerticalResult`); генерируется для шага вычисления значения (`EVALUATE_EXPRESSION`), показывается блоком «Подробнее» | `solver/evaluate.py`, `service.py` (`attach_text` рекурсирует в `subresult`), `app/lib/src/api/solver_api.dart`, `app/lib/main.dart` |
+| 59 | **Раскрываемое углублённое пояснение шага** — контрактное поле `subresult` (вложение `CoreSolverVerticalResult`); генерируется для вычисления значения (`EVALUATE_EXPRESSION`), производной (почленно для суммы/произведения) и корней квадратного уравнения (дискриминант + итог); показывается блоком «Подробнее» | `solver/evaluate.py`, `solver/derivatives.py`, `solver/equations.py`, `service.py` (`attach_text` рекурсирует в `subresult`), `app/lib/src/api/solver_api.dart`, `app/lib/main.dart` |
+| 69 | **Узел `FUNCTION`/`FUNCTION_INVERSE`** — функция как объект: имя в `value`, аргумент в детях (для этих типов `value` и дети сосуществуют); `to_sympy`/`from_sympy` знают их, модуль нормализует аргумент (`f(2+3)` → `f(5)`), сам узел остаётся символьным | `solver/functions.py`, `solver/sympy_bridge.py`, `ast.py`, `app/lib/src/model/core_node.dart`, `app/lib/src/render/latex.dart`, `app/lib/src/editor/kind.dart` |
 | 60 | **Копировать результат** — LaTeX ответа (или текст шага) в буфер обмена | `app/lib/main.dart` (`_copyResult`, `_copyFormula`) |
 | 61 | **Выбор способа решения — общий механизм**: провайдеры способов регистрируются по типу узла, `solve` не знает про конкретные типы | `solver/methods.py`, `solver/equations.py`, `solver/systems.py`, `solver/__init__.py` |
 | 62 | **Блокнот: метаданные задачи** (uuid, version, source, command, locale, methodIndex) повторяют `ResultItemMetadata` APK; **очистка обратима** («История очищена»/«Отменить») | `app/lib/src/notebook/notebook.dart`, `app/lib/src/notebook/notebook_page.dart` |
@@ -132,7 +133,11 @@
 | 67 | **Предпросмотр ввода** — текущее дерево редактора показывается набором (`flutter_math`) над клавиатурой | `app/lib/main.dart` (`_preview`) |
 | 68 | Экран **настроек** — десятичный знак, биномиальный коэффициент, методы умножения/деления | `app/lib/src/settings/settings_page.dart` |
 
-Не поддержано (помечено в каталоге с причиной): узел `FUNCTION` (`f(x)`/`g(x)`), `±` (`ADD_SUBTRACT`), подстрочный индекс (`a_n`), `π/2`, `π/3`, многострочный ввод.
+Не поддержано (помечено в каталоге с причиной): `±` (`ADD_SUBTRACT`), подстрочный индекс (`a_n`), `π/2`, `π/3`, многострочный ввод.
+
+`f(x)`/`g(x)` теперь доступны: узел `FUNCTION` реализован (#69). Производная
+неизвестной функции (`d/dx f(x)`) по-прежнему не выражается — определения
+функции нет.
 
 ## Следующее (открыто)
 

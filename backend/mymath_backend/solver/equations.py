@@ -314,8 +314,31 @@ def _quadratic_solution(
         [_HEADER],
     )
     key = "solve_by_factoring" if factoring else "eq_quad_solve_in_r"
-    ctx.result.add(Step(left=node, right=solution, key=key), [_HEADER])
+    ctx.result.add(
+        Step(
+            left=node,
+            right=solution,
+            key=key,
+            subresult=_quadratic_detail(discriminant, solution),
+        ),
+        [_HEADER],
+    )
     return solution
+
+
+def _quadratic_detail(discriminant: Fraction, solution: CoreNode) -> SolveResult:
+    """Раскрываемое пояснение корней: значение дискриминанта и итог.
+
+    Показывает вычисленный дискриминант и финальную запись корней — то, что
+    в развёрнутом виде объясняет формулу.
+    """
+    detail = SolveResult()
+    detail_ctx = SolveContext(result=detail, variables=[])
+    detail_ctx.step(None, None, "eq_quad_disc_calculate", _const(discriminant))
+    single = solution.type is T.EQUALS
+    detail_ctx.step(None, solution, "quad_final_single" if single else "quad_final_multi")
+    detail.set_solution(solution)
+    return detail
 
 
 def _quad_root(
