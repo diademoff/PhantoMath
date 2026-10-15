@@ -25,8 +25,27 @@ const String _placeholder = r'\square';
 /// Собрать LaTeX для узла.
 ///
 /// Возвращает пустую строку для листьев без значения и для `EMPTY`:
-/// вызывающий покажет заглушку.
+/// вызывающий покажет заглушку. Подсветка (`color`) и зачёркивание
+/// (`crossed`) оборачивают результат: это микро-анимация шага.
 String nodeToLatex(CoreNode node) {
+  final latex = _nodeBody(node);
+  return _styled(node, latex);
+}
+
+/// Обернуть LaTeX подсветкой/зачёркиванием узла.
+String _styled(CoreNode node, String latex) {
+  if (latex.isEmpty) return latex;
+  var out = latex;
+  if (node.crossed == true) out = '\\cancel{$out}';
+  if (node.color != null) {
+    final rgb = (node.color! & 0xFFFFFF).toRadixString(16).padLeft(6, '0');
+    out = '\\textcolor{#$rgb}{$out}';
+  }
+  return out;
+}
+
+/// Тело узла без подсветки и зачёркивания.
+String _nodeBody(CoreNode node) {
   switch (node.type) {
     // ── листья ──────────────────────────────────────────────────────
     case CoreNodeType.constant:

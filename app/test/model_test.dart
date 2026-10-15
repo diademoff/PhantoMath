@@ -55,6 +55,19 @@ void main() {
         expect(CoreNodeType.fromWire(type.wire), type);
       }
     });
+
+    test('разбирает подсветку и зачёркивание', () {
+      final node = CoreNode.fromJson({
+        'type': 'CONSTANT',
+        'value': '8',
+        'crossed': true,
+        'color': 0xFFFF0000,
+      });
+      expect(node.crossed, isTrue);
+      expect(node.color, 0xFFFF0000);
+      expect(node.toJson()['crossed'], isTrue);
+      expect(node.toJson()['color'], 0xFFFF0000);
+    });
   });
 
   group('nodeToLatex', () {
@@ -151,6 +164,30 @@ void main() {
       final node = CoreNode(type: CoreNodeType.add, children: [c2]);
       expect(nodeToLatex(node), contains(r'\square'));
     });
+
+    test('подсветка и зачёркивание оборачивают формулу', () {
+      final crossed = CoreNode(
+        type: CoreNodeType.constant,
+        value: '8',
+        crossed: true,
+      );
+      expect(nodeToLatex(crossed), r'\cancel{8}');
+
+      final colored = CoreNode(
+        type: CoreNodeType.constant,
+        value: 'x',
+        color: 0xFFFF0000,
+      );
+      expect(nodeToLatex(colored), r'\textcolor{#ff0000}{x}');
+
+      final both = CoreNode(
+        type: CoreNodeType.constant,
+        value: '8',
+        crossed: true,
+        color: 0xFF00FF00,
+      );
+      expect(nodeToLatex(both), r'\textcolor{#00ff00}{\cancel{8}}');
+    });
   });
 
   group('nodeToLatex рендерится', () {
@@ -181,6 +218,8 @@ void main() {
           type: CoreNodeType.determinant2,
           children: [c2, c3, c3, c2],
         ),
+        // Микро-анимация: зачёркнутая часть.
+        CoreNode(type: CoreNodeType.constant, value: '8', crossed: true),
         // Серия общего решения тригонометрического уравнения: x = π/6 + 2πk.
         bin(
           CoreNodeType.equals,

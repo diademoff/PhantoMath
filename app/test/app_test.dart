@@ -60,6 +60,25 @@ void main() {
     expect(find.byKey(const ValueKey('solve')), findsOneWidget);
   });
 
+  testWidgets('подключена тёмная тема', (tester) async {
+    await tester.pumpWidget(MyMathApp(baseUrl: 'http://test'));
+    await tester.pump();
+    final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(app.darkTheme, isNotNull);
+    expect(app.themeMode, ThemeMode.system);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('у клавиш есть словесные метки для screen reader', (tester) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(MaterialApp(home: SolvePage(api: _api())));
+    await tester.pump();
+    expect(find.bySemanticsLabel('Дробь'), findsWidgets);
+    expect(find.bySemanticsLabel('Плюс'), findsWidgets);
+    handle.dispose();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('набор с клавиатуры и решение', (tester) async {
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: _api())));
     await tester.pump();

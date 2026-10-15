@@ -39,20 +39,23 @@ class _EditorViewState extends State<EditorView> {
     return AnimatedBuilder(
       animation: widget.controller,
       builder: (context, _) {
-        return Container(
-          width: double.infinity,
-          constraints: const BoxConstraints(minHeight: 72),
-          alignment: Alignment.centerLeft,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DefaultTextStyle.merge(
-              style: TextStyle(
-                fontSize: _fs,
-                height: 1.25,
-                color: theme.colorScheme.onSurface,
+        return Semantics(
+          label: 'Поле ввода математического выражения',
+          child: Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(minHeight: 72),
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DefaultTextStyle.merge(
+                style: TextStyle(
+                  fontSize: _fs,
+                  height: 1.25,
+                  color: theme.colorScheme.onSurface,
+                ),
+                child: _row(_document, const []),
               ),
-              child: _row(_document, const []),
             ),
           ),
         );

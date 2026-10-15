@@ -49,6 +49,14 @@ class MyMathApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2C6BED)),
         useMaterial3: true,
       ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF2C6BED),
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+      ),
+      themeMode: ThemeMode.system,
       home: SolvePage(api: SolverApi(baseUrl: baseUrl)),
     );
   }
@@ -691,12 +699,15 @@ class _Math extends StatelessWidget {
     if (latex.isEmpty) {
       return const SizedBox.shrink();
     }
-    return Math.tex(
-      latex,
-      mathStyle: MathStyle.display,
-      onErrorFallback: (error) => Text(
+    return Semantics(
+      label: 'Формула',
+      child: Math.tex(
         latex,
-        style: TextStyle(color: Theme.of(context).colorScheme.error),
+        mathStyle: MathStyle.display,
+        onErrorFallback: (error) => Text(
+          latex,
+          style: TextStyle(color: Theme.of(context).colorScheme.error),
+        ),
       ),
     );
   }

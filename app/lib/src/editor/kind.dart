@@ -535,4 +535,83 @@ extension ENodeKindSpec on ENodeKind {
         return '';
     }
   }
+
+  /// Описание клавиши словами — для подсказки и screen reader.
+  ///
+  /// Символьные подписи (`⁄`, `xⁿ`, `|x|`) сами по себе непонятны, поэтому
+  /// у каждой конструкции есть короткое название. Для остальных видов
+  /// описание совпадает с подписью.
+  String get description {
+    switch (this) {
+      case ENodeKind.add:
+        return 'Плюс';
+      case ENodeKind.subtract:
+        return 'Минус';
+      case ENodeKind.multiply:
+        return 'Умножить';
+      case ENodeKind.divide:
+        return 'Разделить';
+      case ENodeKind.equals:
+        return 'Равно';
+      case ENodeKind.notEquals:
+        return 'Не равно';
+      case ENodeKind.lessThan:
+        return 'Меньше';
+      case ENodeKind.lessThanEqual:
+        return 'Меньше или равно';
+      case ENodeKind.greaterThan:
+        return 'Больше';
+      case ENodeKind.greaterThanEqual:
+        return 'Больше или равно';
+      case ENodeKind.factorial:
+        return 'Факториал';
+      case ENodeKind.percentage:
+        return 'Проценты';
+      case ENodeKind.fraction:
+        return 'Дробь';
+      case ENodeKind.power:
+        return 'Степень';
+      case ENodeKind.root2:
+        return 'Квадратный корень';
+      case ENodeKind.rootN:
+        return 'Корень n-й степени';
+      case ENodeKind.abs:
+        return 'Модуль';
+      case ENodeKind.bracket:
+        return 'Скобки';
+      case ENodeKind.vector:
+        return 'Вектор';
+      case ENodeKind.system2:
+        return 'Система уравнений';
+      case ENodeKind.determinant2:
+      case ENodeKind.determinant3:
+        return 'Определитель';
+      case ENodeKind.degree:
+        return 'Градусы';
+      case ENodeKind.radian:
+        return 'Радианы';
+      case ENodeKind.floor:
+        return 'Целая часть';
+      case ENodeKind.sign:
+        return 'Знак числа';
+      case ENodeKind.derivative:
+        return 'Производная';
+      case ENodeKind.integral:
+        return 'Неопределённый интеграл';
+      case ENodeKind.integralDefinite:
+        return 'Определённый интеграл';
+      case ENodeKind.limit:
+        return 'Предел';
+      case ENodeKind.sigma:
+        return 'Сумма';
+      case ENodeKind.choose:
+        return 'Биномиальный коэффициент';
+      case ENodeKind.permutation:
+        return 'Перестановки';
+      case ENodeKind.variation:
+        return 'Размещения';
+      default:
+        return label;
+    }
+  }
 }

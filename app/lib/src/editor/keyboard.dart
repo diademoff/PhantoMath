@@ -440,14 +440,17 @@ class _KeyButton extends StatelessWidget {
       MathKeyType.clear => true,
       _ => false,
     };
-    return SizedBox(
-      height: 46,
+    // Подпись словами: символьные клавиши (`⁄`, `xⁿ`, `|x|`) иначе читаются
+    // непонятно — и как подсказка, и в screen reader.
+    final described = mathKey.kind?.description ?? mathKey.label;
+    final child = SizedBox(
+      height: 48,
       child: isAction
           ? OutlinedButton(
               onPressed: onPressed,
               style: OutlinedButton.styleFrom(
                 padding: EdgeInsets.zero,
-                minimumSize: const Size(0, 46),
+                minimumSize: const Size(0, 48),
               ),
               child: Text(mathKey.label, style: const TextStyle(fontSize: 18)),
             )
@@ -455,13 +458,18 @@ class _KeyButton extends StatelessWidget {
               onPressed: onPressed,
               style: FilledButton.styleFrom(
                 padding: EdgeInsets.zero,
-                minimumSize: const Size(0, 46),
+                minimumSize: const Size(0, 48),
               ),
               child: Text(
                 mathKey.label,
                 style: const TextStyle(fontSize: 18),
               ),
             ),
+    );
+    return Semantics(
+      button: true,
+      label: described,
+      child: Tooltip(message: described, child: child),
     );
   }
 }

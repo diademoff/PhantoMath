@@ -104,7 +104,13 @@ enum CoreNodeType {
 /// Узел выражения.
 @immutable
 class CoreNode {
-  const CoreNode({required this.type, this.value, this.children = const []});
+  const CoreNode({
+    required this.type,
+    this.value,
+    this.children = const [],
+    this.color,
+    this.crossed,
+  });
 
   /// Узел из JSON ответа бэкенда.
   ///
@@ -121,6 +127,8 @@ class CoreNode {
         for (final child in rawChildren)
           if (child is Map<String, dynamic>) CoreNode.fromJson(child),
       ],
+      color: json['color'] as int?,
+      crossed: json['crossed'] as bool?,
     );
   }
 
@@ -130,6 +138,12 @@ class CoreNode {
   final String? value;
 
   final List<CoreNode> children;
+
+  /// Цвет подсветки части выражения (ARGB) — микро-анимация шага.
+  final int? color;
+
+  /// Зачёркнута ли часть выражения (сокращаемая часть) — микро-анимация.
+  final bool? crossed;
 
   /// Разбор разошёлся ли с контрактом: попался неизвестный тип.
   static bool hadUnknownTypeIn(Map<String, dynamic> json) =>
@@ -148,6 +162,8 @@ class CoreNode {
     if (value != null) 'value': value,
     if (children.isNotEmpty)
       'children': [for (final child in children) child.toJson()],
+    if (color != null) 'color': color,
+    if (crossed != null) 'crossed': crossed,
   };
 
   @override
@@ -155,10 +171,13 @@ class CoreNode {
       other is CoreNode &&
       other.type == type &&
       other.value == value &&
+      other.color == color &&
+      other.crossed == crossed &&
       _sameChildren(children, other.children);
 
   @override
-  int get hashCode => Object.hash(type, value, Object.hashAll(children));
+  int get hashCode =>
+      Object.hash(type, value, color, crossed, Object.hashAll(children));
 
   static bool _sameChildren(List<CoreNode> a, List<CoreNode> b) {
     if (a.length != b.length) return false;
