@@ -64,7 +64,7 @@ def _vertical_entries(data: Any) -> list[CoreSolverVerticalResult]:
     group = data.result.group(ResultGroupType.VERTICAL)
     assert group is not None, "нет вертикальной ветки"
     return [
-        CoreSolverVerticalResult.model_validate(entry.result)
+        CoreSolverVerticalResult.from_contract(entry.result)
         for entry in group.entries
         if entry.result and "steps" in entry.result
     ]

@@ -107,7 +107,7 @@ class SolveRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     node: dict[str, Any] = Field(description="Выражение в формате CoreNode (AST-JSON)")
-    action: CoreAction | None = Field(
+    action: dict[str, Any] | None = Field(
         default=None,
         description="Действие над выражением (CoreAction): solve/factor/expand/simplify",
     )
@@ -311,10 +311,17 @@ def create_app() -> FastAPI:
                 ) from err
 
         try:
+            action = CoreAction.from_contract(payload.action) if payload.action else None
+        except (KeyError, ValueError) as err:
+            raise HTTPException(
+                status_code=422, detail=f"не удалось разобрать действие: {err}"
+            ) from err
+
+        try:
             data = solve(
                 node,
-                command=payload.action.command if payload.action else None,
-                args=payload.action.args if payload.action else None,
+                command=action.command if action else None,
+                args=action.args if action else None,
                 interval=interval,
             )
         except SolveError as err:

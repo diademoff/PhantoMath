@@ -21,6 +21,7 @@ from ..results import (
     CoreSolverResult,
     CoreSolverVerticalResult,
     CoreSolverVerticalStep,
+    CoreSolverVerticalSubstep,
     Entry,
     ResultGroupType,
 )
@@ -55,15 +56,6 @@ class Step:
     args: list[CoreNode] = field(default_factory=list)
     headers: list[CoreRichText] = field(default_factory=list)
     subresult: SolveResult | None = None
-
-    def to_contract(self) -> dict[str, Any]:
-        """Подшаг в формате ``CoreSolverVerticalSubstep``."""
-        return {
-            "description": CoreRichText(type=self.key, args=list(self.args)).to_contract(),
-            "left": self.left.to_contract() if self.left else None,
-            "right": self.right.to_contract() if self.right else None,
-            "subresult": self.subresult.to_contract() if self.subresult else None,
-        }
 
 
 class SolveResult:
@@ -119,23 +111,29 @@ class SolveResult:
     def to_vertical(self) -> CoreSolverVerticalResult:
         """Собрать вертикальный результат для контракта."""
         steps = [
-            CoreSolverVerticalStep.model_validate(
-                {
-                    "headers": [h.to_contract() for h in heads],
-                    "substeps": [s.to_contract() for s in subs],
-                }
+            CoreSolverVerticalStep(
+                step_headers=list(heads),
+                substeps=[
+                    CoreSolverVerticalSubstep(
+                        description=CoreRichText(type=sub.key, args=list(sub.args)),
+                        left=sub.left,
+                        right=sub.right,
+                        subresult=sub.subresult.to_vertical() if sub.subresult else None,
+                    )
+                    for sub in subs
+                ],
             )
             for heads, subs in self._steps
         ]
         return CoreSolverVerticalResult(
             header=CoreRichText(type=self.header) if self.header else None,
-            solutionNode=self.solution,
+            solution=self.solution,
             steps=steps,
         )
 
     def to_contract(self) -> dict[str, Any]:
         """Вертикальный результат целиком, готовый к отдаче."""
-        return self.to_vertical().model_dump(by_alias=True, exclude_none=True)
+        return self.to_vertical().to_contract()
 
 
 @dataclass(slots=True)
@@ -261,7 +259,7 @@ def build_solver_data(
         entries.append(_vertical_entry(alternative))
     vertical = result.to_vertical()
     return CoreSolverData(
-        normalizedInputNodeStr=None,
+        normalized_input_node_str=None,
         result=CoreSolverResult(
             problem=node,
             solution=vertical.solution,
@@ -269,7 +267,7 @@ def build_solver_data(
                 CoreSolverGroup(
                     type=ResultGroupType.VERTICAL,
                     description=None,
-                    selectMethodText=(
+                    select_method_text=(
                         CoreRichText(type=select_method_text) if select_method_text else None
                     ),
                     entries=entries,
@@ -283,7 +281,7 @@ def _vertical_entry(result: SolveResult) -> Entry:
     """Одна запись вертикальной ветки: все шаги одного способа."""
     return Entry(
         action=None,
-        result=result.to_vertical().model_dump(by_alias=True, exclude_none=True),
+        result=result.to_vertical().to_contract(),
     )
 
 

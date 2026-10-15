@@ -264,7 +264,5 @@ class TestJsonInput:
         assert from_json.structural_eq(from_protocol)
 
     def test_json_rejects_unknown_type(self) -> None:
-        from pydantic import ValidationError
-
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             parse_json({"type": "НЕТ_ТАКОГО", "value": "1"})

@@ -6,22 +6,43 @@
 список вложенных узлов.
 
 Разбор: ``truth/03-solver-contract.md`` раздел 3.2.
+
+Модели -- обычные dataclasses, а не pydantic: так решатель и модели
+контракта не тянут ``pydantic-core`` (Rust) и работают на устройстве под
+встроенным CPython (см. ``truth/06-plan.md``). Валидация, которую раньше
+делал pydantic, выполняется в ``__post_init__``.
 """
 
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import Annotated, Any, Literal, Self
-
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from dataclasses import dataclass, field
+from typing import Any, Self
 
 from .node_types import CoreNodeType
 
 # ARGB: 0xAARRGGBB. Photomath отдаёт целое, а не отдельные каналы.
-Color = Annotated[int, Field(ge=0, le=0xFFFFFFFF, description="Цвет ARGB")]
+Color = int
+
+_MAX_COLOR = 0xFFFFFFFF
 
 
-class CoreNode(BaseModel):
+def _coerce_type(value: CoreNodeType | str) -> CoreNodeType:
+    """Привести тип узла к ``CoreNodeType``.
+
+    Принимает и enum, и строку (``"ADD"``) -- как это делал pydantic
+    в lax-режиме. Неизвестное имя -- ошибка формата.
+    """
+    if isinstance(value, CoreNodeType):
+        return value
+    try:
+        return CoreNodeType(str(value).upper())
+    except ValueError as err:
+        raise ValueError(f"неизвестный тип узла: {value!r}") from err
+
+
+@dataclass
+class CoreNode:
     """Узел выражения.
 
     Терминал -- ``value`` без потомков. Ветка -- ``type`` без ``value``.
@@ -29,22 +50,24 @@ class CoreNode(BaseModel):
     результата по шагам.
     """
 
-    model_config = ConfigDict(populate_by_name=True, validate_assignment=True)
+    type: CoreNodeType
+    value: str | None = None
+    children: list[CoreNode] = field(default_factory=list)
+    color: Color | None = None
+    crossed: bool | None = None
 
-    type: CoreNodeType = Field(description="Тип узла, имя элемента CoreNodeType")
-    value: str | None = Field(default=None, description="Текст терминала")
-    children: list[CoreNode] = Field(default_factory=list, description="Потомки")
-    color: Color | None = Field(default=None, description="Цвет ARGB или null")
-    crossed: bool | None = Field(default=None, description="Зачёркнута ли часть")
-
-    @model_validator(mode="after")
-    def _check_shape(self) -> Self:
+    def __post_init__(self) -> None:
+        """Проверить форму узла и привести тип к enum."""
+        self.type = _coerce_type(self.type)
+        if self.value is not None:
+            self.value = str(self.value)
+        if self.color is not None and not 0 <= self.color <= _MAX_COLOR:
+            raise ValueError(f"цвет вне диапазона ARGB: {self.color}")
         if self.value is not None and self.children:
             raise ValueError(
                 f"узел типа {self.type}: нельзя одновременно иметь value "
                 f"({self.value!r}) и потомков"
             )
-        return self
 
     # -- обход ---------------------------------------------------------
 
@@ -90,8 +113,8 @@ class CoreNode(BaseModel):
         """Структурное равенство, игнорирующее порядок полей.
 
         Нужно решателю, чтобы сравнивать промежуточные выражения между
-        шагами. Отличается от ``==`` из pydantic, который чувствителен
-        к типам ``value`` (``"3"`` и ``3``).
+        шагами. Отличается от ``==``: тот чувствителен к типу ``value``
+        (``"3"`` и ``3``) и к классу узла (colored/plain).
         """
         if not isinstance(other, CoreNode):
             return False
@@ -107,7 +130,8 @@ class CoreNode(BaseModel):
     def to_contract(self) -> dict[str, Any]:
         """Формат контракта из ``truth/03-solver-contract.md`` раздел 3.2.
 
-        ``None``-поля опускаются, как это делает Gson по умолчанию.
+        ``None``-поля и пустой список потомков опускаются, как это делает
+        Gson по умолчанию.
         """
         out: dict[str, Any] = {"type": self.type.value}
         if self.value is not None:
@@ -124,7 +148,7 @@ class CoreNode(BaseModel):
     def from_contract(cls, data: dict[str, Any]) -> CoreNode:
         """Разобрать узел из формата контракта.
 
-        ``color`` и ``crossed`` поднимаются в ``CoreColoredNode``, если
+        ``color`` и ``crossed`` поднимают узел до ``CoreColoredNode``, если
         присутствуют: именно так работает полиморфный адаптер оригинала
         (``CoreColoredNodeDeserializer``).
         """
@@ -135,12 +159,12 @@ class CoreNode(BaseModel):
             "value": payload.get("value"),
             "children": [cls.from_contract(c) for c in payload.get("children", [])],
         }
-        if not extra:
-            return cls.model_validate(built)
-        colored: CoreColoredNode = CoreColoredNode.model_validate({**built, **extra})
-        return colored
+        if extra:
+            return CoreColoredNode(**built, **extra)
+        return cls(**built)
 
 
+@dataclass
 class CoreColoredNode(CoreNode):
     """Узел с подсветкой и зачёркиванием.
 
@@ -149,8 +173,8 @@ class CoreColoredNode(CoreNode):
     Наш рендер использует это вместо полноценных анимаций.
 
     Поля ``color``/``crossed`` объявлены в :class:`CoreNode`, поэтому они
-    переживают сериализацию контракта и валидацию модели подшага. Этот
-    класс -- совместимое имя и признак ``is_crossed``.
+    переживают сериализацию контракта. Этот класс -- совместимое имя и
+    признак ``is_crossed``.
     """
 
     def is_crossed(self) -> bool:
@@ -175,7 +199,8 @@ def colored(
     )
 
 
-class CoreAction(BaseModel):
+@dataclass
+class CoreAction:
     """Действие над выражением -- ``c.a.a.m.k.a`` в оригинале.
 
     Описывает операцию с аргументами-узлами: ``{"command": ..., "args": [...]}``.
@@ -183,17 +208,24 @@ class CoreAction(BaseModel):
     для переключения способа решения.
     """
 
-    model_config = ConfigDict(populate_by_name=True)
-
-    command: str = Field(description="Имя команды")
-    args: list[CoreNode] = Field(default_factory=list, description="Аргументы-узлы")
+    command: str
+    args: list[CoreNode] = field(default_factory=list)
 
     def to_contract(self) -> dict[str, Any]:
         """Формат контракта: ``command`` и ``args``."""
         return {"command": self.command, "args": [a.to_contract() for a in self.args]}
 
+    @classmethod
+    def from_contract(cls, data: dict[str, Any]) -> CoreAction:
+        """Разобрать действие из формата контракта."""
+        return cls(
+            command=data["command"],
+            args=[CoreNode.from_contract(a) for a in data.get("args", [])],
+        )
 
-class CoreRichText(BaseModel):
+
+@dataclass
+class CoreRichText:
     """Локализуемый фрагмент текста -- ``CoreRichText``.
 
     ``type`` -- не имя ресурса, а ключ словаря объяснений. На этапе показа
@@ -204,17 +236,12 @@ class CoreRichText(BaseModel):
     Разбор: ``truth/04-explanations.md``.
     """
 
-    model_config = ConfigDict(populate_by_name=True)
-
-    type: str = Field(description="Ключ словаря объяснений, без префикса step_")
-    args: list[CoreNode] = Field(default_factory=list, description="Аргументы шаблона")
+    type: str
+    args: list[CoreNode] = field(default_factory=list)
 
     def to_contract(self) -> dict[str, Any]:
-        """Формат контракта: ключ объяснения и его аргументы."""
+        """Форматы контракта: ключ объяснения и его аргументы."""
         return {"type": self.type, "args": [a.to_contract() for a in self.args]}
-
-
-CoreNode.model_rebuild()
 
 
 __all__ = [
@@ -224,6 +251,5 @@ __all__ = [
     "CoreNode",
     "CoreNodeType",
     "CoreRichText",
-    "Literal",
     "colored",
 ]

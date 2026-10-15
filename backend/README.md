@@ -10,13 +10,18 @@
 ## Установка
 
 ```bash
-uv sync --python 3.12
+uv sync --python 3.12                 # решатель: только sympy
+uv sync --python 3.12 --extra api     # + HTTP-слой (FastAPI/pydantic) для API и тестов
 ```
+
+Модели контракта (`ast.py`, `results.py`) — обычные dataclasses, поэтому
+ядро не зависит от `pydantic`/`pydantic-core` (Rust). `pydantic` и `fastapi`
+нужны только HTTP-слою (`api.py`) и живут в extra `api`.
 
 ## Проверки
 
 ```bash
-uv run pytest          # тесты
+uv run pytest          # тесты (нужен extra api: тесты HTTP-слоя)
 uv run ruff check .    # линтер
 uv run ruff format .   # форматирование
 uv run mypy mymath_backend

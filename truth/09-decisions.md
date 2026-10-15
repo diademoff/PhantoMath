@@ -46,6 +46,7 @@
 | 19 | Тождество и противоречие — **ответ без узла**: шаг `solutions_inf_many` / `false_statement_solve`, `solution = null`; отдельного узла «все/ни одного» не вводим | `solver/equations.py` |
 | 20 | Графики — **своё семплирование**: эндпоинт `/api/v1/graph` (sympy) + `CustomPainter`; `CoreGraphResult` Photomath не воспроизводим | `graph.py`, `app/lib/src/render/graph_view.dart` |
 | 21 | Блокнот — **локальный файл** в каталоге приложения (`path_provider`); нет диска — работаем в памяти | `app/lib/src/notebook/notebook.dart` |
+| 54 | **Модели контракта — dataclasses, не pydantic**: ядро не тянет `pydantic-core` (Rust) и годится для встраивания CPython на устройстве; `pydantic`/`fastapi` — только HTTP-слой (extra `api`) | `ast.py`, `results.py`, `pyproject.toml` |
 
 ## Ввод: редактор и клавиатура
 
