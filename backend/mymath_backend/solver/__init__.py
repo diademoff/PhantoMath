@@ -22,6 +22,7 @@ from .base import (
     route,
     solver_for,
 )
+from .combinatorics import solve_arrangement, solve_choose, solve_factorial
 from .derivatives import solve_derivative
 from .equations import solve_equation
 from .fractions import solve_fraction
@@ -94,9 +95,12 @@ __all__ = [
     "registered_types",
     "route",
     "solve",
+    "solve_arrangement",
+    "solve_choose",
     "solve_derivative",
     "solve_determinant",
     "solve_equation",
+    "solve_factorial",
     "solve_fraction",
     "solve_inequality",
     "solve_integral",
