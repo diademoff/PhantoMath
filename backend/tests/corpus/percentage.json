@@ -1,0 +1,33 @@
+{
+  "module": "percentage",
+  "tasks": [
+    {
+      "id": "half",
+      "title": "50% → 1/2",
+      "input": "{percent({50})}",
+      "solution": {"type": "CONSTANT", "value": "1/2"},
+      "steps": ["percent_to_frac"]
+    },
+    {
+      "id": "eighth",
+      "title": "12,5% → 1/8",
+      "input": "{percent({12.5})}",
+      "solution": {"type": "CONSTANT", "value": "1/8"},
+      "steps": ["percent_to_frac"]
+    },
+    {
+      "id": "integer",
+      "title": "200% → 2",
+      "input": "{percent({200})}",
+      "solution": {"type": "CONSTANT", "value": "2"},
+      "steps": ["percent_to_frac"]
+    },
+    {
+      "id": "percent-of-number",
+      "title": "50% · 200 → 100",
+      "input": "{percent({50})*200}",
+      "solution": {"type": "CONSTANT", "value": "100"},
+      "steps": ["percent_to_frac", "mul"]
+    }
+  ]
+}

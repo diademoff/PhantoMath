@@ -38,6 +38,7 @@ from .integrals import solve_integral
 from .intervals import solve_interval
 from .limits import solve_limit
 from .matrices import solve_determinant, solve_matrix
+from .percentage import solve_percentage
 from .powers import solve_logarithm, solve_root
 from .sequences import solve_sequence
 from .series import solve_series
@@ -204,6 +205,7 @@ __all__ = [
     "solve_matrix",
     "solve_membership",
     "solve_order",
+    "solve_percentage",
     "solve_root",
     "solve_sequence",
     "solve_series",

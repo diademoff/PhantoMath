@@ -192,6 +192,7 @@ def test_corpus_covers_every_module() -> None:
         "restrictions",
         "system_nxn",
         "sequences",
+        "percentage",
         "matrices",
         "matrix_ops",
         "derivatives",
