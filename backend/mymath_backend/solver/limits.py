@@ -41,8 +41,10 @@ def solve_limit(node: CoreNode, ctx: SolveContext) -> CoreNode:
     point_value = to_sympy(point)
     expression_value = to_sympy(expression)
 
-    if _indeterminate(expression_value, symbol, point_value):
-        ctx.result.add(Step(left=node, right=None, key="limit_lhopital_long"))
+    classification = _classification(expression_value, symbol, point_value)
+    if classification is not None:
+        key, classification_args = classification
+        ctx.result.add(Step(left=node, right=None, key=key, args=classification_args))
 
     value = sympy.limit(expression_value, symbol, point_value, _DIRECTION[node.type])
     if not isinstance(value, sympy.Expr) or value is sympy.nan or value.has(sympy.Limit):
@@ -55,6 +57,33 @@ def solve_limit(node: CoreNode, ctx: SolveContext) -> CoreNode:
         raise SolveError("предел не существует или не вычисляется") from err
     ctx.result.add(Step(left=node, right=result, key="limit_solve"))
     return result
+
+
+def _classification(
+    expression: sympy.Expr, symbol: sympy.Symbol, point: sympy.Expr
+) -> tuple[str, list[CoreNode]] | None:
+    """Шаг с видом предела (константа, подстановка, многочлен, Лопиталь)."""
+    if not expression.has(symbol):
+        return "limit_solve_const", []
+    if _indeterminate(expression, symbol, point):
+        return "limit_lhopital_long", []
+    if point not in (sympy.oo, -sympy.oo):
+        value = expression.subs(symbol, point)
+        if value.is_finite is True:
+            return "limit_solve_insert_value", [from_sympy(point)]
+        return None
+    if _is_polynomial(expression, symbol):
+        return "limit_poly_msg", []
+    return None
+
+
+def _is_polynomial(expression: sympy.Expr, symbol: sympy.Symbol) -> bool:
+    """Многочлен ли выражение по переменной."""
+    try:
+        sympy.Poly(expression, symbol)
+    except sympy.PolynomialError:
+        return False
+    return True
 
 
 def _indeterminate(expression: sympy.Expr, symbol: sympy.Symbol, point: sympy.Expr) -> bool:

@@ -56,7 +56,7 @@ class TestLimits:
     def test_polynomial(self) -> None:
         problem = limit(c("2"), node(T.POWER, var(), c("2")))
         assert value_of(problem) == "4"
-        assert step_keys(problem) == ["limit_solve"]
+        assert step_keys(problem) == ["limit_solve_insert_value", "limit_solve"]
 
     def test_linear_expression(self) -> None:
         problem = limit(c("3"), node(T.ADD, node(T.MULTIPLY_IMPLICIT, c("2"), var()), c("1")))

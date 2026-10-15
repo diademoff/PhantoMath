@@ -10,8 +10,16 @@
         "value": "4"
       },
       "steps": [
+        "limit_solve_insert_value",
         "limit_solve"
       ]
+    },
+    {
+      "id": "constant",
+      "title": "предел константы: lim 7 = 7",
+      "input": "{lim({3},{7})}",
+      "solution": {"type": "CONSTANT", "value": "7"},
+      "steps": ["limit_solve_const", "limit_solve"]
     },
     {
       "id": "at-infinity",
@@ -22,6 +30,7 @@
         "value": "∞"
       },
       "steps": [
+        "limit_poly_msg",
         "limit_solve"
       ]
     },
