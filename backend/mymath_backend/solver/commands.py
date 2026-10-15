@@ -19,6 +19,7 @@
 * ``to_mixed`` — неправильную дробь в смешанное число (``convert_improper_fraction``);
 * ``approximate`` — приближённое значение с округлением (``round0``…``round4``);
 * ``inverse_function`` — обратная функция (``find_inverse``);
+* ``solve_param`` — уравнение с параметрами относительно переменной (``eq_param_write``);
 * ``intercepts`` — пересечения графика с осями координат
   (``find_x_intercept``/``find_y_intercept``);
 * ``range`` — область значений функции (``graph_rt_info_range``);
@@ -456,6 +457,42 @@ def inverse_function(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) ->
     return result
 
 
+def solve_param(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Решить уравнение с параметрами относительно указанной переменной.
+
+    Аргумент команды — переменная, относительно которой решаем; остальные
+    буквы считаются параметрами. Ответ — ``x = …`` (или список выражений с
+    параметрами); шаги ``eq_param_write`` и ``eq_linear_param_j_final``.
+    """
+    if node.type is not T.EQUALS or len(node.children) != 2:
+        raise SolveError("параметрическое уравнение — это равенство")
+    if len(args) != 1 or args[0].type is not T.VARIABLE or not args[0].value:
+        raise SolveError("нужно указать переменную для решения")
+    target = args[0].value
+    lhs, rhs = node.children
+    try:
+        found = sympy.solve(sympy.Eq(to_sympy(lhs), to_sympy(rhs)), sympy.Symbol(target))
+    except (NotImplementedError, TypeError, ValueError) as error:
+        raise SolveError("уравнение с параметрами не решается") from error
+    if not found:
+        raise SolveError("нет решений относительно переменной")
+
+    answers = [
+        CoreNode.node(T.EQUALS, CoreNode.variable(target), from_sympy(root)) for root in found
+    ]
+    answer = answers[0] if len(answers) == 1 else CoreNode.node(T.LIST, *answers)
+    ctx.result.add(Step(left=node, right=None, key="eq_param_write"))
+    ctx.result.add(
+        Step(
+            left=node,
+            right=answer,
+            key="eq_linear_param_j_final",
+            args=[CoreNode.variable(target)],
+        )
+    )
+    return answer
+
+
 def value_range(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Область значений функции — множество её значений на прямой.
 
@@ -666,6 +703,7 @@ COMMANDS: dict[str, Command] = {
     "nth_derivative": nth_derivative,
     "periodic_to_frac": periodic_to_frac,
     "range": value_range,
+    "solve_param": solve_param,
     "prove": prove,
     "substitute": substitute,
     "to_fraction": to_fraction,
@@ -715,6 +753,7 @@ __all__ = [
     "rationalize",
     "restrictions",
     "simplify",
+    "solve_param",
     "substitute",
     "to_degrees",
     "to_fraction",
