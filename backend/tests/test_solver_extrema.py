@@ -34,13 +34,22 @@ class TestExtrema:
     def test_minimum(self) -> None:
         source = "{x^2}"
         assert points(source) == ["0"]
-        assert step_keys(source) == ["extrema_derive", "extrema_minimum"]
+        assert step_keys(source) == [
+            "extrema_derive",
+            "extrema_critical_point",
+            "extrema_critical_intervals",
+            "extrema_interval_points",
+            "extrema_minimum",
+        ]
 
     def test_two_extrema(self) -> None:
         source = "{x^3-3x}"
         assert points(source) == ["-1", "1"]
         assert step_keys(source) == [
             "extrema_derive",
+            "extrema_critical_point",
+            "extrema_critical_intervals",
+            "extrema_interval_points",
             "extrema_maximum",
             "extrema_minimum",
         ]

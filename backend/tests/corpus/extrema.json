@@ -9,11 +9,23 @@
       "solution": {
         "type": "EQUALS",
         "children": [
-          {"type": "VARIABLE", "value": "x"},
-          {"type": "CONSTANT", "value": "0"}
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "0"
+          }
         ]
       },
-      "steps": ["extrema_derive", "extrema_minimum"]
+      "steps": [
+        "extrema_derive",
+        "extrema_critical_point",
+        "extrema_critical_intervals",
+        "extrema_interval_points",
+        "extrema_minimum"
+      ]
     },
     {
       "id": "cubic-two-extrema",
@@ -23,11 +35,42 @@
       "solution": {
         "type": "LIST",
         "children": [
-          {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "-1"}]},
-          {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "1"}]}
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "-1"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "1"
+              }
+            ]
+          }
         ]
       },
-      "steps": ["extrema_derive", "extrema_maximum", "extrema_minimum"]
+      "steps": [
+        "extrema_derive",
+        "extrema_critical_point",
+        "extrema_critical_intervals",
+        "extrema_interval_points",
+        "extrema_maximum",
+        "extrema_minimum"
+      ]
     }
   ]
 }

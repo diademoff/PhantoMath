@@ -458,6 +458,10 @@ def extrema(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode
     derivative = sympy.diff(function, symbol)
     critical = _real_roots(derivative, symbol)
     ctx.result.add(Step(left=node, right=None, key="extrema_derive"))
+    if critical:
+        ctx.result.add(Step(left=node, right=None, key="extrema_critical_point"))
+        ctx.result.add(Step(left=node, right=None, key="extrema_critical_intervals"))
+        ctx.result.add(Step(left=node, right=None, key="extrema_interval_points"))
 
     points: list[CoreNode] = []
     for point in critical:
