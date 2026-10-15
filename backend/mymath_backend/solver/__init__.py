@@ -39,6 +39,7 @@ from .intervals import solve_interval
 from .limits import solve_limit
 from .matrices import solve_determinant, solve_matrix
 from .powers import solve_logarithm, solve_root
+from .sequences import solve_sequence
 from .series import solve_series
 from .sets import solve_inclusion, solve_membership, solve_set_operation
 from .sympy_bridge import from_sympy, to_sympy
@@ -204,6 +205,7 @@ __all__ = [
     "solve_membership",
     "solve_order",
     "solve_root",
+    "solve_sequence",
     "solve_series",
     "solve_set_operation",
     "solve_system",

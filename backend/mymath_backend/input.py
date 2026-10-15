@@ -139,6 +139,7 @@ KEYWORD_TO_TYPE: dict[str, CoreNodeType] = {
     "set": T.SET,
     "list": T.LIST,
     "vert_list": T.VERTICAL_LIST,
+    "sequence": T.SEQUENCE,
     "union": T.UNION,
     # Словарь протокола даёт `intsec`; `intersection` оставлен читаемым алиасом.
     "intsec": T.INTERSECTION,
