@@ -57,8 +57,8 @@ rendered = explanations.render(
     args=[CoreNode.variable("x"), CoreNode.constant(7), CoreNode.constant(7)],
     locale="ru",
 )
-rendered.text     # "Поскольку x, абсолютное значение 7 равно 7"
-rendered.links    # кликабельные ссылки «показать другой способ»
+rendered.text  # "Поскольку x, абсолютное значение 7 равно 7"
+rendered.links  # кликабельные ссылки «показать другой способ»
 rendered.tail_label  # метка в конце строки, отделённая от текста
 ```
 
