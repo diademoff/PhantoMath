@@ -71,6 +71,16 @@ class TestFractions:
         assert keys == ["frac_reduce_out"]
         assert args_of(frac(C4, CoreNode.constant("8"))) == [["4"]]
 
+    def test_reduction_marks_crossed_parts(self) -> None:
+        """Микро-анимация: сокращаемые числитель и знаменатель зачёркнуты."""
+        step = next(
+            sub
+            for s in vertical(frac(C4, CoreNode.constant("8"))).steps
+            for sub in s.substeps
+        )
+        assert step.left is not None
+        assert [child.crossed for child in step.left.children] == [True, True]
+
     def test_nested_numerator_is_folded_first(self) -> None:
         numerator = CoreNode.node(T.ADD, CoreNode.constant("1"), CoreNode.constant("1"))
         keys = step_keys(frac(numerator, C4))

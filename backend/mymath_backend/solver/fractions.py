@@ -17,7 +17,7 @@ from __future__ import annotations
 from fractions import Fraction
 from math import gcd
 
-from ..ast import CoreNode
+from ..ast import CoreNode, colored
 from ..node_types import CoreNodeType as T
 from .arithmetic import as_fraction, format_number
 from .base import SolveContext, Step, route, solver_for
@@ -58,9 +58,15 @@ def _solve_fraction(node: CoreNode, ctx: SolveContext) -> CoreNode:
     result = CoreNode.constant(format_number(value))
     common = _integer_common_divisor(numerator, denominator)
     if common is not None:
+        # Микро-анимация: показываем, что числитель и знаменатель сокращаются.
+        crossed = CoreNode.node(
+            T.FRACTION,
+            colored(CoreNode.constant(format_number(numerator)), crossed=True),
+            colored(CoreNode.constant(format_number(denominator)), crossed=True),
+        )
         ctx.result.add(
             Step(
-                left=node,
+                left=crossed,
                 right=result,
                 key="frac_reduce_out",
                 args=[CoreNode.constant(str(common))],

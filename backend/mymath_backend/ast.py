@@ -34,6 +34,8 @@ class CoreNode(BaseModel):
     type: CoreNodeType = Field(description="Тип узла, имя элемента CoreNodeType")
     value: str | None = Field(default=None, description="Текст терминала")
     children: list[CoreNode] = Field(default_factory=list, description="Потомки")
+    color: Color | None = Field(default=None, description="Цвет ARGB или null")
+    crossed: bool | None = Field(default=None, description="Зачёркнута ли часть")
 
     @model_validator(mode="after")
     def _check_shape(self) -> Self:
@@ -112,6 +114,10 @@ class CoreNode(BaseModel):
             out["value"] = self.value
         if self.children:
             out["children"] = [c.to_contract() for c in self.children]
+        if self.color is not None:
+            out["color"] = self.color
+        if self.crossed is not None:
+            out["crossed"] = self.crossed
         return out
 
     @classmethod
@@ -141,27 +147,32 @@ class CoreColoredNode(CoreNode):
     Решатель помечает так части выражения в промежуточных шагах:
     ``color`` выделяет значимую часть, ``crossed`` -- сокращаемую.
     Наш рендер использует это вместо полноценных анимаций.
-    """
 
-    color: Color | None = Field(default=None, description="Цвет ARGB или null")
-    crossed: bool | None = Field(default=None, description="Зачёркнута ли часть")
+    Поля ``color``/``crossed`` объявлены в :class:`CoreNode`, поэтому они
+    переживают сериализацию контракта и валидацию модели подшага. Этот
+    класс -- совместимое имя и признак ``is_crossed``.
+    """
 
     def is_crossed(self) -> bool:
         """Зачёркнута ли часть. ``None`` считается за ``False``."""
         return bool(self.crossed)
 
-    def to_contract(self) -> dict[str, Any]:
-        """Дополнить контракт полями ``color`` и ``crossed``.
 
-        Gson в оригинале опускает null-поля, поэтому отсутствующую подсветку
-        в JSON не пишем: фронт различает «серое поле» и «подсветку».
-        """
-        out = super().to_contract()
-        if self.color is not None:
-            out["color"] = self.color
-        if self.crossed is not None:
-            out["crossed"] = self.crossed
-        return out
+def colored(
+    node: CoreNode, *, color: int | None = None, crossed: bool | None = None
+) -> CoreColoredNode:
+    """Копия узла с подсветкой или зачёркиванием.
+
+    Микро-анимация шага (вариант B): ``crossed`` помечает сокращаемую часть,
+    ``color`` -- значимую. Контракт отдаёт эти поля рядом с типом узла.
+    """
+    return CoreColoredNode(
+        type=node.type,
+        value=node.value,
+        children=list(node.children),
+        color=color,
+        crossed=crossed,
+    )
 
 
 class CoreAction(BaseModel):
@@ -214,4 +225,5 @@ __all__ = [
     "CoreNodeType",
     "CoreRichText",
     "Literal",
+    "colored",
 ]
