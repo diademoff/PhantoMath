@@ -26,6 +26,7 @@ class TestConicDetails:
         keys, solution = run("{=({x^2+y^2-2x+4y-4},{0})}")
         assert keys == [
             "conics_identify",
+            "conics_complete_square_both",
             "graph_rt_info_center",
             "conics_since_circle",
             "graph_rt_info_radius",

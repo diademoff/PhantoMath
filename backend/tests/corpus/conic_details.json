@@ -18,11 +18,20 @@
                   {
                     "type": "SUBTRACT",
                     "children": [
-                      {"type": "VARIABLE", "value": "x"},
-                      {"type": "CONSTANT", "value": "1"}
+                      {
+                        "type": "VARIABLE",
+                        "value": "x"
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "1"
+                      }
                     ]
                   },
-                  {"type": "CONSTANT", "value": "2"}
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
                 ]
               },
               {
@@ -31,20 +40,33 @@
                   {
                     "type": "ADD",
                     "children": [
-                      {"type": "CONSTANT", "value": "2"},
-                      {"type": "VARIABLE", "value": "y"}
+                      {
+                        "type": "CONSTANT",
+                        "value": "2"
+                      },
+                      {
+                        "type": "VARIABLE",
+                        "value": "y"
+                      }
                     ]
                   },
-                  {"type": "CONSTANT", "value": "2"}
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
                 ]
               }
             ]
           },
-          {"type": "CONSTANT", "value": "9"}
+          {
+            "type": "CONSTANT",
+            "value": "9"
+          }
         ]
       },
       "steps": [
         "conics_identify",
+        "conics_complete_square_both",
         "graph_rt_info_center",
         "conics_since_circle",
         "graph_rt_info_radius"
@@ -61,15 +83,43 @@
           {
             "type": "ADD",
             "children": [
-              {"type": "POWER", "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "2"}]},
-              {"type": "POWER", "children": [{"type": "VARIABLE", "value": "y"}, {"type": "CONSTANT", "value": "2"}]}
+              {
+                "type": "POWER",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "x"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
+                ]
+              },
+              {
+                "type": "POWER",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "y"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
+                ]
+              }
             ]
           },
-          {"type": "CONSTANT", "value": "4"}
+          {
+            "type": "CONSTANT",
+            "value": "4"
+          }
         ]
       },
       "steps": [
         "conics_identify",
+        "conics_complete_square_both",
         "graph_rt_info_center",
         "conics_since_circle",
         "graph_rt_info_radius"

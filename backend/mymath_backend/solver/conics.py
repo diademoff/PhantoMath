@@ -72,6 +72,7 @@ def _central(
     h = sympy.Rational(-d, 2 * a)
     k = sympy.Rational(-e, 2 * c)
     remainder = a * h * h + c * k * k - f
+    ctx.result.add(Step(left=node, right=None, key="conics_complete_square_both"))
     ctx.result.add(Step(left=node, right=_point(h, k), key="graph_rt_info_center"))
 
     if a == c:
