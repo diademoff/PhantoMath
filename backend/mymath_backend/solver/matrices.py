@@ -176,6 +176,7 @@ def matrix_inverse(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> C
         "обратной матрицы не существует: определитель равен нулю",
         "matrix_inv_det_zero",
     )
+    ctx.result.add(Step(left=node, right=None, key="matrix_inv_find_formula"))
     return _record(node, from_sympy(matrix.inv()), ctx, "matrix_inv_find_smpl")
 
 

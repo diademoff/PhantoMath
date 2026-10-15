@@ -67,7 +67,7 @@ class TestOperations:
             [[sympy.Rational(-2), 1], [sympy.Rational(3, 2), sympy.Rational(-1, 2)]]
         )
         assert run(A, "matrix_inverse") == expected
-        assert step_key(A, "matrix_inverse") == "matrix_inv_find_smpl"
+        assert step_key(A, "matrix_inverse") == "matrix_inv_find_formula"
 
     def test_determinant(self) -> None:
         assert run(A, "matrix_determinant") == -2
