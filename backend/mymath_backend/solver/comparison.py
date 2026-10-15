@@ -42,12 +42,29 @@ _STEP_KEY: dict[T, str] = {
 def solve_comparison(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Проверить утверждение без переменных и вернуть «Истина»/«Ложь»."""
     ctx.require(len(node.children) == 2, "утверждение связывает две части")
-    value = _evaluate(node.type, to_sympy(node.children[0]), to_sympy(node.children[1]))
+    left, right = to_sympy(node.children[0]), to_sympy(node.children[1])
+    detail = _detail_key(left, right)
+    if detail is not None:
+        ctx.result.add(Step(left=node, right=None, key=detail))
+    value = _evaluate(node.type, left, right)
     if value not in (True, False):
         raise SolveError("утверждение не удалось проверить")
     answer = boolean_node(value)
     ctx.result.add(Step(left=node, right=answer, key=_STEP_KEY.get(node.type, "compare_ineq")))
     return answer
+
+
+def _detail_key(left: sympy.Expr, right: sympy.Expr) -> str | None:
+    """Шаг с приёмом сравнения дробей или ``None``."""
+    numerator_left, denominator_left = sympy.fraction(sympy.nsimplify(left))
+    numerator_right, denominator_right = sympy.fraction(sympy.nsimplify(right))
+    if denominator_left == 1 and denominator_right == 1:
+        return None
+    if denominator_left == denominator_right:
+        return "compare_frac_nom"
+    if numerator_left == numerator_right:
+        return "compare_frac_den"
+    return "compare_frac_cross"
 
 
 def _evaluate(node_type: T, left: sympy.Expr, right: sympy.Expr) -> bool | None:
