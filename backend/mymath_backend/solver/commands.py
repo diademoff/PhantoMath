@@ -14,7 +14,9 @@
 * ``domain`` — область определения выражения (``domain_find``);
 * ``restrictions`` — недопустимые значения выражения (``rel_restrictions_find``);
 * ``to_fraction`` — десятичную дробь в обыкновенную (``dec_to_frac``);
-* ``to_percent`` — число в проценты (``rewrite_as_percent``).
+* ``to_percent`` — число в проценты (``rewrite_as_percent``);
+* ``to_sci`` — число в экспоненциальную запись (``sci_form_msg``);
+* ``to_mixed`` — неправильную дробь в смешанное число (``convert_improper_fraction``).
 
 Для уравнения команда применяется к обеим частям.
 """
@@ -85,6 +87,49 @@ def to_percent(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreN
     return result
 
 
+def to_sci(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Число — в экспоненциальную запись ``a · 10ⁿ``."""
+    del args
+    value = to_sympy(node)
+    if value.is_real is not True or value.is_number is not True:
+        raise SolveError("экспоненциальная запись берётся у числа")
+    if value == 0:
+        result = CoreNode.constant("0")
+    else:
+        exponent = int(sympy.floor(sympy.log(abs(value), 10)))
+        mantissa = float(value) / (10.0**exponent)
+        power = CoreNode.node(T.POWER, CoreNode.constant("10"), CoreNode.constant(str(exponent)))
+        result = CoreNode.node(T.MULTIPLY, CoreNode.constant(_trim(mantissa)), power)
+    ctx.result.add(Step(left=node, right=result, key="sci_form_msg"))
+    return result
+
+
+def _trim(value: float) -> str:
+    """Число без хвостового ``.0``."""
+    text = repr(value)
+    return text[:-2] if text.endswith(".0") else text
+
+
+def to_mixed(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Неправильную дробь — в смешанное число."""
+    del args
+    value = sympy.nsimplify(to_sympy(node))
+    if not isinstance(value, sympy.Rational) or value.q == 1:
+        raise SolveError("смешанное число — из неправильной дроби")
+    whole = sympy.Integer(sympy.floor(abs(value)))
+    numerator = sympy.Integer(abs(value.p)) - whole * value.q
+    if value < 0:
+        whole = -whole
+    result = CoreNode.node(
+        T.FRACTION_MIXED,
+        from_sympy(whole),
+        from_sympy(numerator),
+        from_sympy(sympy.Integer(value.q)),
+    )
+    ctx.result.add(Step(left=node, right=result, key="convert_improper_fraction"))
+    return result
+
+
 COMMANDS: dict[str, Command] = {
     "factor": factor,
     "expand": expand,
@@ -92,7 +137,9 @@ COMMANDS: dict[str, Command] = {
     "domain": domain,
     "restrictions": restrictions,
     "to_fraction": to_fraction,
+    "to_mixed": to_mixed,
     "to_percent": to_percent,
+    "to_sci": to_sci,
     **VECTOR_COMMANDS,
     **MATRIX_COMMANDS,
 }
@@ -121,5 +168,7 @@ __all__ = [
     "restrictions",
     "simplify",
     "to_fraction",
+    "to_mixed",
     "to_percent",
+    "to_sci",
 ]

@@ -30,6 +30,35 @@
         "children": [{"type": "CONSTANT", "value": "75"}]
       },
       "steps": ["rewrite_as_percent"]
+    },
+    {
+      "id": "scientific-notation",
+      "title": "2500 → 2.5·10³",
+      "input": "{2500}",
+      "command": "to_sci",
+      "solution": {
+        "type": "MULTIPLY",
+        "children": [
+          {"type": "CONSTANT", "value": "2.5"},
+          {"type": "POWER", "children": [{"type": "CONSTANT", "value": "10"}, {"type": "CONSTANT", "value": "3"}]}
+        ]
+      },
+      "steps": ["sci_form_msg"]
+    },
+    {
+      "id": "improper-to-mixed",
+      "title": "7/3 → 2 1/3",
+      "input": "{frac({7},{3})}",
+      "command": "to_mixed",
+      "solution": {
+        "type": "FRACTION_MIXED",
+        "children": [
+          {"type": "CONSTANT", "value": "2"},
+          {"type": "CONSTANT", "value": "1"},
+          {"type": "CONSTANT", "value": "3"}
+        ]
+      },
+      "steps": ["convert_improper_fraction"]
     }
   ]
 }

@@ -45,3 +45,34 @@ class TestRewrite:
         assert answer is not None and answer.type is T.EQUALS
         assert answer.children[0].value == "1/2"
         assert answer.children[1].value == "1/4"
+
+
+class TestScientific:
+    def test_positive_exponent(self) -> None:
+        answer = _vertical("{2500}", "to_sci").solution
+        assert answer is not None and answer.type is T.MULTIPLY
+        assert answer.children[0].value == "2.5"
+        assert answer.children[1].type is T.POWER
+
+    def test_negative_exponent(self) -> None:
+        answer = _vertical("{0.005}", "to_sci").solution
+        assert answer is not None
+        assert answer.children[0].value == "5"
+        assert answer.children[1].children[1].value == "-3"
+
+    def test_exact_mantissa(self) -> None:
+        answer = _vertical("{12345}", "to_sci").solution
+        assert answer is not None
+        assert answer.children[0].value == "1.2345"
+
+
+class TestMixedNumber:
+    def test_improper(self) -> None:
+        answer = _vertical("{frac({7},{3})}", "to_mixed").solution
+        assert answer is not None and answer.type is T.FRACTION_MIXED
+        assert [child.value for child in answer.children] == ["2", "1", "3"]
+
+    def test_quarter(self) -> None:
+        answer = _vertical("{frac({9},{4})}", "to_mixed").solution
+        assert answer is not None
+        assert [child.value for child in answer.children] == ["2", "1", "4"]
