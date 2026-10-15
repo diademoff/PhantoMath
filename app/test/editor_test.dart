@@ -194,6 +194,35 @@ void main() {
       expect(node.children.single.value, '5');
     });
 
+    test('постфиксный градус оборачивает число', () {
+      final c = EditorController();
+      _digits(c, '30');
+      c.insertOperator(ENodeKind.degree);
+      final node = solve(c);
+      expect(node.type, CoreNodeType.degree);
+      expect(node.children.single.value, '30');
+    });
+
+    test('постфиксный радиан оборачивает число', () {
+      final c = EditorController();
+      _digits(c, '2');
+      c.insertOperator(ENodeKind.radian);
+      final node = solve(c);
+      expect(node.type, CoreNodeType.radian);
+      expect(node.children.single.value, '2');
+    });
+
+    test('sin(30°) собирается как SIN(DEGREE(30))', () {
+      final c = EditorController();
+      c.insertTemplate(ENodeKind.sin);
+      _digits(c, '30');
+      c.insertOperator(ENodeKind.degree);
+      final node = solve(c);
+      expect(node.type, CoreNodeType.sin);
+      expect(node.children.single.type, CoreNodeType.degree);
+      expect(node.children.single.children.single.value, '30');
+    });
+
     test('вектор даёт список LIST', () {
       final c = EditorController();
       c.insertTemplate(ENodeKind.vector);

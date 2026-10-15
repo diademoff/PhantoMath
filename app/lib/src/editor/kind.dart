@@ -38,6 +38,8 @@ enum ENodeKind {
   // ── плоские знаки: постфиксные ──────────────────────────────────────
   factorial,
   percentage,
+  degree,
+  radian,
 
   // ── шаблоны: дробь, степени, корни ──────────────────────────────────
   fraction,
@@ -151,6 +153,8 @@ extension ENodeKindSpec on ENodeKind {
       case ENodeKind.greaterThanEqual:
       case ENodeKind.factorial:
       case ENodeKind.percentage:
+      case ENodeKind.degree:
+      case ENodeKind.radian:
         return 0;
     }
   }
@@ -178,9 +182,12 @@ extension ENodeKindSpec on ENodeKind {
     }
   }
 
-  /// Плоский постфиксный знак: `!`, `%`.
+  /// Плоский постфиксный знак: `!`, `%`, `°`, `rad`.
   bool get isPostfix =>
-      this == ENodeKind.factorial || this == ENodeKind.percentage;
+      this == ENodeKind.factorial ||
+      this == ENodeKind.percentage ||
+      this == ENodeKind.degree ||
+      this == ENodeKind.radian;
 
   /// Шаблон: узел с фиксированным числом слотов.
   bool get isTemplate => arity > 0;
@@ -282,6 +289,10 @@ extension ENodeKindSpec on ENodeKind {
         return core.CoreNodeType.root2;
       case ENodeKind.abs:
         return core.CoreNodeType.abs;
+      case ENodeKind.degree:
+        return core.CoreNodeType.degree;
+      case ENodeKind.radian:
+        return core.CoreNodeType.radian;
       case ENodeKind.bracket:
         return core.CoreNodeType.bracket;
       case ENodeKind.vector:
@@ -380,6 +391,10 @@ extension ENodeKindSpec on ENodeKind {
         return '!';
       case ENodeKind.percentage:
         return '%';
+      case ENodeKind.degree:
+        return '°';
+      case ENodeKind.radian:
+        return 'rad';
       case ENodeKind.fraction:
         return '⁄';
       case ENodeKind.power:

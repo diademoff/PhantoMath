@@ -155,6 +155,8 @@ final KeyboardPanel _functionPanel = KeyboardPanel(
       MathKey.template(ENodeKind.cosh),
       MathKey.template(ENodeKind.tanh),
       MathKey.template(ENodeKind.coth),
+      MathKey.operator(ENodeKind.degree),
+      MathKey.operator(ENodeKind.radian),
     ],
   ],
 );

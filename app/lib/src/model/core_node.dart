@@ -60,6 +60,8 @@ enum CoreNodeType {
   sign('SIGN'),
   floor('FLOOR'),
   abs('ABS'),
+  degree('DEGREE'),
+  radian('RADIAN'),
   percentage('PERCENTAGE'),
   derivation('DERIVATION'),
   derivation1('DERIVATION1'),

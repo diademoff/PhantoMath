@@ -439,6 +439,10 @@ class _EditorViewState extends State<EditorView> {
         return '!';
       case ENodeKind.percentage:
         return '%';
+      case ENodeKind.degree:
+        return '°';
+      case ENodeKind.radian:
+        return 'rad';
       default:
         break;
     }

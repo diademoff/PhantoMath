@@ -98,6 +98,17 @@ void main() {
       expect(nodeToLatex(CoreNode(type: CoreNodeType.empty)), '');
     });
 
+    test('единицы угла', () {
+      expect(
+        nodeToLatex(CoreNode(type: CoreNodeType.degree, children: [c2])),
+        r'{$2$}^{\circ}',
+      );
+      expect(
+        nodeToLatex(CoreNode(type: CoreNodeType.radian, children: [c2])),
+        r'{$2$}\ \mathrm{rad}',
+      );
+    });
+
     test('список решений через запятую', () {
       final node = CoreNode(
         type: CoreNodeType.list,

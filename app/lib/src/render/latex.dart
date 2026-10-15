@@ -59,6 +59,13 @@ String nodeToLatex(CoreNode node) {
     case CoreNodeType.factorial:
       return _wrap(node, r'{$0}!');
 
+    // ── единицы угла ────────────────────────────────────────────────
+    case CoreNodeType.degree:
+      return _wrap(node, r'{$0}^{\circ}');
+
+    case CoreNodeType.radian:
+      return _wrap(node, r'{$0}\ \mathrm{rad}');
+
     // ── многочленные конструкции ────────────────────────────────────
     case CoreNodeType.fraction:
       return _wrap(node, r'\frac{$0}{$1}');
