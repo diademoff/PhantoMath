@@ -118,6 +118,44 @@
       "input": "{=({abs({x})},{-2})}",
       "solution": {"type": "EMPTY"},
       "steps": ["false_statement_solve"]
+    },
+    {
+      "id": "abs-equation-variable-right",
+      "title": "|x - 1| = x — правая часть с переменной",
+      "input": "{=({abs({x-1})},{x})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {"type": "VARIABLE", "value": "x"},
+          {"type": "CONSTANT", "value": "1/2"}
+        ]
+      },
+      "steps": ["eq_abs_branch", "quad_final_single"]
+    },
+    {
+      "id": "abs-equation-quadratic-right",
+      "title": "|x| = x² - 2",
+      "input": "{=({abs({x})},{x^2-2})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {"type": "VARIABLE", "value": "x"},
+              {"type": "CONSTANT", "value": "-2"}
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {"type": "VARIABLE", "value": "x"},
+              {"type": "CONSTANT", "value": "2"}
+            ]
+          }
+        ]
+      },
+      "steps": ["eq_abs_branch", "quad_final_single"]
     }
   ]
 }

@@ -182,6 +182,18 @@ class TestAbsEquations:
         )
         assert step_keys(problem) == ["move", "eq_linar_divide_both_sides"]
 
+    def test_variable_right(self) -> None:
+        # |x - 1| = x -> x = 1/2.
+        argument = node(T.SUBTRACT, var(), c("1"))
+        problem = node(T.EQUALS, node(T.ABS, argument), var())
+        assert self.roots_of(problem) == {sympy.Rational(1, 2)}
+
+    def test_quadratic_right(self) -> None:
+        # |x| = x^2 - 2 -> x = ±2.
+        right = node(T.SUBTRACT, node(T.POWER, var(), c("2")), c("2"))
+        problem = node(T.EQUALS, node(T.ABS, var()), right)
+        assert self.roots_of(problem) == {-2, 2}
+
 
 class TestExplanationKeys:
     def test_keys_exist(self) -> None:

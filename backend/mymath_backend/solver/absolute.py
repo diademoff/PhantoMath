@@ -119,11 +119,12 @@ def _integer(node: CoreNode) -> int | None:
 
 
 def solve_abs_equation(node: CoreNode, variables: list[str]) -> SolveResult | None:
-    """Решить простейшее уравнение ``|f(x)| = a`` или вернуть ``None``.
+    """Решить уравнение ``|f(x)| = g(x)`` или вернуть ``None``.
 
-    Слева -- модуль линейного выражения, справа -- число. Модуль заменяется
-    двумя уравнениями (``f(x) = a`` и ``f(x) = -a``), их корни объединяются.
-    Отрицательная правая часть решений не имеет; не наш случай -- ``None``.
+    Модуль заменяется двумя уравнениями (``f = g`` и ``f = -g``), их корни
+    объединяются и проверяются подстановкой в исходное уравнение: ветвь
+    ``f = -g`` подходит только при ``g ≥ 0``. Если правая часть —
+    отрицательное число, решений нет. Не наш случай -- ``None``.
     """
     if len(variables) != 1:
         return None
@@ -138,25 +139,43 @@ def solve_abs_equation(node: CoreNode, variables: list[str]) -> SolveResult | No
         right = to_sympy(other)
     except SolveError:
         return None
-    if right.is_number is not True or right.is_real is not True:
-        return None
-    if right.is_negative:
+    if right.is_number is True and right.is_negative:
         return _no_solution(node)
 
-    targets = [right] if right == 0 else [right, -right]
-    roots = _roots(left, targets, sympy.Symbol(var))
-    if not roots:
+    targets = [right] if right.is_zero else [right, -right]
+    symbol = sympy.Symbol(var)
+    residual = sympy.Abs(left) - right
+    candidates = _roots(left, targets, symbol)
+    if not candidates:
         return None
+    roots = [root for root in candidates if _satisfies(residual, symbol, root)]
 
-    solution = _solution_node(var, roots)
+    result = SolveResult()
     branch_node = _list_node(
         CoreNode.node(T.EQUALS, abs_argument, from_sympy(target)) for target in targets
     )
-    result = SolveResult()
     result.add(Step(left=node, right=branch_node, key=_KEY_ABS_BRANCH))
+    if not roots:
+        result.add(Step(left=branch_node, right=None, key=_KEY_NO_SOLUTION))
+        result.set_solution(CoreNode.empty())
+        return result
+
+    solution = _solution_node(var, roots)
     result.add(Step(left=branch_node, right=solution, key=_KEY_FINAL))
     result.set_solution(solution)
     return result
+
+
+def _satisfies(residual: sympy.Expr, symbol: sympy.Symbol, root: sympy.Expr) -> bool:
+    """Обращается ли ``residual`` в ноль при данном корне."""
+    try:
+        value = sympy.simplify(residual.subs(symbol, root))
+    except (TypeError, ValueError):
+        return True
+    result = value == 0
+    if isinstance(result, bool):
+        return result
+    return result is sympy.true
 
 
 def _match_abs(node: CoreNode) -> tuple[CoreNode, CoreNode] | None:
@@ -185,8 +204,16 @@ def _roots(left: sympy.Expr, targets: list[sympy.Expr], symbol: sympy.Symbol) ->
             if any(sympy.simplify(root - known) == 0 for known in roots):
                 continue
             roots.append(root)
-    roots.sort(key=lambda root: float(sympy.N(root)))
+    roots.sort(key=_sort_key)
     return roots
+
+
+def _sort_key(root: sympy.Expr) -> float:
+    """Ключ сортировки корней; нечисловые корни идут первыми."""
+    try:
+        return float(sympy.N(root))
+    except (TypeError, ValueError):
+        return 0.0
 
 
 def _solution_node(var: str, roots: list[sympy.Expr]) -> CoreNode:
