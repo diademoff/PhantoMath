@@ -59,3 +59,21 @@ class TestSequences:
         problem = CoreNode.node(T.SEQUENCE, CoreNode.constant("1"))
         with pytest.raises(SolveError):
             solve(problem)
+
+
+class TestExplicitFormula:
+    def _run(self, source: str) -> tuple[list[str], CoreNode]:
+        vertical = solve(parse_protocol(source), command="explicit_formula").result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
+        return keys, vertical.solution
+
+    def test_arithmetic(self) -> None:
+        keys, solution = self._run("{sequence({2},{5},{8})}")
+        assert keys == ["seq_write_explicit_formula", "seq_arithmetic_sub_explicit_formula"]
+        assert solution.type is T.SUBTRACT
+
+    def test_geometric(self) -> None:
+        keys, solution = self._run("{sequence({3},{6},{12})}")
+        assert keys == ["seq_write_explicit_formula", "seq_geometric_sub_explicit_formula"]
+        assert solution.type is T.MULTIPLY_IMPLICIT

@@ -55,6 +55,45 @@ def solve_sequence(node: CoreNode, ctx: SolveContext) -> CoreNode:
     return next_list
 
 
+def explicit_formula(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Записать явную формулу общего члена ``aₙ``.
+
+    Аргумент команды не нужен: разность/знаменатель определяются по первым
+    членам. Шаги ``seq_write_explicit_formula`` и
+    ``seq_arithmetic_sub_explicit_formula``/``seq_geometric_sub_explicit_formula``.
+    """
+    del args
+    ctx.require(node.type is T.SEQUENCE and len(node.children) >= 2, "нужна последовательность")
+    terms = [to_sympy(child) for child in node.children]
+    index = sympy.Symbol("n")
+    first = terms[0]
+
+    difference = _constant_difference(terms)
+    if difference is not None:
+        formula = sympy.simplify(first + (index - 1) * difference)
+        key = "seq_arithmetic_sub_explicit_formula"
+        step = difference
+    else:
+        ratio = _constant_ratio(terms)
+        if ratio is None:
+            raise SolveError("последовательность не арифметическая и не геометрическая")
+        formula = sympy.simplify(first * ratio ** (index - 1))
+        key = "seq_geometric_sub_explicit_formula"
+        step = ratio
+
+    answer = from_sympy(formula)
+    ctx.result.add(Step(left=node, right=None, key="seq_write_explicit_formula"))
+    ctx.result.add(
+        Step(
+            left=node,
+            right=answer,
+            key=key,
+            args=[from_sympy(first), from_sympy(step), CoreNode.variable("n"), answer],
+        )
+    )
+    return answer
+
+
 def _constant_difference(terms: list[sympy.Expr]) -> sympy.Expr | None:
     """Постоянная разность соседних членов или ``None``."""
     differences = [b - a for a, b in itertools.pairwise(terms)]
@@ -93,5 +132,6 @@ def _extend(last: sympy.Expr, step: sympy.Expr, *, multiply: bool) -> list[sympy
 
 
 __all__ = [
+    "explicit_formula",
     "solve_sequence",
 ]

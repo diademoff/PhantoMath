@@ -30,6 +30,52 @@
         ]
       },
       "steps": ["seq_state_common_ratio", "seq_state_next_four"]
+    },
+    {
+      "id": "arithmetic-formula",
+      "title": "2, 5, 8 → aₙ = 3n − 1",
+      "input": "{sequence({2},{5},{8})}",
+      "command": "explicit_formula",
+      "solution": {
+        "type": "SUBTRACT",
+        "children": [
+          {
+            "type": "MULTIPLY_IMPLICIT",
+            "children": [
+              {"type": "CONSTANT", "value": "3"},
+              {"type": "VARIABLE", "value": "n"}
+            ]
+          },
+          {"type": "CONSTANT", "value": "1"}
+        ]
+      },
+      "steps": ["seq_write_explicit_formula", "seq_arithmetic_sub_explicit_formula"]
+    },
+    {
+      "id": "geometric-formula",
+      "title": "3, 6, 12 → aₙ = 3·2ⁿ⁻¹",
+      "input": "{sequence({3},{6},{12})}",
+      "command": "explicit_formula",
+      "solution": {
+        "type": "MULTIPLY_IMPLICIT",
+        "children": [
+          {"type": "CONSTANT", "value": "3"},
+          {
+            "type": "POWER",
+            "children": [
+              {"type": "CONSTANT", "value": "2"},
+              {
+                "type": "SUBTRACT",
+                "children": [
+                  {"type": "VARIABLE", "value": "n"},
+                  {"type": "CONSTANT", "value": "1"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": ["seq_write_explicit_formula", "seq_geometric_sub_explicit_formula"]
     }
   ]
 }
