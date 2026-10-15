@@ -18,13 +18,14 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from fractions import Fraction
 from math import isqrt
 
 from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
 from .arithmetic import as_fraction, format_number
-from .base import SolveContext, SolveError, Step, solver_for
+from .base import SolveContext, SolveError, SolveResult, Step, solver_for
 
 # Многочлен: степень -> коэффициент. Нулевые коэффициенты не хранятся,
 # поэтому пустой словарь -- это тождественный ноль.
@@ -211,8 +212,14 @@ def _linear_solution(
     return _equation(var, _const(root))
 
 
-def _quadratic_solution(node: CoreNode, var: str, poly: Poly, ctx: SolveContext) -> CoreNode:
-    """Квадратное уравнение: дискриминант и корни."""
+def _quadratic_solution(
+    node: CoreNode, var: str, poly: Poly, ctx: SolveContext, *, factoring: bool = False
+) -> CoreNode:
+    """Квадратное уравнение: дискриминант и корни.
+
+    ``factoring`` выбирает способ: разложение на множители вместо формулы
+    (корни те же, меняется только пояснение шага).
+    """
     a, b, c = _coeff(poly, 2), _coeff(poly, 1), _coeff(poly, 0)
     discriminant = b * b - 4 * a * c
     if discriminant < 0:
@@ -221,6 +228,8 @@ def _quadratic_solution(node: CoreNode, var: str, poly: Poly, ctx: SolveContext)
         )
 
     exact = _perfect_sqrt(discriminant)
+    if factoring and exact is None:
+        raise SolveError("разложение на множители с рациональными корнями невозможно")
     if exact is not None:
         low = (-b - exact) / (2 * a)
         high = (-b + exact) / (2 * a)
@@ -238,7 +247,8 @@ def _quadratic_solution(node: CoreNode, var: str, poly: Poly, ctx: SolveContext)
             _equation(var, _quad_root(-b, root, 2 * a, plus=True)),
         )
 
-    ctx.result.add(Step(left=node, right=solution, key="eq_quad_solve_in_r"), [_HEADER])
+    key = "solve_by_factoring" if factoring else "eq_quad_solve_in_r"
+    ctx.result.add(Step(left=node, right=solution, key=key), [_HEADER])
     return solution
 
 
@@ -290,8 +300,53 @@ def solve_equation(node: CoreNode, ctx: SolveContext) -> CoreNode:
     raise SolveError("уравнения выше второй степени пока не решаются")
 
 
+def _run(
+    node: CoreNode, variables: list[str], action: Callable[[CoreNode, SolveContext], CoreNode]
+) -> SolveResult:
+    """Выполнить стратегию в отдельном накопителе и вернуть готовый результат."""
+    result = SolveResult()
+    ctx = SolveContext(result=result, variables=list(variables))
+    result.set_solution(action(node, ctx))
+    return result
+
+
+def solve_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
+    """Способы решения уравнения: первый — основной, дальше — альтернативы.
+
+    Линейное уравнение пока решается одним способом; квадратное — формулой и,
+    если корни рациональны, ещё и разложением на множители.
+    """
+    if len(node.children) != 2 or len(variables) != 1:
+        raise SolveError("поддерживается одно неизвестное")
+    var = variables[0]
+    lhs, rhs = node.children
+    poly = _sub(poly_of(lhs, var), poly_of(rhs, var))
+    degree = _degree(poly)
+
+    if degree == 0:
+        if _coeff(poly, 0) == 0:
+            raise SolveError("обе части уравнения совпадают: решений бесконечно много")
+        raise SolveError("уравнение не имеет решений", "false_statement_solve")
+    if degree == 1:
+        return [_run(node, variables, lambda n, c: _linear_solution(n, lhs, rhs, var, poly, c))]
+    if degree == 2:
+        methods = [_run(node, variables, lambda n, c: _quadratic_solution(n, var, poly, c))]
+        a, b, c = _coeff(poly, 2), _coeff(poly, 1), _coeff(poly, 0)
+        if _perfect_sqrt(b * b - 4 * a * c) is not None:
+            methods.append(
+                _run(
+                    node,
+                    variables,
+                    lambda n, c: _quadratic_solution(n, var, poly, c, factoring=True),
+                )
+            )
+        return methods
+    raise SolveError("уравнения выше второй степени пока не решаются")
+
+
 __all__ = [
     "Poly",
     "poly_of",
     "solve_equation",
+    "solve_methods",
 ]

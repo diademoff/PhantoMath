@@ -17,7 +17,7 @@ from mymath_backend import CoreNodeType as T
 from mymath_backend import load_explanations
 from mymath_backend.explanations import DEFAULT_LOCALE
 from mymath_backend.input import parse_protocol
-from mymath_backend.results import CoreSolverVerticalResult
+from mymath_backend.results import CoreSolverGroup, CoreSolverVerticalResult
 from mymath_backend.solver import SolveError, registered_types, solve
 
 EXPLANATIONS = Path(__file__).resolve().parents[2] / "truth" / "data" / "explanations.json"
@@ -157,3 +157,41 @@ class TestExplanationKeys:
 class TestRegistration:
     def test_equals_is_registered(self) -> None:
         assert T.EQUALS in registered_types()
+
+
+def _group(source: str) -> CoreSolverGroup:
+    return solve(parse_protocol(source)).result.groups[0]
+
+
+def _method_keys(entry: object) -> list[str]:
+    steps = entry.result["steps"]  # type: ignore[index]
+    return [
+        sub["description"]["type"]
+        for step in steps
+        for sub in step["substeps"]  # type: ignore[index]
+    ]
+
+
+class TestMethods:
+    """Выбор способа решения: несколько записей вертикальной ветки."""
+
+    def test_factorable_quadratic_has_two_methods(self) -> None:
+        group = _group("{=({x^2-5x+6},{0})}")
+        assert len(group.entries) == 2
+        assert group.select_method_text is not None
+        assert group.select_method_text.type == "select_method"
+
+    def test_first_method_is_formula_second_factoring(self) -> None:
+        group = _group("{=({x^2-5x+6},{0})}")
+        assert _method_keys(group.entries[0]) == ["eq_quad_solve_in_r"]
+        assert _method_keys(group.entries[1]) == ["solve_by_factoring"]
+
+    def test_irrational_quadratic_has_one_method(self) -> None:
+        group = _group("{=({x^2-2},{0})}")
+        assert len(group.entries) == 1
+        assert group.select_method_text is None
+
+    def test_linear_has_one_method(self) -> None:
+        group = _group("{=({2x+3},{7})}")
+        assert len(group.entries) == 1
+        assert group.select_method_text is None

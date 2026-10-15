@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 from ..ast import CoreNode
+from ..node_types import CoreNodeType
 from ..results import CoreSolverData
 from . import commands
 from .arithmetic import format_number
@@ -25,7 +26,7 @@ from .base import (
 )
 from .combinatorics import solve_arrangement, solve_choose, solve_factorial
 from .derivatives import solve_derivative
-from .equations import solve_equation
+from .equations import solve_equation, solve_methods
 from .fractions import solve_fraction
 from .inequalities import solve_inequality
 from .integrals import solve_integral
@@ -54,6 +55,17 @@ def solve(node: CoreNode, command: str | None = None) -> CoreSolverData:
         solution = commands.apply(command, node, ctx)
         result.set_solution(solution)
         return build_solver_data(node, result)
+
+    if node.type is CoreNodeType.EQUALS:
+        # Уравнение решается несколькими способами; первый — основной.
+        methods = solve_methods(node, ctx.variables)
+        alternatives = methods[1:]
+        return build_solver_data(
+            node,
+            methods[0],
+            alternatives=alternatives,
+            select_method_text="select_method" if alternatives else None,
+        )
 
     route(node, ctx)
     if not result:

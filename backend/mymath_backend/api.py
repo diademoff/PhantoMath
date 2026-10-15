@@ -174,6 +174,10 @@ def _attach_text(node: dict[str, Any], locale: str) -> dict[str, Any]:
             else h
             for h in headers
         ]
+    # Подпись переключателя способов решения — тоже `CoreRichText`.
+    select = out.get("selectMethodText")
+    if isinstance(select, dict) and "type" in select:
+        out["selectMethodText"] = {**select, "explanation": _render_rich(select, locale)}
     for key in ("children", "substeps", "steps", "entries"):
         value = out.get(key)
         if isinstance(value, list):

@@ -214,28 +214,47 @@ def registered_types() -> set[CoreNodeType]:
     return set(_MODULE_REGISTRY)
 
 
-def build_solver_data(node: CoreNode, result: SolveResult) -> CoreSolverData:
-    """Собрать полный ответ из дерева и накопленных шагов."""
+def build_solver_data(
+    node: CoreNode,
+    result: SolveResult,
+    *,
+    alternatives: Iterable[SolveResult] = (),
+    select_method_text: str | None = None,
+) -> CoreSolverData:
+    """Собрать полный ответ из дерева и накопленных шагов.
+
+    ``alternatives`` — другие способы решения того же условия. Они становятся
+    отдельными записями вертикальной ветки, а ``select_method_text`` — подпись
+    переключателя «показать другой способ».
+    """
+    entries = [_vertical_entry(result)]
+    for alternative in alternatives:
+        entries.append(_vertical_entry(alternative))
     vertical = result.to_vertical()
     return CoreSolverData(
         normalizedInputNodeStr=None,
         result=CoreSolverResult(
             problem=node,
-            solution=result.solution,
+            solution=vertical.solution,
             groups=[
                 CoreSolverGroup(
                     type=ResultGroupType.VERTICAL,
                     description=None,
-                    selectMethodText=None,
-                    entries=[
-                        Entry(
-                            action=None,
-                            result=vertical.model_dump(by_alias=True, exclude_none=True),
-                        )
-                    ],
+                    selectMethodText=(
+                        CoreRichText(type=select_method_text) if select_method_text else None
+                    ),
+                    entries=entries,
                 )
             ],
         ),
+    )
+
+
+def _vertical_entry(result: SolveResult) -> Entry:
+    """Одна запись вертикальной ветки: все шаги одного способа."""
+    return Entry(
+        action=None,
+        result=result.to_vertical().model_dump(by_alias=True, exclude_none=True),
     )
 
 
