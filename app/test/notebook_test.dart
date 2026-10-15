@@ -1,0 +1,52 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mymath_app/src/model/core_node.dart';
+import 'package:mymath_app/src/notebook/notebook.dart';
+
+CoreNode num_(String value) =>
+    CoreNode(type: CoreNodeType.constant, value: value);
+
+void main() {
+  group('Notebook', () {
+    test('добавление и очистка', () async {
+      final notebook = Notebook();
+      await notebook.add(
+        NotebookEntry(
+          problem: num_('2'),
+          solution: num_('2'),
+          savedAt: DateTime(2020, 1, 2, 3, 4),
+        ),
+      );
+      expect(notebook.entries, hasLength(1));
+      expect(notebook.entries.single.solution?.value, '2');
+
+      await notebook.clear();
+      expect(notebook.isEmpty, isTrue);
+    });
+
+    test('свежие записи сверху и лимит', () async {
+      final notebook = Notebook(maxEntries: 2);
+      for (final value in ['1', '2', '3']) {
+        await notebook.add(
+          NotebookEntry(problem: num_(value), savedAt: DateTime(2020)),
+        );
+      }
+      expect(notebook.entries, hasLength(2));
+      expect(notebook.entries.first.problem.value, '3');
+    });
+
+    test('запись переживает круг сериализации', () {
+      final entry = NotebookEntry(
+        problem: CoreNode(
+          type: CoreNodeType.add,
+          children: [num_('2'), num_('3')],
+        ),
+        solution: num_('5'),
+        savedAt: DateTime(2020, 1, 2, 3, 4),
+      );
+      final restored = NotebookEntry.fromJson(entry.toJson());
+      expect(restored.problem, entry.problem);
+      expect(restored.solution?.value, '5');
+      expect(restored.savedAt, entry.savedAt);
+    });
+  });
+}

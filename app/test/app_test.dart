@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -212,6 +213,26 @@ void main() {
 
     expect(find.text('График y = f(x)'), findsOneWidget);
     expect(find.byType(GraphView), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('решённая задача попадает в блокнот', (tester) async {
+    await tester.pumpWidget(MaterialApp(home: SolvePage(api: _api())));
+    await tester.pump();
+
+    await _key(tester, '2');
+    await _key(tester, '+');
+    await _key(tester, '3');
+    await tester.tap(find.byKey(const ValueKey('solve')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.tap(find.byIcon(Icons.book_outlined));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('Блокнот'), findsOneWidget);
+    expect(find.byType(Math), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 

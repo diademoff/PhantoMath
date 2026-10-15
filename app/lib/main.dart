@@ -13,6 +13,8 @@ import 'src/editor/controller.dart';
 import 'src/editor/editor_view.dart';
 import 'src/editor/keyboard.dart';
 import 'src/model/core_node.dart';
+import 'src/notebook/notebook.dart';
+import 'src/notebook/notebook_page.dart';
 import 'src/render/graph_view.dart';
 import 'src/render/latex.dart';
 
@@ -64,6 +66,7 @@ class SolvePage extends StatefulWidget {
 
 class _SolvePageState extends State<SolvePage> {
   final _editor = EditorController();
+  final _notebook = Notebook();
   String _locale = 'ru';
   String? _command;
 
@@ -87,8 +90,15 @@ class _SolvePageState extends State<SolvePage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _notebook.load();
+  }
+
+  @override
   void dispose() {
     _editor.dispose();
+    _notebook.dispose();
     widget.api.close();
     super.dispose();
   }
@@ -108,8 +118,9 @@ class _SolvePageState extends State<SolvePage> {
       _error = null;
     });
     try {
+      final node = _editor.toCoreNode();
       final answer = await widget.api.solve(
-        _editor.toCoreNode(),
+        node,
         locale: _locale,
         command: command,
         args: args,
@@ -120,6 +131,13 @@ class _SolvePageState extends State<SolvePage> {
         _methods = answer.methods.isEmpty ? [answer] : answer.methods;
         _methodIndex = 0;
       });
+      await _notebook.add(
+        NotebookEntry(
+          problem: node,
+          solution: answer.solution,
+          savedAt: DateTime.now(),
+        ),
+      );
     } on SolveFailure catch (err) {
       if (!mounted) return;
       setState(() {
@@ -188,6 +206,15 @@ class _SolvePageState extends State<SolvePage> {
       appBar: AppBar(
         title: const Text('mymath'),
         actions: [
+          IconButton(
+            tooltip: 'Блокнот',
+            icon: const Icon(Icons.book_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => NotebookPage(notebook: _notebook),
+              ),
+            ),
+          ),
           PopupMenuButton<String>(
             tooltip: 'Язык пояснений',
             initialValue: _locale,

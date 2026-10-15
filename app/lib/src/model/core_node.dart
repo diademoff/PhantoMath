@@ -130,6 +130,14 @@ class CoreNode {
   @override
   String toString() => value ?? '${type.wire}(${children.join(', ')})';
 
+  /// Формат контракта: так узел уходит на бэкенд и сохраняется в блокнот.
+  Map<String, dynamic> toJson() => {
+    'type': type.wire,
+    if (value != null) 'value': value,
+    if (children.isNotEmpty)
+      'children': [for (final child in children) child.toJson()],
+  };
+
   @override
   bool operator ==(Object other) =>
       other is CoreNode &&

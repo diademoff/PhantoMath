@@ -18,6 +18,9 @@ dependencies:
   # писать свой рендер дробей и корней — это отдельный проект.
   flutter_math_fork: ^0.7.4
 
+  # Блокнот: путь к каталогу приложения для локального файла истории.
+  path_provider: ^2.1.6
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
