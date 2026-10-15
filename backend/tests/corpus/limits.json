@@ -18,8 +18,14 @@
       "id": "constant",
       "title": "предел константы: lim 7 = 7",
       "input": "{lim({3},{7})}",
-      "solution": {"type": "CONSTANT", "value": "7"},
-      "steps": ["limit_solve_const", "limit_solve"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "7"
+      },
+      "steps": [
+        "limit_solve_const",
+        "limit_solve"
+      ]
     },
     {
       "id": "at-infinity",
@@ -30,9 +36,16 @@
         "value": "∞"
       },
       "steps": [
-        "limit_poly_msg",
+        "limit_poly_pos_inf_pos_lead",
         "limit_solve"
       ]
+    },
+    {
+      "id": "at-negative-infinity",
+      "title": "предел x³ на −∞ равен −∞",
+      "input": "{lim({-infty},{x^3})}",
+      "solution": {"type": "NEGATIVE", "children": [{"type": "CONSTANT", "value": "∞"}]},
+      "steps": ["limit_poly_neg_inf_pos_lead_odd", "limit_solve"]
     },
     {
       "id": "right-reciprocal",

@@ -41,14 +41,14 @@ def solve_limit(node: CoreNode, ctx: SolveContext) -> CoreNode:
     point_value = to_sympy(point)
     expression_value = to_sympy(expression)
 
-    classification = _classification(expression_value, symbol, point_value)
-    if classification is not None:
-        key, classification_args = classification
-        ctx.result.add(Step(left=node, right=None, key=key, args=classification_args))
-
     value = sympy.limit(expression_value, symbol, point_value, _DIRECTION[node.type])
     if not isinstance(value, sympy.Expr) or value is sympy.nan or value.has(sympy.Limit):
         raise SolveError("предел не существует или не вычисляется")
+
+    classification = _classification(expression_value, symbol, point_value, value)
+    if classification is not None:
+        key, classification_args = classification
+        ctx.result.add(Step(left=node, right=None, key=key, args=classification_args))
 
     try:
         result = from_sympy(sympy.simplify(value))
@@ -60,7 +60,7 @@ def solve_limit(node: CoreNode, ctx: SolveContext) -> CoreNode:
 
 
 def _classification(
-    expression: sympy.Expr, symbol: sympy.Symbol, point: sympy.Expr
+    expression: sympy.Expr, symbol: sympy.Symbol, point: sympy.Expr, value: sympy.Expr
 ) -> tuple[str, list[CoreNode]] | None:
     """Шаг с видом предела (константа, подстановка, многочлен, Лопиталь)."""
     if not expression.has(symbol):
@@ -68,13 +68,31 @@ def _classification(
     if _indeterminate(expression, symbol, point):
         return "limit_lhopital_long", []
     if point not in (sympy.oo, -sympy.oo):
-        value = expression.subs(symbol, point)
-        if value.is_finite is True:
+        substituted = expression.subs(symbol, point)
+        if substituted.is_finite is True:
             return "limit_solve_insert_value", [from_sympy(point)]
         return None
     if _is_polynomial(expression, symbol):
-        return "limit_poly_msg", []
+        return _poly_key(expression, symbol, point, value)
     return None
+
+
+def _poly_key(
+    expression: sympy.Expr, symbol: sympy.Symbol, point: sympy.Expr, value: sympy.Expr
+) -> tuple[str, list[CoreNode]]:
+    """Ключ предела многочлена на бесконечности (степень и старший коэффициент)."""
+    polynomial = sympy.Poly(expression, symbol)
+    leading = polynomial.LC()
+    degree = polynomial.degree()
+    if point is sympy.oo:
+        key = "limit_poly_pos_inf_pos_lead" if leading > 0 else "limit_poly_pos_inf_neg_lead"
+    else:
+        even = degree % 2 == 0
+        if leading > 0:
+            key = "limit_poly_neg_inf_pos_lead_even" if even else "limit_poly_neg_inf_pos_lead_odd"
+        else:
+            key = "limit_poly_neg_inf_neg_lead_even" if even else "limit_poly_neg_inf_neg_lead_odd"
+    return key, [from_sympy(point), from_sympy(value)]
 
 
 def _is_polynomial(expression: sympy.Expr, symbol: sympy.Symbol) -> bool:
