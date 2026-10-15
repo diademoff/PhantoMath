@@ -36,7 +36,12 @@ class TestAsymptotes:
     def test_hyperbola(self) -> None:
         source = "{1/x}"
         assert lines(source) == [("x", "0"), ("y", "0")]
-        assert step_keys(source) == ["find_vert_asymptote", "find_hor_asymptote"]
+        assert step_keys(source) == [
+            "def_vert_asymptote",
+            "find_vert_asymptote",
+            "def_hor_asymptote",
+            "find_hor_asymptote",
+        ]
 
     def test_two_vertical(self) -> None:
         assert lines("{frac({1},{x^2-1})}") == [("x", "-1"), ("x", "1"), ("y", "0")]
@@ -44,7 +49,12 @@ class TestAsymptotes:
     def test_exponential(self) -> None:
         source = "{exp({x})}"
         assert lines(source) == [("y", "0")]
-        assert step_keys(source) == ["no_vert_asymptote", "find_hor_asymptote"]
+        assert step_keys(source) == [
+            "def_vert_asymptote",
+            "no_vert_asymptote",
+            "def_hor_asymptote",
+            "find_hor_asymptote",
+        ]
 
     def test_no_asymptotes(self) -> None:
         with pytest.raises(SolveError):

@@ -9,11 +9,40 @@
       "solution": {
         "type": "LIST",
         "children": [
-          {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "0"}]},
-          {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "y"}, {"type": "CONSTANT", "value": "0"}]}
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "y"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "0"
+              }
+            ]
+          }
         ]
       },
-      "steps": ["find_vert_asymptote", "find_hor_asymptote"]
+      "steps": [
+        "def_vert_asymptote",
+        "find_vert_asymptote",
+        "def_hor_asymptote",
+        "find_hor_asymptote"
+      ]
     },
     {
       "id": "two-vertical",
@@ -23,12 +52,53 @@
       "solution": {
         "type": "LIST",
         "children": [
-          {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "-1"}]},
-          {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "1"}]},
-          {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "y"}, {"type": "CONSTANT", "value": "0"}]}
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "-1"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "1"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "y"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "0"
+              }
+            ]
+          }
         ]
       },
-      "steps": ["find_vert_asymptote", "find_hor_asymptote"]
+      "steps": [
+        "def_vert_asymptote",
+        "find_vert_asymptote",
+        "def_hor_asymptote",
+        "find_hor_asymptote"
+      ]
     }
   ]
 }

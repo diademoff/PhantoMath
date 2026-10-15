@@ -951,6 +951,7 @@ def asymptotes(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreN
     function = to_sympy(expression_node)
 
     vertical = _vertical_asymptotes(function, symbol)
+    ctx.result.add(Step(left=node, right=None, key="def_vert_asymptote"))
     if vertical:
         ctx.result.add(Step(left=node, right=None, key="find_vert_asymptote"))
     else:
@@ -959,6 +960,7 @@ def asymptotes(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreN
     plus = sympy.limit(function, symbol, sympy.oo)
     minus = sympy.limit(function, symbol, -sympy.oo)
     horizontals = [value for value in (plus, minus) if value.is_finite]
+    ctx.result.add(Step(left=node, right=None, key="def_hor_asymptote"))
     if horizontals:
         ctx.result.add(
             Step(
