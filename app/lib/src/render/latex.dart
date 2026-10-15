@@ -261,6 +261,19 @@ String _nodeBody(CoreNode node) {
     case CoreNodeType.greaterThanEqual:
       return _wrap(node, r'$0 \ge $1');
 
+    // ── промежутки ──────────────────────────────────────────────────
+    case CoreNodeType.openOpenInterval:
+      return _wrap(node, r'\left($0, $1\right)');
+
+    case CoreNodeType.openClosedInterval:
+      return _wrap(node, r'\left($0, $1\right]');
+
+    case CoreNodeType.closedOpenInterval:
+      return _wrap(node, r'\left[$0, $1\right)');
+
+    case CoreNodeType.closedClosedInterval:
+      return _wrap(node, r'\left[$0, $1\right]');
+
     // ── составные ───────────────────────────────────────────────────
     case CoreNodeType.list:
       if (node.children.isEmpty) return _placeholder;

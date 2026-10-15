@@ -124,6 +124,25 @@ void main() {
       );
     });
 
+    test('промежутки', () {
+      expect(
+        nodeToLatex(bin(CoreNodeType.openOpenInterval, c2, c3)),
+        r'\left(2, 3\right)',
+      );
+      expect(
+        nodeToLatex(bin(CoreNodeType.openClosedInterval, c2, c3)),
+        r'\left(2, 3\right]',
+      );
+      expect(
+        nodeToLatex(bin(CoreNodeType.closedOpenInterval, c2, c3)),
+        r'\left[2, 3\right)',
+      );
+      expect(
+        nodeToLatex(bin(CoreNodeType.closedClosedInterval, c2, c3)),
+        r'\left[2, 3\right]',
+      );
+    });
+
     test('гиперболические функции', () {
       expect(
         nodeToLatex(CoreNode(type: CoreNodeType.sech, children: [c2])),
@@ -232,6 +251,8 @@ void main() {
           type: CoreNodeType.determinant2,
           children: [c2, c3, c3, c2],
         ),
+        bin(CoreNodeType.openClosedInterval, c2, c3),
+        bin(CoreNodeType.closedOpenInterval, c2, c3),
         // Микро-анимация: зачёркнутая часть.
         CoreNode(type: CoreNodeType.constant, value: '8', crossed: true),
         // Матрица со строками.

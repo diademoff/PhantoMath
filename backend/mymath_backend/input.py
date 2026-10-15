@@ -120,6 +120,11 @@ KEYWORD_TO_TYPE: dict[str, CoreNodeType] = {
     "permutation": T.PARTIAL_PERMUTATION_LEFT_SUBSCRIPT_RIGHT_SUBSCRIPT,
     "partial_permutation_lsub_rsub": T.PARTIAL_PERMUTATION_LEFT_SUBSCRIPT_RIGHT_SUBSCRIPT,
     "variation": T.VARIATION,
+    # промежутки: «o» — открытый край, «c» — закрытый, порядок «слева-справа»
+    "ooint": T.OPEN_OPEN_INTERVAL,
+    "ocint": T.OPEN_CLOSED_INTERVAL,
+    "coint": T.CLOSED_OPEN_INTERVAL,
+    "ccint": T.CLOSED_CLOSED_INTERVAL,
     # структуры
     "system": T.SYSTEM,
     "mat": T.MATRIX,

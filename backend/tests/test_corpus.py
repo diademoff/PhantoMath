@@ -176,6 +176,7 @@ def test_corpus_covers_every_module() -> None:
         "equations",
         "inequalities",
         "systems",
+        "intervals",
         "matrices",
         "matrix_ops",
         "derivatives",

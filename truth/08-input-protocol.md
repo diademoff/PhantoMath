@@ -103,8 +103,10 @@ system_flat tan tanh text text_key union var var_tmpl variation vert_list
 
 ### Что ещё видно из таблицы
 
-- `ccint`, `coint`, `ocint`, `ooint` — «целые коэффициенты / обычные целые»,
-  то есть решатель различает режимы приведения к целому виду.
+- `ccint`, `coint`, `ocint`, `ooint` — **числовые промежутки**: `o` — открытый
+  край, `c` — закрытый, порядок «слева-справа» (`ooint` — `(a, b)`, `ccint` —
+  `[a, b]`, `ocint` — `(a, b]`, `coint` — `[a, b)`); узлы `OPEN_OPEN_INTERVAL`
+  и т.д. (`solver/intervals.py`).
 - `BIG_INT_`, `big_int` — арифметика целых произвольной точности.
 - `hd_del`, `hlist`, `changeset`, `changeset_ignore`, `sanitize_block`,
   `search_block`, `no_reduce` — внутренние служебные узлы решателя.

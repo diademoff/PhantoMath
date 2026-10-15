@@ -67,6 +67,14 @@ _COMPLEX_CLASSES: dict[str, T] = {
     "conjugate": T.CONJUGATE,
 }
 
+# Промежутки: тип -> (левый край открыт, правый край открыт). Дети — границы.
+INTERVALS: dict[T, tuple[bool, bool]] = {
+    T.OPEN_OPEN_INTERVAL: (True, True),
+    T.OPEN_CLOSED_INTERVAL: (True, False),
+    T.CLOSED_OPEN_INTERVAL: (False, True),
+    T.CLOSED_CLOSED_INTERVAL: (False, False),
+}
+
 
 def _number(value: Fraction) -> CoreNode:
     return CoreNode.constant(format_number(value))
@@ -149,6 +157,14 @@ def to_sympy(node: CoreNode) -> sympy.Expr:
         return sympy.Matrix(rows)
     if node_type is T.EQUALS:
         return sympy.Eq(*(to_sympy(child) for child in node.children))
+    if node_type in INTERVALS:
+        left_open, right_open = INTERVALS[node_type]
+        return sympy.Interval(
+            to_sympy(node.children[0]),
+            to_sympy(node.children[1]),
+            left_open=left_open,
+            right_open=right_open,
+        )
     if node_type is T.DEGREE:
         # Градусы -- только единица записи: в sympy угол всегда в радианах.
         return to_sympy(node.children[0]) * sympy.pi / 180
@@ -215,6 +231,10 @@ def from_sympy(expr: sympy.Expr) -> CoreNode:
         return CoreNode.node(T.LN, from_sympy(arguments[0]))
     if isinstance(expr, sympy.Eq):
         return CoreNode.node(T.EQUALS, from_sympy(expr.lhs), from_sympy(expr.rhs))
+    if isinstance(expr, sympy.Interval):
+        return _from_interval(expr)
+    if expr is sympy.EmptySet:
+        return CoreNode.empty()
     complex_node = _COMPLEX_CLASSES.get(type(expr).__name__)
     if complex_node is not None:
         return CoreNode.node(complex_node, from_sympy(expr.args[0]))
@@ -314,12 +334,26 @@ def _from_pow(expr: sympy.Pow) -> CoreNode:
     return CoreNode.node(T.POWER, from_sympy(base), from_sympy(exponent))
 
 
+def _from_interval(expr: sympy.Interval) -> CoreNode:
+    """Промежуток sympy -> узел; тип задаёт открытость краёв."""
+    if expr.left_open and expr.right_open:
+        node_type = T.OPEN_OPEN_INTERVAL
+    elif expr.left_open:
+        node_type = T.OPEN_CLOSED_INTERVAL
+    elif expr.right_open:
+        node_type = T.CLOSED_OPEN_INTERVAL
+    else:
+        node_type = T.CLOSED_CLOSED_INTERVAL
+    return CoreNode.node(node_type, from_sympy(expr.start), from_sympy(expr.end))
+
+
 def simplify_node(node: CoreNode) -> CoreNode:
     """Упростить дерево узлов через sympy."""
     return from_sympy(sympy.simplify(to_sympy(node)))
 
 
 __all__ = [
+    "INTERVALS",
     "from_sympy",
     "simplify_node",
     "to_sympy",

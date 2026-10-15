@@ -34,6 +34,7 @@ from .equations import solve_equation, solve_methods
 from .fractions import solve_fraction
 from .inequalities import solve_inequality
 from .integrals import solve_integral
+from .intervals import solve_interval
 from .limits import solve_limit
 from .matrices import solve_determinant, solve_matrix
 from .powers import solve_logarithm, solve_root
@@ -186,6 +187,7 @@ __all__ = [
     "solve_function",
     "solve_inequality",
     "solve_integral",
+    "solve_interval",
     "solve_limit",
     "solve_logarithm",
     "solve_matrix",
