@@ -50,6 +50,13 @@ _SYMPY_TO_NODE: dict[object, T] = {
     getattr(sympy, name): node_type for node_type, name in _FUNCTIONS.items()
 }
 
+# Действительная/мнимая часть и сопряжение — по имени класса sympy.
+_COMPLEX_CLASSES: dict[str, T] = {
+    "re": T.REAL,
+    "im": T.IMAGINARY,
+    "conjugate": T.CONJUGATE,
+}
+
 
 def _number(value: Fraction) -> CoreNode:
     return CoreNode.constant(format_number(value))
@@ -66,6 +73,8 @@ def to_sympy(node: CoreNode) -> sympy.Expr:
             return sympy.E
         if text == "∞":
             return sympy.oo
+        if text == "i":
+            return sympy.I
         try:
             return sympy.Rational(text)
         except (ValueError, TypeError):
@@ -96,6 +105,12 @@ def to_sympy(node: CoreNode) -> sympy.Expr:
         return sympy.root(to_sympy(node.children[-1]), to_sympy(node.children[0]))
     if node_type is T.ABS:
         return sympy.Abs(to_sympy(node.children[0]))
+    if node_type is T.REAL:
+        return sympy.re(to_sympy(node.children[0]))
+    if node_type is T.IMAGINARY:
+        return sympy.im(to_sympy(node.children[0]))
+    if node_type is T.CONJUGATE:
+        return sympy.conjugate(to_sympy(node.children[0]))
     if node_type is T.EXP:
         return sympy.exp(to_sympy(node.children[0]))
     if node_type is T.LN:
@@ -120,6 +135,8 @@ def from_sympy(expr: sympy.Expr) -> CoreNode:
 
     if expr is sympy.oo:
         return CoreNode.constant("∞")
+    if expr is sympy.I:
+        return CoreNode.constant("i")
     if expr is sympy.pi:
         return CoreNode.constant("π")
     if expr is sympy.E:
@@ -152,6 +169,9 @@ def from_sympy(expr: sympy.Expr) -> CoreNode:
         return CoreNode.node(T.LN, from_sympy(arguments[0]))
     if isinstance(expr, sympy.Eq):
         return CoreNode.node(T.EQUALS, from_sympy(expr.lhs), from_sympy(expr.rhs))
+    complex_node = _COMPLEX_CLASSES.get(type(expr).__name__)
+    if complex_node is not None:
+        return CoreNode.node(complex_node, from_sympy(expr.args[0]))
     if type(expr) in _SYMPY_TO_NODE:
         return CoreNode.node(_SYMPY_TO_NODE[type(expr)], from_sympy(expr.args[0]))
     raise SolveError(f"выражение sympy {expr} не переводится в узел")

@@ -25,6 +25,7 @@ from .base import (
     solver_for,
 )
 from .combinatorics import solve_arrangement, solve_choose, solve_factorial
+from .complex import contains_imaginary, solve_complex, solve_imaginary_arithmetic
 from .derivatives import solve_derivative
 from .equations import solve_equation, solve_methods
 from .fractions import solve_fraction
@@ -66,6 +67,16 @@ def solve(node: CoreNode, command: str | None = None) -> CoreSolverData:
             alternatives=alternatives,
             select_method_text="select_method" if alternatives else None,
         )
+
+    if contains_imaginary(node) and node.type not in (
+        CoreNodeType.REAL,
+        CoreNodeType.IMAGINARY,
+        CoreNodeType.CONJUGATE,
+    ):
+        # Арифметику с мнимой единицей считает sympy: наше сворачивание к
+        # числу её не знает. Re/Im/сопряжение отрабатывают свои модули.
+        result.set_solution(solve_imaginary_arithmetic(node, ctx))
+        return build_solver_data(node, result)
 
     route(node, ctx)
     if not result:
@@ -120,6 +131,7 @@ __all__ = [
     "solve",
     "solve_arrangement",
     "solve_choose",
+    "solve_complex",
     "solve_derivative",
     "solve_determinant",
     "solve_equation",
