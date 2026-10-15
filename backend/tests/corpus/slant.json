@@ -1,0 +1,47 @@
+{
+  "module": "slant",
+  "tasks": [
+    {
+      "id": "simple",
+      "title": "(x² + 1)/x → y = x",
+      "input": "{frac({x^2+1},{x})}",
+      "command": "slant_asymptote",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {"type": "VARIABLE", "value": "y"},
+          {"type": "VARIABLE", "value": "x"}
+        ]
+      },
+      "steps": [
+        "slope_slant_asymptote",
+        "intercept_slant_asymptote",
+        "def_slant_asymptote"
+      ]
+    },
+    {
+      "id": "with-intercept",
+      "title": "(x² + 2x)/x → y = x + 2",
+      "input": "{frac({x^2+2x},{x})}",
+      "command": "slant_asymptote",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {"type": "VARIABLE", "value": "y"},
+          {
+            "type": "ADD",
+            "children": [
+              {"type": "CONSTANT", "value": "2"},
+              {"type": "VARIABLE", "value": "x"}
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "slope_slant_asymptote",
+        "intercept_slant_asymptote",
+        "def_slant_asymptote"
+      ]
+    }
+  ]
+}

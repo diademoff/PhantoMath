@@ -179,6 +179,7 @@ class _SolvePageState extends State<SolvePage> {
     ('extrema', 'Экстремумы'),
     ('inflection', 'Перегибы'),
     ('asymptotes', 'Асимптоты'),
+    ('slant_asymptote', 'Наклонная асимптота'),
     ('vertex', 'Вершина'),
     ('conic', 'Тип коники'),
     ('convergence', 'Сходимость'),

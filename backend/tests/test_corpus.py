@@ -208,6 +208,7 @@ def test_corpus_covers_every_module() -> None:
         "intercepts",
         "range",
         "asymptotes",
+        "slant",
         "conic",
         "convergence",
         "slope",

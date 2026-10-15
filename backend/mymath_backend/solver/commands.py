@@ -25,6 +25,7 @@
 * ``explicit_formula`` — явная формула общего члена последовательности;
 * ``slope_intercept`` — линейное уравнение в виде y = kx + b (``slope_and_y_intercept``);
 * ``axis_of_symmetry``/``intercept_form`` — ось симметрии и форма по корням параболы;
+* ``slant_asymptote`` — наклонная асимптота рациональной функции;
 * ``sequence_convergence`` — сходимость последовательности (``seq_lim_conv``);
 * ``ratio_test`` — признак Даламбера для ряда (``series_ratio_test``);
 * ``root_test``/``nth_term_test`` — радикальный и необходимый признаки сходимости ряда;
@@ -532,6 +533,64 @@ def partial_fractions(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -
     return result
 
 
+def slant_asymptote(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Наклонная асимптота ``y = kx + b`` рациональной функции.
+
+    ``k = lim f(x)/x``, ``b = lim (f(x) − kx)`` при ``x → ∞`` (шаги
+    ``slope_slant_asymptote``, ``intercept_slant_asymptote``,
+    ``def_slant_asymptote``). Если степени числителя и знаменателя не
+    различаются на единицу — асимптоты нет.
+    """
+    del args
+    expression_node = _expression_of(node)
+    if len(ctx.variables) != 1:
+        raise SolveError("наклонная асимптота: поддерживается одна переменная")
+    symbol = sympy.Symbol(ctx.variables[0])
+    function = to_sympy(expression_node)
+    numerator, denominator = sympy.fraction(sympy.together(function))
+    if sympy.degree(numerator, symbol) != sympy.degree(denominator, symbol) + 1:
+        raise SolveError(
+            "наклонной асимптоты нет",
+            "no_slope_slant_asymptote",
+        )
+
+    slope = sympy.limit(function / symbol, symbol, sympy.oo)
+    intercept = sympy.limit(function - slope * symbol, symbol, sympy.oo)
+    if slope.is_finite is not True or intercept.is_finite is not True:
+        raise SolveError("наклонной асимптоты нет", "no_slope_slant_asymptote")
+
+    line = CoreNode.node(
+        T.EQUALS,
+        CoreNode.variable("y"),
+        from_sympy(sympy.simplify(slope * symbol + intercept)),
+    )
+    ctx.result.add(
+        Step(
+            left=node,
+            right=None,
+            key="slope_slant_asymptote",
+            args=[from_sympy(function / symbol)],
+        )
+    )
+    ctx.result.add(
+        Step(
+            left=node,
+            right=None,
+            key="intercept_slant_asymptote",
+            args=[from_sympy(function - slope * symbol)],
+        )
+    )
+    ctx.result.add(
+        Step(
+            left=node,
+            right=line,
+            key="def_slant_asymptote",
+            args=[line, from_sympy(slope), from_sympy(intercept)],
+        )
+    )
+    return line
+
+
 def axis_of_symmetry(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Ось симметрии параболы: ``x = −b/(2a)`` (шаг ``find_axis``)."""
     del args
@@ -815,6 +874,7 @@ COMMANDS: dict[str, Command] = {
     "approximate": approximate,
     "axis_of_symmetry": axis_of_symmetry,
     "intercept_form": intercept_form,
+    "slant_asymptote": slant_asymptote,
     "complex_power": complex_power,
     "complex_roots": complex_roots,
     "explicit_formula": explicit_formula,
