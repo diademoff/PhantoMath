@@ -6,30 +6,53 @@
       "title": "вторая производная x³ → 6x",
       "input": "{x^3}",
       "command": "nth_derivative",
-      "args": ["{2}"],
+      "args": [
+        "{2}"
+      ],
       "solution": {
         "type": "MULTIPLY_IMPLICIT",
         "children": [
-          {"type": "CONSTANT", "value": "6"},
-          {"type": "VARIABLE", "value": "x"}
+          {
+            "type": "CONSTANT",
+            "value": "6"
+          },
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          }
         ]
       },
-      "steps": ["derive_higher_order", "second_derivative"]
+      "steps": [
+        "derive_higher_order",
+        "second_derivative"
+      ]
     },
     {
       "id": "third",
       "title": "третья производная x⁴ → 24x",
       "input": "{x^4}",
       "command": "nth_derivative",
-      "args": ["{3}"],
+      "args": [
+        "{3}"
+      ],
       "solution": {
         "type": "MULTIPLY_IMPLICIT",
         "children": [
-          {"type": "CONSTANT", "value": "24"},
-          {"type": "VARIABLE", "value": "x"}
+          {
+            "type": "CONSTANT",
+            "value": "24"
+          },
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          }
         ]
       },
-      "steps": ["derive_higher_order", "find_high_order_derivative"]
+      "steps": [
+        "derive_higher_order",
+        "derive_multi",
+        "find_high_order_derivative"
+      ]
     },
     {
       "id": "leibniz",
@@ -38,11 +61,19 @@
       "solution": {
         "type": "MULTIPLY_IMPLICIT",
         "children": [
-          {"type": "CONSTANT", "value": "2"},
-          {"type": "VARIABLE", "value": "x"}
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          },
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          }
         ]
       },
-      "steps": ["find_derivative_with_respect"]
+      "steps": [
+        "find_derivative_with_respect"
+      ]
     }
   ]
 }

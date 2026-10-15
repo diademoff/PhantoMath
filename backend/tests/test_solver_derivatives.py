@@ -179,6 +179,7 @@ class TestHigherOrder:
         assert self._solution("{x^4}", "{3}").structural_eq(muli(c("24"), x()))
         assert self._keys("{x^4}", "{3}") == [
             "derive_higher_order",
+            "derive_multi",
             "find_high_order_derivative",
         ]
 

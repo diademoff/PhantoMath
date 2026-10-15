@@ -394,6 +394,8 @@ def nth_derivative(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> C
 
     if count >= 2:
         ctx.result.add(Step(left=node, right=None, key="derive_higher_order"), [_HEADER])
+    if count >= 3:
+        ctx.result.add(Step(left=node, right=None, key="derive_multi"), [_HEADER])
     if count == 1:
         key = "find_derivative"
     elif count == 2:
