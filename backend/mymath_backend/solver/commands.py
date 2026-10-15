@@ -228,6 +228,50 @@ def _numeric(value: sympy.Expr) -> float:
         return 0.0
 
 
+def inflection(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Найти точки перегиба функции."""
+    del args
+    expression_node = (
+        node.children[1] if node.type is T.EQUALS and len(node.children) == 2 else node
+    )
+    if len(ctx.variables) != 1:
+        raise SolveError("перегибы: поддерживается одна переменная")
+    var = ctx.variables[0]
+    symbol = sympy.Symbol(var)
+    function = to_sympy(expression_node)
+    second = sympy.diff(function, symbol, 2)
+    candidates = _real_roots(second, symbol)
+    ctx.result.add(Step(left=node, right=None, key="inflection_sec_der"))
+    ctx.result.add(Step(left=node, right=None, key="inflection_find"))
+
+    points: list[CoreNode] = []
+    for point in candidates:
+        if not _sign_changes(second, symbol, point):
+            continue
+        ctx.result.add(
+            Step(left=node, right=None, key="inflection_the_point", args=[from_sympy(point)])
+        )
+        points.append(CoreNode.node(T.EQUALS, CoreNode.variable(var), from_sympy(point)))
+    if not points:
+        raise SolveError("точки перегиба не найдены")
+    if len(points) == 1:
+        return points[0]
+    return CoreNode.node(T.LIST, *points)
+
+
+def _sign_changes(expression: sympy.Expr, symbol: sympy.Symbol, point: sympy.Expr) -> bool:
+    """Меняет ли выражение знак в точке (численная проверка слева/справа)."""
+    delta = sympy.Rational(1, 1000)
+    left = expression.subs(symbol, point - delta)
+    right = expression.subs(symbol, point + delta)
+    try:
+        left_value = float(sympy.N(left))
+        right_value = float(sympy.N(right))
+    except (TypeError, ValueError):
+        return False
+    return (left_value < 0 < right_value) or (right_value < 0 < left_value)
+
+
 COMMANDS: dict[str, Command] = {
     "factor": factor,
     "expand": expand,
@@ -237,6 +281,7 @@ COMMANDS: dict[str, Command] = {
     "area": area,
     "even_odd": even_odd,
     "extrema": extrema,
+    "inflection": inflection,
     "prove": prove,
     "substitute": substitute,
     "to_fraction": to_fraction,
@@ -271,6 +316,7 @@ __all__ = [
     "expand",
     "extrema",
     "factor",
+    "inflection",
     "prove",
     "restrictions",
     "simplify",
