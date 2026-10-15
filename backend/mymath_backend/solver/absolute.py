@@ -1,0 +1,117 @@
+"""Модуль, знак и целая часть: точные значения и снятие знака.
+
+Модуль зарегистрирован на узлы ``ABS``, ``SIGN`` и ``FLOOR`` -- три
+элементарные функции одного аргумента:
+
+* ``ABS`` -- модуль: ``|-5| = 5``, ``|π| = π``, ``|x²| = x²``;
+* ``SIGN`` -- знак: ``sgn(5) = 1``, ``sgn(-3) = -1``, ``sgn(0) = 0``;
+* ``FLOOR`` -- целая часть: ``⌊2.7⌋ = 2``, ``⌊-1.5⌋ = -2``, ``⌊π⌋ = 3``.
+
+Значение считает sympy. Где он не справляется, помогают структурные
+правила: модуль и знак выражения, заведомо неотрицательного (чётная
+степень, корень, ``e^u``, произведение неотрицательных) снимаются.
+Модуль такого выражения равен самому выражению; знак считается равным
+``1`` -- как в оригинале, **вне нуля** (в нуле знак был бы ``0``, и этот
+случай здесь не отделяется).
+
+Символьные аргументы без вывода о знаке (``|x|``, ``sgn(x)``) остаются
+без изменений: точного значения у них нет.
+
+Ключи шагов: ``abs`` / ``abs_pos`` (снятие модуля), ``find_sign``,
+``calculate_floor``.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+import sympy
+
+from ..ast import CoreNode
+from ..node_types import CoreNodeType as T
+from .base import SolveContext, SolveError, Step, solver_for
+from .sympy_bridge import from_sympy, to_sympy
+
+# Узел -> функция sympy (она же применяется к значению и для проверки
+# «осталась ли функция»). Ключ пояснения хранится отдельно.
+_FUNCTIONS: dict[T, Any] = {
+    T.ABS: sympy.Abs,
+    T.SIGN: sympy.sign,
+    T.FLOOR: sympy.floor,
+}
+_STEP_KEY: dict[T, str] = {
+    T.ABS: "abs",
+    T.SIGN: "find_sign",
+    T.FLOOR: "calculate_floor",
+}
+_KEY_ABS_POSITIVE = "abs_pos"
+
+
+@solver_for(*_FUNCTIONS)
+def solve_value_function(node: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Вычислить модуль, знак или целую часть или оставить узел."""
+    if len(node.children) != 1:
+        raise SolveError("функция должна иметь один аргумент")
+    argument = node.children[0]
+    result = _resolve(node, argument)
+    if result is None:
+        return node
+    key = _STEP_KEY[node.type]
+    if node.type is T.ABS and result.structural_eq(argument):
+        key = _KEY_ABS_POSITIVE
+    ctx.result.add(Step(left=node, right=result, key=key))
+    return result
+
+
+def _resolve(node: CoreNode, argument: CoreNode) -> CoreNode | None:
+    """Итоговое значение узла или ``None``, если он не упрощается."""
+    value = _FUNCTIONS[node.type](to_sympy(argument))
+    if not value.has(_FUNCTIONS[node.type]):
+        # Значение вычислено полностью (число, π, …).
+        return from_sympy(value)
+
+    # Функция осталась: применяем структурные правила о неотрицательности.
+    if node.type in (T.ABS, T.SIGN) and _nonnegative(argument):
+        return argument if node.type is T.ABS else CoreNode.constant("1")
+
+    candidate = from_sympy(value)
+    # Частичное упрощение (например, ``|-x| = |x|``) принимаем, если узел
+    # действительно изменился.
+    return candidate if not candidate.structural_eq(node) else None
+
+
+def _nonnegative(node: CoreNode) -> bool:
+    """Заведомо ли выражение неотрицательно по своей структуре."""
+    if node.type in (T.ABS, T.EXP, T.ROOT2):
+        return True
+    if node.type is T.ROOT and len(node.children) == 2:
+        return True
+    if node.type is T.POWER and len(node.children) == 2:
+        exponent = _integer(node.children[1])
+        if exponent is not None and exponent % 2 == 0:
+            return True
+    if node.type in (T.MULTIPLY, T.MULTIPLY_IMPLICIT):
+        return all(_nonnegative(child) for child in node.children)
+    if node.type in (T.BRACKET, T.POSITIVE) and node.children:
+        return _nonnegative(node.children[0])
+    if node.type is T.CONSTANT:
+        try:
+            return bool(to_sympy(node).is_nonnegative)
+        except SolveError:
+            return False
+    return False
+
+
+def _integer(node: CoreNode) -> int | None:
+    """Целое значение константы или ``None``."""
+    if node.type is not T.CONSTANT or node.value is None:
+        return None
+    try:
+        return int(node.value.strip())
+    except ValueError:
+        return None
+
+
+__all__ = [
+    "solve_value_function",
+]

@@ -83,6 +83,7 @@
 | 35 | **Доступность** — словесные метки клавиш (`ENodeKind.description`) и редактора; локализация интерфейса не делается (решение пользователя) | `app/lib/src/editor/kind.dart`, `keyboard.dart` |
 | 36 | **Микро-анимации (вариант B)** — `color`/`crossed` объявлены в базовом `CoreNode` (переживают сериализацию контракта), рендер оборачивает формулу в `\textcolor`/`\cancel`; решатель помечает сокращаемую дробь | `ast.py`, `solver/fractions.py`, `app/lib/src/render/latex.dart` |
 | 37 | **Формулы:** рендер выдаёт «сырой» LaTeX без `$…$` — `flutter_math` (KaTeX) не принимает `$` внутри формулы | `app/lib/src/render/latex.dart` |
+| 38 | **Модуль/знак/пол** — `ABS`/`SIGN`/`FLOOR` через sympy; структурные правила для заведомо неотрицательного аргумента (`\|x²\| = x²`, `sgn(x²) = 1` вне нуля); ключи `abs`/`abs_pos`, `find_sign`, `calculate_floor` | `solver/absolute.py` |
 
 ## Следующее (открыто)
 

@@ -15,6 +15,7 @@ from ..ast import CoreNode
 from ..node_types import CoreNodeType
 from ..results import CoreSolverData
 from . import commands
+from .absolute import solve_value_function
 from .arithmetic import format_number
 from .base import (
     SolveContext,
@@ -194,5 +195,6 @@ __all__ = [
     "solve_series",
     "solve_system",
     "solve_trig_equation",
+    "solve_value_function",
     "solver_for",
 ]

@@ -115,6 +115,10 @@ def to_sympy(node: CoreNode) -> sympy.Expr:
         return sympy.root(to_sympy(node.children[-1]), to_sympy(node.children[0]))
     if node_type is T.ABS:
         return sympy.Abs(to_sympy(node.children[0]))
+    if node_type is T.SIGN:
+        return sympy.sign(to_sympy(node.children[0]))
+    if node_type is T.FLOOR:
+        return sympy.floor(to_sympy(node.children[0]))
     if node_type is T.REAL:
         return sympy.re(to_sympy(node.children[0]))
     if node_type is T.IMAGINARY:
@@ -176,6 +180,10 @@ def from_sympy(expr: sympy.Expr) -> CoreNode:
         return _from_pow(expr)
     if isinstance(expr, sympy.Abs):
         return CoreNode.node(T.ABS, from_sympy(expr.args[0]))
+    if isinstance(expr, sympy.sign):
+        return CoreNode.node(T.SIGN, from_sympy(expr.args[0]))
+    if isinstance(expr, sympy.floor):
+        return CoreNode.node(T.FLOOR, from_sympy(expr.args[0]))
     if isinstance(expr, sympy.factorial):
         return CoreNode.node(T.FACTORIAL, from_sympy(expr.args[0]))
     if isinstance(expr, sympy.exp):
