@@ -14,7 +14,9 @@
 решается как **рациональное**: приводится к виду ``числитель / знаменатель =
 0``, решается числитель, корни-полюсы исключаются. Уравнение с квадратным
 корнем решается как **иррациональное**: обе части возводятся в квадрат,
-посторонние корни отсеиваются подстановкой.
+посторонние корни отсеиваются подстановкой. Уравнение с логарифмом или
+степенью решается как **показательное/логарифмическое**: части приводятся к
+общему основанию, корни проверяются на области определения.
 
 Ключи шагов берутся из ``truth/data/explanations.json``: ``move``,
 ``eq_linar_divide_both_sides``, ``eq_quad_solve_in_r``, заголовок
@@ -488,6 +490,114 @@ def _satisfies(residual: sympy.Expr, symbol: sympy.Symbol, value: CoreNode) -> b
     return result is sympy.true
 
 
+def _solve_transcendental(
+    node: CoreNode, variables: list[str], ctx: SolveContext
+) -> CoreNode | None:
+    """Решить показательное или логарифмическое уравнение.
+
+    Шаг-преобразование показывает эквивалентную форму: ``eq_log_equalise``
+    (одинаковые основания логарифмов → приравнять аргументы), ``eq_pow_eq``
+    (одинаковые основания степеней → приравнять показатели) или ``eq_trans``
+    (переход логарифм ↔ степень). Корни берёт sympy из исходного уравнения и
+    проверяет подстановкой (область определения логарифма). Не такой случай —
+    ``None``.
+    """
+    var = variables[0]
+    lhs, rhs = node.children
+    try:
+        left, right = to_sympy(lhs), to_sympy(rhs)
+    except SolveError:
+        return None
+
+    transformed = _log_exp_transform(left, right)
+    if transformed is None:
+        if _impossible_exponential(left, right) or _impossible_exponential(right, left):
+            # a^x > 0 при a > 0: неположительная правая часть — решений нет.
+            ctx.result.add(Step(left=node, right=None, key="false_statement_solve"), [_HEADER])
+            return CoreNode.empty()
+        return None
+    key, equation = transformed
+
+    symbol = sympy.Symbol(var)
+    try:
+        found = sympy.solve(sympy.Eq(left, right), symbol)
+    except (TypeError, ValueError, NotImplementedError):
+        return None
+
+    roots: list[sympy.Expr] = []
+    for root in found:
+        if root.is_real is False:
+            continue
+        if _satisfies(left - right, symbol, from_sympy(root)) and not any(
+            sympy.simplify(root - known) == 0 for known in roots
+        ):
+            roots.append(root)
+    roots.sort(key=_sort_key)
+
+    ctx.result.add(Step(left=node, right=from_sympy(equation), key=key), [_HEADER])
+    if not roots:
+        return CoreNode.empty()
+    return _solutions_node(var, [from_sympy(root) for root in roots])
+
+
+def _sort_key(root: sympy.Expr) -> float:
+    """Ключ сортировки корней; нечисловые корни идут первыми."""
+    try:
+        return float(sympy.N(root))
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _log_exp_transform(left: sympy.Expr, right: sympy.Expr) -> tuple[str, sympy.Eq] | None:
+    """Преобразовать логарифмическое/показательное уравнение или ``None``."""
+    left_log, right_log = _single_log(left), _single_log(right)
+    if left_log is not None and right_log is not None and left_log[1] == right_log[1]:
+        return "eq_log_equalise", sympy.Eq(left_log[0], right_log[0])
+    if left_log is not None and right.is_number:
+        return "eq_trans", sympy.Eq(left_log[0], left_log[1] ** right)
+    if right_log is not None and left.is_number:
+        return "eq_trans", sympy.Eq(right_log[0], right_log[1] ** left)
+
+    left_pow, right_pow = isinstance(left, sympy.Pow), isinstance(right, sympy.Pow)
+    if left_pow and right_pow and left.base == right.base and left.base.is_number:
+        return "eq_pow_eq", sympy.Eq(left.exp, right.exp)
+    if left_pow and left.base.is_number and right.is_number and right.is_positive:
+        return "eq_trans", sympy.Eq(left.exp, sympy.log(right, left.base))
+    if right_pow and right.base.is_number and left.is_number and left.is_positive:
+        return "eq_trans", sympy.Eq(right.exp, sympy.log(left, right.base))
+    return None
+
+
+def _single_log(expression: sympy.Expr) -> tuple[sympy.Expr, sympy.Expr] | None:
+    """``(аргумент, основание)``, если выражение — один логарифм.
+
+    Логарифм с явным основанием sympy хранит как ``log(f)/log(b)``; этот и
+    простой ``log(f)`` (основание ``e``) распознаются как один логарифм.
+    """
+    if isinstance(expression, sympy.log):
+        return expression.args[0], _log_base(expression)
+    numerator, denominator = sympy.fraction(expression)
+    if isinstance(numerator, sympy.log) and isinstance(denominator, sympy.log):
+        return numerator.args[0], denominator.args[0]
+    return None
+
+
+def _impossible_exponential(power: sympy.Expr, other: sympy.Expr) -> bool:
+    """Верно ли, что ``a^f = other`` невозможно (неположительная правая часть)."""
+    return (
+        isinstance(power, sympy.Pow)
+        and power.base.is_number
+        and power.base.is_positive is True
+        and other.is_number is True
+        and other.is_positive is False
+    )
+
+
+def _log_base(logarithm: sympy.Expr) -> sympy.Expr:
+    """Основание логарифма; для ``ln`` — число ``e``."""
+    return logarithm.args[1] if len(logarithm.args) > 1 else sympy.E
+
+
 @solver_for(T.EQUALS)
 def solve_equation(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Решить уравнение с одним неизвестным.
@@ -509,7 +619,7 @@ def solve_equation(node: CoreNode, ctx: SolveContext) -> CoreNode:
     try:
         poly = _sub(poly_of(lhs, var), poly_of(rhs, var))
     except SolveError:
-        for solver in (_solve_rational, _solve_radical):
+        for solver in (_solve_rational, _solve_radical, _solve_transcendental):
             answer = solver(node, ctx.variables, ctx)
             if answer is not None:
                 return answer
@@ -553,7 +663,7 @@ def solve_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
     try:
         poly = _sub(poly_of(lhs, var), poly_of(rhs, var))
     except SolveError:
-        for solver in (_solve_rational, _solve_radical):
+        for solver in (_solve_rational, _solve_radical, _solve_transcendental):
             alternative = _alternative_result(node, variables, solver)
             if alternative is not None:
                 return [alternative]

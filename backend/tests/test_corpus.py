@@ -182,6 +182,7 @@ def test_corpus_covers_every_module() -> None:
         "domain",
         "rational",
         "radical",
+        "transcendental",
         "matrices",
         "matrix_ops",
         "derivatives",

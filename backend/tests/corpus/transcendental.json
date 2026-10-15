@@ -1,0 +1,51 @@
+{
+  "module": "transcendental",
+  "tasks": [
+    {
+      "id": "exponential",
+      "title": "2^x = 8",
+      "input": "{=({2^x},{8})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {"type": "VARIABLE", "value": "x"},
+          {"type": "CONSTANT", "value": "3"}
+        ]
+      },
+      "steps": ["eq_trans"]
+    },
+    {
+      "id": "log-same-base",
+      "title": "ln x = ln 3 — приравнять аргументы",
+      "input": "{=({ln({x})},{ln({3})})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {"type": "VARIABLE", "value": "x"},
+          {"type": "CONSTANT", "value": "3"}
+        ]
+      },
+      "steps": ["eq_log_equalise"]
+    },
+    {
+      "id": "log-with-base",
+      "title": "log₂ x = 3",
+      "input": "{=({log({x},{2})},{3})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {"type": "VARIABLE", "value": "x"},
+          {"type": "CONSTANT", "value": "8"}
+        ]
+      },
+      "steps": ["eq_trans"]
+    },
+    {
+      "id": "exponential-no-solution",
+      "title": "2^x = −1 — решений нет",
+      "input": "{=({2^x},{-1})}",
+      "solution": null,
+      "steps": ["false_statement_solve"]
+    }
+  ]
+}
