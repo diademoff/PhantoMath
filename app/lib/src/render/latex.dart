@@ -88,14 +88,86 @@ String nodeToLatex(CoreNode node) {
     case CoreNodeType.tan:
       return _wrap(node, r'\tan\left($0\right)');
 
+    case CoreNodeType.cot:
+      return _wrap(node, r'\cot\left($0\right)');
+
+    case CoreNodeType.sec:
+      return _wrap(node, r'\sec\left($0\right)');
+
+    case CoreNodeType.csc:
+      return _wrap(node, r'\csc\left($0\right)');
+
+    case CoreNodeType.asin:
+      return _wrap(node, r'\arcsin\left($0\right)');
+
+    case CoreNodeType.acos:
+      return _wrap(node, r'\arccos\left($0\right)');
+
+    case CoreNodeType.atan:
+      return _wrap(node, r'\arctan\left($0\right)');
+
+    case CoreNodeType.acot:
+      return _wrap(node, r'\mathrm{acot}\left($0\right)');
+
+    case CoreNodeType.sinh:
+      return _wrap(node, r'\sinh\left($0\right)');
+
+    case CoreNodeType.cosh:
+      return _wrap(node, r'\cosh\left($0\right)');
+
+    case CoreNodeType.tanh:
+      return _wrap(node, r'\tanh\left($0\right)');
+
+    case CoreNodeType.coth:
+      return _wrap(node, r'\coth\left($0\right)');
+
     case CoreNodeType.log:
       return _wrap(node, r'\log_{$1}\left($0\right)');
+
+    case CoreNodeType.log10:
+      return _wrap(node, r'\log_{10}\left($0\right)');
 
     case CoreNodeType.ln:
       return _wrap(node, r'\ln\left($0\right)');
 
     case CoreNodeType.exp:
       return _wrap(node, r'e^{$0}');
+
+    case CoreNodeType.sign:
+      return _wrap(node, r'\mathrm{sign}\left($0\right)');
+
+    case CoreNodeType.floor:
+      return _wrap(node, r'\lfloor $0 \rfloor');
+
+    case CoreNodeType.percentage:
+      return _wrap(node, r'{$0}\,\%');
+
+    // ── исчисление ──────────────────────────────────────────────────
+    case CoreNodeType.derivation:
+    case CoreNodeType.derivation1:
+      return _wrap(node, r'\frac{d}{dx}\left($0\right)');
+
+    case CoreNodeType.integral:
+      return _wrap(node, r'\int $0\,dx');
+
+    case CoreNodeType.integralDefinite:
+      return _wrap(node, r'\int_{$0}^{$1} $2\,dx');
+
+    case CoreNodeType.limit:
+      return _wrap(node, r'\lim_{x \to $0} $1');
+
+    case CoreNodeType.sigmaDefinite:
+      return _wrap(node, r'\sum_{n=$0}^{$1} $2');
+
+    // ── комбинаторика ───────────────────────────────────────────────
+    case CoreNodeType.choose:
+      return _wrap(node, r'\binom{$0}{$1}');
+
+    case CoreNodeType.partialPermutation:
+      return _wrap(node, r'{}^{$0}P_{$1}');
+
+    case CoreNodeType.variation:
+      return _wrap(node, r'{}^{$0}A_{$1}');
 
     // ── отношения ───────────────────────────────────────────────────
     case CoreNodeType.equals:

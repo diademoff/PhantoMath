@@ -1,14 +1,17 @@
 /// Экран ввода и показа решения.
 ///
-/// Минимальный рабочий сценарий: вводим выражение, отправляем бэкенду,
-/// получаем шаги с пояснениями и отве��. Камера вне объёма (решение
-/// пользователя), поэтому ввода ровно два — текстовое поле и кнопка.
+/// Сценарий: набираем выражение на своей клавиатуре (структурный редактор,
+/// `src/editor/`), отправляем бэкенду AST-JSON, получаем шаги с пояснениями
+/// и ответ. Камера вне объёма (решение пользователя).
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 
 import 'src/api/solver_api.dart';
+import 'src/editor/controller.dart';
+import 'src/editor/editor_view.dart';
+import 'src/editor/keyboard.dart';
 import 'src/render/latex.dart';
 
 void main() {
@@ -23,6 +26,20 @@ const String defaultBaseUrl = String.fromEnvironment(
   'MYMATH_API',
   defaultValue: 'http://10.0.2.2:8000',
 );
+
+/// Языки пояснений из `explanations.json`.
+const List<String> explanationLocales = [
+  'default',
+  'ru',
+  'en',
+  'de',
+  'es',
+  'fr',
+  'it',
+  'pl',
+  'pt',
+  'uk',
+];
 
 class MyMathApp extends StatelessWidget {
   const MyMathApp({super.key, this.baseUrl = defaultBaseUrl});
@@ -53,8 +70,8 @@ class SolvePage extends StatefulWidget {
 }
 
 class _SolvePageState extends State<SolvePage> {
-  final _controller = TextEditingController(text: '2+3*4');
-  final _localeController = TextEditingController(text: 'ru');
+  final _editor = EditorController();
+  String _locale = 'ru';
 
   SolveResponse? _result;
   String? _error;
@@ -62,32 +79,33 @@ class _SolvePageState extends State<SolvePage> {
 
   @override
   void dispose() {
-    _controller.dispose();
-    _localeController.dispose();
+    _editor.dispose();
     widget.api.close();
     super.dispose();
   }
 
   Future<void> _solve() async {
+    if (_editor.isEmpty) {
+      setState(() => _error = 'Введите выражение');
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
-      // Текстовое поле принимает тот же протокол, что и редактор Photomath:
-      // это снимает отдельный слой парсинга на фронте.
-      final node = await widget.api.parse('{${_controller.text}}');
       final answer = await widget.api.solve(
-        node,
-        locale: _localeController.text.isEmpty
-            ? 'default'
-            : _localeController.text,
+        _editor.toCoreNode(),
+        locale: _locale,
       );
       if (!mounted) return;
       setState(() => _result = answer);
     } on SolveFailure catch (err) {
       if (!mounted) return;
-      setState(() => _error = err.message);
+      setState(() {
+        _error = err.message;
+        _result = null;
+      });
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -97,63 +115,61 @@ class _SolvePageState extends State<SolvePage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('mymath')),
+      appBar: AppBar(
+        title: const Text('mymath'),
+        actions: [
+          PopupMenuButton<String>(
+            tooltip: 'Язык пояснений',
+            initialValue: _locale,
+            onSelected: (value) => setState(() => _locale = value),
+            itemBuilder: (context) => [
+              for (final locale in explanationLocales)
+                PopupMenuItem(value: locale, child: Text(locale)),
+            ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Center(child: Text(_locale)),
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(
-                      labelText: 'Выражение',
-                      hintText: '2x + 3 = 7',
-                      border: OutlineInputBorder(),
-                    ),
-                    onSubmitted: (_) => _solve(),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: 110,
-                        child: TextField(
-                          controller: _localeController,
-                          decoration: const InputDecoration(
-                            labelText: 'Язык',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      FilledButton(
-                        onPressed: _busy ? null : _solve,
-                        child: _busy
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Text('Решить'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
             if (_error != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+              Container(
+                width: double.infinity,
+                color: theme.colorScheme.errorContainer,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Text(
                   _error!,
-                  style: TextStyle(color: theme.colorScheme.error),
+                  style: TextStyle(color: theme.colorScheme.onErrorContainer),
                 ),
               ),
-            const Divider(height: 1),
             Expanded(child: _buildBody(theme)),
+            const Divider(height: 1),
+            EditorView(controller: _editor),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _busy ? null : _solve,
+                  icon: _busy
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.check),
+                  label: const Text('Решить'),
+                ),
+              ),
+            ),
+            MathKeyboard(controller: _editor),
           ],
         ),
       ),
@@ -164,9 +180,13 @@ class _SolvePageState extends State<SolvePage> {
     final result = _result;
     if (result == null) {
       return Center(
-        child: Text(
-          'Введите выражение и нажмите «Решить»',
-          style: theme.textTheme.bodyMedium,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'Наберите выражение на клавиатуре и нажмите «Решить»',
+            style: theme.textTheme.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
         ),
       );
     }
