@@ -88,7 +88,7 @@ class TestSolve:
             eq(node(T.ADD, var("x"), var("y")), c("3")),
             eq(node(T.SUBTRACT, var("x"), var("y")), c("1")),
         )
-        assert step_keys(problem) == ["system_2x2_solve_elimination"]
+        assert step_keys(problem) == ["system_2x2_cramer_rule", "system_2x2_solve_elimination"]
         vertical = solve(problem).result.vertical()
         assert vertical is not None
         assert [h.type for h in vertical.steps[0].step_headers] == ["system_solve_short"]
@@ -220,7 +220,7 @@ class TestMethods:
             vertical = CoreSolverVerticalResult.from_contract(entry.result)
             keys.append([sub.description.type for step in vertical.steps for sub in step.substeps])
         assert keys == [
-            ["system_2x2_solve_elimination"],
+            ["system_2x2_cramer_rule", "system_2x2_solve_elimination"],
             ["system_2x2_solve_substitution"],
             ["system_2x2_add_eqs"],
         ]

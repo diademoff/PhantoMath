@@ -11,20 +11,35 @@
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
-              {"type": "CONSTANT", "value": "2"}
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
             ]
           },
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "y"},
-              {"type": "CONSTANT", "value": "1"}
+              {
+                "type": "VARIABLE",
+                "value": "y"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "1"
+              }
             ]
           }
         ]
       },
-      "steps": ["system_2x2_solve_elimination"]
+      "steps": [
+        "system_2x2_cramer_rule",
+        "system_2x2_solve_elimination"
+      ]
     },
     {
       "id": "coefficients",
@@ -36,20 +51,35 @@
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
-              {"type": "CONSTANT", "value": "3"}
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "3"
+              }
             ]
           },
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "y"},
-              {"type": "CONSTANT", "value": "2"}
+              {
+                "type": "VARIABLE",
+                "value": "y"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
             ]
           }
         ]
       },
-      "steps": ["system_2x2_solve_elimination"]
+      "steps": [
+        "system_2x2_cramer_rule",
+        "system_2x2_solve_elimination"
+      ]
     }
   ]
 }

@@ -173,6 +173,7 @@ def _cramer_2x2(node: CoreNode, ctx: SolveContext) -> CoreNode:
             children=[CoreNode.variable(second_var), CoreNode.constant(format_number(v))],
         ),
     )
+    ctx.result.add(Step(left=node, right=None, key="system_2x2_cramer_rule"), [_HEADER])
     ctx.result.add(Step(left=node, right=solution, key="system_2x2_solve_elimination"), [_HEADER])
     return solution
 
