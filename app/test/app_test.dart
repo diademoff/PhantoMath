@@ -37,6 +37,14 @@ Future<void> _key(WidgetTester tester, String label) async {
   await tester.pump();
 }
 
+/// Нажать чип: при необходимости прокрутить ленту команд до него.
+Future<void> _chip(WidgetTester tester, String label) async {
+  await tester.ensureVisible(find.text(label));
+  await tester.pump();
+  await tester.tap(find.text(label));
+  await tester.pump();
+}
+
 void main() {
   setUp(() {
     // Экран телефона: клавиатура должна помещаться без переполнения.
@@ -113,8 +121,7 @@ void main() {
     await tester.pump();
 
     await _key(tester, '2');
-    await tester.tap(find.text('Разложить'));
-    await tester.pump();
+    await _chip(tester, 'Разложить');
     await tester.tap(find.byKey(const ValueKey('solve')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
@@ -155,8 +162,7 @@ void main() {
     await tester.pump();
 
     await _key(tester, '2');
-    await tester.tap(find.text('Промежуток'));
-    await tester.pump();
+    await _chip(tester, 'Промежуток');
     await tester.pump(const Duration(milliseconds: 300));
     await tester.enterText(find.byType(TextField).at(0), '0');
     await tester.enterText(find.byType(TextField).at(1), '1');
@@ -245,8 +251,7 @@ void main() {
     await _key(tester, '2');
 
     // Шторка операций: второй вектор и скалярное произведение.
-    await tester.tap(find.text('Вектор…'));
-    await tester.pump();
+    await _chip(tester, 'Вектор…');
     await tester.pump(const Duration(milliseconds: 400));
     await tester.enterText(find.byType(TextField).at(0), '3, 4');
     await tester.tap(find.text('Скалярное'));
@@ -291,8 +296,7 @@ void main() {
       await _key(tester, '▼');
     }
 
-    await tester.tap(find.text('Матрица…'));
-    await tester.pump();
+    await _chip(tester, 'Матрица…');
     await tester.pump(const Duration(milliseconds: 400));
     await tester.enterText(find.byType(TextField).at(0), '5,6;7,8');
     await tester.tap(find.text('Умножить'));
@@ -328,10 +332,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: api)));
     await tester.pump();
     await _key(tester, '1');
-    await tester.ensureVisible(find.text('График'));
-    await tester.pump();
-    await tester.tap(find.text('График'));
-    await tester.pump();
+    await _chip(tester, 'График');
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('График y = f(x)'), findsOneWidget);

@@ -29,7 +29,7 @@ import sympy
 
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
-from .base import Command, SolveContext, SolveError, Step
+from .base import Command, SolveContext, SolveError, Step, boolean_node
 from .domain import domain, restrictions
 from .integrals import area
 from .matrices import MATRIX_COMMANDS
@@ -131,6 +131,19 @@ def to_mixed(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNod
     return result
 
 
+def prove(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Проверить, является ли равенство тождеством."""
+    del args
+    if node.type is not T.EQUALS or len(node.children) != 2:
+        raise SolveError("доказывать нужно равенство")
+    difference = sympy.simplify(to_sympy(node.children[0]) - to_sympy(node.children[1]))
+    identity = difference == 0
+    answer = boolean_node(identity)
+    key = "prove_identity_true" if identity else "prove_identity_both_false"
+    ctx.result.add(Step(left=node, right=answer, key=key))
+    return answer
+
+
 COMMANDS: dict[str, Command] = {
     "factor": factor,
     "expand": expand,
@@ -138,6 +151,7 @@ COMMANDS: dict[str, Command] = {
     "domain": domain,
     "restrictions": restrictions,
     "area": area,
+    "prove": prove,
     "to_fraction": to_fraction,
     "to_mixed": to_mixed,
     "to_percent": to_percent,
@@ -168,6 +182,7 @@ __all__ = [
     "domain",
     "expand",
     "factor",
+    "prove",
     "restrictions",
     "simplify",
     "to_fraction",

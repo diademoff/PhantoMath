@@ -195,6 +195,7 @@ def test_corpus_covers_every_module() -> None:
         "percentage",
         "rewrite",
         "area",
+        "prove",
         "matrices",
         "matrix_ops",
         "derivatives",

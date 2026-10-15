@@ -176,6 +176,7 @@ class _SolvePageState extends State<SolvePage> {
     ('to_sci', '10ⁿ'),
     ('to_mixed', 'Смешанное'),
     ('area', 'Площадь'),
+    ('prove', 'Доказать'),
     ('vector_length', 'Длина'),
   ];
 
@@ -414,10 +415,10 @@ class _SolvePageState extends State<SolvePage> {
             EditorView(controller: _editor),
             SizedBox(
               height: 40,
-              child: ListView(
+              child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                children: [
+                child: Row(children: [
                   for (final (command, label) in _commands)
                     Padding(
                       padding: const EdgeInsets.only(right: 6),
@@ -463,7 +464,7 @@ class _SolvePageState extends State<SolvePage> {
                       onPressed: _openGraph,
                     ),
                   ),
-                ],
+                ]),
               ),
             ),
             Padding(
