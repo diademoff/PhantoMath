@@ -37,6 +37,7 @@ from ..node_types import CoreNodeType as T
 from .arithmetic import as_fraction, format_number
 from .base import SolveContext, SolveError, SolveResult, Step, solver_for
 from .domain import add_restriction_steps
+from .methods import method_provider
 from .sympy_bridge import from_sympy, to_sympy
 
 # Многочлен: степень -> коэффициент. Нулевые коэффициенты не хранятся,
@@ -732,6 +733,7 @@ def _run(
     return result
 
 
+@method_provider(T.EQUALS)
 def solve_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
     """Способы решения уравнения: первый — основной, дальше — альтернативы.
 

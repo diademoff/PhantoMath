@@ -22,6 +22,7 @@ from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
 from .arithmetic import as_fraction, format_number
 from .base import SolveContext, SolveError, SolveResult, Step, boolean_node, solver_for
+from .methods import method_provider
 from .sympy_bridge import from_sympy, to_sympy
 
 _HEADER = CoreRichText(type="system_solve_short")
@@ -254,6 +255,7 @@ def _general_system(node: CoreNode, ctx: SolveContext) -> CoreNode:
     return solution
 
 
+@method_provider(T.SYSTEM)
 def system_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
     """Способы решения системы: Крамер (2×2 линейная) и подстановка (sympy).
 

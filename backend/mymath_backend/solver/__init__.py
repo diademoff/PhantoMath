@@ -32,7 +32,7 @@ from .comparison import COMPARABLE, solve_comparison, solve_order
 from .complex import contains_imaginary, solve_complex, solve_imaginary_arithmetic
 from .containers import solve_container
 from .derivatives import solve_derivative
-from .equations import solve_equation, solve_methods
+from .equations import solve_equation
 from .evaluate import solve_evaluate_expression, solve_mean
 from .fractions import solve_fraction
 from .inequalities import solve_inequality
@@ -40,13 +40,14 @@ from .integrals import solve_integral
 from .intervals import solve_interval
 from .limits import solve_limit
 from .matrices import solve_determinant, solve_matrix
+from .methods import has_method_provider, methods_for
 from .percentage import solve_percentage
 from .powers import solve_logarithm, solve_root
 from .sequences import solve_sequence
 from .series import solve_series
 from .sets import solve_inclusion, solve_membership, solve_set_operation
 from .sympy_bridge import from_sympy, to_sympy
-from .systems import solve_system, system_methods
+from .systems import solve_system
 from .trig_equations import Interval, solve_trig_equation
 from .trigonometry import solve_angle_unit, solve_function
 from .vertical import solve_vertical
@@ -94,26 +95,13 @@ def solve(
         trig = solve_trig_equation(node, ctx.variables, interval)
         if trig is not None:
             return build_solver_data(node, trig)
-        # Уравнение решается несколькими способами; первый — основной.
-        methods = solve_methods(node, ctx.variables)
-        alternatives = methods[1:]
-        return build_solver_data(
-            node,
-            methods[0],
-            alternatives=alternatives,
-            select_method_text="select_method" if alternatives else None,
-        )
-
-    if node.type is CoreNodeType.SYSTEM:
-        # Система решается несколькими способами (Крамер, подстановка).
-        methods = system_methods(node, ctx.variables)
-        alternatives = methods[1:]
-        return build_solver_data(
-            node,
-            methods[0],
-            alternatives=alternatives,
-            select_method_text="select_method" if alternatives else None,
-        )
+    # Способы решения — общий механизм: провайдеры по типу узла (уравнения,
+    # системы, ...). Первый способ основной, остальные — альтернативы, между
+    # которыми клиент переключается (`selectMethodText`).
+    if has_method_provider(node.type):
+        methods = methods_for(node, ctx.variables)
+        if methods:
+            return _with_methods(node, methods)
 
     if contains_imaginary(node) and node.type not in (
         CoreNodeType.REAL,
@@ -141,6 +129,21 @@ def solve(
         # должен подменять ответ (truth/07-open-questions.md, Q10).
         result.set_solution(folded)
     return build_solver_data(node, result)
+
+
+def _with_methods(node: CoreNode, methods: list[SolveResult]) -> CoreSolverData:
+    """Собрать ответ из способов решения: первый — основной, дальше — альтернативы.
+
+    Альтернативы становятся отдельными записями вертикальной ветки, а подпись
+    переключателя (`selectMethodText`) появляется, только если способ не один.
+    """
+    alternatives = methods[1:]
+    return build_solver_data(
+        node,
+        methods[0],
+        alternatives=alternatives,
+        select_method_text="select_method" if alternatives else None,
+    )
 
 
 def _simplify_fallback(node: CoreNode) -> SolveResult | None:
