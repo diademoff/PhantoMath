@@ -11,15 +11,24 @@
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
               {
                 "type": "ADD",
                 "children": [
                   {
                     "type": "FRACTION",
                     "children": [
-                      {"type": "CONSTANT", "value": "π"},
-                      {"type": "CONSTANT", "value": "6"}
+                      {
+                        "type": "CONSTANT",
+                        "value": "π"
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "6"
+                      }
                     ]
                   },
                   {
@@ -28,11 +37,20 @@
                       {
                         "type": "MULTIPLY_IMPLICIT",
                         "children": [
-                          {"type": "CONSTANT", "value": "2"},
-                          {"type": "CONSTANT", "value": "π"}
+                          {
+                            "type": "CONSTANT",
+                            "value": "2"
+                          },
+                          {
+                            "type": "CONSTANT",
+                            "value": "π"
+                          }
                         ]
                       },
-                      {"type": "VARIABLE", "value": "k"}
+                      {
+                        "type": "VARIABLE",
+                        "value": "k"
+                      }
                     ]
                   }
                 ]
@@ -42,7 +60,10 @@
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
               {
                 "type": "ADD",
                 "children": [
@@ -52,11 +73,20 @@
                       {
                         "type": "MULTIPLY_IMPLICIT",
                         "children": [
-                          {"type": "CONSTANT", "value": "5"},
-                          {"type": "CONSTANT", "value": "π"}
+                          {
+                            "type": "CONSTANT",
+                            "value": "5"
+                          },
+                          {
+                            "type": "CONSTANT",
+                            "value": "π"
+                          }
                         ]
                       },
-                      {"type": "CONSTANT", "value": "6"}
+                      {
+                        "type": "CONSTANT",
+                        "value": "6"
+                      }
                     ]
                   },
                   {
@@ -65,11 +95,20 @@
                       {
                         "type": "MULTIPLY_IMPLICIT",
                         "children": [
-                          {"type": "CONSTANT", "value": "2"},
-                          {"type": "CONSTANT", "value": "π"}
+                          {
+                            "type": "CONSTANT",
+                            "value": "2"
+                          },
+                          {
+                            "type": "CONSTANT",
+                            "value": "π"
+                          }
                         ]
                       },
-                      {"type": "VARIABLE", "value": "k"}
+                      {
+                        "type": "VARIABLE",
+                        "value": "k"
+                      }
                     ]
                   }
                 ]
@@ -78,7 +117,10 @@
           }
         ]
       },
-      "steps": ["trig_general_sol"]
+      "steps": [
+        "trig_find_period",
+        "trig_general_sol"
+      ]
     },
     {
       "id": "cosine-half",
@@ -90,15 +132,24 @@
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
               {
                 "type": "ADD",
                 "children": [
                   {
                     "type": "FRACTION",
                     "children": [
-                      {"type": "CONSTANT", "value": "π"},
-                      {"type": "CONSTANT", "value": "3"}
+                      {
+                        "type": "CONSTANT",
+                        "value": "π"
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "3"
+                      }
                     ]
                   },
                   {
@@ -107,11 +158,20 @@
                       {
                         "type": "MULTIPLY_IMPLICIT",
                         "children": [
-                          {"type": "CONSTANT", "value": "2"},
-                          {"type": "CONSTANT", "value": "π"}
+                          {
+                            "type": "CONSTANT",
+                            "value": "2"
+                          },
+                          {
+                            "type": "CONSTANT",
+                            "value": "π"
+                          }
                         ]
                       },
-                      {"type": "VARIABLE", "value": "k"}
+                      {
+                        "type": "VARIABLE",
+                        "value": "k"
+                      }
                     ]
                   }
                 ]
@@ -121,7 +181,10 @@
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
               {
                 "type": "ADD",
                 "children": [
@@ -131,11 +194,20 @@
                       {
                         "type": "MULTIPLY_IMPLICIT",
                         "children": [
-                          {"type": "CONSTANT", "value": "5"},
-                          {"type": "CONSTANT", "value": "π"}
+                          {
+                            "type": "CONSTANT",
+                            "value": "5"
+                          },
+                          {
+                            "type": "CONSTANT",
+                            "value": "π"
+                          }
                         ]
                       },
-                      {"type": "CONSTANT", "value": "3"}
+                      {
+                        "type": "CONSTANT",
+                        "value": "3"
+                      }
                     ]
                   },
                   {
@@ -144,11 +216,20 @@
                       {
                         "type": "MULTIPLY_IMPLICIT",
                         "children": [
-                          {"type": "CONSTANT", "value": "2"},
-                          {"type": "CONSTANT", "value": "π"}
+                          {
+                            "type": "CONSTANT",
+                            "value": "2"
+                          },
+                          {
+                            "type": "CONSTANT",
+                            "value": "π"
+                          }
                         ]
                       },
-                      {"type": "VARIABLE", "value": "k"}
+                      {
+                        "type": "VARIABLE",
+                        "value": "k"
+                      }
                     ]
                   }
                 ]
@@ -157,7 +238,10 @@
           }
         ]
       },
-      "steps": ["trig_general_sol"]
+      "steps": [
+        "trig_find_period",
+        "trig_general_sol"
+      ]
     },
     {
       "id": "tangent-one",
@@ -166,29 +250,47 @@
       "solution": {
         "type": "EQUALS",
         "children": [
-          {"type": "VARIABLE", "value": "x"},
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
           {
             "type": "ADD",
             "children": [
               {
                 "type": "FRACTION",
                 "children": [
-                  {"type": "CONSTANT", "value": "π"},
-                  {"type": "CONSTANT", "value": "4"}
+                  {
+                    "type": "CONSTANT",
+                    "value": "π"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "4"
+                  }
                 ]
               },
               {
                 "type": "MULTIPLY",
                 "children": [
-                  {"type": "CONSTANT", "value": "π"},
-                  {"type": "VARIABLE", "value": "k"}
+                  {
+                    "type": "CONSTANT",
+                    "value": "π"
+                  },
+                  {
+                    "type": "VARIABLE",
+                    "value": "k"
+                  }
                 ]
               }
             ]
           }
         ]
       },
-      "steps": ["trig_general_sol"]
+      "steps": [
+        "trig_find_period",
+        "trig_general_sol"
+      ]
     },
     {
       "id": "linear-argument",
@@ -200,22 +302,37 @@
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
               {
                 "type": "ADD",
                 "children": [
                   {
                     "type": "FRACTION",
                     "children": [
-                      {"type": "CONSTANT", "value": "π"},
-                      {"type": "CONSTANT", "value": "12"}
+                      {
+                        "type": "CONSTANT",
+                        "value": "π"
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "12"
+                      }
                     ]
                   },
                   {
                     "type": "MULTIPLY",
                     "children": [
-                      {"type": "CONSTANT", "value": "π"},
-                      {"type": "VARIABLE", "value": "k"}
+                      {
+                        "type": "CONSTANT",
+                        "value": "π"
+                      },
+                      {
+                        "type": "VARIABLE",
+                        "value": "k"
+                      }
                     ]
                   }
                 ]
@@ -225,7 +342,10 @@
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
               {
                 "type": "ADD",
                 "children": [
@@ -235,18 +355,33 @@
                       {
                         "type": "MULTIPLY_IMPLICIT",
                         "children": [
-                          {"type": "CONSTANT", "value": "5"},
-                          {"type": "CONSTANT", "value": "π"}
+                          {
+                            "type": "CONSTANT",
+                            "value": "5"
+                          },
+                          {
+                            "type": "CONSTANT",
+                            "value": "π"
+                          }
                         ]
                       },
-                      {"type": "CONSTANT", "value": "12"}
+                      {
+                        "type": "CONSTANT",
+                        "value": "12"
+                      }
                     ]
                   },
                   {
                     "type": "MULTIPLY",
                     "children": [
-                      {"type": "CONSTANT", "value": "π"},
-                      {"type": "VARIABLE", "value": "k"}
+                      {
+                        "type": "CONSTANT",
+                        "value": "π"
+                      },
+                      {
+                        "type": "VARIABLE",
+                        "value": "k"
+                      }
                     ]
                   }
                 ]
@@ -255,7 +390,10 @@
           }
         ]
       },
-      "steps": ["trig_general_sol"]
+      "steps": [
+        "trig_find_period",
+        "trig_general_sol"
+      ]
     },
     {
       "id": "two-sided",
@@ -267,15 +405,24 @@
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
               {
                 "type": "ADD",
                 "children": [
                   {
                     "type": "FRACTION",
                     "children": [
-                      {"type": "CONSTANT", "value": "π"},
-                      {"type": "CONSTANT", "value": "4"}
+                      {
+                        "type": "CONSTANT",
+                        "value": "π"
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "4"
+                      }
                     ]
                   },
                   {
@@ -284,11 +431,20 @@
                       {
                         "type": "MULTIPLY_IMPLICIT",
                         "children": [
-                          {"type": "CONSTANT", "value": "2"},
-                          {"type": "CONSTANT", "value": "π"}
+                          {
+                            "type": "CONSTANT",
+                            "value": "2"
+                          },
+                          {
+                            "type": "CONSTANT",
+                            "value": "π"
+                          }
                         ]
                       },
-                      {"type": "VARIABLE", "value": "k"}
+                      {
+                        "type": "VARIABLE",
+                        "value": "k"
+                      }
                     ]
                   }
                 ]
@@ -298,7 +454,10 @@
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
               {
                 "type": "ADD",
                 "children": [
@@ -308,11 +467,20 @@
                       {
                         "type": "MULTIPLY_IMPLICIT",
                         "children": [
-                          {"type": "CONSTANT", "value": "5"},
-                          {"type": "CONSTANT", "value": "π"}
+                          {
+                            "type": "CONSTANT",
+                            "value": "5"
+                          },
+                          {
+                            "type": "CONSTANT",
+                            "value": "π"
+                          }
                         ]
                       },
-                      {"type": "CONSTANT", "value": "4"}
+                      {
+                        "type": "CONSTANT",
+                        "value": "4"
+                      }
                     ]
                   },
                   {
@@ -321,11 +489,20 @@
                       {
                         "type": "MULTIPLY_IMPLICIT",
                         "children": [
-                          {"type": "CONSTANT", "value": "2"},
-                          {"type": "CONSTANT", "value": "π"}
+                          {
+                            "type": "CONSTANT",
+                            "value": "2"
+                          },
+                          {
+                            "type": "CONSTANT",
+                            "value": "π"
+                          }
                         ]
                       },
-                      {"type": "VARIABLE", "value": "k"}
+                      {
+                        "type": "VARIABLE",
+                        "value": "k"
+                      }
                     ]
                   }
                 ]
@@ -334,7 +511,10 @@
           }
         ]
       },
-      "steps": ["trig_general_sol"]
+      "steps": [
+        "trig_find_period",
+        "trig_general_sol"
+      ]
     },
     {
       "id": "sine-zero",
@@ -346,18 +526,30 @@
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
               {
                 "type": "MULTIPLY",
                 "children": [
                   {
                     "type": "MULTIPLY_IMPLICIT",
                     "children": [
-                      {"type": "CONSTANT", "value": "2"},
-                      {"type": "CONSTANT", "value": "π"}
+                      {
+                        "type": "CONSTANT",
+                        "value": "2"
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "π"
+                      }
                     ]
                   },
-                  {"type": "VARIABLE", "value": "k"}
+                  {
+                    "type": "VARIABLE",
+                    "value": "k"
+                  }
                 ]
               }
             ]
@@ -365,22 +557,37 @@
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
               {
                 "type": "ADD",
                 "children": [
-                  {"type": "CONSTANT", "value": "π"},
+                  {
+                    "type": "CONSTANT",
+                    "value": "π"
+                  },
                   {
                     "type": "MULTIPLY",
                     "children": [
                       {
                         "type": "MULTIPLY_IMPLICIT",
                         "children": [
-                          {"type": "CONSTANT", "value": "2"},
-                          {"type": "CONSTANT", "value": "π"}
+                          {
+                            "type": "CONSTANT",
+                            "value": "2"
+                          },
+                          {
+                            "type": "CONSTANT",
+                            "value": "π"
+                          }
                         ]
                       },
-                      {"type": "VARIABLE", "value": "k"}
+                      {
+                        "type": "VARIABLE",
+                        "value": "k"
+                      }
                     ]
                   }
                 ]
@@ -389,25 +596,40 @@
           }
         ]
       },
-      "steps": ["trig_general_sol"]
+      "steps": [
+        "trig_find_period",
+        "trig_general_sol"
+      ]
     },
     {
       "id": "roots-in-interval",
       "title": "sin x = 1/2, отбор корней на [0, 2π]",
       "input": "{=({sin({x})},{1/2})}",
-      "interval": {"min": "{0}", "max": "{2pi}"},
+      "interval": {
+        "min": "{0}",
+        "max": "{2pi}"
+      },
       "solution": {
         "type": "LIST",
         "children": [
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
               {
                 "type": "FRACTION",
                 "children": [
-                  {"type": "CONSTANT", "value": "π"},
-                  {"type": "CONSTANT", "value": "6"}
+                  {
+                    "type": "CONSTANT",
+                    "value": "π"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "6"
+                  }
                 ]
               }
             ]
@@ -415,39 +637,63 @@
           {
             "type": "EQUALS",
             "children": [
-              {"type": "VARIABLE", "value": "x"},
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
               {
                 "type": "FRACTION",
                 "children": [
                   {
                     "type": "MULTIPLY_IMPLICIT",
                     "children": [
-                      {"type": "CONSTANT", "value": "5"},
-                      {"type": "CONSTANT", "value": "π"}
+                      {
+                        "type": "CONSTANT",
+                        "value": "5"
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "π"
+                      }
                     ]
                   },
-                  {"type": "CONSTANT", "value": "6"}
+                  {
+                    "type": "CONSTANT",
+                    "value": "6"
+                  }
                 ]
               }
             ]
           }
         ]
       },
-      "steps": ["trig_general_sol", "trig_find_intervals_smpl"]
+      "steps": [
+        "trig_find_period",
+        "trig_general_sol",
+        "trig_find_intervals_smpl"
+      ]
     },
     {
       "id": "no-solution",
       "title": "sin x = 2 — решений нет",
       "input": "{=({sin({x})},{2})}",
-      "solution": {"type": "EMPTY"},
-      "steps": ["false_statement_solve"]
+      "solution": {
+        "type": "EMPTY"
+      },
+      "steps": [
+        "false_statement_solve"
+      ]
     },
     {
       "id": "identity",
       "title": "sin x = sin x — тождество",
       "input": "{=({sin({x})},{sin({x})})}",
-      "solution": {"type": "EMPTY"},
-      "steps": ["solutions_inf_many"]
+      "solution": {
+        "type": "EMPTY"
+      },
+      "steps": [
+        "solutions_inf_many"
+      ]
     }
   ]
 }

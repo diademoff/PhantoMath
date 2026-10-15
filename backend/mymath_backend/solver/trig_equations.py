@@ -76,6 +76,7 @@ def solve_trig_equation(
 
     general = _series_node(var, series)
     result = SolveResult()
+    result.add(Step(left=node, right=None, key="trig_find_period"))
     result.add(Step(left=node, right=general, key=_KEY_GENERAL, args=[from_sympy(series[0][0])]))
     result.set_solution(general)
 

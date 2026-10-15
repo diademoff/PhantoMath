@@ -69,7 +69,7 @@ class TestGeneralSolution:
     def test_sine_two_series(self) -> None:
         problem = eq(node(T.SIN, x()), half())
         assert series_offsets(problem) == {sympy.pi / 6, 5 * sympy.pi / 6}
-        assert step_keys(problem) == ["trig_general_sol"]
+        assert step_keys(problem) == ["trig_find_period", "trig_general_sol"]
 
     def test_cosine_two_series(self) -> None:
         problem = eq(node(T.COS, x()), half())
@@ -118,7 +118,11 @@ class TestInterval:
         assert solution is not None and solution.solution is not None
         assert solution.solution.type is T.LIST
         assert len(solution.solution.children) == 2
-        assert step_keys(problem, interval) == ["trig_general_sol", "trig_find_intervals_smpl"]
+        assert step_keys(problem, interval) == [
+            "trig_find_period",
+            "trig_general_sol",
+            "trig_find_intervals_smpl",
+        ]
 
     def test_selected_values(self) -> None:
         problem = eq(node(T.SIN, x()), half())
