@@ -39,6 +39,7 @@ from .powers import solve_logarithm, solve_root
 from .series import solve_series
 from .sympy_bridge import from_sympy, to_sympy
 from .systems import solve_system
+from .trig_equations import Interval, solve_trig_equation
 from .trigonometry import solve_angle_unit, solve_function
 
 # Ключ шага упрощения (общий с командой ``simplify``).
@@ -49,6 +50,7 @@ def solve(
     node: CoreNode,
     command: str | None = None,
     args: list[CoreNode] | None = None,
+    interval: Interval | None = None,
 ) -> CoreSolverData:
     """Решить выражение и вернуть ответ в формате контракта.
 
@@ -56,6 +58,7 @@ def solve(
     решают как обычно, ``factor``/``expand``/``simplify`` и векторные команды
     применяют соответствующее преобразование (см. ``solver/commands.py``).
     ``args`` — аргументы команды (``CoreAction.args``), например второй вектор.
+    ``interval`` — промежуток для отбора корней тригонометрического уравнения.
 
     Бросает :class:`SolveError`, если задача не решается текущим набором
     модулей. Вызывающий сам решает, что показать пользователю: 404 с
@@ -70,6 +73,9 @@ def solve(
         return build_solver_data(node, result)
 
     if node.type is CoreNodeType.EQUALS:
+        trig = solve_trig_equation(node, ctx.variables, interval)
+        if trig is not None:
+            return build_solver_data(node, trig)
         # Уравнение решается несколькими способами; первый — основной.
         methods = solve_methods(node, ctx.variables)
         alternatives = methods[1:]
@@ -187,5 +193,6 @@ __all__ = [
     "solve_root",
     "solve_series",
     "solve_system",
+    "solve_trig_equation",
     "solver_for",
 ]

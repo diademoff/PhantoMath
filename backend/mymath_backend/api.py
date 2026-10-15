@@ -83,6 +83,19 @@ def _explanations_loaded() -> bool:
 # ── схемы запросов и ответа ────────────────────────────────────────────
 
 
+class IntervalRequest(BaseModel):
+    """Промежуток отбора корней: левая и правая границы в формате ``CoreNode``.
+
+    Граница может быть не числом, а выражением (``π/2``), поэтому берём
+    узел контракта, а не число.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    min: dict[str, Any] = Field(description="Левая граница (CoreNode)")
+    max: dict[str, Any] = Field(description="Правая граница (CoreNode)")
+
+
 class SolveRequest(BaseModel):
     """Запрос на решение.
 
@@ -97,6 +110,10 @@ class SolveRequest(BaseModel):
     action: CoreAction | None = Field(
         default=None,
         description="Действие над выражением (CoreAction): solve/factor/expand/simplify",
+    )
+    interval: IntervalRequest | None = Field(
+        default=None,
+        description="Промежуток отбора корней тригонометрического уравнения",
     )
     locale: str = Field(default=DEFAULT_LOCALE, description="Язык пояснений")
     render: bool = Field(
@@ -280,11 +297,25 @@ def create_app() -> FastAPI:
                 status_code=422, detail=f"не удалось разобрать узел: {err}"
             ) from err
 
+        interval = None
+        if payload.interval is not None:
+            try:
+                interval = (
+                    parse_json(payload.interval.min),
+                    parse_json(payload.interval.max),
+                )
+            except (ValueError, KeyError) as err:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"не удалось разобрать границы промежутка: {err}",
+                ) from err
+
         try:
             data = solve(
                 node,
                 command=payload.action.command if payload.action else None,
                 args=payload.action.args if payload.action else None,
+                interval=interval,
             )
         except SolveError as err:
             # Задачу не решили -- это не поломка сервиса. Отвечаем 422 с

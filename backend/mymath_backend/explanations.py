@@ -253,6 +253,15 @@ def _default_render_arg(node: CoreNode) -> str:
         return f"({_default_render_arg(node.children[0])})"
     if node.type is T.NEGATIVE and len(node.children) == 1:
         return f"-{_default_render_arg(node.children[0])}"
+    if node.type is T.ADD:
+        return " + ".join(_default_render_arg(child) for child in node.children)
+    if node.type is T.SUBTRACT and len(node.children) >= 2:
+        head, *rest = node.children
+        return _default_render_arg(head) + "".join(
+            f" - {_default_render_arg(child)}" for child in rest
+        )
+    if node.type in (T.MULTIPLY, T.MULTIPLY_IMPLICIT):
+        return "·".join(_default_render_arg(child) for child in node.children)
     if len(node.children) == 1:
         return _default_render_arg(node.children[0])
     if node.children:
