@@ -1,0 +1,75 @@
+{
+  "module": "partial_fractions",
+  "tasks": [
+    {
+      "id": "two-factors",
+      "title": "1/(x²−1) = 1/(2(x−1)) − 1/(2(x+1))",
+      "input": "{frac({1},{x^2-1})}",
+      "command": "partial_fractions",
+      "solution": {
+        "type": "SUBTRACT",
+        "children": [
+          {
+            "type": "FRACTION",
+            "children": [
+              {"type": "CONSTANT", "value": "1"},
+              {
+                "type": "MULTIPLY_IMPLICIT",
+                "children": [
+                  {"type": "CONSTANT", "value": "2"},
+                  {
+                    "type": "SUBTRACT",
+                    "children": [
+                      {"type": "VARIABLE", "value": "x"},
+                      {"type": "CONSTANT", "value": "1"}
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "FRACTION",
+            "children": [
+              {"type": "CONSTANT", "value": "1"},
+              {
+                "type": "MULTIPLY_IMPLICIT",
+                "children": [
+                  {"type": "CONSTANT", "value": "2"},
+                  {
+                    "type": "ADD",
+                    "children": [
+                      {"type": "CONSTANT", "value": "1"},
+                      {"type": "VARIABLE", "value": "x"}
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": ["partial_frac"]
+    },
+    {
+      "id": "cancels",
+      "title": "(x+1)/(x²−1) = 1/(x−1)",
+      "input": "{frac({x+1},{x^2-1})}",
+      "command": "partial_fractions",
+      "solution": {
+        "type": "FRACTION",
+        "children": [
+          {"type": "CONSTANT", "value": "1"},
+          {
+            "type": "SUBTRACT",
+            "children": [
+              {"type": "VARIABLE", "value": "x"},
+              {"type": "CONSTANT", "value": "1"}
+            ]
+          }
+        ]
+      },
+      "steps": ["partial_frac"]
+    }
+  ]
+}

@@ -197,6 +197,7 @@ def test_corpus_covers_every_module() -> None:
         "periodic",
         "rewrite",
         "area",
+        "partial_fractions",
         "prove",
         "evaluate",
         "inverse",

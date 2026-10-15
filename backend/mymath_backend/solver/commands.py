@@ -26,6 +26,7 @@
 * ``sequence_convergence`` — сходимость последовательности (``seq_lim_conv``);
 * ``ratio_test`` — признак Даламбера для ряда (``series_ratio_test``);
 * ``root_test``/``nth_term_test`` — радикальный и необходимый признаки сходимости ряда;
+* ``partial_fractions`` — разложение на простейшие дроби (``partial_frac``);
 * ``intercepts`` — пересечения графика с осями координат
   (``find_x_intercept``/``find_y_intercept``);
 * ``range`` — область значений функции (``graph_rt_info_range``);
@@ -501,6 +502,23 @@ def solve_param(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> Core
     return answer
 
 
+def partial_fractions(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Разложить рациональное выражение на простейшие дроби.
+
+    Считает sympy (``apart``); шаг ``partial_frac``. Выражение обязано быть
+    рациональным (знаменатель зависит от переменной).
+    """
+    del args
+    expression = to_sympy(node)
+    _, denominator = sympy.fraction(sympy.together(expression))
+    if denominator == 1 or not denominator.free_symbols:
+        raise SolveError("простейшие дроби берутся у рационального выражения")
+    decomposed = sympy.apart(expression)
+    result = from_sympy(decomposed)
+    ctx.result.add(Step(left=node, right=result, key="partial_frac"))
+    return result
+
+
 def value_range(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Область значений функции — множество её значений на прямой.
 
@@ -712,6 +730,7 @@ COMMANDS: dict[str, Command] = {
     "intercepts": intercepts,
     "inverse_function": inverse_function,
     "nth_derivative": nth_derivative,
+    "partial_fractions": partial_fractions,
     "periodic_to_frac": periodic_to_frac,
     "range": value_range,
     "ratio_test": ratio_test,
