@@ -26,6 +26,7 @@ from .derivatives import solve_derivative
 from .equations import solve_equation
 from .fractions import solve_fraction
 from .inequalities import solve_inequality
+from .integrals import solve_integral
 from .limits import solve_limit
 from .matrices import solve_determinant
 from .powers import solve_logarithm, solve_root
@@ -97,6 +98,7 @@ __all__ = [
     "solve_equation",
     "solve_fraction",
     "solve_inequality",
+    "solve_integral",
     "solve_limit",
     "solve_logarithm",
     "solve_root",
