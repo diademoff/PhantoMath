@@ -289,9 +289,14 @@ def _quadratic_solution(
 def _quad_root(
     minus_b: Fraction, sqrt_node: CoreNode, denominator: Fraction, *, plus: bool
 ) -> CoreNode:
-    """Корень квадратного уравнения по формуле с знаком корня."""
+    """Корень квадратного уравнения по формуле с знаком корня.
+
+    При ``b = 0`` слагаемое ``-b`` равно нулю, но знак перед корнем всё
+    равно важен: без него обе ветви дают один и тот же положительный корень
+    (``x² − 2 = 0`` терял ``−√2``).
+    """
     if minus_b == 0:
-        numerator = sqrt_node
+        numerator = sqrt_node if plus else CoreNode(type=T.NEGATIVE, children=[sqrt_node])
     else:
         numerator = CoreNode(
             type=T.ADD if plus else T.SUBTRACT,
