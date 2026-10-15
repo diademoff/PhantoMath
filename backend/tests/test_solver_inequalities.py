@@ -159,6 +159,33 @@ class TestRationalInequality:
         assert answer.children[1].type is T.CLOSED_OPEN_INTERVAL
 
 
+class TestTranscendentalInequality:
+    def test_irrational(self) -> None:
+        # sqrt(x+1) < x-1 -> (3, inf)
+        problem = ineq(
+            T.LESS_THAN,
+            node(T.ROOT2, node(T.ADD, var("x"), c("1"))),
+            node(T.SUBTRACT, var("x"), c("1")),
+        )
+        answer = solution_of(problem)
+        assert answer.type is T.OPEN_OPEN_INTERVAL
+        assert answer.children[0].value == "3"
+
+    def test_exponential(self) -> None:
+        # 2^x < 8 -> (-inf, 3)
+        problem = ineq(T.LESS_THAN, node(T.POWER, c("2"), var("x")), c("8"))
+        answer = solution_of(problem)
+        assert answer.type is T.OPEN_OPEN_INTERVAL
+        assert answer.children[1].value == "3"
+
+    def test_logarithmic(self) -> None:
+        # log_2 x >= 3 -> [8, inf)
+        problem = ineq(T.GREATER_THAN_EQUAL, node(T.LOG, var("x"), c("2")), c("3"))
+        answer = solution_of(problem)
+        assert answer.type is T.CLOSED_OPEN_INTERVAL
+        assert answer.children[0].value == "8"
+
+
 class TestUnsupported:
     def test_two_variables(self) -> None:
         problem = ineq(T.LESS_THAN, node(T.ADD, var("x"), var("y")), c("1"))

@@ -9,7 +9,9 @@
   задаёт промежутки; ответ — промежуток или их объединение;
 * степень 0 — утверждение верно для всех или ни для одного значения;
 * неизвестное в знаменателе — множество решений даёт ``sympy.solveset``,
-  ответ — промежутки/объединение (ключи ``ineq_quotient_*``).
+  ответ — промежутки/объединение (ключи ``ineq_quotient_*``);
+* корень, логарифм или степень с переменным показателем — тоже ``solveset``
+  (ключи ``ineq_irr_solve``, ``ineq_solve_short``, ``log_ineq_gt_one``).
 
 Ключи: ``ineq_linear_div``/``ineq_linear_div_neg``, ``move``,
 ``ineq_quad_to_eq_quad``, ``ineq_quad_lead_*``. Ответ-промежуток — узлы
@@ -77,10 +79,15 @@ def solve_inequality(node: CoreNode, ctx: SolveContext) -> CoreNode:
             if poly[degree] == 0:
                 del poly[degree]
     except SolveError:
-        rational = _rational_inequality(node, var, ctx)
-        if rational is None:
-            raise
-        return rational
+        for solver in (
+            _rational_inequality,
+            _irrational_inequality,
+            _transcendental_inequality,
+        ):
+            answer = solver(node, var, ctx)
+            if answer is not None:
+                return answer
+        raise
 
     degree = max(poly) if poly else 0
     if degree == 0:
@@ -145,6 +152,68 @@ def _rational_inequality(node: CoreNode, var: str, ctx: SolveContext) -> CoreNod
     answer = from_sympy(values)
     ctx.result.add(Step(left=node, right=answer, key=key), [_HEADER])
     return answer
+
+
+def _irrational_inequality(node: CoreNode, var: str, ctx: SolveContext) -> CoreNode | None:
+    """Иррациональное неравенство: корни, множество решений — ``solveset``."""
+    expression = _difference(node)
+    if expression is None or not _has_radical(expression):
+        return None
+    return _inequality_set(node, expression, "ineq_irr_solve", ctx)
+
+
+def _transcendental_inequality(node: CoreNode, var: str, ctx: SolveContext) -> CoreNode | None:
+    """Показательное или логарифмическое неравенство через ``solveset``."""
+    expression = _difference(node)
+    if expression is None:
+        return None
+    symbol = sympy.Symbol(var)
+    if expression.has(sympy.log):
+        key = "ineq_solve_short"
+    elif _has_variable_power(expression, symbol):
+        key = "log_ineq_gt_one"
+    else:
+        return None
+    return _inequality_set(node, expression, key, ctx)
+
+
+def _difference(node: CoreNode) -> sympy.Expr | None:
+    """Разность частей неравенства в sympy или ``None``."""
+    lhs, rhs = node.children
+    try:
+        return sympy.together(to_sympy(lhs) - to_sympy(rhs))
+    except SolveError:
+        return None
+
+
+def _inequality_set(
+    node: CoreNode, expression: sympy.Expr, key: str, ctx: SolveContext
+) -> CoreNode | None:
+    """Множество решений неравенства через ``sympy.solveset``."""
+    symbol = sympy.Symbol(ctx.variables[0])
+    try:
+        values = sympy.solveset(_relational(node.type, expression), symbol, sympy.S.Reals)
+    except (TypeError, ValueError, NotImplementedError):
+        return None
+    answer = from_sympy(values)
+    ctx.result.add(Step(left=node, right=answer, key=key), [_HEADER])
+    return answer
+
+
+def _has_radical(expression: sympy.Expr) -> bool:
+    """Есть ли в выражении квадратный корень."""
+    return any(
+        isinstance(power, sympy.Pow) and power.exp == sympy.Rational(1, 2)
+        for power in expression.atoms(sympy.Pow)
+    )
+
+
+def _has_variable_power(expression: sympy.Expr, symbol: sympy.Symbol) -> bool:
+    """Есть ли степень с переменной в показателе (показательное выражение)."""
+    return any(
+        isinstance(power, sympy.Pow) and power.exp.has(symbol)
+        for power in expression.atoms(sympy.Pow)
+    )
 
 
 def _relational(node_type: T, expression: sympy.Expr) -> sympy.Rel:

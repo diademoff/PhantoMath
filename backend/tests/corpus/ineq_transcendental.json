@@ -1,0 +1,44 @@
+{
+  "module": "ineq_transcendental",
+  "tasks": [
+    {
+      "id": "irrational",
+      "title": "√(x+1) < x − 1 → (3, ∞)",
+      "input": "{lt({root2({x+1})},{x-1})}",
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "3"},
+          {"type": "CONSTANT", "value": "∞"}
+        ]
+      },
+      "steps": ["ineq_irr_solve"]
+    },
+    {
+      "id": "exponential",
+      "title": "2^x < 8 → (−∞, 3)",
+      "input": "{lt({2^x},{8})}",
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {"type": "NEGATIVE", "children": [{"type": "CONSTANT", "value": "∞"}]},
+          {"type": "CONSTANT", "value": "3"}
+        ]
+      },
+      "steps": ["log_ineq_gt_one"]
+    },
+    {
+      "id": "logarithmic",
+      "title": "log₂ x ≥ 3 → [8, ∞)",
+      "input": "{gte({log({x},{2})},{3})}",
+      "solution": {
+        "type": "CLOSED_OPEN_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "8"},
+          {"type": "CONSTANT", "value": "∞"}
+        ]
+      },
+      "steps": ["ineq_solve_short"]
+    }
+  ]
+}
