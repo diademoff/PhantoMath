@@ -52,7 +52,9 @@ uv run uvicorn mymath_backend.api:app --reload
 | `mymath_backend/input.py` | Разбор строки протокола Photomah и AST-JSON в `CoreNode` |
 | `mymath_backend/solver/base.py` | Шаги, накопитель результата, реестр модулей по типам узлов |
 | `mymath_backend/solver/arithmetic.py` | Первый модуль: `+ - * /`, степени, скобки, точные дроби |
-| `mymath_backend/api.py` | FastAPI: `/solve`, `/parse`, `/health` |
+| `mymath_backend/service.py` | Логика сервиса без фреймворка: словарь, рендер пояснений, parse/solve/graph |
+| `mymath_backend/api.py` | FastAPI поверх `service` (десктоп): `/solve`, `/parse`, `/graph`, `/health` |
+| `mymath_backend/device.py` | Локальный сервер на stdlib `http.server` для встроенного Python на устройстве |
 | `scripts/gen_node_types.py` | Генератор `node_types.py` из `truth/data/enums.json` |
 
 ## Эндпоинты

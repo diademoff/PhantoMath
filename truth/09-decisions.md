@@ -47,6 +47,10 @@
 | 20 | Графики — **своё семплирование**: эндпоинт `/api/v1/graph` (sympy) + `CustomPainter`; `CoreGraphResult` Photomath не воспроизводим | `graph.py`, `app/lib/src/render/graph_view.dart` |
 | 21 | Блокнот — **локальный файл** в каталоге приложения (`path_provider`); нет диска — работаем в памяти | `app/lib/src/notebook/notebook.dart` |
 | 54 | **Модели контракта — dataclasses, не pydantic**: ядро не тянет `pydantic-core` (Rust) и годится для встраивания CPython на устройстве; `pydantic`/`fastapi` — только HTTP-слой (extra `api`) | `ast.py`, `results.py`, `pyproject.toml` |
+| 55 | **Логика сервиса — в `service.py`** без фреймворка; FastAPI (`api.py`) и локальный сервер устройства (`device.py`, stdlib `http.server`) — тонкие обёртки над ней | `service.py`, `api.py`, `device.py` |
+| 56 | **Python на устройстве — `serious_python`** (CPython 3.12 в APK); `app/python/main.py` поднимает сервер на `127.0.0.1:8770`, приложение ходит HTTP | `app/python/`, `app/lib/src/api/embedded_backend.dart` |
+| 57 | **Сборка/раздача — `Makefile`** (`icon`, `python-bundle`, `apk`, `serve`, …); APK раздаётся по tailnet (статика на tailnet-IP) | `Makefile` |
+| 58 | **Launcher-иконка — из `app/logo.png`** (`flutter_launcher_icons`), adaptive-фон `#B80730` из лого; splash и лого в UI не добавлялись | `app/pubspec.yaml` |
 
 ## Ввод: редактор и клавиатура
 
