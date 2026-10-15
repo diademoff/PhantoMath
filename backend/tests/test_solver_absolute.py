@@ -145,10 +145,48 @@ class TestWithArithmetic:
         assert step_keys(problem) == ["abs", "add"]
 
 
+class TestAbsEquations:
+    def roots_of(self, problem: CoreNode) -> set[sympy.Expr]:
+        solution = solution_of(problem)
+        equations = solution.children if solution.type is T.LIST else [solution]
+        return {sympy.simplify(to_sympy(eq.children[1])) for eq in equations}
+
+    def test_two_roots(self) -> None:
+        problem = node(T.EQUALS, node(T.ABS, var()), c("3"))
+        assert self.roots_of(problem) == {-3, 3}
+        assert step_keys(problem) == ["eq_abs_branch", "quad_final_single"]
+
+    def test_fraction_root(self) -> None:
+        problem = node(T.EQUALS, node(T.ABS, var()), node(T.FRACTION, c("1"), c("2")))
+        assert self.roots_of(problem) == {sympy.Rational(-1, 2), sympy.Rational(1, 2)}
+
+    def test_linear_argument(self) -> None:
+        argument = node(T.SUBTRACT, node(T.MULTIPLY_IMPLICIT, c("2"), var()), c("3"))
+        problem = node(T.EQUALS, node(T.ABS, argument), c("5"))
+        assert self.roots_of(problem) == {-1, 4}
+
+    def test_negative_right_has_no_solution(self) -> None:
+        problem = node(T.EQUALS, node(T.ABS, var()), neg(c("2")))
+        assert solution_of(problem).type is T.EMPTY
+        assert step_keys(problem) == ["false_statement_solve"]
+
+    def test_zero_right_single_root(self) -> None:
+        problem = node(T.EQUALS, node(T.ABS, var()), c("0"))
+        assert self.roots_of(problem) == {0}
+
+    def test_plain_equation_is_untouched(self) -> None:
+        problem = node(
+            T.EQUALS,
+            node(T.ADD, node(T.MULTIPLY_IMPLICIT, c("2"), var()), c("3")),
+            c("7"),
+        )
+        assert step_keys(problem) == ["move", "eq_linar_divide_both_sides"]
+
+
 class TestExplanationKeys:
     def test_keys_exist(self) -> None:
         explanations = load_explanations(str(EXPLANATIONS))
-        for key in ("abs", "abs_pos", "find_sign", "calculate_floor"):
+        for key in ("abs", "abs_pos", "find_sign", "calculate_floor", "eq_abs_branch"):
             assert key in explanations
             assert explanations.arity(key) == 0
             assert "ARG" not in (explanations.raw_template(key, DEFAULT_LOCALE) or "")

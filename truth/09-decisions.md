@@ -84,6 +84,7 @@
 | 36 | **Микро-анимации (вариант B)** — `color`/`crossed` объявлены в базовом `CoreNode` (переживают сериализацию контракта), рендер оборачивает формулу в `\textcolor`/`\cancel`; решатель помечает сокращаемую дробь | `ast.py`, `solver/fractions.py`, `app/lib/src/render/latex.dart` |
 | 37 | **Формулы:** рендер выдаёт «сырой» LaTeX без `$…$` — `flutter_math` (KaTeX) не принимает `$` внутри формулы | `app/lib/src/render/latex.dart` |
 | 38 | **Модуль/знак/пол** — `ABS`/`SIGN`/`FLOOR` через sympy; структурные правила для заведомо неотрицательного аргумента (`\|x²\| = x²`, `sgn(x²) = 1` вне нуля); ключи `abs`/`abs_pos`, `find_sign`, `calculate_floor` | `solver/absolute.py` |
+| 39 | **Простейшие уравнения с модулем** `\|f(x)\| = a` — две ветви (`f(x)=a`, `f(x)=-a`), корни объединяются; при `a<0` решений нет; ключи `eq_abs_branch`, `quad_final_single` | `solver/absolute.py` |
 
 ## Следующее (открыто)
 

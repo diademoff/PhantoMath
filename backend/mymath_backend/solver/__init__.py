@@ -15,7 +15,7 @@ from ..ast import CoreNode
 from ..node_types import CoreNodeType
 from ..results import CoreSolverData
 from . import commands
-from .absolute import solve_value_function
+from .absolute import solve_abs_equation, solve_value_function
 from .arithmetic import format_number
 from .base import (
     SolveContext,
@@ -74,6 +74,9 @@ def solve(
         return build_solver_data(node, result)
 
     if node.type is CoreNodeType.EQUALS:
+        abs_equation = solve_abs_equation(node, ctx.variables)
+        if abs_equation is not None:
+            return build_solver_data(node, abs_equation)
         trig = solve_trig_equation(node, ctx.variables, interval)
         if trig is not None:
             return build_solver_data(node, trig)
@@ -177,6 +180,7 @@ __all__ = [
     "registered_types",
     "route",
     "solve",
+    "solve_abs_equation",
     "solve_angle_unit",
     "solve_arrangement",
     "solve_choose",

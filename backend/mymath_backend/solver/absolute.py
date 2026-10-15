@@ -23,13 +23,14 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import Any
 
 import sympy
 
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
-from .base import SolveContext, SolveError, Step, solver_for
+from .base import SolveContext, SolveError, SolveResult, Step, solver_for
 from .sympy_bridge import from_sympy, to_sympy
 
 # Узел -> функция sympy (она же применяется к значению и для проверки
@@ -45,6 +46,11 @@ _STEP_KEY: dict[T, str] = {
     T.FLOOR: "calculate_floor",
 }
 _KEY_ABS_POSITIVE = "abs_pos"
+
+# Ключи шагов уравнения с модулем.
+_KEY_ABS_BRANCH = "eq_abs_branch"
+_KEY_FINAL = "quad_final_single"
+_KEY_NO_SOLUTION = "false_statement_solve"
 
 
 @solver_for(*_FUNCTIONS)
@@ -112,6 +118,101 @@ def _integer(node: CoreNode) -> int | None:
         return None
 
 
+def solve_abs_equation(node: CoreNode, variables: list[str]) -> SolveResult | None:
+    """Решить простейшее уравнение ``|f(x)| = a`` или вернуть ``None``.
+
+    Слева -- модуль линейного выражения, справа -- число. Модуль заменяется
+    двумя уравнениями (``f(x) = a`` и ``f(x) = -a``), их корни объединяются.
+    Отрицательная правая часть решений не имеет; не наш случай -- ``None``.
+    """
+    if len(variables) != 1:
+        return None
+    matched = _match_abs(node)
+    if matched is None:
+        return None
+    abs_argument, other = matched
+    var = variables[0]
+
+    try:
+        left = to_sympy(abs_argument)
+        right = to_sympy(other)
+    except SolveError:
+        return None
+    if right.is_number is not True or right.is_real is not True:
+        return None
+    if right.is_negative:
+        return _no_solution(node)
+
+    targets = [right] if right == 0 else [right, -right]
+    roots = _roots(left, targets, sympy.Symbol(var))
+    if not roots:
+        return None
+
+    solution = _solution_node(var, roots)
+    branch_node = _list_node(
+        CoreNode.node(T.EQUALS, abs_argument, from_sympy(target)) for target in targets
+    )
+    result = SolveResult()
+    result.add(Step(left=node, right=branch_node, key=_KEY_ABS_BRANCH))
+    result.add(Step(left=branch_node, right=solution, key=_KEY_FINAL))
+    result.set_solution(solution)
+    return result
+
+
+def _match_abs(node: CoreNode) -> tuple[CoreNode, CoreNode] | None:
+    """``(аргумент модуля, другая часть)`` или ``None``, если это не ``|…| = …``."""
+    if node.type is not T.EQUALS or len(node.children) != 2:
+        return None
+    left, right = node.children
+    if left.type is T.ABS and len(left.children) == 1:
+        return left.children[0], right
+    if right.type is T.ABS and len(right.children) == 1:
+        return right.children[0], left
+    return None
+
+
+def _roots(left: sympy.Expr, targets: list[sympy.Expr], symbol: sympy.Symbol) -> list[sympy.Expr]:
+    """Корни уравнений ``left = target`` без повторов и комплексных."""
+    roots: list[sympy.Expr] = []
+    for target in targets:
+        try:
+            found = sympy.solve(sympy.Eq(left, target), symbol)
+        except (TypeError, ValueError, NotImplementedError):
+            continue
+        for root in found:
+            if root.is_real is False:
+                continue
+            if any(sympy.simplify(root - known) == 0 for known in roots):
+                continue
+            roots.append(root)
+    roots.sort(key=lambda root: float(sympy.N(root)))
+    return roots
+
+
+def _solution_node(var: str, roots: list[sympy.Expr]) -> CoreNode:
+    """Ответ ``x = …`` или список таких равенств."""
+    return _list_node(
+        CoreNode.node(T.EQUALS, CoreNode.variable(var), from_sympy(root)) for root in roots
+    )
+
+
+def _list_node(equations: Iterable[CoreNode]) -> CoreNode:
+    """Один узел из перечисления равенств."""
+    items = list(equations)
+    if len(items) == 1:
+        return items[0]
+    return CoreNode.node(T.LIST, *items)
+
+
+def _no_solution(node: CoreNode) -> SolveResult:
+    """Модуль не может быть равен отрицательному числу."""
+    result = SolveResult()
+    result.add(Step(left=node, right=None, key=_KEY_NO_SOLUTION))
+    result.set_solution(CoreNode.empty())
+    return result
+
+
 __all__ = [
+    "solve_abs_equation",
     "solve_value_function",
 ]
