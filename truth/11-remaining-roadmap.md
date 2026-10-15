@@ -218,9 +218,16 @@ R6 график кусочной функции (`/graph`, признак `piece
 интегралы (`integrate`, `integrate_def_rewrite`), производные (`derive_multi`),
 коники-классификация (`conics_identify`, `conics_identify_disc`).
 
-Остаётся: R11 (анимации — по решению пользователя отложены), дальнейшая
-глубина R8/R10 и остатки по модулям (`trig_*` дальше, `matrix_*` строками,
-`eq_*` трансцендентные, `integrate_*`/`limit_*` детали).
+Ещё в глубину (второй проход): комплексные (`complex_calculate_polar`), площадь
+(`total_area_fun`, `total_area_x_intercept`), обратная по Гауссу
+(`matrix_inv_use_notation`, `matrix_inv_write_right`), сходимость
+последовательности (`seq_conv_div_lim`), радиус сходимости
+(`convergence_radius_abs`), область определения (`domain_find_defined`),
+пересечения с осью x (`one_x_intercept`/`two_x_intercepts`), логарифмы
+(`log_def_solve`).
+
+Остаётся: R11 (анимации — по решению пользователя отложены) и остаточная
+глубина по редким ключам (`trig_*`, `matrix_*` строками, `integrate_*`/`limit_*`).
 
 ## 11.4. Порядок работ
 
