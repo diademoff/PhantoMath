@@ -1,0 +1,38 @@
+{
+  "module": "radical",
+  "tasks": [
+    {
+      "id": "simple",
+      "title": "√x = 2",
+      "input": "{=({root2({x})},{2})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {"type": "VARIABLE", "value": "x"},
+          {"type": "CONSTANT", "value": "4"}
+        ]
+      },
+      "steps": ["eq_irrational_simple_square"]
+    },
+    {
+      "id": "extraneous-root-excluded",
+      "title": "√(x+1) = x−1 — посторонний корень x=0 отброшен",
+      "input": "{=({root2({x+1})},{x-1})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {"type": "VARIABLE", "value": "x"},
+          {"type": "CONSTANT", "value": "3"}
+        ]
+      },
+      "steps": ["eq_irrational_simple_square", "eq_quad_solve_in_r", "rel_restrictions_check"]
+    },
+    {
+      "id": "no-solution",
+      "title": "√x = −1 — решений нет",
+      "input": "{=({root2({x})},{-1})}",
+      "solution": null,
+      "steps": ["eq_irrational_simple_square", "rel_restrictions_check"]
+    }
+  ]
+}

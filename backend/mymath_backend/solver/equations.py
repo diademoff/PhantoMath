@@ -12,7 +12,9 @@
 
 Если многочлен не строится, а неизвестное стоит в знаменателе, уравнение
 решается как **рациональное**: приводится к виду ``числитель / знаменатель =
-0``, решается числитель, корни-полюсы исключаются.
+0``, решается числитель, корни-полюсы исключаются. Уравнение с квадратным
+корнем решается как **иррациональное**: обе части возводятся в квадрат,
+посторонние корни отсеиваются подстановкой.
 
 Ключи шагов берутся из ``truth/data/explanations.json``: ``move``,
 ``eq_linar_divide_both_sides``, ``eq_quad_solve_in_r``, заголовок
@@ -313,11 +315,18 @@ def _quad_root(
     return CoreNode(type=T.FRACTION, children=[numerator, _const(denominator)])
 
 
-def _rational_result(node: CoreNode, variables: list[str]) -> SolveResult | None:
-    """Решить рациональное уравнение отдельным способом; ``None`` — не оно."""
+def _alternative_result(
+    node: CoreNode,
+    variables: list[str],
+    solver: Callable[[CoreNode, list[str], SolveContext], CoreNode | None],
+) -> SolveResult | None:
+    """Решить уравнение отдельным способом (рациональное, иррациональное).
+
+    ``None`` — способ не подошёл; тогда пробуется следующий.
+    """
     result = SolveResult()
     ctx = SolveContext(result=result, variables=list(variables))
-    answer = _solve_rational(node, variables, ctx)
+    answer = solver(node, variables, ctx)
     if answer is None:
         return None
     if answer.type is T.EMPTY:
@@ -411,6 +420,74 @@ def _solutions_node(var: str, values: list[CoreNode]) -> CoreNode:
     return CoreNode.node(T.LIST, *[_equation(var, value) for value in values])
 
 
+def _has_radical(expression: sympy.Expr) -> bool:
+    """Есть ли в выражении квадратный корень."""
+    return any(
+        isinstance(power, sympy.Pow) and power.exp == sympy.Rational(1, 2)
+        for power in expression.atoms(sympy.Pow)
+    )
+
+
+def _solve_radical(node: CoreNode, variables: list[str], ctx: SolveContext) -> CoreNode | None:
+    """Решить иррациональное уравнение возведением в квадрат.
+
+    Берётся одно возведение в квадрат (один радикал): уравнение ``f = g``
+    превращается в ``f² = g²``, решается как многочлен, затем посторонние
+    корни отсеиваются подстановкой в исходное ``f - g``. Возвращает ``None``,
+    если радикалов нет или одним возведением их не убрать.
+    """
+    var = variables[0]
+    lhs, rhs = node.children
+    try:
+        left, right = to_sympy(lhs), to_sympy(rhs)
+    except SolveError:
+        return None
+    if not (_has_radical(left) or _has_radical(right)):
+        return None
+
+    squared = CoreNode.node(T.EQUALS, from_sympy(left**2), from_sympy(right**2))
+    if _has_radical(to_sympy(squared)):
+        return None  # радикал остался — нужно несколько возведений, не берём
+
+    ctx.result.add(Step(left=node, right=squared, key="eq_irrational_simple_square"), [_HEADER])
+    answer = solve_equation(squared, ctx)
+    return _verify_roots(answer, left - right, var, ctx)
+
+
+def _verify_roots(answer: CoreNode, residual: sympy.Expr, var: str, ctx: SolveContext) -> CoreNode:
+    """Оставить только корни, обращающие ``residual`` в ноль."""
+    values = _roots_of(answer, var)
+    if not values:
+        return answer
+
+    symbol = sympy.Symbol(var)
+    kept: list[CoreNode] = []
+    excluded = False
+    for value in values:
+        if _satisfies(residual, symbol, value):
+            kept.append(value)
+        else:
+            excluded = True
+    if not excluded:
+        return answer
+
+    filtered = _solutions_node(var, kept)
+    ctx.result.add(Step(left=answer, right=filtered, key="rel_restrictions_check"), [_HEADER])
+    return filtered
+
+
+def _satisfies(residual: sympy.Expr, symbol: sympy.Symbol, value: CoreNode) -> bool:
+    """Обращается ли ``residual`` в ноль при данном значении переменной."""
+    try:
+        difference = sympy.simplify(residual.subs(symbol, to_sympy(value)))
+    except (TypeError, ValueError):
+        return True
+    result = difference == 0
+    if isinstance(result, bool):
+        return result
+    return result is sympy.true
+
+
 @solver_for(T.EQUALS)
 def solve_equation(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Решить уравнение с одним неизвестным.
@@ -432,10 +509,11 @@ def solve_equation(node: CoreNode, ctx: SolveContext) -> CoreNode:
     try:
         poly = _sub(poly_of(lhs, var), poly_of(rhs, var))
     except SolveError:
-        rational = _solve_rational(node, ctx.variables, ctx)
-        if rational is None:
-            raise
-        return rational
+        for solver in (_solve_rational, _solve_radical):
+            answer = solver(node, ctx.variables, ctx)
+            if answer is not None:
+                return answer
+        raise
     degree = _degree(poly)
 
     if degree == 0:
@@ -475,10 +553,11 @@ def solve_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
     try:
         poly = _sub(poly_of(lhs, var), poly_of(rhs, var))
     except SolveError:
-        rational = _rational_result(node, variables)
-        if rational is None:
-            raise
-        return [rational]
+        for solver in (_solve_rational, _solve_radical):
+            alternative = _alternative_result(node, variables, solver)
+            if alternative is not None:
+                return [alternative]
+        raise
     degree = _degree(poly)
 
     if degree == 0:
