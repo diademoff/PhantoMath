@@ -8,9 +8,17 @@
       "command": "prove",
       "solution": {
         "type": "TEXT",
-        "children": [{"type": "TEXT_KEY", "value": "true"}]
+        "children": [
+          {
+            "type": "TEXT_KEY",
+            "value": "true"
+          }
+        ]
       },
-      "steps": ["prove_identity_true"]
+      "steps": [
+        "prove_identity",
+        "prove_identity_true"
+      ]
     },
     {
       "id": "false-identity",
@@ -19,9 +27,17 @@
       "command": "prove",
       "solution": {
         "type": "TEXT",
-        "children": [{"type": "TEXT_KEY", "value": "false"}]
+        "children": [
+          {
+            "type": "TEXT_KEY",
+            "value": "false"
+          }
+        ]
       },
-      "steps": ["prove_identity_both_false"]
+      "steps": [
+        "prove_identity",
+        "prove_identity_both_false"
+      ]
     },
     {
       "id": "algebraic-identity",
@@ -30,9 +46,17 @@
       "command": "prove",
       "solution": {
         "type": "TEXT",
-        "children": [{"type": "TEXT_KEY", "value": "true"}]
+        "children": [
+          {
+            "type": "TEXT_KEY",
+            "value": "true"
+          }
+        ]
       },
-      "steps": ["prove_identity_true"]
+      "steps": [
+        "prove_identity",
+        "prove_identity_true"
+      ]
     }
   ]
 }

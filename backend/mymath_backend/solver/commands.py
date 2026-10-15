@@ -355,6 +355,7 @@ def prove(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     identity = difference == 0
     answer = boolean_node(identity)
     key = "prove_identity_true" if identity else "prove_identity_both_false"
+    ctx.result.add(Step(left=node, right=None, key="prove_identity"))
     ctx.result.add(Step(left=node, right=answer, key=key))
     return answer
 

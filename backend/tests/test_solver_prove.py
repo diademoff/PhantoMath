@@ -36,12 +36,12 @@ class TestProve:
     def test_true_identity(self) -> None:
         source = "{=({sin({x})^2+cos({x})^2},{1})}"
         assert bool_value(source) == "true"
-        assert step_keys(source) == ["prove_identity_true"]
+        assert step_keys(source) == ["prove_identity", "prove_identity_true"]
 
     def test_false_identity(self) -> None:
         source = "{=({sin({x})^2+cos({x})^2},{2})}"
         assert bool_value(source) == "false"
-        assert step_keys(source) == ["prove_identity_both_false"]
+        assert step_keys(source) == ["prove_identity", "prove_identity_both_false"]
 
     def test_algebraic(self) -> None:
         assert bool_value("{=({(x+1)^2},{x^2+2x+1})}") == "true"
