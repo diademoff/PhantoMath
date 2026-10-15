@@ -1,0 +1,173 @@
+{
+  "module": "matrix_ops",
+  "tasks": [
+    {
+      "id": "add",
+      "title": "сложение матриц",
+      "input": "{mat({mat_row({1},{2})},{mat_row({3},{4})})}",
+      "command": "matrix_add",
+      "args": ["{mat({mat_row({5},{6})},{mat_row({7},{8})})}"],
+      "solution": {
+        "type": "MATRIX",
+        "children": [
+          {
+            "type": "MATRIX_ROW",
+            "children": [
+              {"type": "CONSTANT", "value": "6"},
+              {"type": "CONSTANT", "value": "8"}
+            ]
+          },
+          {
+            "type": "MATRIX_ROW",
+            "children": [
+              {"type": "CONSTANT", "value": "10"},
+              {"type": "CONSTANT", "value": "12"}
+            ]
+          }
+        ]
+      },
+      "steps": ["matrix_add"]
+    },
+    {
+      "id": "multiply",
+      "title": "умножение матриц",
+      "input": "{mat({mat_row({1},{2})},{mat_row({3},{4})})}",
+      "command": "matrix_multiply",
+      "args": ["{mat({mat_row({5},{6})},{mat_row({7},{8})})}"],
+      "solution": {
+        "type": "MATRIX",
+        "children": [
+          {
+            "type": "MATRIX_ROW",
+            "children": [
+              {"type": "CONSTANT", "value": "19"},
+              {"type": "CONSTANT", "value": "22"}
+            ]
+          },
+          {
+            "type": "MATRIX_ROW",
+            "children": [
+              {"type": "CONSTANT", "value": "43"},
+              {"type": "CONSTANT", "value": "50"}
+            ]
+          }
+        ]
+      },
+      "steps": ["matrix_mul"]
+    },
+    {
+      "id": "subtract",
+      "title": "вычитание матриц",
+      "input": "{mat({mat_row({1},{2})},{mat_row({3},{4})})}",
+      "command": "matrix_subtract",
+      "args": ["{mat({mat_row({5},{6})},{mat_row({7},{8})})}"],
+      "solution": {
+        "type": "MATRIX",
+        "children": [
+          {
+            "type": "MATRIX_ROW",
+            "children": [
+              {"type": "CONSTANT", "value": "-4"},
+              {"type": "CONSTANT", "value": "-4"}
+            ]
+          },
+          {
+            "type": "MATRIX_ROW",
+            "children": [
+              {"type": "CONSTANT", "value": "-4"},
+              {"type": "CONSTANT", "value": "-4"}
+            ]
+          }
+        ]
+      },
+      "steps": ["matrix_sub"]
+    },
+    {
+      "id": "scale",
+      "title": "умножение матрицы на скаляр",
+      "input": "{mat({mat_row({1},{2})},{mat_row({3},{4})})}",
+      "command": "matrix_scale",
+      "args": ["{2}"],
+      "solution": {
+        "type": "MATRIX",
+        "children": [
+          {
+            "type": "MATRIX_ROW",
+            "children": [
+              {"type": "CONSTANT", "value": "2"},
+              {"type": "CONSTANT", "value": "4"}
+            ]
+          },
+          {
+            "type": "MATRIX_ROW",
+            "children": [
+              {"type": "CONSTANT", "value": "6"},
+              {"type": "CONSTANT", "value": "8"}
+            ]
+          }
+        ]
+      },
+      "steps": ["matrix_mul_scalar"]
+    },
+    {
+      "id": "transpose",
+      "title": "транспонирование",
+      "input": "{mat({mat_row({1},{2})},{mat_row({3},{4})})}",
+      "command": "matrix_transpose",
+      "solution": {
+        "type": "MATRIX",
+        "children": [
+          {
+            "type": "MATRIX_ROW",
+            "children": [
+              {"type": "CONSTANT", "value": "1"},
+              {"type": "CONSTANT", "value": "3"}
+            ]
+          },
+          {
+            "type": "MATRIX_ROW",
+            "children": [
+              {"type": "CONSTANT", "value": "2"},
+              {"type": "CONSTANT", "value": "4"}
+            ]
+          }
+        ]
+      },
+      "steps": ["calculate_short"]
+    },
+    {
+      "id": "inverse",
+      "title": "обратная матрица",
+      "input": "{mat({mat_row({1},{2})},{mat_row({3},{4})})}",
+      "command": "matrix_inverse",
+      "solution": {
+        "type": "MATRIX",
+        "children": [
+          {
+            "type": "MATRIX_ROW",
+            "children": [
+              {"type": "CONSTANT", "value": "-2"},
+              {"type": "CONSTANT", "value": "1"}
+            ]
+          },
+          {
+            "type": "MATRIX_ROW",
+            "children": [
+              {"type": "CONSTANT", "value": "3/2"},
+              {"type": "CONSTANT", "value": "-1/2"}
+            ]
+          }
+        ]
+      },
+      "steps": ["matrix_inv_find_smpl"]
+    },
+    {
+      "id": "determinant-of-matrix",
+      "title": "определитель матрицы командой",
+      "input": "{mat({mat_row({1},{2})},{mat_row({3},{4})})}",
+      "command": "matrix_determinant",
+      "solution": {"type": "CONSTANT", "value": "-2"},
+      "steps": ["matrix_det_rewrite"]
+    }
+  ]
+}

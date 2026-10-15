@@ -1,0 +1,26 @@
+{
+  "module": "series",
+  "tasks": [
+    {
+      "id": "natural-numbers",
+      "title": "сумма n от 1 до 5",
+      "input": "{sigma_def({n},{1},{5},{n})}",
+      "solution": {"type": "CONSTANT", "value": "15"},
+      "steps": ["series_sigma_find_sub"]
+    },
+    {
+      "id": "squares",
+      "title": "сумма n^2 от 1 до 4",
+      "input": "{sigma_def({n},{1},{4},{n^2})}",
+      "solution": {"type": "CONSTANT", "value": "30"},
+      "steps": ["series_sigma_find_sub"]
+    },
+    {
+      "id": "geometric",
+      "title": "сумма 2^n от 0 до 3",
+      "input": "{sigma_def({n},{0},{3},{2^n})}",
+      "solution": {"type": "CONSTANT", "value": "15"},
+      "steps": ["series_sigma_find_sub"]
+    }
+  ]
+}

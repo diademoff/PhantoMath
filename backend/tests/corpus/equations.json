@@ -1,0 +1,123 @@
+{
+  "module": "equations",
+  "tasks": [
+    {
+      "id": "linear",
+      "title": "линейное: 2x + 3 = 7",
+      "input": "{=({2x+3},{7})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {"type": "VARIABLE", "value": "x"},
+          {"type": "CONSTANT", "value": "2"}
+        ]
+      },
+      "steps": ["move", "eq_linar_divide_both_sides"]
+    },
+    {
+      "id": "variables-both-sides",
+      "title": "неизвестное с двух сторон: 3x - 1 = 2x + 4",
+      "input": "{=({3x-1},{2x+4})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {"type": "VARIABLE", "value": "x"},
+          {"type": "CONSTANT", "value": "5"}
+        ]
+      },
+      "steps": ["move"]
+    },
+    {
+      "id": "linear-divide-first",
+      "title": "способ 2: сначала деление обеих частей",
+      "input": "{=({2x+3},{7})}",
+      "method": 1,
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {"type": "VARIABLE", "value": "x"},
+          {"type": "CONSTANT", "value": "2"}
+        ]
+      },
+      "steps": ["eq_linar_divide_both_sides", "move"]
+    },
+    {
+      "id": "quadratic-two-roots",
+      "title": "квадратное: x^2 - 5x + 6 = 0, два корня",
+      "input": "{=({x^2-5x+6},{0})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {"type": "VARIABLE", "value": "x"},
+              {"type": "CONSTANT", "value": "2"}
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {"type": "VARIABLE", "value": "x"},
+              {"type": "CONSTANT", "value": "3"}
+            ]
+          }
+        ]
+      },
+      "steps": ["eq_quad_solve_in_r"]
+    },
+    {
+      "id": "quadratic-double-root",
+      "title": "квадратное: x^2 - 4x + 4 = 0, один корень",
+      "input": "{=({x^2-4x+4},{0})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {"type": "VARIABLE", "value": "x"},
+          {"type": "CONSTANT", "value": "2"}
+        ]
+      },
+      "steps": ["eq_quad_solve_in_r"]
+    },
+    {
+      "id": "quadratic-factoring",
+      "title": "способ 2: квадратное разложением на множители",
+      "input": "{=({x^2-5x+6},{0})}",
+      "method": 1,
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {"type": "VARIABLE", "value": "x"},
+              {"type": "CONSTANT", "value": "2"}
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {"type": "VARIABLE", "value": "x"},
+              {"type": "CONSTANT", "value": "3"}
+            ]
+          }
+        ]
+      },
+      "steps": ["solve_by_factoring"]
+    },
+    {
+      "id": "identity",
+      "title": "тождество: x = x — бесконечно много решений",
+      "input": "{=({x},{x})}",
+      "solution": null,
+      "steps": ["solutions_inf_many"]
+    },
+    {
+      "id": "contradiction",
+      "title": "противоречие: x + 1 = x + 2 — решений нет",
+      "input": "{=({x+1},{x+2})}",
+      "solution": null,
+      "steps": ["false_statement_solve"]
+    }
+  ]
+}

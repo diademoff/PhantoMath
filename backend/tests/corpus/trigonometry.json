@@ -1,0 +1,117 @@
+{
+  "module": "trigonometry",
+  "tasks": [
+    {
+      "id": "sin-30-degrees",
+      "title": "синус 30 градусов",
+      "input": "{sin({deg({30})})}",
+      "solution": {"type": "CONSTANT", "value": "1/2"},
+      "steps": ["trig_table_calc"]
+    },
+    {
+      "id": "cos-60-degrees",
+      "title": "косинус 60 градусов",
+      "input": "{cos({deg({60})})}",
+      "solution": {"type": "CONSTANT", "value": "1/2"},
+      "steps": ["trig_table_calc"]
+    },
+    {
+      "id": "tan-45-degrees",
+      "title": "тангенс 45 градусов",
+      "input": "{tan({deg({45})})}",
+      "solution": {"type": "CONSTANT", "value": "1"},
+      "steps": ["trig_table_calc"]
+    },
+    {
+      "id": "cos-30-degrees",
+      "title": "косинус 30 градусов — одна дробь sqrt(3)/2",
+      "input": "{cos({deg({30})})}",
+      "solution": {
+        "type": "FRACTION",
+        "children": [
+          {"type": "ROOT2", "children": [{"type": "CONSTANT", "value": "3"}]},
+          {"type": "CONSTANT", "value": "2"}
+        ]
+      },
+      "steps": ["trig_table_calc"]
+    },
+    {
+      "id": "sin-pi-over-6",
+      "title": "синус π/6 в радианах",
+      "input": "{sin({pi/6})}",
+      "solution": {"type": "CONSTANT", "value": "1/2"},
+      "steps": ["trig_table_calc"]
+    },
+    {
+      "id": "asin-half",
+      "title": "арксинус 1/2 — π/6",
+      "input": "{asin({1/2})}",
+      "solution": {
+        "type": "FRACTION",
+        "children": [
+          {"type": "CONSTANT", "value": "π"},
+          {"type": "CONSTANT", "value": "6"}
+        ]
+      },
+      "steps": ["trig_func_calc"]
+    },
+    {
+      "id": "sin-390-degrees",
+      "title": "периодичность: sin 390° приводится к sin 30°",
+      "input": "{sin({deg({390})})}",
+      "solution": {"type": "CONSTANT", "value": "1/2"},
+      "steps": ["trig_rewrite_coterminal_pos", "trig_table_calc"]
+    },
+    {
+      "id": "sin-13pi-over-6",
+      "title": "периодичность в радианах: sin 13π/6",
+      "input": "{sin({13pi/6})}",
+      "solution": {"type": "CONSTANT", "value": "1/2"},
+      "steps": ["trig_rewrite_coterminal_pos", "trig_table_calc"]
+    },
+    {
+      "id": "tan-5pi-over-4",
+      "title": "периодичность тангенса (полупериод): tan 5π/4",
+      "input": "{tan({5pi/4})}",
+      "solution": {"type": "CONSTANT", "value": "1"},
+      "steps": ["trig_rewrite_coterminal_pos", "trig_table_calc"]
+    },
+    {
+      "id": "sin-negative-x",
+      "title": "нечётность синуса: sin(-x) = -sin(x)",
+      "input": "{sin({-x})}",
+      "solution": {
+        "type": "NEGATIVE",
+        "children": [{"type": "SIN", "children": [{"type": "VARIABLE", "value": "x"}]}]
+      },
+      "steps": ["trig_neg_sin"]
+    },
+    {
+      "id": "cos-negative-x",
+      "title": "чётность косинуса: cos(-x) = cos(x)",
+      "input": "{cos({-x})}",
+      "solution": {"type": "COS", "children": [{"type": "VARIABLE", "value": "x"}]},
+      "steps": ["trig_neg_cos"]
+    },
+    {
+      "id": "asin-negative-half",
+      "title": "нечётность арксинуса: arcsin(-1/2) = -π/6",
+      "input": "{asin({-1/2})}",
+      "solution": {
+        "type": "FRACTION",
+        "children": [
+          {"type": "NEGATIVE", "children": [{"type": "CONSTANT", "value": "π"}]},
+          {"type": "CONSTANT", "value": "6"}
+        ]
+      },
+      "steps": ["trig_func_calc"]
+    },
+    {
+      "id": "pythagorean-identity",
+      "title": "основное тригонометрическое тождество",
+      "input": "{sin({x})^2+cos({x})^2}",
+      "solution": {"type": "CONSTANT", "value": "1"},
+      "steps": ["simplify"]
+    }
+  ]
+}

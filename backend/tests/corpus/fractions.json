@@ -1,0 +1,40 @@
+{
+  "module": "fractions",
+  "tasks": [
+    {
+      "id": "reduce",
+      "title": "сокращение 6/8",
+      "input": "{frac({6},{8})}",
+      "solution": {"type": "CONSTANT", "value": "3/4"},
+      "steps": ["frac_reduce_out"]
+    },
+    {
+      "id": "integer-result",
+      "title": "дробь сворачивается в целое",
+      "input": "{frac({6},{2})}",
+      "solution": {"type": "CONSTANT", "value": "3"},
+      "steps": ["frac_reduce_out"]
+    },
+    {
+      "id": "mixed-number",
+      "title": "смешанное число в неправильную дробь",
+      "input": "{mfrac({2},{1},{3})}",
+      "solution": {"type": "CONSTANT", "value": "7/3"},
+      "steps": ["convert_mixed_number"]
+    },
+    {
+      "id": "nested-numerator",
+      "title": "числитель-выражение сворачивается первым",
+      "input": "{frac({1+1},{4})}",
+      "solution": {"type": "CONSTANT", "value": "1/2"},
+      "steps": ["add", "frac_reduce_out"]
+    },
+    {
+      "id": "times-number",
+      "title": "дробь умножается на число",
+      "input": "{frac({2},{3})*3}",
+      "solution": {"type": "CONSTANT", "value": "2"},
+      "steps": ["mul"]
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "module": "powers",
+  "tasks": [
+    {
+      "id": "sqrt-25",
+      "title": "квадратный корень из полного квадрата",
+      "input": "{root2({25})}",
+      "solution": {"type": "CONSTANT", "value": "5"},
+      "steps": ["root_simplify"]
+    },
+    {
+      "id": "cube-root-27",
+      "title": "кубический корень из полного куба",
+      "input": "{root({3},{27})}",
+      "solution": {"type": "CONSTANT", "value": "3"},
+      "steps": ["root_simplify"]
+    },
+    {
+      "id": "sqrt-2-kept",
+      "title": "иррациональный корень остаётся символьным",
+      "input": "{root2({2})}",
+      "solution": {"type": "ROOT2", "children": [{"type": "CONSTANT", "value": "2"}]},
+      "steps": []
+    },
+    {
+      "id": "log10-1000",
+      "title": "десятичный логарифм точной степени",
+      "input": "{log10({1000})}",
+      "solution": {"type": "CONSTANT", "value": "3"},
+      "steps": ["calculate_short"]
+    },
+    {
+      "id": "log2-8",
+      "title": "логарифм по основанию 2",
+      "input": "{log({8},{2})}",
+      "solution": {"type": "CONSTANT", "value": "3"},
+      "steps": ["calculate_short"]
+    },
+    {
+      "id": "ln-1",
+      "title": "натуральный логарифм единицы",
+      "input": "{ln({1})}",
+      "solution": {"type": "CONSTANT", "value": "0"},
+      "steps": ["calculate_short"]
+    },
+    {
+      "id": "exp-0",
+      "title": "экспонента нуля",
+      "input": "{exp({0})}",
+      "solution": {"type": "CONSTANT", "value": "1"},
+      "steps": ["calculate_short"]
+    },
+    {
+      "id": "root-plus-one",
+      "title": "точный корень складывается с числом",
+      "input": "{root2({16})+1}",
+      "solution": {"type": "CONSTANT", "value": "5"},
+      "steps": ["root_simplify", "add"]
+    }
+  ]
+}

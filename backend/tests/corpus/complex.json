@@ -1,0 +1,57 @@
+{
+  "module": "complex",
+  "tasks": [
+    {
+      "id": "real-part",
+      "title": "действительная часть Re(1 + 2i)",
+      "input": "{real({1+2\\i})}",
+      "solution": {"type": "CONSTANT", "value": "1"},
+      "steps": ["complex_rewrite"]
+    },
+    {
+      "id": "imaginary-part",
+      "title": "мнимая часть Im(1 + 2i)",
+      "input": "{imag({1+2\\i})}",
+      "solution": {"type": "CONSTANT", "value": "2"},
+      "steps": ["complex_rewrite"]
+    },
+    {
+      "id": "conjugate",
+      "title": "сопряжение 1 + 2i",
+      "input": "{conj({1+2\\i})}",
+      "solution": {
+        "type": "SUBTRACT",
+        "children": [
+          {"type": "CONSTANT", "value": "1"},
+          {
+            "type": "MULTIPLY_IMPLICIT",
+            "children": [
+              {"type": "CONSTANT", "value": "2"},
+              {"type": "CONSTANT", "value": "i"}
+            ]
+          }
+        ]
+      },
+      "steps": ["complex_conjugate"]
+    },
+    {
+      "id": "product",
+      "title": "произведение (1 + 2i)(3 - i) в стандартном виде",
+      "input": "{(1+2\\i)*(3-\\i)}",
+      "solution": {
+        "type": "ADD",
+        "children": [
+          {"type": "CONSTANT", "value": "5"},
+          {
+            "type": "MULTIPLY_IMPLICIT",
+            "children": [
+              {"type": "CONSTANT", "value": "5"},
+              {"type": "CONSTANT", "value": "i"}
+            ]
+          }
+        ]
+      },
+      "steps": ["complex_convert_std_form"]
+    }
+  ]
+}

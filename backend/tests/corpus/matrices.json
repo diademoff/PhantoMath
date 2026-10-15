@@ -1,0 +1,33 @@
+{
+  "module": "matrices",
+  "tasks": [
+    {
+      "id": "det-2x2",
+      "title": "определитель 2x2",
+      "input": "{det2({1},{2},{3},{4})}",
+      "solution": {"type": "CONSTANT", "value": "-2"},
+      "steps": ["det2_calc"]
+    },
+    {
+      "id": "det-3x3",
+      "title": "определитель 3x3 по правилу Саррюса",
+      "input": "{det3({1},{2},{3},{4},{5},{6},{7},{8},{10})}",
+      "solution": {"type": "CONSTANT", "value": "-3"},
+      "steps": ["det3_sarrus_eval"]
+    },
+    {
+      "id": "det-4x4-identity",
+      "title": "определитель единичной 4x4",
+      "input": "{det4({1},{0},{0},{0},{0},{1},{0},{0},{0},{0},{1},{0},{0},{0},{0},{1})}",
+      "solution": {"type": "CONSTANT", "value": "1"},
+      "steps": ["det3_cofactor_eval"]
+    },
+    {
+      "id": "det-rows-form",
+      "title": "определитель из строк MATRIX_ROW",
+      "input": "{det({mat_row({2},{0})},{mat_row({0},{3})})}",
+      "solution": {"type": "CONSTANT", "value": "6"},
+      "steps": ["det2_calc"]
+    }
+  ]
+}

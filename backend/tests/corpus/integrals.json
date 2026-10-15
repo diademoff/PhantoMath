@@ -1,0 +1,81 @@
+{
+  "module": "integrals",
+  "tasks": [
+    {
+      "id": "power-two",
+      "title": "первообразная x^2",
+      "input": "{integral({x^2})}",
+      "solution": {
+        "type": "FRACTION",
+        "children": [
+          {
+            "type": "POWER",
+            "children": [
+              {"type": "VARIABLE", "value": "x"},
+              {"type": "CONSTANT", "value": "3"}
+            ]
+          },
+          {"type": "CONSTANT", "value": "3"}
+        ]
+      },
+      "steps": ["integrate_calc"]
+    },
+    {
+      "id": "sine",
+      "title": "первообразная sin x",
+      "input": "{integral({sin({x})})}",
+      "solution": {
+        "type": "NEGATIVE",
+        "children": [{"type": "COS", "children": [{"type": "VARIABLE", "value": "x"}]}]
+      },
+      "steps": ["integrate_calc"]
+    },
+    {
+      "id": "reciprocal",
+      "title": "первообразная 1/x",
+      "input": "{integral({1/x})}",
+      "solution": {"type": "LN", "children": [{"type": "VARIABLE", "value": "x"}]},
+      "steps": ["integrate_calc"]
+    },
+    {
+      "id": "exponential",
+      "title": "первообразная exp(x)",
+      "input": "{integral({exp({x})})}",
+      "solution": {"type": "EXP", "children": [{"type": "VARIABLE", "value": "x"}]},
+      "steps": ["integrate_calc"]
+    },
+    {
+      "id": "linear",
+      "title": "первообразная x",
+      "input": "{integral({x})}",
+      "solution": {
+        "type": "FRACTION",
+        "children": [
+          {
+            "type": "POWER",
+            "children": [
+              {"type": "VARIABLE", "value": "x"},
+              {"type": "CONSTANT", "value": "2"}
+            ]
+          },
+          {"type": "CONSTANT", "value": "2"}
+        ]
+      },
+      "steps": ["integrate_calc"]
+    },
+    {
+      "id": "definite-linear",
+      "title": "определённый интеграл x от 0 до 1",
+      "input": "{integral_def({0},{1},{x})}",
+      "solution": {"type": "CONSTANT", "value": "1/2"},
+      "steps": ["integrate_calc"]
+    },
+    {
+      "id": "definite-sine",
+      "title": "определённый интеграл sin x от 0 до π",
+      "input": "{integral_def({0},{pi},{sin({x})})}",
+      "solution": {"type": "CONSTANT", "value": "2"},
+      "steps": ["integrate_calc"]
+    }
+  ]
+}
