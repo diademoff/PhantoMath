@@ -1,0 +1,296 @@
+"""Производная функции одной переменной.
+
+Модуль зарегистрирован на узлы ``DERIVATION`` и ``DERIVATION1`` (``d/dx`` от
+подвыражения). Дифференцирование идёт по правилам над деревом ``CoreNode``,
+с локальным упрощением: константы складываются, ``1`` и ``0`` не пишутся,
+поэтому производная многочлена выходит сразу в чистом виде:
+
+* сумма/разность -- почленно;
+* произведение -- по правилу произведения;
+* частное -- по правилу частного;
+* степень, ``√``, ``sin``, ``cos``, ``tan``, ``ln``, ``e^u``, ``log`` --
+  по таблице с правилом цепочки.
+
+Шаг один -- ключ ``find_derivative`` с заголовком ``derive_short``. Типы,
+которых нет в таблице, отклоняются: это следующие модули.
+"""
+
+from __future__ import annotations
+
+from fractions import Fraction
+
+from ..ast import CoreNode, CoreRichText
+from ..node_types import CoreNodeType as T
+from .arithmetic import format_number
+from .base import SolveContext, SolveError, Step, solver_for
+
+_HEADER = CoreRichText(type="derive_short")
+
+
+def _const(value: Fraction) -> CoreNode:
+    return CoreNode.constant(format_number(value))
+
+
+def _as_number(node: CoreNode) -> Fraction | None:
+    """Число узла, если это числовая константа (``π`` не число)."""
+    if node.type is not T.CONSTANT or node.value is None:
+        return None
+    try:
+        return Fraction(node.value.strip())
+    except ValueError:
+        return None
+
+
+def _is_const(node: CoreNode, value: Fraction | None = None) -> bool:
+    number = _as_number(node)
+    if number is None:
+        return False
+    return value is None or number == value
+
+
+def _add(left: CoreNode, right: CoreNode) -> CoreNode:
+    if _is_const(left, Fraction(0)):
+        return right
+    if _is_const(right, Fraction(0)):
+        return left
+    a, b = _as_number(left), _as_number(right)
+    if a is not None and b is not None:
+        return _const(a + b)
+    return CoreNode(type=T.ADD, children=[left, right])
+
+
+def _sub(left: CoreNode, right: CoreNode) -> CoreNode:
+    if _is_const(right, Fraction(0)):
+        return left
+    if _is_const(left, Fraction(0)):
+        return _neg(right)
+    a, b = _as_number(left), _as_number(right)
+    if a is not None and b is not None:
+        return _const(a - b)
+    return CoreNode(type=T.SUBTRACT, children=[left, right])
+
+
+def _neg(node: CoreNode) -> CoreNode:
+    if node.type is T.NEGATIVE and len(node.children) == 1:
+        return node.children[0]
+    number = _as_number(node)
+    if number is not None:
+        return _const(-number)
+    return CoreNode(type=T.NEGATIVE, children=[node])
+
+
+def _scale_left(coefficient: Fraction, node: CoreNode) -> CoreNode:
+    """Умножить выражение на константу, сложив её с ведущим множителем.
+
+    ``3·(2x)`` даёт ``6x``, а не ``3·2·x``: так производная многочлена
+    выходит в чистом виде.
+    """
+    if node.type in (T.MULTIPLY, T.MULTIPLY_IMPLICIT) and node.children:
+        leading = _as_number(node.children[0])
+        if leading is not None:
+            rest = list(node.children[1:])
+            if not rest:
+                return _const(coefficient * leading)
+            inner = rest[0] if len(rest) == 1 else CoreNode(type=node.type, children=rest)
+            return CoreNode(
+                type=node.type,
+                children=[_const(coefficient * leading), inner],
+            )
+    return CoreNode(type=T.MULTIPLY_IMPLICIT, children=[_const(coefficient), node])
+
+
+def _mul(left: CoreNode, right: CoreNode) -> CoreNode:
+    if _is_const(left, Fraction(0)) or _is_const(right, Fraction(0)):
+        return _const(Fraction(0))
+    if _is_const(left, Fraction(1)):
+        return right
+    if _is_const(right, Fraction(1)):
+        return left
+    a, b = _as_number(left), _as_number(right)
+    if a is not None and b is not None:
+        return _const(a * b)
+    if a is not None:
+        return _neg(right) if a == -1 else _scale_left(a, right)
+    if b is not None:
+        return _neg(left) if b == -1 else _scale_left(b, left)
+    return CoreNode(type=T.MULTIPLY, children=[left, right])
+
+
+def _div(left: CoreNode, right: CoreNode) -> CoreNode:
+    if _is_const(left, Fraction(0)):
+        return _const(Fraction(0))
+    if _is_const(right, Fraction(1)):
+        return left
+    a, b = _as_number(left), _as_number(right)
+    if a is not None and b is not None and b != 0:
+        return _const(a / b)
+    return CoreNode(type=T.FRACTION, children=[left, right])
+
+
+def _int_exponent(node: CoreNode) -> int | None:
+    number = _as_number(node)
+    if number is None or number.denominator != 1:
+        return None
+    return number.numerator
+
+
+def _pow(base: CoreNode, exponent: CoreNode) -> CoreNode:
+    if _is_const(exponent, Fraction(0)):
+        return _const(Fraction(1))
+    if _is_const(exponent, Fraction(1)):
+        return base
+    a, b = _as_number(base), _as_number(exponent)
+    if a is not None and b is not None and b.denominator == 1 and abs(b) <= 64:
+        if a == 0 and b.numerator < 0:
+            raise SolveError("ноль в отрицательной степени")
+        return _const(a**b.numerator)
+    return CoreNode(type=T.POWER, children=[base, exponent])
+
+
+def _chain(outer: CoreNode, inner: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Правило цепочки: ``outer(u)`` -> ``outer'(u) · u'``."""
+    return _mul(outer, _diff(inner, ctx))
+
+
+def _diff(node: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Производная узла по переменной ``ctx.variables[0]``."""
+    var = ctx.variables[0] if ctx.variables else "x"
+    node_type = node.type
+
+    if node_type is T.CONSTANT:
+        return _const(Fraction(0))
+    if node_type is T.VARIABLE:
+        return _const(Fraction(1) if node.value == var else Fraction(0))
+    if node_type is T.NEGATIVE:
+        return _neg(_diff(node.children[0], ctx))
+    if node_type in (T.POSITIVE, T.BRACKET):
+        return _diff(node.children[0], ctx)
+
+    if node_type is T.ADD:
+        return _sum([_diff(child, ctx) for child in node.children], subtract=False)
+    if node_type is T.SUBTRACT:
+        return _sum([_diff(child, ctx) for child in node.children], subtract=True)
+    if node_type in (T.MULTIPLY, T.MULTIPLY_IMPLICIT):
+        return _product_rule(node.children, ctx)
+    if node_type in (T.DIVIDE, T.FRACTION):
+        return _quotient_rule(node.children[0], node.children[1], ctx)
+    if node_type is T.POWER:
+        return _power_rule(node.children[0], node.children[1], ctx)
+    if node_type in (T.ROOT2, T.ROOT):
+        radicand = node.children[-1]
+        outer = _div(_const(Fraction(1)), _mul(_const(Fraction(2)), _sqrt(radicand)))
+        return _chain(outer, radicand, ctx)
+
+    return _function_rule(node, ctx)
+
+
+def _sum(terms: list[CoreNode], *, subtract: bool) -> CoreNode:
+    result = terms[0] if terms else _const(Fraction(0))
+    for term in terms[1:]:
+        result = _sub(result, term) if subtract else _add(result, term)
+    return result
+
+
+def _sqrt(radicand: CoreNode) -> CoreNode:
+    return CoreNode(type=T.ROOT2, children=[radicand])
+
+
+def _product_rule(factors: list[CoreNode], ctx: SolveContext) -> CoreNode:
+    """Производная произведения: сумма по одному дифференцируемому множителю."""
+    total: CoreNode | None = None
+    for index, factor in enumerate(factors):
+        term = _diff(factor, ctx)
+        for other_index, other in enumerate(factors):
+            if other_index != index:
+                term = _mul(term, other)
+        total = term if total is None else _add(total, term)
+    return total if total is not None else _const(Fraction(0))
+
+
+def _quotient_rule(numerator: CoreNode, denominator: CoreNode, ctx: SolveContext) -> CoreNode:
+    top = _sub(
+        _mul(_diff(numerator, ctx), denominator),
+        _mul(numerator, _diff(denominator, ctx)),
+    )
+    return _div(top, _pow(denominator, _const(Fraction(2))))
+
+
+def _power_rule(base: CoreNode, exponent: CoreNode, ctx: SolveContext) -> CoreNode:
+    power = _int_exponent(exponent)
+    if power is not None:
+        # (u^n)' = n · u^(n-1) · u'
+        outer = _mul(_const(Fraction(power)), _pow(base, _const(Fraction(power - 1))))
+        return _mul(outer, _diff(base, ctx))
+    if _is_const(base):
+        # (a^u)' = a^u · ln(a) · u'
+        outer = _mul(CoreNode(type=T.POWER, children=[base, exponent]), _ln(base))
+        return _mul(outer, _diff(exponent, ctx))
+    raise SolveError("производная степени с переменными основанием и показателем не поддерживается")
+
+
+def _ln(argument: CoreNode) -> CoreNode:
+    return CoreNode(type=T.LN, children=[argument])
+
+
+def _function_rule(node: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Производные функций: таблица внешней производной и правило цепочки."""
+    argument = node.children[0] if node.children else CoreNode.empty()
+
+    def outer() -> CoreNode | None:
+        match node.type:
+            case T.SIN:
+                return CoreNode.node(T.COS, argument)
+            case T.COS:
+                return _neg(CoreNode.node(T.SIN, argument))
+            case T.TAN:
+                return _div(
+                    _const(Fraction(1)), _pow(CoreNode.node(T.COS, argument), _const(Fraction(2)))
+                )
+            case T.COT:
+                return _neg(
+                    _div(
+                        _const(Fraction(1)),
+                        _pow(CoreNode.node(T.SIN, argument), _const(Fraction(2))),
+                    )
+                )
+            case T.SINH:
+                return CoreNode.node(T.COSH, argument)
+            case T.COSH:
+                return CoreNode.node(T.SINH, argument)
+            case T.TANH:
+                return _div(
+                    _const(Fraction(1)), _pow(CoreNode.node(T.COSH, argument), _const(Fraction(2)))
+                )
+            case T.LN:
+                return _div(_const(Fraction(1)), argument)
+            case T.EXP:
+                return CoreNode.node(T.EXP, argument)
+            case T.LOG10:
+                return _div(_const(Fraction(1)), _mul(argument, _ln(CoreNode.constant("10"))))
+            case T.LOG:
+                base = node.children[1] if len(node.children) > 1 else CoreNode.constant("10")
+                return _div(_const(Fraction(1)), _mul(argument, _ln(base)))
+            case _:
+                return None
+
+    derived = outer()
+    if derived is None:
+        raise SolveError(f"производная узла {node.type} не поддерживается")
+    return _mul(derived, _diff(argument, ctx))
+
+
+@solver_for(T.DERIVATION, T.DERIVATION1)
+def solve_derivative(node: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Взять производную подвыражения.
+
+    Переменная — единственная свободная переменная выражения, иначе ``x``.
+    """
+    ctx.require(len(node.children) >= 1, "производная без выражения")
+    result = _diff(node.children[0], ctx)
+    ctx.result.add(Step(left=node, right=result, key="find_derivative"), [_HEADER])
+    return result
+
+
+__all__ = [
+    "solve_derivative",
+]

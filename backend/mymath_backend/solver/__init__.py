@@ -22,6 +22,7 @@ from .base import (
     route,
     solver_for,
 )
+from .derivatives import solve_derivative
 from .equations import solve_equation
 from .fractions import solve_fraction
 
@@ -86,6 +87,7 @@ __all__ = [
     "registered_types",
     "route",
     "solve",
+    "solve_derivative",
     "solve_equation",
     "solve_fraction",
     "solver_for",
