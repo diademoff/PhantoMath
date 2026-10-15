@@ -200,8 +200,18 @@ R6 график кусочной функции (`/graph`, признак `piece
 (`system_2x2_cramer_rule`), тождества (`prove_identity`), модуль
 (`abs_separate`).
 
+Продолжение углубления R10: уравнения (`eq_quad_coeff_identify`,
+`eq_quad_disc`, `eq_quad_disc_calculate`), пределы многочленов
+(`limit_poly_pos_inf_*`, `limit_poly_neg_inf_*_even/_odd`), перегибы
+(`inflection_domain_find`, `inflection_domain_snd_find`), чётность
+(`function_even_odd_notation`), последовательности (`seq_check_*`), матрицы
+(`matrix_inv_find_formula`), системы 3×3 (`system_3x3_eliminate_var`), ряды
+(`series_test_group`), модуль (`abs_separate`), y=kx+b
+(`identify_y_intercept_as_const_term`).
+
 Остаётся: R11 (анимации — по решению пользователя отложены), дальнейшая
-глубина R8/R10 и остатки по модулям.
+глубина R8/R10 и остатки по модулям (`rel_*`, `trig_*`, `frac_*`, `matrix_*`,
+`seq_*`).
 
 ## 11.4. Порядок работ
 
