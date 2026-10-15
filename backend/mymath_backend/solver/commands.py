@@ -177,6 +177,57 @@ def even_odd(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNod
     return expression_node
 
 
+def extrema(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
+    """Найти точки экстремума функции (через производные)."""
+    del args
+    expression_node = (
+        node.children[1] if node.type is T.EQUALS and len(node.children) == 2 else node
+    )
+    if len(ctx.variables) != 1:
+        raise SolveError("экстремумы: поддерживается одна переменная")
+    var = ctx.variables[0]
+    symbol = sympy.Symbol(var)
+    function = to_sympy(expression_node)
+    derivative = sympy.diff(function, symbol)
+    critical = _real_roots(derivative, symbol)
+    ctx.result.add(Step(left=node, right=None, key="extrema_derive"))
+
+    points: list[CoreNode] = []
+    for point in critical:
+        second = sympy.diff(derivative, symbol).subs(symbol, point)
+        if second.is_negative:
+            key = "extrema_maximum"
+        elif second.is_positive:
+            key = "extrema_minimum"
+        else:
+            continue
+        ctx.result.add(Step(left=node, right=None, key=key, args=[from_sympy(point)]))
+        points.append(CoreNode.node(T.EQUALS, CoreNode.variable(var), from_sympy(point)))
+    if not points:
+        raise SolveError("точки экстремума не найдены")
+    if len(points) == 1:
+        return points[0]
+    return CoreNode.node(T.LIST, *points)
+
+
+def _real_roots(expression: sympy.Expr, symbol: sympy.Symbol) -> list[sympy.Expr]:
+    """Действительные корни по возрастанию."""
+    try:
+        found = sympy.solve(sympy.Eq(expression, 0), symbol)
+    except (TypeError, ValueError, NotImplementedError):
+        return []
+    real = [root for root in found if root.is_real is not False]
+    real.sort(key=lambda item: _numeric(item))
+    return real
+
+
+def _numeric(value: sympy.Expr) -> float:
+    try:
+        return float(sympy.N(value))
+    except (TypeError, ValueError):
+        return 0.0
+
+
 COMMANDS: dict[str, Command] = {
     "factor": factor,
     "expand": expand,
@@ -185,6 +236,7 @@ COMMANDS: dict[str, Command] = {
     "restrictions": restrictions,
     "area": area,
     "even_odd": even_odd,
+    "extrema": extrema,
     "prove": prove,
     "substitute": substitute,
     "to_fraction": to_fraction,
@@ -217,6 +269,7 @@ __all__ = [
     "domain",
     "even_odd",
     "expand",
+    "extrema",
     "factor",
     "prove",
     "restrictions",
