@@ -43,6 +43,7 @@
 | 16 | Ссылки `[label\|uuid]` возвращаются как **`{label, uuid, definition}`**; определения — наш короткий глоссарий (`concepts.py`), не из APK | `api.py`, `concepts.py`, `app/lib/main.dart` |
 | 17 | Комплексные числа: мнимая единица — **`CONSTANT "i"`**; `Re`/`Im`/сопряжение — типы `REAL`/`IMAGINARY`/`CONJUGATE`, арифметика с `i` — через sympy | `solver/complex.py`, `sympy_bridge.py` |
 | 18 | **Векторы — наше представление**: вектор = узел `LIST` с компонентами; операции — команды с вторым операндом в `CoreAction.args` (в контракте типа вектора нет) | `solver/vectors.py`, `api.py` |
+| 19 | Тождество и противоречие — **ответ без узла**: шаг `solutions_inf_many` / `false_statement_solve`, `solution = null`; отдельного узла «все/ни одного» не вводим | `solver/equations.py` |
 
 ## Ввод: редактор и клавиатура
 

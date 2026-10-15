@@ -187,11 +187,45 @@ def _sqrt_node(value: Fraction) -> CoreNode:
 
 
 def _linear_solution(
-    node: CoreNode, lhs: CoreNode, rhs: CoreNode, var: str, poly: Poly, ctx: SolveContext
+    node: CoreNode,
+    lhs: CoreNode,
+    rhs: CoreNode,
+    var: str,
+    poly: Poly,
+    ctx: SolveContext,
+    *,
+    divide_first: bool = False,
 ) -> CoreNode:
-    """Линейное уравнение: ``a x + b = 0`` -> ``x = -b/a``."""
+    """Линейное уравнение: ``a x + b = 0`` -> ``x = -b/a``.
+
+    Два способа записи шагов: перенести свободный член, затем делить
+    (``divide_first=False``) — или сначала разделить обе части на ``a``,
+    затем перенести (``divide_first=True``).
+    """
     a, b = _coeff(poly, 1), _coeff(poly, 0)
     root = -b / a
+    solution = _equation(var, _const(root))
+
+    if divide_first:
+        after_divide = CoreNode(
+            type=T.EQUALS,
+            children=[
+                CoreNode(type=T.DIVIDE, children=[lhs, _const(a)]),
+                CoreNode(type=T.DIVIDE, children=[rhs, _const(a)]),
+            ],
+        )
+        ctx.result.add(
+            Step(
+                left=node,
+                right=after_divide,
+                key="eq_linar_divide_both_sides",
+                args=[_const(a)],
+            ),
+            [_HEADER],
+        )
+        ctx.result.add(Step(left=after_divide, right=solution, key="move"), [_HEADER])
+        return solution
+
     after_move = CoreNode(type=T.EQUALS, children=[_x_term(a, var), _const(-b)])
     already = poly_of(lhs, var) == {1: a} and poly_of(rhs, var) == {0: -b}
 
@@ -203,13 +237,13 @@ def _linear_solution(
         ctx.result.add(
             Step(
                 left=left,
-                right=_equation(var, _const(root)),
+                right=solution,
                 key="eq_linar_divide_both_sides",
                 args=[_const(a)],
             ),
             [_HEADER],
         )
-    return _equation(var, _const(root))
+    return solution
 
 
 def _quadratic_solution(
@@ -290,9 +324,10 @@ def solve_equation(node: CoreNode, ctx: SolveContext) -> CoreNode:
     degree = _degree(poly)
 
     if degree == 0:
-        if _coeff(poly, 0) == 0:
-            raise SolveError("обе части уравнения совпадают: решений бесконечно много")
-        raise SolveError("уравнение не имеет решений", "false_statement_solve")
+        # Уравнение не зависит от неизвестного: либо тождество, либо противоречие.
+        key = "solutions_inf_many" if _coeff(poly, 0) == 0 else "false_statement_solve"
+        ctx.result.add(Step(left=node, right=None, key=key))
+        return CoreNode.empty()
     if degree == 1:
         return _linear_solution(node, lhs, rhs, var, poly, ctx)
     if degree == 2:
@@ -313,8 +348,9 @@ def _run(
 def solve_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
     """Способы решения уравнения: первый — основной, дальше — альтернативы.
 
-    Линейное уравнение пока решается одним способом; квадратное — формулой и,
-    если корни рациональны, ещё и разложением на множители.
+    Линейное уравнение решается переносом и делением, а если коэффициент при
+    ``x`` не единица и есть свободный член — ещё и делением до переноса.
+    Квадратное — формулой и, если корни рациональны, разложением на множители.
     """
     if len(node.children) != 2 or len(variables) != 1:
         raise SolveError("поддерживается одно неизвестное")
@@ -324,11 +360,27 @@ def solve_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
     degree = _degree(poly)
 
     if degree == 0:
-        if _coeff(poly, 0) == 0:
-            raise SolveError("обе части уравнения совпадают: решений бесконечно много")
-        raise SolveError("уравнение не имеет решений", "false_statement_solve")
+        # Ответ — сам текст шага: решений либо нет, либо бесконечно много.
+        special = SolveResult()
+        special_ctx = SolveContext(result=special, variables=list(variables))
+        key = "solutions_inf_many" if _coeff(poly, 0) == 0 else "false_statement_solve"
+        special_ctx.result.add(Step(left=node, right=None, key=key))
+        return [special]
     if degree == 1:
-        return [_run(node, variables, lambda n, c: _linear_solution(n, lhs, rhs, var, poly, c))]
+        methods = [_run(node, variables, lambda n, c: _linear_solution(n, lhs, rhs, var, poly, c))]
+        a, b = _coeff(poly, 1), _coeff(poly, 0)
+        already = poly_of(lhs, var) == {1: a} and poly_of(rhs, var) == {0: -b}
+        # Второй способ — сначала разделить обе части на коэффициент; он
+        # отличается от первого, только если есть что переносить и делить.
+        if a != 1 and b != 0 and not already:
+            methods.append(
+                _run(
+                    node,
+                    variables,
+                    lambda n, c: _linear_solution(n, lhs, rhs, var, poly, c, divide_first=True),
+                )
+            )
+        return methods
     if degree == 2:
         methods = [_run(node, variables, lambda n, c: _quadratic_solution(n, var, poly, c))]
         a, b, c = _coeff(poly, 2), _coeff(poly, 1), _coeff(poly, 0)

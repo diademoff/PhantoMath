@@ -111,14 +111,6 @@ class TestQuadratic:
 
 
 class TestUnsupported:
-    def test_no_solution(self) -> None:
-        with pytest.raises(SolveError, match="не имеет решений"):
-            solve(parse_protocol("{=({2x+3},{2x+5})}"))
-
-    def test_identity(self) -> None:
-        with pytest.raises(SolveError, match="бесконечно много"):
-            solve(parse_protocol("{=({x+1},{x+1})}"))
-
     def test_degree_above_two(self) -> None:
         with pytest.raises(SolveError, match="второй степени"):
             solve(parse_protocol("{=({x^3},{1})}"))
@@ -191,7 +183,27 @@ class TestMethods:
         assert len(group.entries) == 1
         assert group.select_method_text is None
 
-    def test_linear_has_one_method(self) -> None:
+    def test_linear_has_two_methods(self) -> None:
         group = _group("{=({2x+3},{7})}")
+        assert len(group.entries) == 2
+        assert _method_keys(group.entries[0]) == ["move", "eq_linar_divide_both_sides"]
+        assert _method_keys(group.entries[1]) == ["eq_linar_divide_both_sides", "move"]
+
+    def test_linear_without_constant_has_one_method(self) -> None:
+        # 3x = 12: делить до переноса нечего, способ один.
+        group = _group("{=({3x},{12})}")
         assert len(group.entries) == 1
-        assert group.select_method_text is None
+
+
+class TestDegenerate:
+    """Тождество и противоречие: ответ — текст шага, без узла ответа."""
+
+    def test_no_solution(self) -> None:
+        group = _group("{=({2x+3},{2x+5})}")
+        assert _method_keys(group.entries[0]) == ["false_statement_solve"]
+        assert "solutionNode" not in group.entries[0].result
+
+    def test_identity(self) -> None:
+        group = _group("{=({x+1},{x+1})}")
+        assert _method_keys(group.entries[0]) == ["solutions_inf_many"]
+        assert "solutionNode" not in group.entries[0].result
