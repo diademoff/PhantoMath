@@ -11,13 +11,25 @@
 from __future__ import annotations
 
 import math
-from typing import Any
+import operator
+from collections.abc import Callable
+from typing import Any, cast
 
 import sympy
 
 from .ast import CoreNode
+from .node_types import CoreNodeType as T
 from .solver.base import SolveError
 from .solver.sympy_bridge import to_sympy
+
+_CONDITIONS: dict[T, Callable[[float, float], bool]] = {
+    T.LESS_THAN: operator.lt,
+    T.LESS_THAN_EQUAL: operator.le,
+    T.GREATER_THAN: operator.gt,
+    T.GREATER_THAN_EQUAL: operator.ge,
+    T.EQUALS: operator.eq,
+    T.NOT_EQUALS: operator.ne,
+}
 
 DEFAULT_SAMPLES = 400
 _MAX_SAMPLES = 5000
@@ -41,7 +53,7 @@ def sample(
         raise SolveError("неверное число точек")
 
     variable = free_variable(node)
-    function = sympy.lambdify(sympy.Symbol(variable), to_sympy(node), modules=["math"])
+    function = _function(node, variable)
 
     points: list[list[float]] = []
     step = (x_max - x_min) / (samples - 1)
@@ -72,12 +84,53 @@ def sample(
     }
 
 
+def _function(node: CoreNode, variable: str) -> Callable[[float], float]:
+    """Функция ``x -> f(x)``; для кусочной — по ветвям с условиями."""
+    symbol = sympy.Symbol(variable)
+    if node.type is not T.PIECEWISE_DEFINITION:
+        return _scalar(node, symbol)
+    branches = [
+        (_scalar(node.children[index], symbol), _condition(node.children[index + 1], symbol))
+        for index in range(0, len(node.children) - 1, 2)
+    ]
+
+    def evaluate(x: float) -> float:
+        for expression, condition in branches:
+            try:
+                if condition(x):
+                    return expression(x)
+            except (ValueError, TypeError, ZeroDivisionError):
+                continue
+        return math.nan
+
+    return evaluate
+
+
+def _scalar(node: CoreNode, symbol: sympy.Symbol) -> Callable[[float], float]:
+    """Числовая функция от одного выражения."""
+    return cast(Callable[[float], float], sympy.lambdify(symbol, to_sympy(node), modules=["math"]))
+
+
+def _condition(node: CoreNode, symbol: sympy.Symbol) -> Callable[[float], bool]:
+    """Предикат условия-отношения."""
+    comparison = _CONDITIONS.get(node.type)
+    if comparison is None or len(node.children) != 2:
+        raise SolveError("условие кусочной функции — отношение двух выражений")
+    left = _scalar(node.children[0], symbol)
+    right = _scalar(node.children[1], symbol)
+    return lambda x: comparison(left(x), right(x))
+
+
 def graph_annotations(node: CoreNode, x_min: float, x_max: float) -> dict[str, Any]:
     """Опорные точки графика: корни, пересечение с осью y, экстремумы, асимптоты.
 
     Соответствует меткам ``graph_rt_info_*`` Photomath. Значения вещественные и
-    конечные; при неудаче соответствующая группа остаётся пустой.
+    конечные; при неудаче соответствующая группа остаётся пустой. Для кусочной
+    функции возвращается только признак ``piecewise``.
     """
+    if node.type is T.PIECEWISE_DEFINITION:
+        return {"piecewise": True}
+
     variable = free_variable(node)
     symbol = sympy.Symbol(variable)
     expression = to_sympy(node)

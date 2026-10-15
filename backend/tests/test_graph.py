@@ -67,6 +67,25 @@ class TestAnnotations:
         assert data["annotations"]["minima"] == [[0.0, 0.0]]
 
 
+class TestPiecewise:
+    def _piecewise(self) -> CoreNode:
+        return CoreNode.node(
+            T.PIECEWISE_DEFINITION,
+            node(T.POWER, var(), c("2")),
+            node(T.LESS_THAN, var(), c("0")),
+            node(T.ADD, var(), c("1")),
+            node(T.GREATER_THAN_EQUAL, var(), c("0")),
+        )
+
+    def test_samples_follow_branches(self) -> None:
+        data = sample(self._piecewise(), -2.0, 2.0, samples=5)
+        assert data["points"] == [[-2.0, 4.0], [-1.0, 1.0], [0.0, 1.0], [1.0, 2.0], [2.0, 3.0]]
+
+    def test_annotations_flagged(self) -> None:
+        data = sample(self._piecewise(), -2.0, 2.0, samples=5)
+        assert data["annotations"] == {"piecewise": True}
+
+
 class TestErrors:
     def test_bad_range(self) -> None:
         with pytest.raises(SolveError, match="диапазон"):
