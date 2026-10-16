@@ -93,6 +93,12 @@ class _EditorViewState extends State<EditorView> {
     final spans = <InlineSpan>[];
     for (var i = 0; i < row.children.length; i++) {
       if (cursorHere && i == _cursor.offset) spans.add(_cursorSpan());
+      if (row.children[i].kind == ENodeKind.newline) {
+        // Перевод строки: разрыв линии, курсор встаёт до/после него
+        // общей логикой смещений.
+        spans.add(const TextSpan(text: '\n'));
+        continue;
+      }
       spans.add(
         WidgetSpan(
           alignment: PlaceholderAlignment.middle,

@@ -17,11 +17,11 @@ Future<void> _pump(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('dead control key is dimmed on primary sheet', (tester) async {
+  testWidgets('all primary keys are live', (tester) async {
     await _pump(tester);
-    // Служебный ряд: перевод строки неподдержан (`_unsupported`), остальные
-    // клавиши рабочие — приглушена ровно одна.
-    expect(_dimmed, findsOneWidget);
+    // Служебный ряд и базовый экран: перевод строки теперь вводит
+    // разделитель, остальные клавиши были рабочими — приглушённых нет.
+    expect(_dimmed, findsNothing);
   });
 
   testWidgets('dead a_n key is dimmed on secondary sheet', (tester) async {
@@ -29,7 +29,7 @@ void main() {
     // Первый InkWell служебного ряда — тоггл `f ∫ <>` на вторичный экран.
     await tester.tap(find.byType(InkWell).first);
     await tester.pump();
-    // Вторичный экран: `aₙ` без действия плюс перевод строки — приглушены две.
-    expect(_dimmed, findsNWidgets(2));
+    // Вторичный экран: только `aₙ` без действия.
+    expect(_dimmed, findsOneWidget);
   });
 }

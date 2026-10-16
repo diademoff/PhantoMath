@@ -3,7 +3,7 @@
 /// Полный перечень взят из `truth/data/enums.json` (`editor_operators`).
 /// Каждый оператор сопоставлен действию редактора (`MathKey`) либо помечен
 /// недоступным с причиной: наш решатель поддерживает не все узлы оригинала
-/// (`FUNCTION`, `ADD_SUBTRACT`, подстрочные индексы, многострочный ввод).
+/// (`FUNCTION`, `ADD_SUBTRACT`, подстрочные индексы).
 ///
 /// Каталог — источник истины о покрытии клавиатуры: тест
 /// `test/operators_test.dart` проверяет, что перечислены ровно 128 операторов
@@ -297,7 +297,6 @@ final Map<String, ENodeKind> _infix = {
 
 /// Операторы без поддержки в нашем решателе: причина.
 const Map<String, String> _unsupported = {
-  'CONTROL_NEW_LINE': 'многострочный ввод не поддержан',
   'BASIC_INFIX_OPERATOR_PLUS_MINUS': 'узел ADD_SUBTRACT не реализован',
   'CONSTANT_HALF_PI': 'нет отдельного узла π/2 (вводится как π⁄2)',
   'CONSTANT_THIRD_PI': 'нет отдельного узла π/3 (вводится как π⁄3)',
@@ -341,6 +340,8 @@ OperatorBinding bindOperator(String name) {
         name,
         key: const MathKey(MathKeyType.backspace, label: '⌫'),
       );
+    case 'CONTROL_NEW_LINE':
+      return OperatorBinding(name, key: const MathKey.newline());
     case 'CONTROL_EMPTY':
       return OperatorBinding(
         name,

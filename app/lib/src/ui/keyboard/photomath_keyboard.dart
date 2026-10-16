@@ -141,9 +141,8 @@ class _PhotomathKeyboardState extends State<PhotomathKeyboard> {
       case 'CONTROL_DELETE':
         _editor.backspace();
       case 'CONTROL_NEW_LINE':
-        // Многострочный ввод вне scope (`_unsupported` в `operators.dart`),
-        // поэтому клавиша ничего не вводит — но сетка всё равно
-        // возвращается на primary, как в оригинале.
+        // Новая строка системы: строки документа решаются совместно.
+        _editor.newLine();
         break;
     }
     if (_sheet != PhSheet.primary) {

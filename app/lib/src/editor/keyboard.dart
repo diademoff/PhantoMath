@@ -17,6 +17,7 @@ enum MathKeyType {
   variable,
   operator,
   template,
+  newline,
   backspace,
   delete,
   left,
@@ -61,6 +62,9 @@ class MathKey {
   /// Переключение панели.
   const MathKey.panel(int panel, String label)
     : this(MathKeyType.panel, label: label, panel: panel);
+
+  /// Перевод строки.
+  const MathKey.newline() : this(MathKeyType.newline, label: '⏎');
 
   final MathKeyType type;
   final String label;
@@ -357,6 +361,8 @@ class _MathKeyboardState extends State<MathKeyboard> {
         controller.insertOperator(key.kind!);
       case MathKeyType.template:
         controller.insertTemplate(key.kind!);
+      case MathKeyType.newline:
+        controller.newLine();
       case MathKeyType.backspace:
         controller.backspace();
       case MathKeyType.delete:
