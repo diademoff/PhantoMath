@@ -494,4 +494,35 @@ void main() {
     expect(find.text('Разложение на множители.'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('ссылка без определения не нажимается', (tester) async {
+    // В английской локали у 266 ссылок из 327 нет определения: тап по такой
+    // ссылке вёл в тупик «пояснение понятия появится позже». Теперь она
+    // остаётся обычным текстом.
+    final api = SolverApi(
+      baseUrl: 'http://test',
+      client: MockClient(
+        (request) async => http.Response(
+          '{"result":{"groups":[{"type":"VERTICAL","entries":[{"result":{"steps":[{"headers":[],"substeps":[{"description":{"type":"factorise_call"},"explanation":{"key":"factorise_call","text":"Factor","links":[{"label":"Factor","uuid":"1ceef362-dfb4-4ae6-ba5d-46dbd862a37b","definition":""}]}}]}]}}]}]}}',
+          200,
+          headers: const {'content-type': 'application/json; charset=utf-8'},
+        ),
+      ),
+    );
+    await tester.pumpWidget(MaterialApp(home: SolvePage(api: api)));
+    await tester.pump();
+    await _key(tester, 'DIGIT_TWO');
+    await tester.tap(find.byKey(const ValueKey('solve')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.tap(find.text('Factor'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    // Карточки понятия нет и заглушки «появится позже» тоже.
+    expect(find.textContaining('появится позже'), findsNothing);
+    expect(find.text('Factor'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

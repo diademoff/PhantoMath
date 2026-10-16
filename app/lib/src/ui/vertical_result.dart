@@ -399,6 +399,11 @@ class _Equation extends StatelessWidget {
 ///
 /// Ссылки приходят метками: текст уже содержит их, поэтому метки отыскиваются
 /// в строке по порядку следования и становятся нажимаемыми.
+///
+/// Нажимаемой становится только та ссылка, у которой есть определение в
+/// глоссарии: без него тап вёл в тупик «пояснение понятия появится позже»
+/// (в английской локали таких ссылок 266 из 327). Метка при этом остаётся в
+/// тексте дословно, меняется только её вид.
 class ExplanationText extends StatelessWidget {
   const ExplanationText({
     super.key,
@@ -421,6 +426,7 @@ class ExplanationText extends StatelessWidget {
     final spans = <InlineSpan>[];
     var cursor = 0;
     for (final link in links) {
+      if (link.definition.isEmpty) continue;
       final index = text.indexOf(link.label, cursor);
       if (index < 0) continue;
       if (index > cursor) {

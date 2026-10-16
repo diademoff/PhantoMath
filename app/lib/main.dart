@@ -1276,46 +1276,35 @@ class _SolvePageState extends State<SolvePage> {
 
   /// Нажатие на ссылку в тексте шага.
   ///
-  /// Если у понятия есть определение — открываем карточку. Иначе, когда
-  /// решатель предложил несколько способов, ссылка переключает на следующий;
-  /// в остальных случаях показываем, что понятие пока не раскрыто.
+  /// Сюда попадают только ссылки с определением: без него ссылка остаётся
+  /// обычным текстом (`ExplanationText`), а не ведёт в тупик «пояснение
+  /// появится позже». Смена способа решения — отдельное управление
+  /// «Альтернативная форма» на самом экране.
   void _onLink(ExplanationLink link) {
-    if (link.definition.isNotEmpty) {
-      showModalBottomSheet<void>(
-        context: context,
-        showDragHandle: true,
-        builder: (context) => Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                link.label,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: PhColor.grayDark,
-                ),
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              link.label,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: PhColor.grayDark,
               ),
-              const SizedBox(height: 12),
-              Text(
-                link.definition,
-                style: const TextStyle(fontSize: 16, color: PhColor.grayDark),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              link.definition,
+              style: const TextStyle(fontSize: 16, color: PhColor.grayDark),
+            ),
+          ],
         ),
-      );
-      return;
-    }
-    if (_methods.length > 1) {
-      setState(() => _methodIndex = (_methodIndex + 1) % _methods.length);
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('«${link.label}»: пояснение понятия появится позже'),
       ),
     );
   }
