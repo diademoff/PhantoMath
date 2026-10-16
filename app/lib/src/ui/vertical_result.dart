@@ -3,10 +3,15 @@ import 'package:flutter_math_fork/flutter_math.dart';
 import '../api/solver_api.dart';
 import '../model/core_node.dart';
 import '../render/latex.dart';
+import '../render/division_trace.dart';
+import '../settings/settings.dart';
+import 'division_lesson.dart';
+import 'transformation_lesson.dart';
 
 class VerticalResult extends StatelessWidget {
   const VerticalResult({super.key, required this.result, required this.latexOptions,
-    required this.onLink, required this.onCopy, this.methodSwitcher, this.onBack, this.expandAll = false});
+    required this.onLink, required this.onCopy, this.methodSwitcher, this.onBack, this.expandAll = false,
+    this.problem, this.divisionMethod = DivisionMethod.ru});
   final SolveResponse result;
   final LatexOptions latexOptions;
   final void Function(ExplanationLink) onLink;
@@ -14,6 +19,8 @@ class VerticalResult extends StatelessWidget {
   final Widget? methodSwitcher;
   final VoidCallback? onBack;
   final bool expandAll;
+  final CoreNode? problem;
+  final DivisionMethod divisionMethod;
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +38,10 @@ class VerticalResult extends StatelessWidget {
         ]),
       ),
       ?methodSwitcher,
+      if (problem != null && DivisionTrace.fromNode(problem!) != null) TextButton.icon(
+        onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => DivisionLesson(
+          trace: DivisionTrace.fromNode(problem!)!, method: divisionMethod, separator: latexOptions.decimalSeparator.symbol))),
+        icon: const Icon(Icons.view_agenda_outlined), label: const Text('Деление столбиком')),
       if (result.steps.isEmpty) const Padding(padding: EdgeInsets.all(16),
         child: Text('Для этой задачи подробные шаги не предоставлены.')),
       for (final group in result.steps) ...[
@@ -59,6 +70,7 @@ class _Step extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final frames = transformationFrames(substep, latexOptions);
     return Container(margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(12)),
       child: ExpansionTile(
@@ -78,6 +90,9 @@ class _Step extends StatelessWidget {
         subtitle: substep.text == null || substep.text!.startsWith('step_') ? null : Padding(
           padding: const EdgeInsets.only(top: 12), child: ExplanationText(text: substep.text!, links: substep.links, onLink: onLink)),
         children: [
+          if (frames.isNotEmpty) Align(alignment: Alignment.centerLeft, child: TextButton.icon(
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => TransformationLesson(frames: frames))),
+            icon: const Icon(Icons.play_circle_outline), label: const Text('Показать преобразование'))),
           for (final group in substep.detail) ...[
             for (final header in group.headers.where((h) => h.isNotEmpty)) Text(header, style: Theme.of(context).textTheme.titleMedium),
             for (var i = 0; i < group.substeps.length; i++) _Step(number: i + 1, substep: group.substeps[i],

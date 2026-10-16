@@ -136,8 +136,8 @@ class SolverReadyIndicator extends StatelessWidget {
       child: AnimatedSwitcher(
         duration: PhMotion.duration(context),
         child: switch (startup.status) {
-          SolverStatus.starting => const Text('Подготавливаем решатель…', key: ValueKey('starting')),
-          SolverStatus.ready => const Text('Готов к решению', key: ValueKey('ready')),
+          SolverStatus.starting => Text('Подготавливаем решатель…', key: const ValueKey('starting'), style: Theme.of(context).textTheme.bodySmall),
+          SolverStatus.ready => Text('Готов к решению', key: const ValueKey('ready'), style: Theme.of(context).textTheme.bodySmall),
           SolverStatus.failed => TextButton.icon(
             key: const ValueKey('retry-startup'),
             onPressed: () => startup.ensureReady().catchError((Object _) {}),
@@ -566,12 +566,11 @@ class _SolvePageState extends State<SolvePage> {
 
   /// Экран ввода: поле, предпросмотр решения, команды и клавиатура.
   Widget _buildEditor() {
-    final keyboard = PhotomathKeyboard(
-          controller: _editor,
-          decimalSeparator: _settings.decimalSeparator.symbol,
-        );
     return LayoutBuilder(builder: (context, constraints) {
       final wide = constraints.maxWidth > 650 && constraints.maxHeight < 520;
+      final keyboard = PhotomathKeyboard(controller: _editor,
+        decimalSeparator: _settings.decimalSeparator.symbol,
+        maxHeight: wide ? constraints.maxHeight : constraints.maxHeight * .58);
       final workspace = Column(children: [
         Expanded(child: _editorArea()),
         _commandBar(),
@@ -839,6 +838,8 @@ class _SolvePageState extends State<SolvePage> {
             ],
             body: VerticalResult(
               result: result,
+              problem: _editor.toCoreNode(),
+              divisionMethod: _settings.divisionMethod,
               expandAll: _expandSteps,
               latexOptions: _latexOptions,
               onLink: _onLink,

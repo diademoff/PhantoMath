@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:flutter_math_fork/flutter_math.dart';
 import '../../editor/controller.dart';
 import '../../editor/keyboard.dart';
@@ -7,9 +8,10 @@ import 'ph_keyboard_spec.dart';
 /// Stable numeric block, minimum 48dp keys, persistent alphabet and an explicit
 /// catalog for variants (long press is a shortcut, never the only way).
 class PhotomathKeyboard extends StatefulWidget {
-  const PhotomathKeyboard({super.key, required this.controller, this.decimalSeparator = '.'});
+  const PhotomathKeyboard({super.key, required this.controller, this.decimalSeparator = '.', this.maxHeight});
   final EditorController controller;
   final String decimalSeparator;
+  final double? maxHeight;
   @override
   State<PhotomathKeyboard> createState() => _PhotomathKeyboardState();
 }
@@ -96,6 +98,7 @@ class _PhotomathKeyboardState extends State<PhotomathKeyboard> {
   Widget _glyph(PhKey key) {
     if (key.code == 'CONTROL_DELETE') return const Icon(Icons.backspace_outlined, size: 22);
     final glyph = key.code == 'DIGIT_DOT' ? widget.decimalSeparator : key.glyph;
+    if (key.type == PhKeyType.digit) return Text(glyph, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500));
     return FittedBox(fit: BoxFit.scaleDown, child: Math.tex(glyph,
       textStyle: TextStyle(fontSize: 21, color: Theme.of(context).colorScheme.onSurface),
       onErrorFallback: (_) => Text(key.description, style: const TextStyle(fontSize: 16))));
@@ -125,7 +128,9 @@ class _PhotomathKeyboardState extends State<PhotomathKeyboard> {
           final columns = ((constraints.maxWidth - 16) / 52).floor().clamp(1, 5);
           final textScale = MediaQuery.textScalerOf(context).scale(1);
           final height = (48 * textScale).clamp(48.0, 80.0);
-          return SizedBox(height: height * 5 + 32, child: GridView.builder(
+          final gridHeight = math.max(height + 16, math.min(height * 5 + 32,
+              (widget.maxHeight ?? (height * 5 + 128)) - 48 - (_sheet == PhSheet.primary ? 0 : 48)));
+          return SizedBox(height: gridHeight, child: GridView.builder(
             key: ValueKey(_sheet),
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 12),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: columns,
