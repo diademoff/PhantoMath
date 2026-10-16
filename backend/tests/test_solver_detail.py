@@ -41,9 +41,7 @@ class TestDetail:
         assert all(key == "find_derivative" for key in keys)
 
     def test_quadratic_discriminant_and_roots(self) -> None:
-        equation = CoreNode.node(
-            T.EQUALS, CoreNode.node(T.POWER, x(), c("2")), c("4")
-        )
+        equation = CoreNode.node(T.EQUALS, CoreNode.node(T.POWER, x(), c("2")), c("4"))
         with_detail = [sub for sub in substeps(equation) if sub.subresult is not None]
         assert with_detail, "итоговый шаг корней раскрывается"
         keys = detail_keys(with_detail[-1])

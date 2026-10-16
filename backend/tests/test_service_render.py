@@ -20,7 +20,7 @@ class TestAttachText:
         node: dict[str, Any] = {
             "description": {"type": "function_evaluate_expr", "args": []},
             "substeps": [],
-            "subresult": {"steps": [{"headers": [], "substeps": [_substep('add')]}]},
+            "subresult": {"steps": [{"headers": [], "substeps": [_substep("add")]}]},
         }
         out = attach_text(node, "ru")
         nested = out["subresult"]["steps"][0]["substeps"][0]

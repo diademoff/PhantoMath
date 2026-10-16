@@ -44,11 +44,7 @@ def solve_segment_length(node: CoreNode, ctx: SolveContext) -> CoreNode:
     if endpoints is None:
         return node
     first, second = endpoints
-    if (
-        _is_point(first)
-        and _is_point(second)
-        and len(first.children) == len(second.children)
-    ):
+    if _is_point(first) and _is_point(second) and len(first.children) == len(second.children):
         coordinates = [
             to_sympy(left) - to_sympy(right)
             for left, right in zip(first.children, second.children, strict=True)

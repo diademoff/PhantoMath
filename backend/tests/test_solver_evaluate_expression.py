@@ -39,9 +39,7 @@ class TestEvaluateExpression:
         assert detail is not None, "у шага вычисления есть раскрываемое пояснение"
         assert detail.solution is not None
         assert detail.solution.value == "5"
-        detail_keys = [
-            s.description.type for step in detail.steps for s in step.substeps
-        ]
+        detail_keys = [s.description.type for step in detail.steps for s in step.substeps]
         assert detail_keys, "внутри — порядок действий вычисления"
 
     def test_simple_substitution_has_no_detail(self) -> None:

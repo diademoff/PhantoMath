@@ -32,9 +32,7 @@ def solve_conditional(node: CoreNode, ctx: SolveContext) -> CoreNode:
         # Условие зависит от переменной — узел остаётся символьным.
         return node
     chosen = then if decision else otherwise
-    ctx.result.add(
-        Step(left=node, right=chosen, key="true" if decision else "false")
-    )
+    ctx.result.add(Step(left=node, right=chosen, key="true" if decision else "false"))
     return chosen
 
 

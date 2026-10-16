@@ -281,9 +281,7 @@ def from_sympy(expr: sympy.Expr) -> CoreNode:
     if isinstance(expr, sympy.Gt):
         return CoreNode.node(T.GREATER_THAN, from_sympy(expr.lhs), from_sympy(expr.rhs))
     if isinstance(expr, sympy.Ge):
-        return CoreNode.node(
-            T.GREATER_THAN_EQUAL, from_sympy(expr.lhs), from_sympy(expr.rhs)
-        )
+        return CoreNode.node(T.GREATER_THAN_EQUAL, from_sympy(expr.lhs), from_sympy(expr.rhs))
     if isinstance(expr, sympy.Piecewise) and len(expr.args) == 2:
         (then, condition), (otherwise, default) = expr.args
         if default is True or default is sympy.true:

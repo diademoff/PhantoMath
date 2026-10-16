@@ -37,9 +37,7 @@ def solve_evaluate_expression(node: CoreNode, ctx: SolveContext) -> CoreNode:
     return result
 
 
-def _evaluation_detail(
-    expression: CoreNode, name: str, value: CoreNode
-) -> SolveResult | None:
+def _evaluation_detail(expression: CoreNode, name: str, value: CoreNode) -> SolveResult | None:
     """Подробные шаги вычисления — раскрываемое пояснение шага.
 
     Подставляем значение вместо переменной и решаем получившееся числовое

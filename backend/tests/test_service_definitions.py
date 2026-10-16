@@ -19,12 +19,8 @@ def x() -> CoreNode:
 
 
 def definition_contract() -> dict[str, Any]:
-    body = CoreNode.node(
-        T.ADD, CoreNode.node(T.MULTIPLY_IMPLICIT, c("2"), x()), c("1")
-    )
-    equation = CoreNode.node(
-        T.EQUALS, CoreNode(type=T.FUNCTION, value="f", children=[x()]), body
-    )
+    body = CoreNode.node(T.ADD, CoreNode.node(T.MULTIPLY_IMPLICIT, c("2"), x()), c("1"))
+    equation = CoreNode.node(T.EQUALS, CoreNode(type=T.FUNCTION, value="f", children=[x()]), body)
     return equation.to_contract()
 
 
