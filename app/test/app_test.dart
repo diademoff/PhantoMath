@@ -8,7 +8,6 @@ import 'package:http/testing.dart';
 import 'package:mymath_app/main.dart';
 import 'package:mymath_app/src/api/solver_api.dart';
 import 'package:mymath_app/src/render/graph_view.dart';
-import 'package:mymath_app/src/theme/photomath_theme.dart';
 import 'package:mymath_app/src/theme/phanto_theme.dart';
 import 'package:mymath_app/src/ui/keyboard/ph_keyboard_spec.dart';
 
@@ -73,6 +72,12 @@ Future<void> _openSheet(WidgetTester tester, PhSheet sheet) async {
 
 /// Нажать чип: при необходимости прокрутить ленту команд до него.
 Future<void> _chip(WidgetTester tester, String label) async {
+  if (find.text(label).evaluate().isEmpty) {
+    await tester.tap(find.text('Другие действия'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+  }
+  await tester.scrollUntilVisible(find.text(label), 400, scrollable: find.byType(Scrollable).last);
   await tester.ensureVisible(find.text(label));
   await tester.pump();
   await tester.tap(find.text(label));
@@ -460,7 +465,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     // Блокнот открывается иконкой в правом верхнем углу экрана ввода.
-    await tester.tap(find.byIcon(Icons.menu_book_outlined));
+    await tester.tap(find.byTooltip('Блокнот'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 

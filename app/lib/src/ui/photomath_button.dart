@@ -25,7 +25,6 @@ library;
 
 import 'package:flutter/material.dart';
 
-import '../theme/photomath_theme.dart';
 
 /// Кнопка Photomath: красная пилюля с текстом и стрелкой.
 class PhButton extends StatelessWidget {
@@ -43,59 +42,18 @@ class PhButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null && !busy;
-    return Material(
-      // `photomath_button_background_default`: красный / серый пилюли.
-      color: enabled ? PhColor.red : PhColor.gray,
-      elevation: 4,
-      borderRadius: BorderRadius.circular(24),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: busy ? null : onPressed,
-        child: ConstrainedBox(
-          // `setMinWidth(120dip)`.
-          constraints: const BoxConstraints(minWidth: 120),
-          child: Padding(
-            // Внешний `setPadding(16, 2, 16, 2)` + внутренние отступы
-            // текста `10dip` сверху/снизу.
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      // `button_text`: 16sp, белый.
-                      fontSize: 16,
-                      color: PhColor.white,
-                    ),
-                  ),
-                  // Зазор текст–иконка 10dip (`layout_marginEnd` текста).
-                  const SizedBox(width: 10),
-                  if (busy)
-                    const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: PhColor.white,
-                      ),
-                    )
-                  else
-                    // `next_white`: стрелка вправо, `view_rotation = 0`.
-                    const Icon(
-                      Icons.arrow_forward,
-                      size: 20,
-                      color: PhColor.white,
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    return Semantics(liveRegion: busy, child: FilledButton(
+      onPressed: enabled ? onPressed : null,
+      child: Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (busy) const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+          if (busy) const SizedBox(width: 12),
+          Flexible(child: Text(label, textAlign: TextAlign.center)),
+          if (!busy) ...[const SizedBox(width: 12), const Icon(Icons.arrow_forward, size: 20)],
+        ],
+      )),
+    ));
   }
 }

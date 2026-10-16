@@ -112,6 +112,7 @@ class _BootstrapAppState extends State<BootstrapApp> {
     });
   }
 
+  @override
   void dispose() {
     _startup.dispose();
     super.dispose();
@@ -506,57 +507,33 @@ class _SolvePageState extends State<SolvePage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: PhColor.white,
       // Шторка навигации оригинала (`@id/navigation_view` в
       // `activity_main.xml`): боковой `NavigationView` шириной до 320dip
       // (`drawer_width`), а не нижний лист.
       drawer: _buildDrawer(),
-      body: SafeArea(
-        bottom: false,
-        child: Stack(
-          children: [
-            // Контент: результат, если он есть, иначе редактор с клавиатурой.
-            Positioned.fill(
-              child: _showResult ? _buildResult() : _buildEditor(),
-            ),
-            // Плавающие иконки принадлежат экрану ввода (`activity_main.xml`):
-            // `@id/menu_icon` — шторка навигации, слева сверху
-            // (`padding=12dip`, `marginTop=20dip`, `marginStart=4dip`);
-            // `@id/notebook_icon` и `@id/help_icon` — справа сверху
-            // (`padding=14dip`, `marginTop=18dip`, у помощи дополнительно
-            // `marginEnd=8dip`, у блокнота `marginEnd=4dip` слева от помощи).
-            //
-            // На экране результата их нет: у него своя панель
-            // (`activity_vertical_result.xml`), и в её `@id/toolbar` нет
-            // навигационной иконки (`contentInsetStartWithNavigation=0dip`),
-            // а `@id/share_button` и `@id/toolbar_ribbon` — `visibility=gone`.
-            // Возврат оттуда — нижняя `@id/back`.
-            if (!_showResult) ...[
-              Positioned(top: 20, left: 4, child: _menuButton()),
-              Positioned(
-                top: 18,
-                right: 4,
-                child: Row(
-                  children: [
-                    _topIcon(
-                      tooltip: PhString.notebook,
-                      icon: Icons.menu_book_outlined,
-                      onPressed: _openNotebook,
-                    ),
-                    const SizedBox(width: 4),
-                    _topIcon(
-                      tooltip: 'Справка',
-                      icon: Icons.help_outline,
-                      onPressed: _openHelp,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ),
+      appBar: _showResult ? null : AppBar(
+        leading: _menuButton(),
+        titleSpacing: 0,
+        title: Row(children: [
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: PhMotion.duration(context, 360),
+            builder: (context, value, child) => Opacity(opacity: value,
+              child: Transform.translate(offset: Offset(0, 4 * (1 - value)), child: child)),
+            child: const PhantoMark(size: 28),
+          ),
+          const SizedBox(width: 8),
+          Text('PhantoMath', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: colors.onSurface)),
+        ]),
+        actions: [_topIcon(tooltip: PhString.notebook, icon: Icons.history_outlined, onPressed: _openNotebook)],
+      ),
+      body: PopScope(
+        canPop: !_showResult,
+        onPopInvokedWithResult: (didPop, _) { if (!didPop && _showResult) _backToInput(); },
+        child: SafeArea(top: _showResult, child: _showResult ? _buildResult() : _buildEditor()),
       ),
     );
   }
@@ -571,7 +548,7 @@ class _SolvePageState extends State<SolvePage> {
       tooltip: tooltip,
       padding: const EdgeInsets.all(14),
       icon: Icon(icon, size: 24),
-      color: PhColor.grayDark,
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
       onPressed: onPressed,
     );
   }
@@ -582,41 +559,45 @@ class _SolvePageState extends State<SolvePage> {
       tooltip: 'Меню',
       padding: const EdgeInsets.all(12),
       icon: const Icon(Icons.menu, size: 24),
-      color: PhColor.grayDark,
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
       onPressed: _openDrawer,
     );
   }
 
   /// Экран ввода: поле, предпросмотр решения, команды и клавиатура.
   Widget _buildEditor() {
-    return Column(
-      children: [
-        Expanded(child: _editorArea()),
-        _commandBar(),
-        // `@id/solution_button` — «Показать решение» над клавиатурой.
-        _showSolutionButton(),
-        PhotomathKeyboard(
+    final keyboard = PhotomathKeyboard(
           controller: _editor,
           decimalSeparator: _settings.decimalSeparator.symbol,
-        ),
-      ],
-    );
+        );
+    return LayoutBuilder(builder: (context, constraints) {
+      final wide = constraints.maxWidth > 650 && constraints.maxHeight < 520;
+      final workspace = Column(children: [
+        Expanded(child: _editorArea()),
+        _commandBar(),
+        _showSolutionButton(),
+      ]);
+      if (wide) return Row(children: [Expanded(child: workspace), SizedBox(width: 360, child: keyboard)]);
+      return Column(children: [Expanded(child: workspace), keyboard]);
+    });
   }
 
   /// Поле ввода, предпросмотр решения и ошибка — `fragment_editor.xml`.
   Widget _editorArea() {
     return ListView(
-      padding: EdgeInsets.zero,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       children: [
+        Text(_editor.isEmpty ? 'Введите задачу' : 'Ваша задача', style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height: 16),
         Stack(
           children: [
             Padding(
               padding: const EdgeInsets.only(
-                top: PhGap.blockTop,
-                left: PhGap.editorStart,
+                 top: 0,
+                 left: 0,
                 // Справа поле под кнопку очистки — `layout_marginEnd=40dip`
                 // плюс сама кнопка.
-                right: 40,
+                 right: 40,
               ),
               child: EditorView(
                 controller: _editor,
@@ -626,17 +607,21 @@ class _SolvePageState extends State<SolvePage> {
             // `@id/clear_button`: галочка справа сверху.
             if (!_editor.isEmpty)
               Positioned(
-                top: PhGap.blockTop,
-                right: 12,
+                 top: 0,
+                 right: 0,
                 child: IconButton(
                   tooltip: 'Очистить',
                   padding: const EdgeInsets.all(4),
                   icon: const Icon(Icons.cancel, size: 24),
-                  color: PhColor.gray,
+                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                   onPressed: () => setState(_editor.clear),
                 ),
               ),
           ],
+        ),
+        if (_editor.isEmpty) Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: Text('Например, 2x + 3 = 7. Начните с клавиатуры ниже.', style: Theme.of(context).textTheme.bodySmall),
         ),
         // `@id/error`: текст 14sp тертичным с иконкой ошибки.
         if (_error != null) _errorRow(),
@@ -663,19 +648,19 @@ class _SolvePageState extends State<SolvePage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(top: 2),
             child: Icon(
               Icons.error_outline,
               size: 18,
-              color: PhColor.grayLight,
+            color: Theme.of(context).colorScheme.error,
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               _error!,
-              style: const TextStyle(fontSize: 14, color: PhColor.grayLight),
+              style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.error),
             ),
           ),
         ],
@@ -720,89 +705,65 @@ class _SolvePageState extends State<SolvePage> {
   /// строятся сразу, поэтому дальние команды (`Промежуток`, `График`)
   /// находятся поиском и доступны скроллу (`ensureVisible` в тестах).
   Widget _commandBar() {
-    return SizedBox(
-      height: 40,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Row(
-          children: [
-          for (final (command, label) in _commands)
-            Padding(
-              padding: const EdgeInsets.only(right: 6),
-              child: ChoiceChip(
-                label: Text(label),
-                labelStyle: TextStyle(
-                  fontSize: 12,
-                  color: _command == command ? PhColor.white : PhColor.grayDark,
-                ),
-                selected: _command == command,
-                selectedColor: PhColor.red,
-                backgroundColor: PhColor.surface,
-                side: const BorderSide(color: PhColor.separatorGray),
-                showCheckmark: false,
-                onSelected: (_) => setState(() => _command = command),
-              ),
-            ),
-          ActionChip(
-            avatar: const Icon(
-              Icons.arrow_outward,
-              size: 16,
-              color: PhColor.grayDark,
-            ),
-            label: const Text('Вектор…'),
-            labelStyle: const TextStyle(fontSize: 12, color: PhColor.grayDark),
-            backgroundColor: PhColor.surface,
-            side: const BorderSide(color: PhColor.separatorGray),
-            onPressed: _openVectorSheet,
-          ),
-          const SizedBox(width: 6),
-          ActionChip(
-            avatar: const Icon(
-              Icons.grid_on,
-              size: 16,
-              color: PhColor.grayDark,
-            ),
-            label: const Text('Матрица…'),
-            labelStyle: const TextStyle(fontSize: 12, color: PhColor.grayDark),
-            backgroundColor: PhColor.surface,
-            side: const BorderSide(color: PhColor.separatorGray),
-            onPressed: _openMatrixSheet,
-          ),
-          const SizedBox(width: 6),
-          ActionChip(
-            avatar: const Icon(
-              Icons.straighten,
-              size: 16,
-              color: PhColor.grayDark,
-            ),
-            label: Text(
-              _hasInterval
-                  ? 'Промежуток: [$_intervalMinText; $_intervalMaxText]'
-                  : 'Промежуток',
-            ),
-            labelStyle: const TextStyle(fontSize: 12, color: PhColor.grayDark),
-            backgroundColor: PhColor.surface,
-            side: const BorderSide(color: PhColor.separatorGray),
-            onPressed: _openIntervalDialog,
-          ),
-          const SizedBox(width: 6),
-          ActionChip(
-            avatar: const Icon(
-              Icons.show_chart,
-              size: 16,
-              color: PhColor.grayDark,
-            ),
-            label: const Text('График'),
-            labelStyle: const TextStyle(fontSize: 12, color: PhColor.grayDark),
-            backgroundColor: PhColor.surface,
-            side: const BorderSide(color: PhColor.separatorGray),
-            onPressed: _openGraph,
-          ),
-          ],
+    final node = _editor.toCoreNode();
+    bool variable(CoreNode n) => n.type == CoreNodeType.variable || n.children.any(variable);
+    return Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Wrap(
+      spacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        if (!_editor.isEmpty && variable(node)) TextButton.icon(
+          onPressed: _busy ? null : _openGraph,
+          icon: const Icon(Icons.show_chart, size: 20), label: const Text('График'),
         ),
-      ),
-    );
+        TextButton.icon(onPressed: _openActions,
+          icon: const Icon(Icons.tune_outlined, size: 20), label: const Text('Другие действия')),
+        if (_command != null) InputChip(
+          label: Text(_commands.firstWhere((c) => c.$1 == _command).$2),
+          onDeleted: () => setState(() => _command = null),
+        ),
+      ],
+    ));
+  }
+
+  Future<void> _openActions() async {
+    final action = await showModalBottomSheet<String>(context: context, isScrollControlled: true,
+      builder: (context) => SafeArea(child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * .75,
+        child: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, 24), children: [
+          Text('Действия с задачей', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 12),
+          for (final (command, label) in _commands) ListTile(
+            minTileHeight: 56, title: Text(label), selected: _command == command,
+            onTap: () => Navigator.pop(context, command ?? 'auto'),
+          ),
+          const Divider(),
+          for (final item in [('vector', 'Вектор…', Icons.arrow_outward), ('matrix', 'Матрица…', Icons.grid_on_outlined),
+            ('interval', _hasInterval ? 'Промежуток: [$_intervalMinText; $_intervalMaxText]' : 'Промежуток', Icons.straighten_outlined),
+            ('graph', 'График', Icons.show_chart)]) ListTile(
+              leading: Icon(item.$3), title: Text(item.$2), minTileHeight: 56,
+              onTap: () => Navigator.pop(context, item.$1),
+            ),
+        ]),
+      )));
+    if (!mounted || action == null) return;
+    switch (action) {
+      case 'vector': await _openVectorSheet();
+      case 'matrix': await _openMatrixSheet();
+      case 'interval': await _openIntervalDialog();
+      case 'graph': await _openGraph();
+      default: setState(() => _command = action == 'auto' ? null : action);
+    }
+  }
+
+  String get _solveLabel {
+    if (_command != null) return _commands.firstWhere((c) => c.$1 == _command).$2;
+    final type = _editor.toCoreNode().type;
+    return switch (type) {
+      CoreNodeType.equals || CoreNodeType.system => 'Решить',
+      CoreNodeType.derivation || CoreNodeType.derivation1 => 'Найти производную',
+      CoreNodeType.integral => 'Найти интеграл',
+      _ => 'Вычислить',
+    };
   }
 
   /// `@id/solution_button` — `PhotoMathButton` оригинала.
@@ -816,13 +777,13 @@ class _SolvePageState extends State<SolvePage> {
   Widget _showSolutionButton() {
     final enabled = !_editor.isEmpty && !_busy;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           if (widget.startup case final startup?) SolverReadyIndicator(startup: startup),
           PhButton(
             key: const ValueKey('solve'),
-            label: _busy ? 'Решаем…' : PhString.showSolution,
+            label: _busy ? 'Решаем…' : _solveLabel,
             onPressed: enabled ? _solve : null,
             busy: _busy,
           ),
@@ -831,6 +792,13 @@ class _SolvePageState extends State<SolvePage> {
       ),
     );
   }
+
+  void _backToInput() => setState(() {
+    _result = null;
+    _methods = const [];
+    _requestGeneration++;
+    _busy = false;
+  });
 
   /// Экран вертикального результата — `activity_vertical_result.xml`.
   ///
@@ -979,7 +947,7 @@ class _SolvePageState extends State<SolvePage> {
   /// отмечены тем же стилем, чтобы ряд выглядел цельно.
   Widget _buildDrawer() {
     return Drawer(
-      backgroundColor: PhColor.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       // `drawer_width=320dip` (`android:maxWidth` шторки).
       width: PhSize.drawerWidth,
       child: SafeArea(
@@ -994,27 +962,16 @@ class _SolvePageState extends State<SolvePage> {
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'mymath',
+                     'PhantoMath',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: PhColor.red,
                     ),
                   ),
                 ),
               ),
             ),
             const SizedBox(height: 25),
-            _drawerItem(
-              icon: Icons.login_outlined,
-              label: PhString.signIn,
-              onTap: () {
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Вход вне объёма версии')),
-                );
-              },
-            ),
             _drawerLanguageItem(),
             _drawerItem(
               icon: Icons.help_outline,
@@ -1030,17 +987,7 @@ class _SolvePageState extends State<SolvePage> {
               onTap: () {
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('mymath — решатель математики')),
-                );
-              },
-            ),
-            _drawerItem(
-              icon: Icons.workspace_premium_outlined,
-              label: PhString.plus,
-              onTap: () {
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Подписка вне объёма версии')),
+                   const SnackBar(content: Text('PhantoMath — понять каждый шаг')),
                 );
               },
             ),
@@ -1106,7 +1053,7 @@ class _SolvePageState extends State<SolvePage> {
             Icon(
               icon,
               size: 24,
-              color: enabled ? PhColor.grayDark : PhColor.grayLight,
+               color: enabled ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -1114,7 +1061,7 @@ class _SolvePageState extends State<SolvePage> {
                 label,
                 style: TextStyle(
                   fontSize: 18,
-                  color: enabled ? PhColor.grayDark : PhColor.grayLight,
+                   color: enabled ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ),
