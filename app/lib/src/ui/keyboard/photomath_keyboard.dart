@@ -95,6 +95,8 @@ class _PhotomathKeyboardState extends State<PhotomathKeyboard> {
         _editor.insertOperator(action.kind!);
       case MathKeyType.template:
         _editor.insertTemplate(action.kind!);
+      case MathKeyType.newline:
+        _editor.newLine();
       case MathKeyType.backspace:
         _editor.backspace();
       case MathKeyType.delete:

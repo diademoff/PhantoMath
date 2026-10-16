@@ -452,4 +452,90 @@ void main() {
       expect(editorToCoreNode(c.document).type, CoreNodeType.lineSegmentLength);
     });
   });
+
+  group('многострочный ввод', () {
+    void equation(EditorController c, String sign) {
+      c.typeVariable('x');
+      c.insertOperator(
+        sign == '+' ? ENodeKind.add : ENodeKind.subtract,
+      );
+      _digits(c, '1');
+      c.insertOperator(ENodeKind.equals);
+      _digits(c, '3');
+    }
+
+    test('две строки собираются в SYSTEM', () {
+      final c = EditorController();
+      equation(c, '+');
+      c.newLine();
+      equation(c, '-');
+      final node = c.toCoreNode();
+      expect(node.type, CoreNodeType.system);
+      expect(node.children, hasLength(2));
+      expect(node.children.every((e) => e.type == CoreNodeType.equals), isTrue);
+    });
+
+    test('висячий перевод в конце игнорируется', () {
+      final c = EditorController();
+      _digits(c, '2');
+      c.insertOperator(ENodeKind.add);
+      _digits(c, '3');
+      c.newLine();
+      expect(c.toCoreNode().type, CoreNodeType.add);
+    });
+
+    test('пустые строки пропускаются', () {
+      final c = EditorController();
+      c.newLine();
+      _digits(c, '2');
+      c.newLine();
+      c.newLine();
+      expect(c.toCoreNode().type, CoreNodeType.constant);
+    });
+
+    test('одни переводы — пустой документ', () {
+      final c = EditorController();
+      c.newLine();
+      c.newLine();
+      expect(c.isEmpty, isTrue);
+      expect(c.toCoreNode().type, CoreNodeType.empty);
+    });
+
+    test('перевод внутри шаблона уходит новой строкой в конец', () {
+      final c = EditorController();
+      _digits(c, '1');
+      c.insertTemplate(ENodeKind.fraction);
+      c.newLine();
+      expect(c.cursor.steps, isEmpty);
+      expect(c.document.children.last.kind, ENodeKind.newline);
+    });
+
+    test('backspace удаляет перевод', () {
+      final c = EditorController();
+      _digits(c, '2');
+      c.newLine();
+      c.backspace();
+      expect(
+        c.document.children.any((t) => t.kind == ENodeKind.newline),
+        isFalse,
+      );
+      expect(c.toCoreNode().type, CoreNodeType.constant);
+    });
+
+    testWidgets('перевод рисуется разрывом строки', (tester) async {
+      final c = EditorController();
+      _digits(c, '2');
+      c.newLine();
+      _digits(c, '3');
+      await tester.pumpWidget(
+        MaterialApp(home: Scaffold(body: EditorView(controller: c))),
+      );
+      await tester.pump();
+      final broken = find.byWidgetPredicate(
+        (widget) =>
+            widget is RichText && widget.text.toPlainText().contains('\n'),
+      );
+      expect(broken, findsOneWidget);
+    });
+  });
 }
