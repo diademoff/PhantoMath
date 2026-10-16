@@ -46,7 +46,10 @@ def solve_set_operation(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Свести конечное множество и операции над множествами через sympy."""
     ctx.require(len(node.children) >= 1, "операция над множествами требует операндов")
     normalized = CoreNode.node(node.type, *(fold_semantically(c, ctx) for c in node.children))
-    result = from_sympy(to_sympy(normalized))
+    try:
+        result = from_sympy(to_sympy(normalized))
+    except (TypeError, ValueError, AttributeError) as error:
+        raise SolveError("операция над множествами требует множеств") from error
     key = _STEP_KEY.get(node.type)
     if key is not None and not result.structural_eq(node):
         ctx.result.add(Step(left=node, right=result, key=key))
@@ -59,6 +62,8 @@ def solve_membership(node: CoreNode, ctx: SolveContext) -> CoreNode:
     ctx.require(len(node.children) == 2, "отношение требует двух операндов")
     element = to_sympy(fold_semantically(node.children[0], ctx))
     target = to_sympy(fold_semantically(node.children[1], ctx))
+    if not isinstance(target, sympy.Set):
+        raise SolveError("вхождение проверяется во множестве")
     contains = target.contains(element)
     if contains not in (True, False):
         raise SolveError("вхождение не определено")
@@ -72,6 +77,8 @@ def solve_inclusion(node: CoreNode, ctx: SolveContext) -> CoreNode:
     ctx.require(len(node.children) == 2, "отношение требует двух операндов")
     left = to_sympy(fold_semantically(node.children[0], ctx))
     right = to_sympy(fold_semantically(node.children[1], ctx))
+    if not isinstance(left, sympy.Set) or not isinstance(right, sympy.Set):
+        raise SolveError("включение проверяется у множеств")
     value = _inclusion_value(node.type, left, right)
     if value not in (True, False):
         raise SolveError("включение не определено")

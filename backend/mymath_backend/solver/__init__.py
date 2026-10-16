@@ -223,7 +223,9 @@ def _simplify_fallback(node: CoreNode) -> SolveResult | None:
         if simplified == expression:
             return None
         simplified_node = from_sympy(simplified)
-    except SolveError:
+    except (SolveError, TypeError, ValueError, AttributeError):
+        # Узел не переводится в sympy (множества из чисел, мусорные слоты):
+        # запасного пути нет, важнее исходная ошибка.
         return None
 
     result = SolveResult()

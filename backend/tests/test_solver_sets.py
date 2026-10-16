@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from mymath_backend import CoreNode
 from mymath_backend import CoreNodeType as T
 from mymath_backend.input import parse_protocol
@@ -125,6 +127,21 @@ class TestMembership:
     def test_element_not_of(self) -> None:
         assert bool_value("{elem_not_of({5},{set({1},{2})})}") == "true"
         assert bool_value("{elem_not_of({2},{set({1},{2})})}") == "false"
+
+    @pytest.mark.parametrize(
+        "source",
+        [
+            "{union({1},{2})}",
+            "{intersection({1},{2})}",
+            "{setminus({1},{2})}",
+            "{elem_of({1},{2})}",
+            "{subseteq({1},{2})}",
+        ],
+    )
+    def test_non_sets_rejected(self, source: str) -> None:
+        """Операции и отношения требуют множеств, а не падают на sympy."""
+        with pytest.raises(SolveError):
+            solve(parse_protocol(source))
 
 
 class TestInclusion:
