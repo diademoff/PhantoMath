@@ -111,6 +111,7 @@ class _Handler(BaseHTTPRequestHandler):
                 interval_data=payload.get("interval"),
                 locale=str(payload.get("locale", DEFAULT_LOCALE)),
                 render=bool(payload.get("render", True)),
+                definitions_data=payload.get("definitions"),
             )
         return None
 

@@ -300,6 +300,10 @@ class _EditorViewState extends State<EditorView> {
         return _function('f', slots[0]);
       case ENodeKind.functionG:
         return _function('g', slots[0]);
+      case ENodeKind.functionInverseF:
+        return _inverseFunction('f', slots[0]);
+      case ENodeKind.functionInverseG:
+        return _inverseFunction('g', slots[0]);
       default:
         return _rowOf(slots);
     }
@@ -400,6 +404,13 @@ class _EditorViewState extends State<EditorView> {
   /// Функция: имя и её аргумент в скобках.
   Widget _function(String name, Widget argument) =>
       _rowOf([Text(name), _functionTail(argument)]);
+
+  /// Обратная функция: имя с верхним индексом −1 и аргумент в скобках.
+  Widget _inverseFunction(String name, Widget argument) => _rowOf([
+    Text(name),
+    _sup(const Text('−1')),
+    _functionTail(argument),
+  ]);
 
   /// Хвост функции: `( аргумент )`.
   Widget _functionTail(Widget argument) {

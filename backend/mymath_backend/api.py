@@ -69,6 +69,13 @@ class SolveRequest(BaseModel):
         default=None,
         description="Промежуток отбора корней тригонометрического уравнения",
     )
+    definitions: list[dict[str, Any]] | None = Field(
+        default=None,
+        description=(
+            "Определения функций (CoreNode вида EQUALS(FUNCTION(имя, параметры), тело)); "
+            "вызовы определённых функций подставляются перед решением"
+        ),
+    )
     locale: str = Field(default=DEFAULT_LOCALE, description="Язык пояснений")
     render: bool = Field(
         default=True,
@@ -153,6 +160,7 @@ def create_app() -> FastAPI:
                 interval_data=interval,
                 locale=payload.locale,
                 render=payload.render,
+                definitions_data=payload.definitions,
             )
         except (ValueError, KeyError) as err:
             raise HTTPException(

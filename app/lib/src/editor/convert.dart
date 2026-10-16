@@ -171,6 +171,13 @@ CoreNode _templateToCore(ENode template) {
         value: template.kind == ENodeKind.functionF ? 'f' : 'g',
         children: [_slotToCore(template.children[0])],
       );
+    case ENodeKind.functionInverseF:
+    case ENodeKind.functionInverseG:
+      return CoreNode(
+        type: CoreNodeType.functionInverse,
+        value: template.kind == ENodeKind.functionInverseF ? 'f' : 'g',
+        children: [_slotToCore(template.children[0])],
+      );
     default:
       break;
   }

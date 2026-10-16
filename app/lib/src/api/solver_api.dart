@@ -150,6 +150,7 @@ class SolverApi {
     List<CoreNode> args = const [],
     CoreNode? intervalMin,
     CoreNode? intervalMax,
+    List<CoreNode> definitions = const [],
   }) async {
     final response = await _client.post(
       Uri.parse('$baseUrl/api/v1/solve'),
@@ -169,6 +170,9 @@ class SolverApi {
             'min': _toJson(intervalMin),
             'max': _toJson(intervalMax),
           },
+        // Определения функций: вызовы f(…) подставляются перед решением.
+        if (definitions.isNotEmpty)
+          'definitions': [for (final definition in definitions) _toJson(definition)],
       }),
     );
 

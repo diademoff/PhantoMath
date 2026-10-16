@@ -109,6 +109,10 @@ enum ENodeKind {
   // ── функции как объекты (OPERATOR_FUNCTION[_F|_G]) ──────────────────
   functionF,
   functionG,
+
+  // ── обратные функции f⁻¹(x), g⁻¹(x) ─────────────────────────────────
+  functionInverseF,
+  functionInverseG,
 }
 
 /// Свойства вида узла: арность, роль в записи и соответствие `CoreNodeType`.
@@ -148,6 +152,8 @@ extension ENodeKindSpec on ENodeKind {
       case ENodeKind.log2:
       case ENodeKind.functionF:
       case ENodeKind.functionG:
+      case ENodeKind.functionInverseF:
+      case ENodeKind.functionInverseG:
         return 1;
       case ENodeKind.root2:
       case ENodeKind.abs:
@@ -445,6 +451,9 @@ extension ENodeKindSpec on ENodeKind {
       case ENodeKind.functionF:
       case ENodeKind.functionG:
         return core.CoreNodeType.function;
+      case ENodeKind.functionInverseF:
+      case ENodeKind.functionInverseG:
+        return core.CoreNodeType.functionInverse;
       case ENodeKind.row:
         return core.CoreNodeType.empty;
     }
@@ -595,6 +604,10 @@ extension ENodeKindSpec on ENodeKind {
         return 'f(x)';
       case ENodeKind.functionG:
         return 'g(x)';
+      case ENodeKind.functionInverseF:
+        return 'f⁻¹(x)';
+      case ENodeKind.functionInverseG:
+        return 'g⁻¹(x)';
       default:
         return '';
     }
@@ -691,6 +704,10 @@ extension ENodeKindSpec on ENodeKind {
         return 'Функция f';
       case ENodeKind.functionG:
         return 'Функция g';
+      case ENodeKind.functionInverseF:
+        return 'Обратная функция f';
+      case ENodeKind.functionInverseG:
+        return 'Обратная функция g';
       default:
         return label;
     }

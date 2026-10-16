@@ -177,6 +177,8 @@ final KeyboardPanel _functionPanel = KeyboardPanel(
     [
       MathKey.template(ENodeKind.functionF),
       MathKey.template(ENodeKind.functionG),
+      MathKey.template(ENodeKind.functionInverseF),
+      MathKey.template(ENodeKind.functionInverseG),
     ],
   ],
 );

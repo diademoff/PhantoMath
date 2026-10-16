@@ -123,6 +123,8 @@
 |---|---|---|
 | 59 | **Раскрываемое углублённое пояснение шага** — контрактное поле `subresult` (вложение `CoreSolverVerticalResult`); генерируется для вычисления значения (`EVALUATE_EXPRESSION`), производной (почленно для суммы/произведения) и корней квадратного уравнения (дискриминант + итог); показывается блоком «Подробнее» | `solver/evaluate.py`, `solver/derivatives.py`, `solver/equations.py`, `service.py` (`attach_text` рекурсирует в `subresult`), `app/lib/src/api/solver_api.dart`, `app/lib/main.dart` |
 | 69 | **Узел `FUNCTION`/`FUNCTION_INVERSE`** — функция как объект: имя в `value`, аргумент в детях (для этих типов `value` и дети сосуществуют); `to_sympy`/`from_sympy` знают их, модуль нормализует аргумент (`f(2+3)` → `f(5)`), сам узел остаётся символьным | `solver/functions.py`, `solver/sympy_bridge.py`, `ast.py`, `app/lib/src/model/core_node.dart`, `app/lib/src/render/latex.dart`, `app/lib/src/editor/kind.dart` |
+| 70 | **Определения функций** `f(x) = тело`: приходят с запросом (`definitions`, список узлов `EQUALS(FUNCTION(f, параметры…), тело)`), живут только в пределах запроса — сервер **без состояния**; перед решением вызовы `f(…)` заменяются телом (с подстановкой аргументов), `f⁻¹(a)` — решением `тело = a`. Само определение возвращается как ответ (шаг `function`) | `solver/functions.py` (`parse_definition`/`inline`/`inverse_of`), `solver/__init__.py`, `service.py`, `api.py`, `device.py` |
+| 71 | **Хранилище определений в приложении** (`FunctionStore`): `f(x) = …` распознаётся на «Решить» и запоминается (не решается), определения уходят в каждом запросе и показываются чипами с возможностью убрать; добавлены клавиши `f⁻¹(x)`/`g⁻¹(x)` | `app/lib/src/functions/function_store.dart`, `app/lib/main.dart`, `app/lib/src/api/solver_api.dart`, `app/lib/src/editor/kind.dart` |
 | 60 | **Копировать результат** — LaTeX ответа (или текст шага) в буфер обмена | `app/lib/main.dart` (`_copyResult`, `_copyFormula`) |
 | 61 | **Выбор способа решения — общий механизм**: провайдеры способов регистрируются по типу узла, `solve` не знает про конкретные типы | `solver/methods.py`, `solver/equations.py`, `solver/systems.py`, `solver/__init__.py` |
 | 62 | **Блокнот: метаданные задачи** (uuid, version, source, command, locale, methodIndex) повторяют `ResultItemMetadata` APK; **очистка обратима** («История очищена»/«Отменить») | `app/lib/src/notebook/notebook.dart`, `app/lib/src/notebook/notebook_page.dart` |
@@ -135,9 +137,9 @@
 
 Не поддержано (помечено в каталоге с причиной): `±` (`ADD_SUBTRACT`), подстрочный индекс (`a_n`), `π/2`, `π/3`, многострочный ввод.
 
-`f(x)`/`g(x)` теперь доступны: узел `FUNCTION` реализован (#69). Производная
-неизвестной функции (`d/dx f(x)`) по-прежнему не выражается — определения
-функции нет.
+`f(x)`/`g(x)` теперь доступны: узел `FUNCTION` реализован (#69), а определение
+`f(x) = …` (#70) даёт `f(2)`, `f′(x)` и `f⁻¹(a)`. Для функции **без**
+определения `d/dx f(x)` по-прежнему не выражается.
 
 ## Следующее (открыто)
 

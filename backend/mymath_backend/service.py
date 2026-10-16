@@ -185,22 +185,27 @@ def solve_request(
     interval_data: dict[str, Any] | None = None,
     locale: str = DEFAULT_LOCALE,
     render: bool = True,
+    definitions_data: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Решить выражение и вернуть ответ контракта.
 
     ``render=True`` дописывает тексты пояснений (ключ ``explanation``).
+    ``definitions_data`` — определения функций (``f(x) = …``), которые
+    подставляются в решаемое выражение.
     """
     node = parse_json(node_data)
     action = CoreAction.from_contract(action_data) if action_data else None
     interval = None
     if interval_data is not None:
         interval = (parse_json(interval_data["min"]), parse_json(interval_data["max"]))
+    definitions = [parse_json(item) for item in (definitions_data or [])]
 
     data = solve(
         node,
         command=action.command if action else None,
         args=action.args if action else None,
         interval=interval,
+        definitions=definitions,
     )
     out = data.to_contract()
     if render:

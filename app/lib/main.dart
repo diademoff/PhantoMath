@@ -15,6 +15,7 @@ import 'src/editor/controller.dart';
 import 'src/editor/convert.dart';
 import 'src/editor/editor_view.dart';
 import 'src/editor/keyboard.dart';
+import 'src/functions/function_store.dart';
 import 'src/model/core_node.dart';
 import 'src/notebook/notebook.dart';
 import 'src/notebook/notebook_page.dart';
@@ -147,6 +148,7 @@ class _SolvePageState extends State<SolvePage> {
   final _editor = EditorController();
   final _notebook = Notebook();
   final _settings = AppSettings();
+  final _functions = FunctionStore();
   String _locale = 'ru';
   String? _command;
 
@@ -215,6 +217,8 @@ class _SolvePageState extends State<SolvePage> {
     _settings.load();
     // Перерисовываем при смене настроек: разделитель и нотация влияют на рендер.
     _settings.addListener(_onSettingsChanged);
+    // Список определённых функций тоже обновляет экран.
+    _functions.addListener(_onSettingsChanged);
   }
 
   void _onSettingsChanged() {
@@ -224,9 +228,11 @@ class _SolvePageState extends State<SolvePage> {
   @override
   void dispose() {
     _settings.removeListener(_onSettingsChanged);
+    _functions.removeListener(_onSettingsChanged);
     _editor.dispose();
     _notebook.dispose();
     _settings.dispose();
+    _functions.dispose();
     widget.api.close();
     super.dispose();
   }
@@ -241,12 +247,27 @@ class _SolvePageState extends State<SolvePage> {
       setState(() => _error = 'Введите выражение');
       return;
     }
+    final node = _editor.toCoreNode();
+    // `f(x) = …` — это определение функции, а не задача: запоминаем его и
+    // подставляем в последующие запросы (см. `FunctionStore`).
+    final definition = FunctionStore.parse(node);
+    if (definition != null) {
+      _functions.define(definition);
+      setState(() {
+        _result = null;
+        _methods = const [];
+        _error = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Функция ${definition.name} определена')),
+      );
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
-      final node = _editor.toCoreNode();
       final answer = await widget.api.solve(
         node,
         locale: _locale,
@@ -254,6 +275,7 @@ class _SolvePageState extends State<SolvePage> {
         args: args,
         intervalMin: _intervalMin,
         intervalMax: _intervalMax,
+        definitions: _functions.contract(),
       );
       if (!mounted) return;
       setState(() {
@@ -471,6 +493,7 @@ class _SolvePageState extends State<SolvePage> {
               controller: _editor,
               decimalSeparator: _settings.decimalSeparator,
             ),
+            _definedFunctions(theme),
             SizedBox(
               height: 40,
               child: SingleChildScrollView(
@@ -620,6 +643,28 @@ class _SolvePageState extends State<SolvePage> {
           ),
         );
       },
+    );
+  }
+
+  /// Список определённых функций (`f(x) = …`) с возможностью убрать.
+  Widget _definedFunctions(ThemeData theme) {
+    if (_functions.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 4,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text('Функции:', style: theme.textTheme.labelMedium),
+          for (final definition in _functions.definitions)
+            Chip(
+              avatar: const Icon(Icons.functions, size: 16),
+              label: Text('${definition.name}(${definition.params.join(', ')})'),
+              onDeleted: () => _functions.remove(definition.name),
+            ),
+        ],
+      ),
     );
   }
 

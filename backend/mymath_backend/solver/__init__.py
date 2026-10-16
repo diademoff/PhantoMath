@@ -35,7 +35,13 @@ from .derivatives import solve_derivative
 from .equations import solve_equation
 from .evaluate import solve_evaluate_expression, solve_mean
 from .fractions import solve_fraction
-from .functions import solve_function_node
+from .functions import (
+    Definition,
+    inline,
+    parse_definition,
+    parse_definitions,
+    solve_function_node,
+)
 from .inequalities import solve_inequality
 from .integrals import solve_integral
 from .intervals import solve_interval
@@ -62,6 +68,7 @@ def solve(
     command: str | None = None,
     args: list[CoreNode] | None = None,
     interval: Interval | None = None,
+    definitions: list[CoreNode] | None = None,
 ) -> CoreSolverData:
     """Решить выражение и вернуть ответ в формате контракта.
 
@@ -71,11 +78,43 @@ def solve(
     ``args`` — аргументы команды (``CoreAction.args``), например второй вектор.
     ``interval`` — промежуток для отбора корней тригонометрического уравнения.
 
+    ``definitions`` — определения функций (``f(x) = …``): вызовы ``f(…)``
+    подменяются телом до решения. Определения живут только в пределах запроса,
+    сервер остаётся без состояния.
+
     Бросает :class:`SolveError`, если задача не решается текущим набором
     модулей. Вызывающий сам решает, что показать пользователю: 404 с
     понятным текстом или 500.
     """
+    definition = parse_definition(node)
+    if definition is not None:
+        # Само определение — это ответ, а не задача: показываем его как есть.
+        result = SolveResult()
+        result.add(Step(left=node, right=node, key="function"))
+        result.set_solution(node)
+        return build_solver_data(node, result)
+
+    parsed_definitions: dict[str, Definition] = parse_definitions(definitions or [])
+    original = node
+    if parsed_definitions:
+        node = inline(node, parsed_definitions)
+
     result = SolveResult()
+    # Прямой вызов функции (``f(2)`` или ``f⁻¹(1)``) показываем отдельным
+    # шагом, дальше решается уже подставленное выражение.
+    if parsed_definitions and not node.structural_eq(original):
+        if original.type is CoreNodeType.FUNCTION:
+            argument = original.children[0] if original.children else CoreNode.empty()
+            result.add(
+                Step(
+                    left=original,
+                    right=node,
+                    key="function_evaluate_value",
+                    args=[argument],
+                )
+            )
+        elif original.type is CoreNodeType.FUNCTION_INVERSE:
+            result.add(Step(left=original, right=node, key="find_inverse"))
     ctx = SolveContext(result=result, variables=_free_variables(node))
 
     if command is not None and command != "solve":

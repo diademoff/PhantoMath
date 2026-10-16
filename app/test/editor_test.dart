@@ -424,5 +424,15 @@ void main() {
       c.typeVariable('t');
       expect(editorToCoreNode(c.document).value, 'g');
     });
+
+    test('f⁻¹(y) собирается в FUNCTION_INVERSE', () {
+      final c = EditorController();
+      c.insertTemplate(ENodeKind.functionInverseF);
+      c.typeVariable('y');
+      final node = editorToCoreNode(c.document);
+      expect(node.type, CoreNodeType.functionInverse);
+      expect(node.value, 'f');
+      expect(node.children.single.value, 'y');
+    });
   });
 }
