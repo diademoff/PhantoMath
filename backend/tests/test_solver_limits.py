@@ -116,9 +116,7 @@ class TestUnsupported:
 
     def test_two_sided_agreeing_infinities(self) -> None:
         """1/x² в нуле: обе стороны +∞ — предел есть."""
-        problem = limit(
-            c("0"), node(T.DIVIDE, c("1"), node(T.POWER, var(), c("2"))), T.LIMIT
-        )
+        problem = limit(c("0"), node(T.DIVIDE, c("1"), node(T.POWER, var(), c("2"))), T.LIMIT)
         assert value_of(problem) == "∞"
 
     def test_two_sided_sign_jump(self) -> None:

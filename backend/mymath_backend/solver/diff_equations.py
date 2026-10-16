@@ -21,7 +21,6 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FuturesTimeoutError
-from typing import Any
 
 import sympy
 
@@ -100,7 +99,11 @@ def diff_eq(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode
     return answer
 
 
-def _dsolve_limited(*args: Any, **kwargs: Any) -> Any:
+def _dsolve_limited(
+    equation: sympy.Eq,
+    func: sympy.AppliedUndef,
+    ics: dict[sympy.AppliedUndef, sympy.Expr] | None = None,
+) -> sympy.Basic | list[sympy.Basic]:
     """Вызвать ``sympy.dsolve`` с дедлайном.
 
     Превышение ``_DSOLVE_TIMEOUT`` превращается в ``SolveError`` вместо
@@ -110,7 +113,7 @@ def _dsolve_limited(*args: Any, **kwargs: Any) -> Any:
     """
     pool = ThreadPoolExecutor(max_workers=1)
     try:
-        future = pool.submit(sympy.dsolve, *args, **kwargs)
+        future = pool.submit(sympy.dsolve, equation, func, ics=ics)
         try:
             return future.result(timeout=_DSOLVE_TIMEOUT)
         except FuturesTimeoutError as error:

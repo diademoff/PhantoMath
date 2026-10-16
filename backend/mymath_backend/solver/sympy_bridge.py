@@ -106,7 +106,14 @@ def to_sympy(node: CoreNode) -> sympy.Expr:
         return _translate(node)
     except SolveError:
         raise
-    except (IndexError, KeyError, TypeError, ValueError, AttributeError, ZeroDivisionError) as error:
+    except (
+        IndexError,
+        KeyError,
+        TypeError,
+        ValueError,
+        AttributeError,
+        ZeroDivisionError,
+    ) as error:
         raise SolveError(f"узел {node.type} не переводится в sympy") from error
 
 
