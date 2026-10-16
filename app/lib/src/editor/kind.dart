@@ -117,6 +117,11 @@ enum ENodeKind {
   // ── геометрия APK: отрезок и его длина ──────────────────────────────
   segment,
   segmentLength,
+
+  // ── разделитель строк документа (клавиша ⏎) ──────────────────────────
+  // Не узел математики: convert разрезает по нему корень на строки, внутрь
+  // слотов шаблонов он не попадает как разделитель.
+  newline,
 }
 
 /// Свойства вида узла: арность, роль в записи и соответствие `CoreNodeType`.
@@ -214,6 +219,7 @@ extension ENodeKindSpec on ENodeKind {
       case ENodeKind.percentage:
       case ENodeKind.degree:
       case ENodeKind.radian:
+      case ENodeKind.newline:
         return 0;
     }
   }
@@ -465,6 +471,10 @@ extension ENodeKindSpec on ENodeKind {
         return core.CoreNodeType.lineSegment;
       case ENodeKind.segmentLength:
         return core.CoreNodeType.lineSegmentLength;
+      case ENodeKind.newline:
+        // Разделитель строк: convert разрезает по нему документ и никогда
+        // не преобразует сам токен.
+        return core.CoreNodeType.empty;
       case ENodeKind.row:
         return core.CoreNodeType.empty;
     }
@@ -623,6 +633,8 @@ extension ENodeKindSpec on ENodeKind {
         return 'AB';
       case ENodeKind.segmentLength:
         return '|AB|';
+      case ENodeKind.newline:
+        return '⏎';
       default:
         return '';
     }
@@ -727,6 +739,8 @@ extension ENodeKindSpec on ENodeKind {
         return 'Отрезок';
       case ENodeKind.segmentLength:
         return 'Длина отрезка';
+      case ENodeKind.newline:
+        return 'Новая строка';
       default:
         return label;
     }

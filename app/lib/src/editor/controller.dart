@@ -60,6 +60,9 @@ class EditorController extends ChangeNotifier {
   void insertTemplate(ENodeKind kind) =>
       _apply(ed.insertTemplate(_state, kind));
 
+  /// Перевод строки: новая строка для следующего уравнения системы.
+  void newLine() => _apply(ed.insertNewline(_state));
+
   /// Удалить слева.
   void backspace() => _apply(ed.backspace(_state));
 

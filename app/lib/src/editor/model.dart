@@ -117,8 +117,10 @@ class EditorState {
   final ENode document;
   final EdCursor cursor;
 
-  /// Документ пуст (ни одного токена в корне).
-  bool get isEmpty => document.children.isEmpty;
+  /// Документ пуст (ни одного токена в корне, либо одни переводы строк).
+  bool get isEmpty =>
+      document.children.isEmpty ||
+      document.children.every((token) => token.kind == ENodeKind.newline);
 
   EditorState copyWith({ENode? document, EdCursor? cursor}) =>
       EditorState(document ?? this.document, cursor ?? this.cursor);
@@ -191,6 +193,30 @@ EditorState insertTerminal(EditorState state, ENodeKind kind, String value) {
     return ENode.row(children);
   });
   return EditorState(document, state.cursor.copyWith(offset: newOffset));
+}
+
+/// Вставить перевод строки (клавиша ⏎).
+///
+/// В корне — разделитель в позиции курсора: документ делится на строки,
+/// каждая строка — отдельное уравнение системы. Внутри шаблона разорвать
+/// строку нельзя (иначе распадётся дробь или корень), поэтому перевод
+/// дописывается в конец документа, а курсор выходит в новую строку.
+EditorState insertNewline(EditorState state) {
+  if (state.cursor.steps.isEmpty) {
+    final at = state.cursor.offset;
+    final document = _updateLeafRow(state.document, state.cursor.steps, (row) {
+      final children = List<ENode>.of(row.children);
+      children.insert(at, const ENode(ENodeKind.newline));
+      return ENode.row(children);
+    });
+    return EditorState(document, state.cursor.copyWith(offset: at + 1));
+  }
+  final children = List<ENode>.of(state.document.children)
+    ..add(const ENode(ENodeKind.newline));
+  return EditorState(
+    ENode.row(children),
+    EdCursor(steps: const [], offset: children.length),
+  );
 }
 
 /// Вставить шаблон.
