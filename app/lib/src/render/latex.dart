@@ -324,6 +324,15 @@ String _nodeBody(CoreNode node) {
     case CoreNodeType.functionInverse:
       return _wrap(node, '${_escape(node.value ?? 'f')}^{-1}\\left(\$0\\right)');
 
+    // ── геометрия: отрезок и его длина ──────────────────────────────
+    case CoreNodeType.lineSegment:
+      if (node.children.isEmpty) return _placeholder;
+      return '\\overline{${node.children.map(_childLatex).join(' ')}}';
+
+    case CoreNodeType.lineSegmentLength:
+      if (node.children.isEmpty) return _placeholder;
+      return '\\left|${node.children.map(_childLatex).join(' ')}\\right|';
+
     // ── матрицы ─────────────────────────────────────────────────────
     case CoreNodeType.determinant2:
       return _matrix(node, 2, r'\begin{vmatrix}', r'\end{vmatrix}');

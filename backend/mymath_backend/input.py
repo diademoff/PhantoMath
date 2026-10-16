@@ -176,6 +176,10 @@ KEYWORD_TO_TYPE: dict[str, CoreNodeType] = {
     "eval_expr": T.EVALUATE_EXPRESSION,
     "evaluate_expr": T.EVALUATE_EXPRESSION,
     "cond_expr": T.CONDITIONAL_EXPRESSION,
+    # Геометрия APK — обозначение отрезка и его длина (натив: line_segment /
+    # line_segment_length). Токена отрезка в протоколе нет — имя наше.
+    "segment": T.LINE_SEGMENT,
+    "length": T.LINE_SEGMENT_LENGTH,
     "diff": T.DERIVATION,
     "sign": T.SIGN,
     "prime": T.PRIME,

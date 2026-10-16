@@ -43,6 +43,7 @@ from .functions import (
     parse_definitions,
     solve_function_node,
 )
+from .geometry import solve_segment, solve_segment_length
 from .inequalities import solve_inequality
 from .integrals import solve_integral
 from .intervals import solve_interval
@@ -272,6 +273,8 @@ __all__ = [
     "solve_percentage",
     "solve_piecewise",
     "solve_root",
+    "solve_segment",
+    "solve_segment_length",
     "solve_sequence",
     "solve_series",
     "solve_set_operation",

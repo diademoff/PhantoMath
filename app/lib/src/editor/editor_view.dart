@@ -304,6 +304,10 @@ class _EditorViewState extends State<EditorView> {
         return _inverseFunction('f', slots[0]);
       case ENodeKind.functionInverseG:
         return _inverseFunction('g', slots[0]);
+      case ENodeKind.segment:
+        return _overline(slots);
+      case ENodeKind.segmentLength:
+        return _lengthBars(slots);
       default:
         return _rowOf(slots);
     }
@@ -411,6 +415,24 @@ class _EditorViewState extends State<EditorView> {
     _sup(const Text('−1')),
     _functionTail(argument),
   ]);
+
+  /// Отрезок: черта над концами (``AB``).
+  Widget _overline(List<Widget> slots) {
+    final color = Theme.of(context).colorScheme.onSurface;
+    return Container(
+      padding: const EdgeInsets.only(top: 2),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: color, width: 1.2)),
+      ),
+      child: _rowOf(slots),
+    );
+  }
+
+  /// Длина отрезка: вертикальные черты по бокам (``|AB|``).
+  Widget _lengthBars(List<Widget> slots) {
+    final style = TextStyle(fontSize: _fs * 1.2, height: 1);
+    return _rowOf([Text('|', style: style), ...slots, Text('|', style: style)]);
+  }
 
   /// Хвост функции: `( аргумент )`.
   Widget _functionTail(Widget argument) {

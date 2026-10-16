@@ -113,6 +113,10 @@ enum ENodeKind {
   // ── обратные функции f⁻¹(x), g⁻¹(x) ─────────────────────────────────
   functionInverseF,
   functionInverseG,
+
+  // ── геометрия APK: отрезок и его длина ──────────────────────────────
+  segment,
+  segmentLength,
 }
 
 /// Свойства вида узла: арность, роль в записи и соответствие `CoreNodeType`.
@@ -137,6 +141,9 @@ extension ENodeKindSpec on ENodeKind {
         return 4;
       case ENodeKind.determinant3:
         return 9;
+      case ENodeKind.segment:
+      case ENodeKind.segmentLength:
+        return 2;
       case ENodeKind.matrix2:
         return 4;
       case ENodeKind.matrix3:
@@ -454,6 +461,10 @@ extension ENodeKindSpec on ENodeKind {
       case ENodeKind.functionInverseF:
       case ENodeKind.functionInverseG:
         return core.CoreNodeType.functionInverse;
+      case ENodeKind.segment:
+        return core.CoreNodeType.lineSegment;
+      case ENodeKind.segmentLength:
+        return core.CoreNodeType.lineSegmentLength;
       case ENodeKind.row:
         return core.CoreNodeType.empty;
     }
@@ -608,6 +619,10 @@ extension ENodeKindSpec on ENodeKind {
         return 'f⁻¹(x)';
       case ENodeKind.functionInverseG:
         return 'g⁻¹(x)';
+      case ENodeKind.segment:
+        return 'AB';
+      case ENodeKind.segmentLength:
+        return '|AB|';
       default:
         return '';
     }
@@ -708,6 +723,10 @@ extension ENodeKindSpec on ENodeKind {
         return 'Обратная функция f';
       case ENodeKind.functionInverseG:
         return 'Обратная функция g';
+      case ENodeKind.segment:
+        return 'Отрезок';
+      case ENodeKind.segmentLength:
+        return 'Длина отрезка';
       default:
         return label;
     }

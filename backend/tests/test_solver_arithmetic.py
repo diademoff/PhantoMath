@@ -100,10 +100,11 @@ class TestErrors:
         with pytest.raises(SolveError, match="показатель степени"):
             solve(parse_protocol("{2^99999}"))
 
-    def test_unimplemented_type_is_reported(self) -> None:
-        node = CoreNode.node(T.LINE_SEGMENT, CoreNode.constant("1"))
-        with pytest.raises(SolveError, match="не реализован"):
-            solve(node)
+    def test_unsupported_shape_is_reported(self) -> None:
+        # Нереализованных типов узлов больше нет (все 143 зарегистрированы),
+        # но некорректная форма узла по-прежнему даёт понятную ошибку.
+        with pytest.raises(SolveError, match="среднее"):
+            solve(CoreNode.node(T.MEAN))
 
 
 class TestStepOrder:
@@ -174,6 +175,11 @@ class TestRegistration:
             T.BRACKET,
         } <= registered_types()
 
-    def test_geometry_type_not_registered_yet(self) -> None:
-        """Отрезки (геометрия) вне scope — следующая граница модулей."""
-        assert T.LINE_SEGMENT not in registered_types()
+    def test_geometry_type_registered(self) -> None:
+        """Отрезок и его длина (геометрия APK) есть в реестре."""
+        assert T.LINE_SEGMENT in registered_types()
+        assert T.LINE_SEGMENT_LENGTH in registered_types()
+
+    def test_all_node_types_registered(self) -> None:
+        """Все 143 типа узлов контракта имеют модуль решателя."""
+        assert registered_types() == set(T)

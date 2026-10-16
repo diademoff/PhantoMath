@@ -46,6 +46,21 @@ void main() {
       expect(nodeToLatex(inverse), r'f^{-1}\left(x\right)');
     });
 
+    test('отрезок и его длина', () {
+      CoreNode variable(String name) =>
+          CoreNode(type: CoreNodeType.variable, value: name);
+      final segment = CoreNode(
+        type: CoreNodeType.lineSegment,
+        children: [variable('A'), variable('B')],
+      );
+      expect(nodeToLatex(segment), r'\overline{A B}');
+      final length = CoreNode(
+        type: CoreNodeType.lineSegmentLength,
+        children: [variable('A'), variable('B')],
+      );
+      expect(nodeToLatex(length), r'\left|A B\right|');
+    });
+
     test('настройки не влияют на вложенные вызовы', () {
       // Разделитель применяется и к детям, а не сбрасывается на умолчание.
       final node = CoreNode(

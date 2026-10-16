@@ -37,5 +37,5 @@ class TestContainers:
         assert vertical is not None and vertical.solution is not None
         assert vertical.solution.type is T.APPROXIMATE
 
-    def test_geometry_not_registered(self) -> None:
-        assert T.LINE_SEGMENT not in registered_types()
+    def test_geometry_registered(self) -> None:
+        assert T.LINE_SEGMENT in registered_types()

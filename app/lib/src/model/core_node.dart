@@ -125,7 +125,9 @@ enum CoreNodeType {
   list('LIST'),
   system('SYSTEM'),
   function('FUNCTION'),
-  functionInverse('FUNCTION_INVERSE');
+  functionInverse('FUNCTION_INVERSE'),
+  lineSegment('LINE_SEGMENT'),
+  lineSegmentLength('LINE_SEGMENT_LENGTH');
 
   const CoreNodeType(this.wire);
 

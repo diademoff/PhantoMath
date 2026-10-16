@@ -434,5 +434,22 @@ void main() {
       expect(node.value, 'f');
       expect(node.children.single.value, 'y');
     });
+
+    test('отрезок собирается в LINE_SEGMENT', () {
+      final c = EditorController();
+      c.insertTemplate(ENodeKind.segment);
+      c.typeVariable('A');
+      final node = editorToCoreNode(c.document);
+      expect(node.type, CoreNodeType.lineSegment);
+      expect(node.children, hasLength(2));
+      expect(node.children.first.value, 'A');
+    });
+
+    test('длина отрезка собирается в LINE_SEGMENT_LENGTH', () {
+      final c = EditorController();
+      c.insertTemplate(ENodeKind.segmentLength);
+      c.typeVariable('A');
+      expect(editorToCoreNode(c.document).type, CoreNodeType.lineSegmentLength);
+    });
   });
 }

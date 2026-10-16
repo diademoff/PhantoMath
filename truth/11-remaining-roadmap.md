@@ -149,7 +149,8 @@ APK решает интегральным признаком. Не исполь�
 Не зарегистрированные оформительские типы: `DIFFERENTIAL`, `DERIVATION_DIFF`,
 `MATRIX_SPLIT_LAST/CENTER`, `ADD_SUBTRACT(_SIGN)`, `APPROXIMATE(_SIGN)`,
 `ALTERNATIVE_FORM`, `EQUALS_SIGN`, `PERIODIC`, `TEXT/TEXT_KEY/EMPTY/STRING/UNKNOWN/
-CHOOSE_LOCALIZE/LIST/VERTICAL_LIST`, `LINE_SEGMENT(_LENGTH)` (исключена).
+CHOOSE_LOCALIZE/LIST/VERTICAL_LIST`. `LINE_SEGMENT(_LENGTH)` — реализованы
+(геометрия APK, см. `09-decisions.md` #75).
 Не сопоставленные токены (44): `fun`, `fun_inv`, `pw_def`, `alt_form`, `mod`,
 `max`, `min`, `length`, `derivation_prime_var`, `periodic_solution` + внутренние
 директивы парсера.
@@ -181,8 +182,8 @@ CHOOSE_LOCALIZE/LIST/VERTICAL_LIST`, `LINE_SEGMENT(_LENGTH)` (исключена
   заданном отрезке).
 - **R10** глубина шагов — начато: вид ограничения области определения
   (`domain_poly_real`/`domain_rational`/`domain_even_root`/`domain_log`).
-- **R12** служебные типы — сделано: зарегистрированы 141 из 143 типов (осталась
-  только исключённая геометрия `LINE_SEGMENT*`).
+- **R12** служебные типы — сделано: зарегистрированы **все 143** типа узлов
+  (геометрия `LINE_SEGMENT*` — см. #75 в `09-decisions.md`).
 
 Дополнено: R2 признаки сравнения (`direct_comparison_test`,
 `limit_comparison_test`); R3 способ сложения для 2×2 (`system_2x2_add_eqs`);
