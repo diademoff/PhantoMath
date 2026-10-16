@@ -91,6 +91,12 @@ class TestErrors:
         with pytest.raises(SolveError):
             solve(parse_protocol(source))
 
+    @pytest.mark.parametrize("source", ["{pow({0},{-1})}", "{pow({0},{-2})}", "{0^-3}"])
+    def test_zero_in_negative_power(self, source: str) -> None:
+        """Ноль в отрицательной степени — деление на ноль, а не падение."""
+        with pytest.raises(SolveError, match="деление на ноль"):
+            solve(parse_protocol(source))
+
     def test_variable_is_reported_as_missing_module(self) -> None:
         """Арифметика не решает уравнения -- это разные модули."""
         with pytest.raises(SolveError, match="нужен модуль уравнений"):

@@ -217,6 +217,8 @@ def _apply(op: CoreNodeType, values: list[Fraction]) -> tuple[Fraction, str]:
         base, exponent = values[0], values[1]
         if exponent.denominator != 1 or abs(exponent.numerator) > _MAX_POWER:
             raise SolveError("показатель степени вне поддерживаемого диапазона")
+        if base == 0 and exponent.numerator < 0:
+            raise SolveError("деление на ноль", explanation_key=_KEY_DIV_ZERO)
         if base < 0 and exponent.numerator % 2 != 0:
             return Fraction(-((-base) ** exponent.numerator)), _EXPLANATION_KEY[op]
         return Fraction(base) ** exponent.numerator, _EXPLANATION_KEY[op]
