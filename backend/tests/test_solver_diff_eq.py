@@ -78,6 +78,29 @@ class TestDiffEq:
         with pytest.raises(SolveError):
             solve(parse_protocol("{=({y},{x})}"), command="diff_eq")
 
+    def test_hard_equation_times_out_instead_of_hanging(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Дедлайн превращает зависший dsolve в SolveError.
+
+        Настоящий пример — маятник ``y″ = sin(y)`` (проверен вручную: виснет
+        навсегда, с дедлайном — ``SolveError``). Здесь вместо sympy — спящий
+        фейк: ``time.sleep`` отпускает GIL, поэтому утёкший поток не жжёт CPU
+        и не тормозит остальную сюиту.
+        """
+        import time
+
+        from mymath_backend.solver import diff_equations
+
+        def hanging_dsolve(*args: object, **kwargs: object) -> object:
+            time.sleep(5)
+            raise AssertionError("недостижимо: дедлайн срабатывает раньше")
+
+        monkeypatch.setattr(diff_equations.sympy, "dsolve", hanging_dsolve)
+        monkeypatch.setattr(diff_equations, "_DSOLVE_TIMEOUT", 0.5)
+        with pytest.raises(SolveError, match="не решается"):
+            solve(parse_protocol("{=({prime({y})},{y})}"), command="diff_eq")
+
 
 class TestDiffEqWithoutCommand:
     """Уравнения с y′/y″ вводит клавиатура напрямую — команда не нужна."""

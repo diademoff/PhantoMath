@@ -19,6 +19,10 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeoutError
+from typing import Any
+
 import sympy
 
 from ..ast import CoreNode
@@ -28,6 +32,15 @@ from .sympy_bridge import from_sympy, to_sympy
 
 _FIRST_ORDER = (T.PRIME, T.DERIVATION1_PRIME)
 _CONSTANT_NAMES = ("C", "D", "E", "F")
+
+_DSOLVE_TIMEOUT = 20.0
+"""Предел времени на один вызов ``sympy.dsolve``, секунд.
+
+У ``dsolve`` нет собственного тайм-аута: «трудные» уравнения (маятник
+``y'' = sin(y)``) вешают запрос навсегда. Превышение превращается в
+``SolveError``; зависший поток sympy при этом остаётся жить до своего конца
+(см. ``_dsolve_limited``).
+"""
 
 
 def diff_eq(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
@@ -56,7 +69,7 @@ def diff_eq(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode
     initial = _init_condition(args)
     if initial is None:
         try:
-            solution = sympy.dsolve(equation, yfun(xsym))
+            solution = _dsolve_limited(equation, yfun(xsym))
         except (NotImplementedError, TypeError, ValueError) as error:
             raise SolveError("уравнение не решается") from error
         ctx.result.add(Step(left=node, right=None, key=_classification(equation, yfun(xsym))))
@@ -68,7 +81,7 @@ def diff_eq(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode
     x0 = _number(x_zero)
     y0 = _number(y_zero)
     try:
-        solution = sympy.dsolve(equation, yfun(xsym), ics={yfun(x0): y0})
+        solution = _dsolve_limited(equation, yfun(xsym), ics={yfun(x0): y0})
     except (NotImplementedError, TypeError, ValueError) as error:
         raise SolveError("уравнение с начальным условием не решается") from error
     condition = CoreNode.node(
@@ -85,6 +98,25 @@ def diff_eq(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode
     answer = _solution_node(solution, dep)
     ctx.result.add(Step(left=node, right=answer, key="diff_eq_find_particular"))
     return answer
+
+
+def _dsolve_limited(*args: Any, **kwargs: Any) -> Any:
+    """Вызвать ``sympy.dsolve`` с дедлайном.
+
+    Превышение ``_DSOLVE_TIMEOUT`` превращается в ``SolveError`` вместо
+    вечного зависания. Остановить поток sympy нельзя (``shutdown`` только
+    перестаёт его ждать), поэтому зависший вызов продолжает жечь CPU в фоне
+    до своего конца — это осознанная плата за живой запрос.
+    """
+    pool = ThreadPoolExecutor(max_workers=1)
+    try:
+        future = pool.submit(sympy.dsolve, *args, **kwargs)
+        try:
+            return future.result(timeout=_DSOLVE_TIMEOUT)
+        except FuturesTimeoutError as error:
+            raise SolveError("уравнение не решается") from error
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)
 
 
 def _order_of(node: CoreNode) -> int | None:
