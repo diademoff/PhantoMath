@@ -98,3 +98,7 @@ class TestRotated:
     def test_imaginary_ellipse_rejected(self) -> None:
         with pytest.raises(SolveError, match="действительных точек"):
             run("{=({x^2+xy+y^2},{-1})}")
+
+    def test_imaginary_circle_rejected(self) -> None:
+        with pytest.raises(SolveError, match="мнимый радиус"):
+            run("{=({x^2+y^2},{-1})}")

@@ -151,6 +151,19 @@ class TestUnsupported:
         with pytest.raises(SolveError, match="элементарн"):
             solve(problem)
 
+    @pytest.mark.parametrize(
+        "source",
+        [
+            "{integral({exp({-x^2})})}",
+            "{integral({sin({x^2})})}",
+            "{integral({pow({x},{x})})}",
+        ],
+    )
+    def test_no_elementary_antiderivative_protocol(self, source: str) -> None:
+        """Неэлементарные первообразные из ввода с клавиатуры — понятный отказ."""
+        with pytest.raises(SolveError, match="элементарн"):
+            solve(parse_protocol(source))
+
 
 class TestMethod:
     def keys_of(self, problem: CoreNode) -> list[str]:
