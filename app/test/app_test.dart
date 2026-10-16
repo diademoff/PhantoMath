@@ -428,6 +428,20 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('у шага нарисована стрелка разворота', (tester) async {
+    await tester.pumpWidget(MaterialApp(home: SolvePage(api: _api())));
+    await tester.pump();
+    await _key(tester, 'DIGIT_TWO');
+    await tester.tap(find.byKey(const ValueKey('solve')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // `@id/expand_button` — своя стрелка `steps_down`; без неё шаг
+    // разворачивается тапом по строке, но обнаружить это нельзя.
+    expect(find.byIcon(Icons.keyboard_arrow_down), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('решённая задача попадает в блокнот', (tester) async {
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: _api())));
     await tester.pump();

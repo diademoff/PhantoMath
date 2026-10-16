@@ -229,8 +229,10 @@ class _Step extends StatelessWidget {
         top: PhGap.stepBottom,
       ),
       childrenPadding: const EdgeInsets.only(left: PhGap.stepSide),
-      // Своя стрелка `@id/expand_button`, стандартная не рисуется.
-      showTrailingIcon: false,
+      // Своя стрелка `@id/expand_button` (вместо стандартной) приходит
+      // через `trailing`. `trailing` рисуется только при
+      // `showTrailingIcon: true` — при `false` `ExpansionTile` отбрасывает
+      // его целиком, и шаг разворачивался тапом по строке без стрелки.
       // `@id/collapsed_description`: пояснение серым под формулой —
       // `marginTop=8`, `marginBottom=16`, `marginStart=16`, `marginEnd=10`.
       subtitle: substep.text == null || substep.text!.isEmpty
