@@ -120,9 +120,6 @@ class SettingsPage extends StatelessWidget {
 
   Widget _hint(String text) => Padding(
     padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-    child: Opacity(
-      opacity: 0.7,
-      child: Text(text, style: const TextStyle(fontSize: 12)),
-    ),
+    child: Text(text, style: const TextStyle(fontSize: 14, height: 1.4)),
   );
 }

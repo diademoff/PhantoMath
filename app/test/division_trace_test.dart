@@ -2,8 +2,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mymath_app/src/model/core_node.dart';
 import 'package:mymath_app/src/render/division_trace.dart';
 
-DivisionTrace? trace(String a, String b) => DivisionTrace.fromNode(CoreNode(type: CoreNodeType.divide,
-  children: [CoreNode(type: CoreNodeType.constant, value: a), CoreNode(type: CoreNodeType.constant, value: b)]));
+DivisionTrace? trace(String a, String b) => DivisionTrace.fromNode(
+  CoreNode(
+    type: CoreNodeType.divide,
+    children: [
+      CoreNode(type: CoreNodeType.constant, value: a),
+      CoreNode(type: CoreNodeType.constant, value: b),
+    ],
+  ),
+);
 
 void main() {
   test('long division is exact, including internal zeros', () {

@@ -77,7 +77,11 @@ Future<void> _chip(WidgetTester tester, String label) async {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
   }
-  await tester.scrollUntilVisible(find.text(label), 400, scrollable: find.byType(Scrollable).last);
+  await tester.scrollUntilVisible(
+    find.text(label),
+    400,
+    scrollable: find.byType(Scrollable).last,
+  );
   await tester.ensureVisible(find.text(label));
   await tester.pump();
   await tester.tap(find.text(label));
@@ -112,7 +116,10 @@ void main() {
     await tester.pump();
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
     expect(app.darkTheme, isNotNull);
-    expect(app.theme?.colorScheme.primary, PhantoTheme.light().colorScheme.primary);
+    expect(
+      app.theme?.colorScheme.primary,
+      PhantoTheme.light().colorScheme.primary,
+    );
     expect(app.title, 'PhantoMath');
     expect(tester.takeException(), isNull);
   });
@@ -131,8 +138,7 @@ void main() {
     // инкрементальной компиляцией, — результат зависит от тайминга кадра,
     // а скринридер читает само дерево (там метки есть всегда).
     Finder withLabel(String label) => find.byWidgetPredicate(
-      (widget) =>
-          widget is Semantics && widget.properties.label == label,
+      (widget) => widget is Semantics && widget.properties.label == label,
     );
     expect(withLabel('Дробь'), findsWidgets);
     expect(withLabel('Сложить'), findsWidgets);
@@ -241,10 +247,7 @@ void main() {
 
     // Базовый экран: цифры и плоские знаки.
     expect(find.byKey(const ValueKey('key:DIGIT_SEVEN')), findsOneWidget);
-    expect(
-      find.byKey(const ValueKey('key:OPERATOR_SIN')),
-      findsNothing,
-    );
+    expect(find.byKey(const ValueKey('key:OPERATOR_SIN')), findsNothing);
 
     // `f ∫ <>` — расширенный экран.
     await _openSheet(tester, PhSheet.secondary);

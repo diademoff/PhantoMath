@@ -39,7 +39,13 @@ class NotebookPage extends StatelessWidget {
           final entries = notebook.entries;
           if (entries.isEmpty) {
             return const Center(
-              child: Text('Пусто: решённые задачи появятся здесь'),
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'Здесь будут ваши решения.\nВведите первую задачу на главном экране.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
             );
           }
           return ListView.builder(
@@ -143,10 +149,13 @@ class _Formula extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (latex.isEmpty) return const SizedBox.shrink();
-    return Math.tex(
-      latex,
-      mathStyle: MathStyle.display,
-      onErrorFallback: (error) => Text(latex),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Math.tex(
+        latex,
+        mathStyle: MathStyle.display,
+        onErrorFallback: (error) => Text(latex),
+      ),
     );
   }
 }

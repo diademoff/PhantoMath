@@ -39,25 +39,38 @@ class CursorStep {
 /// Пустой `steps` означает корневой ряд документа.
 @immutable
 class EdCursor {
-  const EdCursor({this.steps = const <CursorStep>[], this.offset = 0, this.textOffset});
+  const EdCursor({
+    this.steps = const <CursorStep>[],
+    this.offset = 0,
+    this.textOffset,
+    this.templateSelected = false,
+  });
 
   final List<CursorStep> steps;
   final int offset;
+
   /// Interior position in a numeric token; null means a token boundary.
   final int? textOffset;
+  final bool templateSelected;
 
   EdCursor copyWith({List<CursorStep>? steps, int? offset, int? textOffset}) =>
-      EdCursor(steps: steps ?? this.steps, offset: offset ?? this.offset, textOffset: textOffset);
+      EdCursor(
+        steps: steps ?? this.steps,
+        offset: offset ?? this.offset,
+        textOffset: textOffset,
+      );
 
   @override
   bool operator ==(Object other) =>
       other is EdCursor &&
       other.offset == offset &&
       other.textOffset == textOffset &&
+      other.templateSelected == templateSelected &&
       listEquals(other.steps, steps);
 
   @override
-  int get hashCode => Object.hash(Object.hashAll(steps), offset, textOffset);
+  int get hashCode =>
+      Object.hash(Object.hashAll(steps), offset, textOffset, templateSelected);
 
   @override
   String toString() => 'EdCursor(${steps.join('>')} @$offset)';
@@ -177,7 +190,9 @@ final RegExp _numeric = RegExp(r'^[0-9.]+$');
 /// пока он остаётся числом; повторная точка начинает новое число.
 EditorState insertTerminal(EditorState state, ENodeKind kind, String value) {
   final inside = state.cursor.textOffset;
-  if (inside != null && kind == ENodeKind.constant && _numeric.hasMatch(value)) {
+  if (inside != null &&
+      kind == ENodeKind.constant &&
+      _numeric.hasMatch(value)) {
     final cursor = state.cursor;
     final token = rowAt(state.document, cursor.steps).children[cursor.offset];
     if (value == '.' && token.value!.contains('.')) return state;
@@ -187,7 +202,10 @@ EditorState insertTerminal(EditorState state, ENodeKind kind, String value) {
       children[cursor.offset] = ENode.terminal(kind, text);
       return ENode.row(children);
     });
-    return EditorState(document, cursor.copyWith(textOffset: inside + value.length));
+    return EditorState(
+      document,
+      cursor.copyWith(textOffset: inside + value.length),
+    );
   }
   state = _splitNumber(state);
   var newOffset = state.cursor.offset;
@@ -279,15 +297,27 @@ EditorState backspace(EditorState state) {
     final document = _updateLeafRow(state.document, cursor.steps, (row) {
       final children = List<ENode>.of(row.children);
       final token = children[cursor.offset];
-      children[cursor.offset] = token.copyWith(value: token.value!.replaceRange(inside - 1, inside, ''));
+      children[cursor.offset] = token.copyWith(
+        value: token.value!.replaceRange(inside - 1, inside, ''),
+      );
       return ENode.row(children);
     });
-    return EditorState(document, cursor.copyWith(textOffset: inside == 1 ? null : inside - 1));
+    return EditorState(
+      document,
+      cursor.copyWith(textOffset: inside == 1 ? null : inside - 1),
+    );
   }
   if (cursor.offset > 0) {
-    final prev = rowAt(state.document, cursor.steps).children[cursor.offset - 1];
-    if (prev.kind.isTemplate && prev.children.any((slot) => !slot.isEmptyRow)) {
-      return state.copyWith(cursor: _edgeCursor(prev, cursor.steps, cursor.offset - 1, end: true));
+    final prev = rowAt(
+      state.document,
+      cursor.steps,
+    ).children[cursor.offset - 1];
+    if (!cursor.templateSelected &&
+        prev.kind.isTemplate &&
+        prev.children.any((slot) => !slot.isEmptyRow)) {
+      return state.copyWith(
+        cursor: _edgeCursor(prev, cursor.steps, cursor.offset - 1, end: true),
+      );
     }
     final at = cursor.offset;
     // При обрезке последнего символа числа узел остаётся на месте, поэтому
@@ -317,6 +347,7 @@ EditorState backspace(EditorState state) {
       EdCursor(
         steps: cursor.steps.sublist(0, cursor.steps.length - 1),
         offset: step.child + 1,
+        templateSelected: true,
       ),
     );
   }
@@ -330,11 +361,19 @@ EditorState deleteForward(EditorState state) {
     final document = _updateLeafRow(state.document, cursor.steps, (row) {
       final children = List<ENode>.of(row.children);
       final token = children[cursor.offset];
-      children[cursor.offset] = token.copyWith(value: token.value!.replaceRange(inside, inside + 1, ''));
+      children[cursor.offset] = token.copyWith(
+        value: token.value!.replaceRange(inside, inside + 1, ''),
+      );
       return ENode.row(children);
     });
-    final length = rowAt(document, cursor.steps).children[cursor.offset].value!.length;
-    return EditorState(document, inside == length ? cursor.copyWith(offset: cursor.offset + 1) : cursor);
+    final length = rowAt(
+      document,
+      cursor.steps,
+    ).children[cursor.offset].value!.length;
+    return EditorState(
+      document,
+      inside == length ? cursor.copyWith(offset: cursor.offset + 1) : cursor,
+    );
   }
   final leaf = rowAt(state.document, cursor.steps);
   if (cursor.offset < leaf.children.length) {
@@ -369,13 +408,29 @@ EditorState deleteForward(EditorState state) {
 EditorState moveLeft(EditorState state) {
   final cursor = state.cursor;
   if (cursor.textOffset case final inside?) {
-    return state.copyWith(cursor: cursor.copyWith(textOffset: inside == 1 ? null : inside - 1));
+    return state.copyWith(
+      cursor: cursor.copyWith(textOffset: inside == 1 ? null : inside - 1),
+    );
   }
   if (cursor.offset > 0) {
-    final prev = rowAt(state.document, cursor.steps).children[cursor.offset - 1];
-    if (prev.kind.isTemplate) return state.copyWith(cursor: _edgeCursor(prev, cursor.steps, cursor.offset - 1, end: true));
-    if (prev.kind == ENodeKind.constant && _numeric.hasMatch(prev.value ?? '') && prev.value!.length > 1) {
-      return state.copyWith(cursor: cursor.copyWith(offset: cursor.offset - 1, textOffset: prev.value!.length - 1));
+    final prev = rowAt(
+      state.document,
+      cursor.steps,
+    ).children[cursor.offset - 1];
+    if (prev.kind.isTemplate) {
+      return state.copyWith(
+        cursor: _edgeCursor(prev, cursor.steps, cursor.offset - 1, end: true),
+      );
+    }
+    if (prev.kind == ENodeKind.constant &&
+        _numeric.hasMatch(prev.value ?? '') &&
+        prev.value!.length > 1) {
+      return state.copyWith(
+        cursor: cursor.copyWith(
+          offset: cursor.offset - 1,
+          textOffset: prev.value!.length - 1,
+        ),
+      );
     }
     return state.copyWith(cursor: cursor.copyWith(offset: cursor.offset - 1));
   }
@@ -384,7 +439,12 @@ EditorState moveLeft(EditorState state) {
     if (step.slot > 0) {
       final parent = cursor.steps.sublist(0, cursor.steps.length - 1);
       final template = rowAt(state.document, parent).children[step.child];
-      return state.copyWith(cursor: EdCursor(steps: [...parent, CursorStep(step.child, step.slot - 1)], offset: template.children[step.slot - 1].children.length));
+      return state.copyWith(
+        cursor: EdCursor(
+          steps: [...parent, CursorStep(step.child, step.slot - 1)],
+          offset: template.children[step.slot - 1].children.length,
+        ),
+      );
     }
     return EditorState(
       state.document,
@@ -403,12 +463,22 @@ EditorState moveRight(EditorState state) {
   final leaf = rowAt(state.document, cursor.steps);
   if (cursor.textOffset case final inside?) {
     final length = leaf.children[cursor.offset].value!.length;
-    return state.copyWith(cursor: inside + 1 == length ? cursor.copyWith(offset: cursor.offset + 1) : cursor.copyWith(textOffset: inside + 1));
+    return state.copyWith(
+      cursor: inside + 1 == length
+          ? cursor.copyWith(offset: cursor.offset + 1)
+          : cursor.copyWith(textOffset: inside + 1),
+    );
   }
   if (cursor.offset < leaf.children.length) {
     final next = leaf.children[cursor.offset];
-    if (next.kind.isTemplate) return state.copyWith(cursor: _edgeCursor(next, cursor.steps, cursor.offset, end: false));
-    if (next.kind == ENodeKind.constant && _numeric.hasMatch(next.value ?? '') && next.value!.length > 1) {
+    if (next.kind.isTemplate) {
+      return state.copyWith(
+        cursor: _edgeCursor(next, cursor.steps, cursor.offset, end: false),
+      );
+    }
+    if (next.kind == ENodeKind.constant &&
+        _numeric.hasMatch(next.value ?? '') &&
+        next.value!.length > 1) {
       return state.copyWith(cursor: cursor.copyWith(textOffset: 1));
     }
     return state.copyWith(cursor: cursor.copyWith(offset: cursor.offset + 1));
@@ -418,7 +488,11 @@ EditorState moveRight(EditorState state) {
     final parent = cursor.steps.sublist(0, cursor.steps.length - 1);
     final template = rowAt(state.document, parent).children[step.child];
     if (step.slot + 1 < template.children.length) {
-      return state.copyWith(cursor: EdCursor(steps: [...parent, CursorStep(step.child, step.slot + 1)]));
+      return state.copyWith(
+        cursor: EdCursor(
+          steps: [...parent, CursorStep(step.child, step.slot + 1)],
+        ),
+      );
     }
     return EditorState(
       state.document,
@@ -461,15 +535,25 @@ EditorState nextSlot(EditorState state) {
   final step = cursor.steps.last;
   final parent = cursor.steps.sublist(0, cursor.steps.length - 1);
   final template = rowAt(state.document, parent).children[step.child];
-  return state.copyWith(cursor: step.slot + 1 < template.children.length
-      ? EdCursor(steps: [...parent, CursorStep(step.child, step.slot + 1)])
-      : EdCursor(steps: parent, offset: step.child + 1));
+  return state.copyWith(
+    cursor: step.slot + 1 < template.children.length
+        ? EdCursor(steps: [...parent, CursorStep(step.child, step.slot + 1)])
+        : EdCursor(steps: parent, offset: step.child + 1),
+  );
 }
 
-EdCursor _edgeCursor(ENode template, List<CursorStep> steps, int index, {required bool end}) {
+EdCursor _edgeCursor(
+  ENode template,
+  List<CursorStep> steps,
+  int index, {
+  required bool end,
+}) {
   final slot = end ? template.children.length - 1 : 0;
   final row = template.children[slot];
-  return EdCursor(steps: [...steps, CursorStep(index, slot)], offset: end ? row.children.length : 0);
+  return EdCursor(
+    steps: [...steps, CursorStep(index, slot)],
+    offset: end ? row.children.length : 0,
+  );
 }
 
 EditorState _splitNumber(EditorState state) {
@@ -479,7 +563,10 @@ EditorState _splitNumber(EditorState state) {
   final document = _updateLeafRow(state.document, cursor.steps, (row) {
     final children = List<ENode>.of(row.children);
     final token = children.removeAt(cursor.offset);
-    children.insertAll(cursor.offset, [token.copyWith(value: token.value!.substring(0, inside)), token.copyWith(value: token.value!.substring(inside))]);
+    children.insertAll(cursor.offset, [
+      token.copyWith(value: token.value!.substring(0, inside)),
+      token.copyWith(value: token.value!.substring(inside)),
+    ]);
     return ENode.row(children);
   });
   return EditorState(document, cursor.copyWith(offset: cursor.offset + 1));

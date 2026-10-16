@@ -25,7 +25,6 @@ library;
 
 import 'package:flutter/material.dart';
 
-
 /// Кнопка Photomath: красная пилюля с текстом и стрелкой.
 class PhButton extends StatelessWidget {
   const PhButton({
@@ -42,18 +41,32 @@ class PhButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null && !busy;
-    return Semantics(liveRegion: busy, child: FilledButton(
-      onPressed: enabled ? onPressed : null,
-      child: Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (busy) const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
-          if (busy) const SizedBox(width: 12),
-          Flexible(child: Text(label, textAlign: TextAlign.center)),
-          if (!busy) ...[const SizedBox(width: 12), const Icon(Icons.arrow_forward, size: 20)],
-        ],
-      )),
-    ));
+    return Semantics(
+      liveRegion: busy,
+      child: FilledButton(
+        onPressed: enabled ? onPressed : null,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (busy)
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              if (busy) const SizedBox(width: 12),
+              Flexible(child: Text(label, textAlign: TextAlign.center)),
+              if (!busy) ...[
+                const SizedBox(width: 12),
+                const Icon(Icons.arrow_forward, size: 20),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

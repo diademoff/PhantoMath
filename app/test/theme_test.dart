@@ -13,8 +13,12 @@ void main() {
     test('AA semantic pairs ${theme.brightness}', () {
       final c = theme.colorScheme;
       expect(contrast(c.onSurface, c.surface), greaterThanOrEqualTo(4.5));
-      expect(contrast(c.onSurfaceVariant, c.surface), greaterThanOrEqualTo(4.5));
+      expect(
+        contrast(c.onSurfaceVariant, c.surface),
+        greaterThanOrEqualTo(4.5),
+      );
       expect(contrast(c.onPrimary, c.primary), greaterThanOrEqualTo(4.5));
+      expect(contrast(c.primary, c.surface), greaterThanOrEqualTo(4.5));
       expect(contrast(c.outline, c.surface), greaterThanOrEqualTo(3));
       expect(contrast(c.error, c.surface), greaterThanOrEqualTo(4.5));
     });

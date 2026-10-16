@@ -310,16 +310,19 @@ OperatorBinding bindOperator(String name) {
   if (digit != null) return OperatorBinding(name, key: MathKey.digit(digit));
 
   final variable = _variables[name];
-  if (variable != null)
+  if (variable != null) {
     return OperatorBinding(name, key: MathKey.variable(variable));
+  }
 
   final constant = _constants[name];
-  if (constant != null)
+  if (constant != null) {
     return OperatorBinding(name, key: MathKey.constant(constant));
+  }
 
   final template = _templates[name];
-  if (template != null)
+  if (template != null) {
     return OperatorBinding(name, key: MathKey.template(template));
+  }
 
   final infix = _infix[name];
   if (infix != null) return OperatorBinding(name, key: MathKey.operator(infix));

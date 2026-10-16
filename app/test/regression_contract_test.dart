@@ -46,14 +46,29 @@ void main() {
         final body = jsonDecode(request.body) as Map;
         expect(body['xMin'], -2);
         expect(body['xMax'], 3);
-        return http.Response(jsonEncode({
-          'points': [[0, 1]], 'xMin': -2, 'xMax': 3,
-          'yMin': 0, 'yMax': 4, 'variable': 'x',
-          'annotations': {
-            'roots': [[1, 0]], 'maxima': [[0, 1]],
-            'verticalAsymptotes': [2], 'horizontalAsymptotes': [0],
-          },
-        }), 200);
+        return http.Response(
+          jsonEncode({
+            'points': [
+              [0, 1],
+            ],
+            'xMin': -2,
+            'xMax': 3,
+            'yMin': 0,
+            'yMax': 4,
+            'variable': 'x',
+            'annotations': {
+              'roots': [
+                [1, 0],
+              ],
+              'maxima': [
+                [0, 1],
+              ],
+              'verticalAsymptotes': [2],
+              'horizontalAsymptotes': [0],
+            },
+          }),
+          200,
+        );
       }),
     );
     addTearDown(api.close);

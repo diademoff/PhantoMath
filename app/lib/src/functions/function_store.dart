@@ -52,8 +52,9 @@ class FunctionStore extends ChangeNotifier {
     }
     final params = <String>[];
     for (final child in head.children) {
-      if (child.type != CoreNodeType.variable || child.value == null)
+      if (child.type != CoreNodeType.variable || child.value == null) {
         return null;
+      }
       params.add(child.value!);
     }
     return FunctionDefinition(

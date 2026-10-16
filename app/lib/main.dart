@@ -1,4 +1,7 @@
-/// Главный экран Photomath: ввод, решение и вертикальный результат.
+/// PhantoMath: ввод без ожидания решателя, контекстные действия и пояснения.
+///
+/// Ниже сохранены исторические заметки о прототипе по APK. Геометрия,
+/// палитра, навигация и состояния PhantoMath больше не повторяют его 1 в 1.
 ///
 /// Раскладка собрана по `res/layout/activity_main.xml`,
 /// `res/layout/fragment_editor.xml`,
@@ -35,6 +38,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import 'dart:io';
 
 import 'src/api/embedded_backend.dart';
@@ -93,16 +97,23 @@ class BootstrapApp extends StatefulWidget {
 }
 
 class _BootstrapAppState extends State<BootstrapApp> {
-  late final String _baseUrl = const String.fromEnvironment('MYMATH_API').isNotEmpty
+  late final String _baseUrl =
+      const String.fromEnvironment('MYMATH_API').isNotEmpty
       ? const String.fromEnvironment('MYMATH_API')
-      : Platform.isAndroid ? embeddedBaseUrl : defaultBaseUrl;
-  late final SolverStartup _startup = SolverStartup(widget.start ?? () async {
-    if (Platform.isAndroid && const String.fromEnvironment('MYMATH_API').isEmpty) {
-      if (await startEmbeddedBackend() == null) {
-        throw const SolveFailure('Не удалось запустить решатель');
-      }
-    }
-  });
+      : Platform.isAndroid
+      ? embeddedBaseUrl
+      : defaultBaseUrl;
+  late final SolverStartup _startup = SolverStartup(
+    widget.start ??
+        () async {
+          if (Platform.isAndroid &&
+              const String.fromEnvironment('MYMATH_API').isEmpty) {
+            if (await startEmbeddedBackend() == null) {
+              throw const SolveFailure('Не удалось запустить решатель');
+            }
+          }
+        },
+  );
 
   @override
   void initState() {
@@ -131,21 +142,33 @@ class SolverReadyIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(listenable: startup, builder: (context, _) => Semantics(
-      liveRegion: true,
-      child: AnimatedSwitcher(
-        duration: PhMotion.duration(context),
-        child: switch (startup.status) {
-          SolverStatus.starting => Text('Подготавливаем решатель…', key: const ValueKey('starting'), style: Theme.of(context).textTheme.bodySmall),
-          SolverStatus.ready => Text('Готов к решению', key: const ValueKey('ready'), style: Theme.of(context).textTheme.bodySmall),
-          SolverStatus.failed => TextButton.icon(
-            key: const ValueKey('retry-startup'),
-            onPressed: () => startup.ensureReady().catchError((Object _) {}),
-            icon: const Icon(Icons.refresh), label: const Text('Повторить запуск'),
-          ),
-        },
+    return ListenableBuilder(
+      listenable: startup,
+      builder: (context, _) => Semantics(
+        liveRegion: true,
+        child: AnimatedSwitcher(
+          duration: PhMotion.duration(context),
+          child: switch (startup.status) {
+            SolverStatus.starting => Text(
+              'Подготавливаем решатель…',
+              key: const ValueKey('starting'),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            SolverStatus.ready => Text(
+              'Готов к решению',
+              key: const ValueKey('ready'),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            SolverStatus.failed => TextButton.icon(
+              key: const ValueKey('retry-startup'),
+              onPressed: () => startup.ensureReady().catchError((Object _) {}),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Повторить запуск'),
+            ),
+          },
+        ),
       ),
-    ));
+    );
   }
 }
 
@@ -162,8 +185,6 @@ class MyMathApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Тема оригинала одна: `AppTheme` — Light, тёмной в APK нет.
-    // `statusBarColor` оригинала — `#73000000` полупрозрачный чёрный.
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -175,7 +196,10 @@ class MyMathApp extends StatelessWidget {
         theme: PhantoTheme.light(),
         darkTheme: PhantoTheme.dark(),
         themeMode: ThemeMode.system,
-        home: SolvePage(api: SolverApi(baseUrl: baseUrl), startup: startup),
+        home: SolvePage(
+          api: SolverApi(baseUrl: baseUrl),
+          startup: startup,
+        ),
       ),
     );
   }
@@ -213,6 +237,7 @@ class _SolvePageState extends State<SolvePage> {
   String? _error;
   bool _busy = false;
   bool _expandSteps = false;
+  bool _keyboardVisible = true;
   int _requestGeneration = 0;
   Object? _lastDocument;
 
@@ -273,9 +298,7 @@ class _SolvePageState extends State<SolvePage> {
     _settings.addListener(_onSettingsChanged);
     // Список определённых функций тоже обновляет экран.
     _functions.addListener(_onSettingsChanged);
-    // Видимость `@id/solution_button` и `@id/clear_button` повторяет
-    // редактор: в оригинале `EditorFragment` следит за вводом и
-    // показывает/прячет кнопку решения (`invisible` + `alpha=0/1`).
+    // Изменения документа отменяют устаревшую отправку, движения каретки — нет.
     _editor.addListener(_onEditorChanged);
   }
 
@@ -373,10 +396,14 @@ class _SolvePageState extends State<SolvePage> {
       });
     } catch (_) {
       if (mounted && generation == _requestGeneration) {
-        setState(() => _error = 'Не удалось запустить решатель. Повторите попытку.');
+        setState(
+          () => _error = 'Не удалось запустить решатель. Повторите попытку.',
+        );
       }
     } finally {
-      if (mounted && generation == _requestGeneration) setState(() => _busy = false);
+      if (mounted && generation == _requestGeneration) {
+        setState(() => _busy = false);
+      }
     }
   }
 
@@ -514,26 +541,74 @@ class _SolvePageState extends State<SolvePage> {
       // `activity_main.xml`): боковой `NavigationView` шириной до 320dip
       // (`drawer_width`), а не нижний лист.
       drawer: _buildDrawer(),
-      appBar: _showResult ? null : AppBar(
-        leading: _menuButton(),
-        titleSpacing: 0,
-        title: Row(children: [
-          TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0, end: 1),
-            duration: PhMotion.duration(context, 360),
-            builder: (context, value, child) => Opacity(opacity: value,
-              child: Transform.translate(offset: Offset(0, 4 * (1 - value)), child: child)),
-            child: const PhantoMark(size: 28),
-          ),
-          const SizedBox(width: 8),
-          Text('PhantoMath', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: colors.onSurface)),
-        ]),
-        actions: [_topIcon(tooltip: PhString.notebook, icon: Icons.history_outlined, onPressed: _openNotebook)],
-      ),
+      appBar: _showResult
+          ? null
+          : AppBar(
+              leading: _menuButton(),
+              titleSpacing: 0,
+              title: Row(
+                children: [
+                  TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: 1),
+                    duration: PhMotion.duration(context, 360),
+                    builder: (context, value, child) => Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, 4 * (1 - value)),
+                        child: child,
+                      ),
+                    ),
+                    child: const PhantoMark(size: 28),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      'PhantoMath',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: colors.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                IconButton(
+                  tooltip: _keyboardVisible
+                      ? 'Скрыть клавиатуру'
+                      : 'Показать клавиатуру',
+                  onPressed: () =>
+                      setState(() => _keyboardVisible = !_keyboardVisible),
+                  icon: Icon(
+                    _keyboardVisible
+                        ? Icons.keyboard_hide_outlined
+                        : Icons.keyboard_outlined,
+                  ),
+                ),
+                _topIcon(
+                  tooltip: PhString.notebook,
+                  icon: Icons.history_outlined,
+                  onPressed: _openNotebook,
+                ),
+              ],
+            ),
       body: PopScope(
-        canPop: !_showResult,
-        onPopInvokedWithResult: (didPop, _) { if (!didPop && _showResult) _backToInput(); },
-        child: SafeArea(top: _showResult, child: _showResult ? _buildResult() : _buildEditor()),
+        canPop: !_showResult && !_keyboardVisible,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop) return;
+          if (_showResult) {
+            _backToInput();
+          } else {
+            setState(() => _keyboardVisible = false);
+          }
+        },
+        child: SafeArea(
+          top: _showResult,
+          child: _showResult ? _buildResult() : _buildEditor(),
+        ),
       ),
     );
   }
@@ -566,19 +641,47 @@ class _SolvePageState extends State<SolvePage> {
 
   /// Экран ввода: поле, предпросмотр решения, команды и клавиатура.
   Widget _buildEditor() {
-    return LayoutBuilder(builder: (context, constraints) {
-      final wide = constraints.maxWidth > 650 && constraints.maxHeight < 520;
-      final keyboard = PhotomathKeyboard(controller: _editor,
-        decimalSeparator: _settings.decimalSeparator.symbol,
-        maxHeight: wide ? constraints.maxHeight : constraints.maxHeight * .58);
-      final workspace = Column(children: [
-        Expanded(child: _editorArea()),
-        _commandBar(),
-        _showSolutionButton(),
-      ]);
-      if (wide) return Row(children: [Expanded(child: workspace), SizedBox(width: 360, child: keyboard)]);
-      return Column(children: [Expanded(child: workspace), keyboard]);
-    });
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth > 650 && constraints.maxHeight < 520;
+        final keyboard = PhotomathKeyboard(
+          controller: _editor,
+          decimalSeparator: _settings.decimalSeparator.symbol,
+          maxHeight: wide ? constraints.maxHeight : constraints.maxHeight * .58,
+        );
+        final content = [_commandBar(), _showSolutionButton()];
+        final Widget workspace =
+            MediaQuery.textScalerOf(context).scale(1) > 1.3 &&
+                constraints.maxHeight < 580
+            ? ListView(
+                children: [
+                  SizedBox(height: 148, child: _editorArea()),
+                  ...content,
+                ],
+              )
+            : Column(
+                children: [
+                  Expanded(child: _editorArea()),
+                  ...content,
+                ],
+              );
+        if (!_keyboardVisible) return workspace;
+        if (wide) {
+          return Row(
+            children: [
+              Expanded(child: workspace),
+              SizedBox(width: 360, child: keyboard),
+            ],
+          );
+        }
+        return Column(
+          children: [
+            Expanded(child: workspace),
+            keyboard,
+          ],
+        );
+      },
+    );
   }
 
   /// Поле ввода, предпросмотр решения и ошибка — `fragment_editor.xml`.
@@ -586,42 +689,50 @@ class _SolvePageState extends State<SolvePage> {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       children: [
-        Text(_editor.isEmpty ? 'Введите задачу' : 'Ваша задача', style: Theme.of(context).textTheme.bodySmall),
+        Text(
+          _editor.isEmpty ? 'Введите задачу' : _kindLabel,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
         const SizedBox(height: 16),
         Stack(
           children: [
             Padding(
               padding: const EdgeInsets.only(
-                 top: 0,
-                 left: 0,
+                top: 0,
+                left: 0,
                 // Справа поле под кнопку очистки — `layout_marginEnd=40dip`
                 // плюс сама кнопка.
-                 right: 40,
+                right: 40,
               ),
               child: EditorView(
                 controller: _editor,
+                onFocus: () => setState(() => _keyboardVisible = true),
                 decimalSeparator: _settings.decimalSeparator,
               ),
             ),
             // `@id/clear_button`: галочка справа сверху.
             if (!_editor.isEmpty)
               Positioned(
-                 top: 0,
-                 right: 0,
+                top: 0,
+                right: 0,
                 child: IconButton(
                   tooltip: 'Очистить',
                   padding: const EdgeInsets.all(4),
                   icon: const Icon(Icons.cancel, size: 24),
-                   color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   onPressed: () => setState(_editor.clear),
                 ),
               ),
           ],
         ),
-        if (_editor.isEmpty) Padding(
-          padding: const EdgeInsets.only(top: 12),
-          child: Text('Например, 2x + 3 = 7. Начните с клавиатуры ниже.', style: Theme.of(context).textTheme.bodySmall),
-        ),
+        if (_editor.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Text(
+              'Например, 2x + 3 = 7. Начните с клавиатуры ниже.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
         // `@id/error`: текст 14sp тертичным с иконкой ошибки.
         if (_error != null) _errorRow(),
         // `@id/solution_container` + `@id/solution_line`: предпросмотр ответа.
@@ -652,14 +763,17 @@ class _SolvePageState extends State<SolvePage> {
             child: Icon(
               Icons.error_outline,
               size: 18,
-            color: Theme.of(context).colorScheme.error,
+              color: Theme.of(context).colorScheme.error,
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               _error!,
-              style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.error),
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.error,
+              ),
             ),
           ),
         ],
@@ -682,9 +796,7 @@ class _SolvePageState extends State<SolvePage> {
               label: Text(
                 '${definition.name}(${definition.params.join(', ')})',
               ),
-              labelStyle: const TextStyle(
-                fontSize: 12,
-              ),
+              labelStyle: const TextStyle(fontSize: 12),
               backgroundColor: Theme.of(context).colorScheme.surface,
               side: BorderSide(color: Theme.of(context).colorScheme.outline),
               onDeleted: () => _functions.remove(definition.name),
@@ -697,72 +809,135 @@ class _SolvePageState extends State<SolvePage> {
 
   /// Команды и дополнительные действия.
   ///
-  /// В оригинале этот выбор живёт в шторке (`view_main_navigation_drawer`),
-  /// здесь — горизонтальная лента, потому что шторка отдана навигации.
-  /// Лента — `SingleChildScrollView` + `Row`, а не `ListView`: все чипы
-  /// строятся сразу, поэтому дальние команды (`Промежуток`, `График`)
-  /// находятся поиском и доступны скроллу (`ensureVisible` в тестах).
+  /// На поверхности — релевантные альтернативы, полный каталог — в листе.
   Widget _commandBar() {
     final node = _editor.toCoreNode();
-    bool variable(CoreNode n) => n.type == CoreNodeType.variable || n.children.any(variable);
-    return Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Wrap(
-      spacing: 8,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        if (!_editor.isEmpty && variable(node)) TextButton.icon(
-          onPressed: _busy ? null : _openGraph,
-          icon: const Icon(Icons.show_chart, size: 20), label: const Text('График'),
-        ),
-        TextButton.icon(onPressed: _openActions,
-          icon: const Icon(Icons.tune_outlined, size: 20), label: const Text('Другие действия')),
-        if (_command != null) InputChip(
-          label: Text(_commands.firstWhere((c) => c.$1 == _command).$2),
-          onDeleted: () => setState(() => _command = null),
-        ),
-      ],
-    ));
+    bool variable(CoreNode n) =>
+        n.type == CoreNodeType.variable || n.children.any(variable);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Wrap(
+        spacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          if (!_editor.isEmpty && variable(node))
+            TextButton.icon(
+              onPressed: _busy ? null : _openGraph,
+              icon: const Icon(Icons.show_chart, size: 20),
+              label: const Text('График'),
+            ),
+          TextButton.icon(
+            onPressed: _openActions,
+            icon: const Icon(Icons.tune_outlined, size: 20),
+            label: const Text('Другие действия'),
+          ),
+          if (_command != null)
+            InputChip(
+              label: Text(_commands.firstWhere((c) => c.$1 == _command).$2),
+              onDeleted: () => setState(() => _command = null),
+            ),
+        ],
+      ),
+    );
   }
 
   Future<void> _openActions() async {
-    final action = await showModalBottomSheet<String>(context: context, isScrollControlled: true,
-      builder: (context) => SafeArea(child: SizedBox(
-        height: MediaQuery.sizeOf(context).height * .75,
-        child: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, 24), children: [
-          Text('Действия с задачей', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 12),
-          for (final (command, label) in _commands) ListTile(
-            minTileHeight: 56, title: Text(label), selected: _command == command,
-            onTap: () => Navigator.pop(context, command ?? 'auto'),
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(context).height * .75,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            children: [
+              Text(
+                'Действия с задачей',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 12),
+              for (final (command, label) in _commands)
+                ListTile(
+                  minTileHeight: 56,
+                  title: Text(label),
+                  selected: _command == command,
+                  onTap: () => Navigator.pop(context, command ?? 'auto'),
+                ),
+              const Divider(),
+              for (final item in [
+                ('vector', 'Вектор…', Icons.arrow_outward),
+                ('matrix', 'Матрица…', Icons.grid_on_outlined),
+                (
+                  'interval',
+                  _hasInterval
+                      ? 'Промежуток: [$_intervalMinText; $_intervalMaxText]'
+                      : 'Промежуток',
+                  Icons.straighten_outlined,
+                ),
+                ('graph', 'График', Icons.show_chart),
+              ])
+                ListTile(
+                  leading: Icon(item.$3),
+                  title: Text(item.$2),
+                  minTileHeight: 56,
+                  onTap: () => Navigator.pop(context, item.$1),
+                ),
+            ],
           ),
-          const Divider(),
-          for (final item in [('vector', 'Вектор…', Icons.arrow_outward), ('matrix', 'Матрица…', Icons.grid_on_outlined),
-            ('interval', _hasInterval ? 'Промежуток: [$_intervalMinText; $_intervalMaxText]' : 'Промежуток', Icons.straighten_outlined),
-            ('graph', 'График', Icons.show_chart)]) ListTile(
-              leading: Icon(item.$3), title: Text(item.$2), minTileHeight: 56,
-              onTap: () => Navigator.pop(context, item.$1),
-            ),
-        ]),
-      )));
+        ),
+      ),
+    );
     if (!mounted || action == null) return;
     switch (action) {
-      case 'vector': await _openVectorSheet();
-      case 'matrix': await _openMatrixSheet();
-      case 'interval': await _openIntervalDialog();
-      case 'graph': await _openGraph();
-      default: setState(() => _command = action == 'auto' ? null : action);
+      case 'vector':
+        await _openVectorSheet();
+      case 'matrix':
+        await _openMatrixSheet();
+      case 'interval':
+        await _openIntervalDialog();
+      case 'graph':
+        await _openGraph();
+      default:
+        setState(() => _command = action == 'auto' ? null : action);
     }
   }
 
   String get _solveLabel {
-    if (_command != null) return _commands.firstWhere((c) => c.$1 == _command).$2;
+    if (_command != null) {
+      return _commands.firstWhere((c) => c.$1 == _command).$2;
+    }
     final type = _editor.toCoreNode().type;
     return switch (type) {
-      CoreNodeType.equals || CoreNodeType.system => 'Решить',
-      CoreNodeType.derivation || CoreNodeType.derivation1 => 'Найти производную',
+      CoreNodeType.equals ||
+      CoreNodeType.system ||
+      CoreNodeType.lessThan ||
+      CoreNodeType.lessThanEqual ||
+      CoreNodeType.greaterThan ||
+      CoreNodeType.greaterThanEqual => 'Решить',
+      CoreNodeType.derivation ||
+      CoreNodeType.derivation1 => 'Найти производную',
       CoreNodeType.integral => 'Найти интеграл',
-      _ => 'Вычислить',
+      _ => _hasVariable(_editor.toCoreNode()) ? 'Упростить' : 'Вычислить',
     };
   }
+
+  bool _hasVariable(CoreNode node) =>
+      node.type == CoreNodeType.variable || node.children.any(_hasVariable);
+
+  String get _kindLabel => switch (_editor.toCoreNode().type) {
+    CoreNodeType.equals => 'Уравнение',
+    CoreNodeType.system => 'Система уравнений',
+    CoreNodeType.lessThan ||
+    CoreNodeType.lessThanEqual ||
+    CoreNodeType.greaterThan ||
+    CoreNodeType.greaterThanEqual => 'Неравенство',
+    CoreNodeType.derivation || CoreNodeType.derivation1 => 'Производная',
+    CoreNodeType.integral || CoreNodeType.integralDefinite => 'Интеграл',
+    _ =>
+      _hasVariable(_editor.toCoreNode())
+          ? 'Выражение с переменной'
+          : 'Арифметическое выражение',
+  };
 
   /// `@id/solution_button` — `PhotoMathButton` оригинала.
   ///
@@ -770,23 +945,33 @@ class _SolvePageState extends State<SolvePage> {
   /// текст 16sp белый + стрелка `next_white`, `elevation=4dip`,
   /// отступ снизу 20dip, по центру над клавиатурой
   /// (`constraintBottom_toTopOf=keyboard`, старт/конец к родителю).
-  /// Без ввода — `invisible` с `alpha=0`: место сохраняется (`Opacity`),
-  /// чтобы клавиатура не прыгала.
+  /// Disabled и busy остаются видимыми и не сдвигают клавиатуру.
   Widget _showSolutionButton() {
     final enabled = !_editor.isEmpty && !_busy;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Center(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          if (widget.startup case final startup?) SolverReadyIndicator(startup: startup),
-          PhButton(
-            key: const ValueKey('solve'),
-            label: _busy ? 'Решаем…' : _solveLabel,
-            onPressed: enabled ? _solve : null,
-            busy: _busy,
-          ),
-          if (_busy) TextButton(onPressed: () => setState(() { _requestGeneration++; _busy = false; }), child: const Text('Отменить')),
-        ]),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (widget.startup case final startup?)
+              SolverReadyIndicator(startup: startup),
+            PhButton(
+              key: const ValueKey('solve'),
+              label: _busy ? 'Решаем…' : _solveLabel,
+              onPressed: enabled ? _solve : null,
+              busy: _busy,
+            ),
+            if (_busy)
+              TextButton(
+                onPressed: () => setState(() {
+                  _requestGeneration++;
+                  _busy = false;
+                }),
+                child: const Text('Отменить'),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -796,6 +981,7 @@ class _SolvePageState extends State<SolvePage> {
     _methods = const [];
     _requestGeneration++;
     _busy = false;
+    _keyboardVisible = true;
   });
 
   /// Экран вертикального результата — `activity_vertical_result.xml`.
@@ -869,19 +1055,21 @@ class _SolvePageState extends State<SolvePage> {
           IconButton(
             tooltip: 'Назад',
             style: IconButton.styleFrom(
-               backgroundColor: Theme.of(context).colorScheme.surface,
+              backgroundColor: Theme.of(context).colorScheme.surface,
               elevation: 4,
               padding: const EdgeInsets.all(8),
               fixedSize: const Size(48, 48),
             ),
             icon: const Icon(Icons.arrow_back),
-             onPressed: _backToInput,
+            onPressed: _backToInput,
           ),
           const SizedBox(width: 12),
-          Expanded(child: PhButton(
-             label: _expandSteps ? 'Свернуть этапы' : PhString.explainSteps,
-             onPressed: () => setState(() => _expandSteps = !_expandSteps),
-          )),
+          Expanded(
+            child: PhButton(
+              label: _expandSteps ? 'Свернуть этапы' : PhString.explainSteps,
+              onPressed: () => setState(() => _expandSteps = !_expandSteps),
+            ),
+          ),
         ],
       ),
     );
@@ -900,8 +1088,11 @@ class _SolvePageState extends State<SolvePage> {
         children: [
           Expanded(
             child: Text(
-              PhString.alternateForm,
-              style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.primary),
+              _result?.selectMethodText ?? 'Способ решения',
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
           ),
           Text(
@@ -959,11 +1150,8 @@ class _SolvePageState extends State<SolvePage> {
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                     'PhantoMath',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    'PhantoMath',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -984,15 +1172,13 @@ class _SolvePageState extends State<SolvePage> {
               onTap: () {
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
-                   const SnackBar(content: Text('PhantoMath — понять каждый шаг')),
+                  const SnackBar(
+                    content: Text('PhantoMath — понять каждый шаг'),
+                  ),
                 );
               },
             ),
-            const Divider(
-              height: 1,
-              indent: 24,
-              endIndent: 24,
-            ),
+            const Divider(height: 1, indent: 24, endIndent: 24),
             _drawerItem(
               icon: Icons.menu_book_outlined,
               label: PhString.notebook,
@@ -1049,7 +1235,9 @@ class _SolvePageState extends State<SolvePage> {
             Icon(
               icon,
               size: 24,
-               color: enabled ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
+              color: enabled
+                  ? Theme.of(context).colorScheme.onSurface
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -1057,7 +1245,9 @@ class _SolvePageState extends State<SolvePage> {
                 label,
                 style: TextStyle(
                   fontSize: 18,
-                   color: enabled ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: enabled
+                      ? Theme.of(context).colorScheme.onSurface
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ),
@@ -1090,17 +1280,9 @@ class _SolvePageState extends State<SolvePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    PhString.language,
-                    style: TextStyle(fontSize: 18),
-                  ),
+                  const Text(PhString.language, style: TextStyle(fontSize: 18)),
                   const SizedBox(height: 4),
-                  Text(
-                    _locale,
-                    style: const TextStyle(
-                      fontSize: 14,
-                    ),
-                  ),
+                  Text(_locale, style: const TextStyle(fontSize: 14)),
                 ],
               ),
             ),
@@ -1135,14 +1317,26 @@ class _SolvePageState extends State<SolvePage> {
       setState(() => _error = 'Введите выражение');
       return;
     }
+    final generation = _requestGeneration;
+    final node = _editor.toCoreNode();
     try {
       await widget.startup?.ensureReady();
-      if (!mounted) return;
-      await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => GraphPage(api: widget.api, node: _editor.toCoreNode())));
+      if (!mounted || generation != _requestGeneration) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => GraphPage(api: widget.api, node: node),
+        ),
+      );
     } on SolveFailure catch (err) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(err.message)));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Не удалось запустить решатель')),
+        );
+      }
     }
   }
 
@@ -1251,16 +1445,10 @@ class _SolvePageState extends State<SolvePage> {
           children: [
             Text(
               link.label,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            Text(
-              link.definition,
-              style: const TextStyle(fontSize: 16),
-            ),
+            Text(link.definition, style: const TextStyle(fontSize: 16)),
           ],
         ),
       ),
@@ -1290,9 +1478,10 @@ class _CollapsingToolbarTitle extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         // 0 — тулбар свёрнут, 1 — развёрнут.
-        final double expanded = ((constraints.maxHeight - kToolbarHeight) /
-                (_expandedHeight - kToolbarHeight))
-            .clamp(0.0, 1.0);
+        final double expanded =
+            ((constraints.maxHeight - kToolbarHeight) /
+                    (_expandedHeight - kToolbarHeight))
+                .clamp(0.0, 1.0);
         final double showExpanded = _crossfade.transform(expanded);
         return Stack(
           fit: StackFit.expand,
@@ -1324,10 +1513,9 @@ class _CollapsingToolbarTitle extends StatelessWidget {
                   padding: EdgeInsets.only(left: 16, bottom: 22),
                   child: Text(
                     PhString.stepsTitle,
-                    style: TextStyle(
-                      fontSize: 34,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -1385,10 +1573,7 @@ class _HelpSheet extends StatelessWidget {
         children: [
           const Text(
             'Как пользоваться',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           for (final (icon, title, body) in items)
@@ -1397,25 +1582,21 @@ class _HelpSheet extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(icon, size: 24, color: Theme.of(context).colorScheme.primary),
+                  Icon(
+                    icon,
+                    size: 24,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            fontSize: 16,
-                          ),
-                        ),
+                        Text(title, style: const TextStyle(fontSize: 16)),
                         const SizedBox(height: 4),
                         Text(
                           body,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            height: 1.35,
-                          ),
+                          style: const TextStyle(fontSize: 14, height: 1.35),
                         ),
                       ],
                     ),
@@ -1471,10 +1652,7 @@ class _VectorSheetState extends State<_VectorSheet> {
         children: [
           const Text(
             'Операции с вектором',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -1627,10 +1805,7 @@ class _MatrixSheetState extends State<_MatrixSheet> {
         children: [
           const Text(
             'Операции с матрицей',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           TextField(

@@ -1,5 +1,5 @@
 name: mymath_app
-description: "Решатель математики с пошаговым объяснением. Переписывание Photomath 7.10.0."
+description: "PhantoMath — понять каждый шаг математического решения."
 publish_to: 'none'
 
 version: 0.1.0+1

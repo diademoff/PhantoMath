@@ -197,10 +197,7 @@ class SolverApi {
         },
       // Промежуток отбора корней: применим к тригонометрическим уравнениям.
       if (intervalMin != null && intervalMax != null)
-        'interval': {
-          'min': _toJson(intervalMin),
-          'max': _toJson(intervalMax),
-        },
+        'interval': {'min': _toJson(intervalMin), 'max': _toJson(intervalMax)},
       // Определения функций: вызовы f(…) подставляются перед решением.
       if (definitions.isNotEmpty)
         'definitions': [
@@ -322,11 +319,13 @@ class SolverApi {
   /// `ClientException`, не показывая пользователю ничего.
   Future<http.Response> _post(Uri uri, Map<String, Object?> body) async {
     try {
-      return await _client.post(
-        uri,
-        headers: const {'content-type': 'application/json'},
-        body: jsonEncode(body),
-      ).timeout(const Duration(seconds: 30));
+      return await _client
+          .post(
+            uri,
+            headers: const {'content-type': 'application/json'},
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 30));
     } on Object {
       throw const SolveFailure('Нет связи с решателем');
     }

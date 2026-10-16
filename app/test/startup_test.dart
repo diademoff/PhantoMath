@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mymath_app/main.dart';
@@ -24,7 +25,9 @@ void main() {
     expect(calls, 2);
   });
 
-  testWidgets('typing is available before solver startup completes', (tester) async {
+  testWidgets('typing is available before solver startup completes', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1080, 2280);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.resetPhysicalSize);
@@ -34,7 +37,9 @@ void main() {
     await tester.pump();
     await tester.tap(find.byKey(const ValueKey('key:DIGIT_TWO')));
     await tester.pump();
-    final editor = tester.widget<EditorView>(find.byType(EditorView)).controller;
+    final editor = tester
+        .widget<EditorView>(find.byType(EditorView))
+        .controller;
     expect(editor.toCoreNode().value, '2');
     expect(find.text('Подготавливаем решатель…'), findsOneWidget);
     gate.complete();
