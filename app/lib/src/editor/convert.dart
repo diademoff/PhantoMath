@@ -17,7 +17,38 @@ import 'model.dart';
 ///
 /// Пустой документ даёт `EMPTY` — вызывающий решает, что с этим делать
 /// (обычно просто не отправляет запрос).
-CoreNode editorToCoreNode(ENode document) => _rowToCore(document);
+///
+/// Переводы строк делят корень на строки: одна непустая строка — её узел,
+/// несколько — `SYSTEM` (как в нативном протоколе Photomath:
+/// `system({строка1},{строка2})`, см. `truth/08-input-protocol.md`).
+/// Пустые строки пропускаются, поэтому висячий перевод в конце не мешает.
+CoreNode editorToCoreNode(ENode document) {
+  if (document.children.any((token) => token.kind == ENodeKind.newline)) {
+    return _linesToCore(document);
+  }
+  return _rowToCore(document);
+}
+
+/// Строки документа, разбитые по переводам строк, без пустых.
+List<List<ENode>> _splitLines(ENode document) {
+  final lines = <List<ENode>>[[]];
+  for (final token in document.children) {
+    if (token.kind == ENodeKind.newline) {
+      lines.add([]);
+    } else {
+      lines.last.add(token);
+    }
+  }
+  return [for (final line in lines) if (line.isNotEmpty) line];
+}
+
+/// Несколько строк — система, одна — её узел, ни одной — `EMPTY`.
+CoreNode _linesToCore(ENode document) {
+  final bodies = [for (final line in _splitLines(document)) _parseSequence(line)];
+  if (bodies.isEmpty) return const CoreNode(type: CoreNodeType.empty);
+  if (bodies.length == 1) return bodies.single;
+  return CoreNode(type: CoreNodeType.system, children: bodies);
+}
 
 CoreNode _rowToCore(ENode row) {
   if (row.children.isEmpty) {
