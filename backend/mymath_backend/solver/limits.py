@@ -30,6 +30,23 @@ _DIRECTION: dict[T, str] = {
 }
 
 
+def _two_sided(expression: sympy.Expr, symbol: sympy.Symbol, point: sympy.Expr) -> sympy.Expr:
+    """Двусторонний предел в конечной точке: стороны обязаны совпасть.
+
+    Раньше двусторонний предел считался как правосторонний (``dir="+"``),
+    поэтому ``1/x`` при ``x → 0`` давал ``∞`` вместо «не существует».
+    """
+    # Вызывается только для T.LIMIT в конечной точке (см. solve_limit).
+    try:
+        left = sympy.limit(expression, symbol, point, "-")
+        right = sympy.limit(expression, symbol, point, "+")
+    except (TypeError, ValueError, NotImplementedError):
+        raise SolveError("предел не существует или не вычисляется") from None
+    if left != right:
+        raise SolveError("предел не существует или не вычисляется")
+    return right
+
+
 @solver_for(*_LIMITS)
 def solve_limit(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Вычислить предел через sympy."""
@@ -41,7 +58,10 @@ def solve_limit(node: CoreNode, ctx: SolveContext) -> CoreNode:
     point_value = to_sympy(point)
     expression_value = to_sympy(expression)
 
-    value = sympy.limit(expression_value, symbol, point_value, _DIRECTION[node.type])
+    if node.type is T.LIMIT and point_value not in (sympy.oo, -sympy.oo):
+        value = _two_sided(expression_value, symbol, point_value)
+    else:
+        value = sympy.limit(expression_value, symbol, point_value, _DIRECTION[node.type])
     if not isinstance(value, sympy.Expr) or value is sympy.nan or value.has(sympy.Limit):
         raise SolveError("предел не существует или не вычисляется")
 

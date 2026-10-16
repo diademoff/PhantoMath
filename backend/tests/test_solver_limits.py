@@ -108,6 +108,25 @@ class TestUnsupported:
         with pytest.raises(SolveError, match="не существует"):
             solve(problem)
 
+    def test_two_sided_reciprocal_diverges_by_sides(self) -> None:
+        """Двусторонний предел 1/x в нуле: слева −∞, справа +∞ — не существует."""
+        problem = limit(c("0"), node(T.DIVIDE, c("1"), var()), T.LIMIT)
+        with pytest.raises(SolveError, match="не существует"):
+            solve(problem)
+
+    def test_two_sided_agreeing_infinities(self) -> None:
+        """1/x² в нуле: обе стороны +∞ — предел есть."""
+        problem = limit(
+            c("0"), node(T.DIVIDE, c("1"), node(T.POWER, var(), c("2"))), T.LIMIT
+        )
+        assert value_of(problem) == "∞"
+
+    def test_two_sided_sign_jump(self) -> None:
+        """|x|/x в нуле: слева −1, справа 1 — не существует."""
+        problem = limit(c("0"), node(T.DIVIDE, node(T.ABS, var()), var()), T.LIMIT)
+        with pytest.raises(SolveError, match="не существует"):
+            solve(problem)
+
 
 class TestExplanationKeys:
     def test_key_exists(self) -> None:
