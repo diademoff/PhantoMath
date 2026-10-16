@@ -35,9 +35,11 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:io';
 
 import 'src/api/embedded_backend.dart';
 import 'src/api/solver_api.dart';
+import 'src/api/solver_startup.dart';
 import 'src/editor/controller.dart';
 import 'src/editor/editor_view.dart';
 import 'src/functions/function_store.dart';
@@ -83,58 +85,66 @@ Future<String> resolveBaseUrl() async {
 /// Сразу показывает окно, а встроенный Python поднимает в фоне: иначе
 /// приложение висело бы без интерфейса, пока стартует интерпретатор.
 class BootstrapApp extends StatefulWidget {
-  const BootstrapApp({super.key});
+  const BootstrapApp({super.key, this.start});
+  final Future<void> Function()? start;
 
   @override
   State<BootstrapApp> createState() => _BootstrapAppState();
 }
 
 class _BootstrapAppState extends State<BootstrapApp> {
-  String? _baseUrl;
+  late final String _baseUrl = const String.fromEnvironment('MYMATH_API').isNotEmpty
+      ? const String.fromEnvironment('MYMATH_API')
+      : Platform.isAndroid ? embeddedBaseUrl : defaultBaseUrl;
+  late final SolverStartup _startup = SolverStartup(widget.start ?? () async {
+    if (Platform.isAndroid && const String.fromEnvironment('MYMATH_API').isEmpty) {
+      if (await startEmbeddedBackend() == null) {
+        throw const SolveFailure('Не удалось запустить решатель');
+      }
+    }
+  });
 
   @override
   void initState() {
     super.initState();
-    _resolve();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _startup.ensureReady().catchError((Object _) {});
+    });
   }
 
-  Future<void> _resolve() async {
-    final baseUrl = await resolveBaseUrl();
-    if (mounted) setState(() => _baseUrl = baseUrl);
+  void dispose() {
+    _startup.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final baseUrl = _baseUrl;
-    if (baseUrl == null) return const _StartingScreen();
-    return MyMathApp(baseUrl: baseUrl);
+    return MyMathApp(baseUrl: _baseUrl, startup: _startup);
   }
 }
 
 /// Экран ожидания, пока поднимается встроенный решатель.
-class _StartingScreen extends StatelessWidget {
-  const _StartingScreen();
+class SolverReadyIndicator extends StatelessWidget {
+  const SolverReadyIndicator({super.key, required this.startup});
+  final SolverStartup startup;
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: PhotomathTheme.light(),
-      home: const Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text(
-                'Запуск решателя…',
-                style: TextStyle(color: PhColor.grayDark),
-              ),
-            ],
+    return ListenableBuilder(listenable: startup, builder: (context, _) => Semantics(
+      liveRegion: true,
+      child: AnimatedSwitcher(
+        duration: PhMotion.duration(context),
+        child: switch (startup.status) {
+          SolverStatus.starting => const Text('Подготавливаем решатель…', key: ValueKey('starting')),
+          SolverStatus.ready => const Text('Готов к решению', key: ValueKey('ready')),
+          SolverStatus.failed => TextButton.icon(
+            key: const ValueKey('retry-startup'),
+            onPressed: () => startup.ensureReady().catchError((Object _) {}),
+            icon: const Icon(Icons.refresh), label: const Text('Повторить запуск'),
           ),
-        ),
+        },
       ),
-    );
+    ));
   }
 }
 
@@ -144,9 +154,10 @@ class _StartingScreen extends StatelessWidget {
 const List<String> explanationLocales = ['ru', 'en'];
 
 class MyMathApp extends StatelessWidget {
-  const MyMathApp({super.key, this.baseUrl = defaultBaseUrl});
+  const MyMathApp({super.key, this.baseUrl = defaultBaseUrl, this.startup});
 
   final String baseUrl;
+  final SolverStartup? startup;
 
   @override
   Widget build(BuildContext context) {
@@ -164,7 +175,7 @@ class MyMathApp extends StatelessWidget {
         theme: PhantoTheme.light(),
         darkTheme: PhantoTheme.dark(),
         themeMode: ThemeMode.system,
-        home: SolvePage(api: SolverApi(baseUrl: baseUrl)),
+        home: SolvePage(api: SolverApi(baseUrl: baseUrl), startup: startup),
       ),
     );
   }
@@ -172,9 +183,10 @@ class MyMathApp extends StatelessWidget {
 
 /// Страница ввода и результата.
 class SolvePage extends StatefulWidget {
-  const SolvePage({super.key, required this.api});
+  const SolvePage({super.key, required this.api, this.startup});
 
   final SolverApi api;
+  final SolverStartup? startup;
 
   @override
   State<SolvePage> createState() => _SolvePageState();
@@ -200,6 +212,8 @@ class _SolvePageState extends State<SolvePage> {
   int _methodIndex = 0;
   String? _error;
   bool _busy = false;
+  int _requestGeneration = 0;
+  Object? _lastDocument;
 
   /// Промежуток отбора корней: границы в виде узлов и их исходный ввод.
   CoreNode? _intervalMin;
@@ -265,6 +279,13 @@ class _SolvePageState extends State<SolvePage> {
   }
 
   void _onEditorChanged() {
+    if (_lastDocument != _editor.document) {
+      _lastDocument = _editor.document;
+      _requestGeneration++;
+      _busy = false;
+      _error = null;
+      _command = null;
+    }
     if (mounted) setState(() {});
   }
 
@@ -291,11 +312,13 @@ class _SolvePageState extends State<SolvePage> {
     String? command,
     List<CoreNode> args = const [],
   }) async {
+    if (_busy) return;
     if (_editor.isEmpty) {
       setState(() => _error = 'Введите выражение');
       return;
     }
     final node = _editor.toCoreNode();
+    final generation = _requestGeneration;
     // `f(x) = …` — это определение функции, а не задача: запоминаем его и
     // подставляем в последующие запросы (см. `FunctionStore`).
     final definition = FunctionStore.parse(node);
@@ -316,6 +339,8 @@ class _SolvePageState extends State<SolvePage> {
       _error = null;
     });
     try {
+      await widget.startup?.ensureReady();
+      if (!mounted || generation != _requestGeneration) return;
       final answer = await widget.api.solve(
         node,
         locale: _locale,
@@ -325,7 +350,7 @@ class _SolvePageState extends State<SolvePage> {
         intervalMax: _intervalMax,
         definitions: _functions.contract(),
       );
-      if (!mounted) return;
+      if (!mounted || generation != _requestGeneration) return;
       setState(() {
         _result = answer;
         _methods = answer.methods.isEmpty ? [answer] : answer.methods;
@@ -339,14 +364,18 @@ class _SolvePageState extends State<SolvePage> {
         ),
       );
     } on SolveFailure catch (err) {
-      if (!mounted) return;
+      if (!mounted || generation != _requestGeneration) return;
       setState(() {
         _error = err.message;
         _result = null;
         _methods = const [];
       });
+    } catch (_) {
+      if (mounted && generation == _requestGeneration) {
+        setState(() => _error = 'Не удалось запустить решатель. Повторите попытку.');
+      }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted && generation == _requestGeneration) setState(() => _busy = false);
     }
   }
 
@@ -789,15 +818,16 @@ class _SolvePageState extends State<SolvePage> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: Center(
-        child: Opacity(
-          opacity: enabled ? 1 : 0,
-          child: PhButton(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          if (widget.startup case final startup?) SolverReadyIndicator(startup: startup),
+          PhButton(
             key: const ValueKey('solve'),
             label: _busy ? 'Решаем…' : PhString.showSolution,
             onPressed: enabled ? _solve : null,
             busy: _busy,
           ),
-        ),
+          if (_busy) TextButton(onPressed: () => setState(() { _requestGeneration++; _busy = false; }), child: const Text('Отменить')),
+        ]),
       ),
     );
   }

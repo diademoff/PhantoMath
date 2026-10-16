@@ -1,0 +1,7 @@
+<resources>
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowSplashScreenBackground">@color/phanto_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/phanto_launcher</item>
+        <item name="android:windowBackground">@drawable/phanto_splash</item>
+    </style>
+</resources>
