@@ -326,7 +326,7 @@ class SolverApi {
         uri,
         headers: const {'content-type': 'application/json'},
         body: jsonEncode(body),
-      );
+      ).timeout(const Duration(seconds: 30));
     } on Object {
       throw const SolveFailure('Нет связи с решателем');
     }

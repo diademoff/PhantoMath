@@ -1135,25 +1135,9 @@ class _SolvePageState extends State<SolvePage> {
       return;
     }
     try {
-      final data = await widget.api.graph(_editor.toCoreNode());
+      await widget.startup?.ensureReady();
       if (!mounted) return;
-      await showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('График y = f(${data.variable})'),
-          content: SizedBox(
-            width: 320,
-            height: 260,
-            child: GraphView(data: data),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Закрыть'),
-            ),
-          ],
-        ),
-      );
+      await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => GraphPage(api: widget.api, node: _editor.toCoreNode())));
     } on SolveFailure catch (err) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)

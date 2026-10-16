@@ -428,7 +428,7 @@ void main() {
     await _chip(tester, 'График');
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('График y = f(x)'), findsOneWidget);
+    expect(find.text('График'), findsWidgets);
     expect(find.byType(GraphView), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
