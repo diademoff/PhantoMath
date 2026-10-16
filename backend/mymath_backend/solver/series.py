@@ -35,14 +35,29 @@ def _parts(node: CoreNode) -> tuple[str, CoreNode, CoreNode, CoreNode]:
     raise SolveError("сумма задаётся индексом, пределами и выражением")
 
 
+def _is_reversed(low: sympy.Expr, high: sympy.Expr) -> bool:
+    """Перевёрнуты ли числовые пределы (нижний больше верхнего).
+
+    Иначе sympy молча считает «назад» (``Σ₅¹ n = −9``) и выдаёт уверенный,
+    но бессмысленный ответ. Символьные пределы не трогаем.
+    """
+    try:
+        return bool(low.is_number and high.is_number and low > high)
+    except TypeError:
+        return False
+
+
 @solver_for(T.SIGMA_DEFINITE)
 def solve_series(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Вычислить сумму ряда."""
     index, lower, upper, expression = _parts(node)
     symbol = sympy.Symbol(index)
+    low, high = to_sympy(lower), to_sympy(upper)
+    if _is_reversed(low, high):
+        raise SolveError("нижний предел суммы больше верхнего")
     value = sympy.summation(
         to_sympy(expression),
-        (symbol, to_sympy(lower), to_sympy(upper)),
+        (symbol, low, high),
     )
     if value.has(sympy.Sum):
         raise SolveError("сумму не удалось вычислить")

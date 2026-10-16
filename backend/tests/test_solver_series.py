@@ -72,6 +72,16 @@ class TestUnsupported:
         with pytest.raises(SolveError, match="сумма"):
             solve(node(T.SIGMA_DEFINITE, var(), c("1")))
 
+    @pytest.mark.parametrize(
+        ("low", "high"),
+        [("5", "1"), ("1", "0"), ("0", "-3")],
+    )
+    def test_reversed_bounds_rejected(self, low: str, high: str) -> None:
+        """Нижний предел больше верхнего — отказ, а не счёт «назад»."""
+        problem = node(T.SIGMA_DEFINITE, var(), c(low), c(high), var())
+        with pytest.raises(SolveError, match="больше верхнего"):
+            solve(problem)
+
 
 class TestExplanationKeys:
     def test_key_exists(self) -> None:
