@@ -694,6 +694,448 @@
       "steps": [
         "solutions_inf_many"
       ]
+    },
+    {
+      "id": "sine-with-parameter",
+      "title": "sin x = a — серии с asin(a)",
+      "input": "{=({sin({x})},{a})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "ADD",
+                "children": [
+                  {
+                    "type": "MULTIPLY",
+                    "children": [
+                      {
+                        "type": "MULTIPLY_IMPLICIT",
+                        "children": [
+                          {
+                            "type": "CONSTANT",
+                            "value": "2"
+                          },
+                          {
+                            "type": "CONSTANT",
+                            "value": "π"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "VARIABLE",
+                        "value": "k"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ASIN",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "a"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "SUBTRACT",
+                "children": [
+                  {
+                    "type": "ADD",
+                    "children": [
+                      {
+                        "type": "CONSTANT",
+                        "value": "π"
+                      },
+                      {
+                        "type": "MULTIPLY",
+                        "children": [
+                          {
+                            "type": "MULTIPLY_IMPLICIT",
+                            "children": [
+                              {
+                                "type": "CONSTANT",
+                                "value": "2"
+                              },
+                              {
+                                "type": "CONSTANT",
+                                "value": "π"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "VARIABLE",
+                            "value": "k"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ASIN",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "a"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "trig_find_period",
+        "trig_general_sol"
+      ]
+    },
+    {
+      "id": "sine-cosine-two-letters",
+      "title": "sin x = cos y — неизвестное x, y параметр",
+      "input": "{=({sin({x})},{cos({y})})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "ADD",
+                "children": [
+                  {
+                    "type": "MULTIPLY",
+                    "children": [
+                      {
+                        "type": "MULTIPLY_IMPLICIT",
+                        "children": [
+                          {
+                            "type": "CONSTANT",
+                            "value": "2"
+                          },
+                          {
+                            "type": "CONSTANT",
+                            "value": "π"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "VARIABLE",
+                        "value": "k"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ASIN",
+                    "children": [
+                      {
+                        "type": "COS",
+                        "children": [
+                          {
+                            "type": "VARIABLE",
+                            "value": "y"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "SUBTRACT",
+                "children": [
+                  {
+                    "type": "ADD",
+                    "children": [
+                      {
+                        "type": "CONSTANT",
+                        "value": "π"
+                      },
+                      {
+                        "type": "MULTIPLY",
+                        "children": [
+                          {
+                            "type": "MULTIPLY_IMPLICIT",
+                            "children": [
+                              {
+                                "type": "CONSTANT",
+                                "value": "2"
+                              },
+                              {
+                                "type": "CONSTANT",
+                                "value": "π"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "VARIABLE",
+                            "value": "k"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ASIN",
+                    "children": [
+                      {
+                        "type": "COS",
+                        "children": [
+                          {
+                            "type": "VARIABLE",
+                            "value": "y"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "trig_find_period",
+        "trig_general_sol"
+      ]
+    },
+    {
+      "id": "sine-quadratic-argument",
+      "title": "sin(x²) = 0 — нелинейные серии ±√(πk+…)",
+      "input": "{=({sin({x^2})},{0})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "NEGATIVE",
+                "children": [
+                  {
+                    "type": "ROOT2",
+                    "children": [
+                      {
+                        "type": "ADD",
+                        "children": [
+                          {
+                            "type": "CONSTANT",
+                            "value": "π"
+                          },
+                          {
+                            "type": "MULTIPLY",
+                            "children": [
+                              {
+                                "type": "MULTIPLY_IMPLICIT",
+                                "children": [
+                                  {
+                                    "type": "CONSTANT",
+                                    "value": "2"
+                                  },
+                                  {
+                                    "type": "CONSTANT",
+                                    "value": "π"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "VARIABLE",
+                                "value": "k"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "MULTIPLY",
+                "children": [
+                  {
+                    "type": "MULTIPLY",
+                    "children": [
+                      {
+                        "type": "ROOT2",
+                        "children": [
+                          {
+                            "type": "CONSTANT",
+                            "value": "2"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ROOT2",
+                        "children": [
+                          {
+                            "type": "CONSTANT",
+                            "value": "π"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ROOT2",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "k"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "NEGATIVE",
+                "children": [
+                  {
+                    "type": "MULTIPLY",
+                    "children": [
+                      {
+                        "type": "MULTIPLY",
+                        "children": [
+                          {
+                            "type": "ROOT2",
+                            "children": [
+                              {
+                                "type": "CONSTANT",
+                                "value": "2"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "ROOT2",
+                            "children": [
+                              {
+                                "type": "CONSTANT",
+                                "value": "π"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ROOT2",
+                        "children": [
+                          {
+                            "type": "VARIABLE",
+                            "value": "k"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "ROOT2",
+                "children": [
+                  {
+                    "type": "ADD",
+                    "children": [
+                      {
+                        "type": "CONSTANT",
+                        "value": "π"
+                      },
+                      {
+                        "type": "MULTIPLY",
+                        "children": [
+                          {
+                            "type": "MULTIPLY_IMPLICIT",
+                            "children": [
+                              {
+                                "type": "CONSTANT",
+                                "value": "2"
+                              },
+                              {
+                                "type": "CONSTANT",
+                                "value": "π"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "VARIABLE",
+                            "value": "k"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "trig_find_period",
+        "trig_general_sol"
+      ]
     }
   ]
 }

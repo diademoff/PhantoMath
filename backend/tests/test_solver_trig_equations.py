@@ -30,6 +30,10 @@ def x() -> CoreNode:
     return CoreNode.variable("x")
 
 
+def var(name: str) -> CoreNode:
+    return CoreNode.variable(name)
+
+
 def node(t: T, *children: CoreNode) -> CoreNode:
     return CoreNode.node(t, *children)
 
@@ -150,3 +154,43 @@ class TestExplanationKeys:
             assert key in explanations
             assert explanations.arity(key) == arity
             assert "ARG" in (explanations.raw_template(key, DEFAULT_LOCALE) or "")
+
+
+class TestParameterized:
+    """Буква вне неизвестного -- параметр: серии с ``asin(a)``, не отказ."""
+
+    def test_sine_with_parameter_gives_series(self) -> None:
+        problem = eq(node(T.SIN, x()), var("a"))
+        solution = solution_of(problem)
+        assert solution.type is T.LIST
+        assert len(solution.children) == 2
+        assert step_keys(problem) == ["trig_find_period", "trig_general_sol"]
+
+    def test_sine_two_letters_unknown_x(self) -> None:
+        problem = eq(node(T.SIN, x()), node(T.COS, var("y")))
+        solution = solution_of(problem)
+        assert solution.type is T.LIST
+        assert all(child.children[0].value == "x" for child in solution.children)
+
+    def test_scaled_sine(self) -> None:
+        problem = eq(node(T.MULTIPLY_IMPLICIT, var("a"), node(T.SIN, x())), c("1"))
+        solution = solution_of(problem)
+        assert solution.type is T.LIST
+
+
+class TestNonlinearSeries:
+    """Серии, нелинейные по параметру (``sin(x²) = 0``), записываются формулой."""
+
+    def test_quadratic_argument(self) -> None:
+        problem = eq(node(T.SIN, node(T.POWER, x(), c("2"))), c("0"))
+        solution = solution_of(problem)
+        assert solution.type is T.LIST
+        assert len(solution.children) == 4
+        assert step_keys(problem) == ["trig_find_period", "trig_general_sol"]
+
+    def test_series_contain_variable_k(self) -> None:
+        problem = eq(node(T.SIN, node(T.POWER, x(), c("2"))), c("0"))
+        solution = solution_of(problem)
+        assert solution is not None
+        for equation in solution.children:
+            assert any(child.value == "k" for child in equation.walk() if child.type is T.VARIABLE)
