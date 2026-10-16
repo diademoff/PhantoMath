@@ -129,8 +129,27 @@ def solve_arithmetic(node: CoreNode, ctx: SolveContext) -> CoreNode:
     values = [_value_of(c) for c in folded]
     result, key = _apply(node.type, values)
     constant = CoreNode.constant(format_number(result))
-    ctx.result.add(Step(left=node, right=constant, key=key))
+    ctx.result.add(Step(left=node, right=constant, key=key, args=_step_args(key, node, constant)))
     return constant
+
+
+def _step_args(key: str, node: CoreNode, result: CoreNode) -> list[CoreNode]:
+    """Аргументы ``ARG1…`` для вырожденных случаев.
+
+    Шаблоны этих ключей требуют аргумент. Без него пользователь читал
+    служебную метку: «Любое выражение, разделенное на ARG1, равно самому
+    себе».
+    """
+    if key == _KEY_DIV_ONE:
+        # «…разделенное на ARG1…» — делитель (последний операнд деления).
+        return [node.children[-1]]
+    if key == _KEY_SUB_SELF:
+        # «Сумма двух противоположных чисел равна ARG1» — результат (ноль).
+        return [result]
+    if key == _KEY_ADD_ZERO:
+        # «При добавлении или вычитании ARG1 величина не меняется» — ноль.
+        return [CoreNode.constant("0")]
+    return []
 
 
 def _is_settled(node: CoreNode) -> bool:

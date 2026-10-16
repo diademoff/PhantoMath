@@ -405,11 +405,11 @@ def even_odd(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNod
     expression = to_sympy(expression_node)
     negated = expression.subs(symbol, -symbol)
     if sympy.simplify(expression - negated) == 0:
-        key = "function_even"
+        key = "function_even_simple"
     elif sympy.simplify(expression + negated) == 0:
-        key = "function_odd"
+        key = "function_odd_simple"
     else:
-        key = "function_not_even_nor_odd"
+        key = "function_not_even_nor_odd_simple"
     ctx.result.add(Step(left=node, right=None, key="function_even_odd_notation"))
     ctx.result.add(Step(left=node, right=None, key=key))
     return expression_node
@@ -1140,14 +1140,20 @@ def conic(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     cross = polynomial.coeff_monomial(first * second)
     right = polynomial.coeff_monomial(second**2)
     discriminant = cross * cross - 4 * left * right
+    # Вид кривой сообщается без подробностей (уравнение в каноническом виде,
+    # радиус, центр): `conics_classify_*` требуют их аргументами, а посчитать
+    # их решатель пока не умеет — шаг показывал бы «…в виде ARG1…ARG2».
+    # Поэтому берём варианты тех же ключей без аргументов.
     if discriminant < 0:
         key = (
-            "conics_classify_circle" if left == right and cross == 0 else "conics_classify_ellipse"
+            "conics_represents_circle"
+            if left == right and cross == 0
+            else "conics_represents_ellipse"
         )
     elif discriminant == 0:
-        key = "conics_classify_parabola"
+        key = "conics_represents_parabola"
     else:
-        key = "conics_classify_hyperbola"
+        key = "conics_represents_hyperbola"
     ctx.result.add(Step(left=node, right=None, key="conics_identify"))
     ctx.result.add(Step(left=node, right=None, key="conics_identify_disc"))
     ctx.result.add(Step(left=node, right=None, key=key))

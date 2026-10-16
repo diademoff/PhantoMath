@@ -49,7 +49,7 @@
       "steps": [
         "conics_identify",
         "conics_identify_disc",
-        "conics_classify_circle"
+        "conics_represents_circle"
       ]
     },
     {
@@ -100,7 +100,7 @@
       "steps": [
         "conics_identify",
         "conics_identify_disc",
-        "conics_classify_hyperbola"
+        "conics_represents_hyperbola"
       ]
     },
     {
@@ -133,7 +133,7 @@
       "steps": [
         "conics_identify",
         "conics_identify_disc",
-        "conics_classify_parabola"
+        "conics_represents_parabola"
       ]
     }
   ]

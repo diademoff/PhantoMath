@@ -21,7 +21,7 @@
       },
       "steps": [
         "function_even_odd_notation",
-        "function_even"
+        "function_even_simple"
       ]
     },
     {
@@ -44,7 +44,7 @@
       },
       "steps": [
         "function_even_odd_notation",
-        "function_odd"
+        "function_odd_simple"
       ]
     },
     {
@@ -76,7 +76,7 @@
       },
       "steps": [
         "function_even_odd_notation",
-        "function_not_even_nor_odd"
+        "function_not_even_nor_odd_simple"
       ]
     }
   ]

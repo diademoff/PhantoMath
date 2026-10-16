@@ -93,6 +93,30 @@ def _step_keys(vertical: CoreSolverVerticalResult) -> list[str]:
     return keys
 
 
+DICTIONARY = load_explanations(str(EXPLANATIONS))
+"""Загруженный словарь: нужен для проверки текстов шагов."""
+
+ARG_LEFT = re.compile(r"ARG\d+")
+
+
+def _leftover_arg(vertical: CoreSolverVerticalResult, locale: str) -> list[str]:
+    """Метки ``ARGn``, оставшиеся в тексте шагов.
+
+    Пользователь видит такой текст дословно: «Любое выражение, разделенное
+    на ARG1, равно самому себе». Причина — шаг создан без ``args``, которые
+    требует шаблон, и это не ловится проверкой арности ключа.
+    """
+    problems: list[str] = []
+    for step in vertical.steps:
+        for sub in step.substeps:
+            if sub.description is None:
+                continue
+            rendered = DICTIONARY.render(sub.description.type, sub.description.args, locale)
+            if match := ARG_LEFT.search(rendered.text):
+                problems.append(f"{sub.description.type}: осталась метка {match.group()}")
+    return problems
+
+
 def _arity_problem(explanations: Any, key: str) -> str | None:
     """Проверить ключ по словарю; ``None`` — всё хорошо."""
     if key not in explanations:
@@ -141,6 +165,11 @@ def test_corpus_task(name: str, task: dict[str, Any]) -> None:
     assert _step_keys(vertical) == task["steps"], (
         f"{name}: ключи шагов {_step_keys(vertical)} != эталон {task['steps']}"
     )
+
+    for locale in ("ru", DEFAULT_LOCALE):
+        assert (problems := _leftover_arg(vertical, locale)) == [], (
+            f"{name} ({locale}): {'; '.join(problems)}"
+        )
 
 
 def test_all_corpus_keys_exist_with_matching_arity() -> None:

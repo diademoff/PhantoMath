@@ -1,8 +1,12 @@
 """Тесты конических сечений (F): команда ``conic``.
 
 Тип определяется по дискриминанту ``B² − 4AC`` общего уравнения второй степени:
-окружность/эллипс, парабола, гипербола (шаги ``conics_classify_*``). Ответ —
+окружность/эллипс, парабола, гипербола (шаги ``conics_represents_*``). Ответ —
 исходное уравнение.
+
+Ключи без аргументов: ``conics_classify_*`` требуют в ARG уравнение в
+каноническом виде, радиус и центр, которых решатель пока не считает, и текст
+показывал бы служебные метки.
 """
 
 from __future__ import annotations
@@ -31,28 +35,28 @@ class TestConic:
         assert step_keys("{=({x^2+y^2},{1})}") == [
             "conics_identify",
             "conics_identify_disc",
-            "conics_classify_circle",
+            "conics_represents_circle",
         ]
 
     def test_ellipse(self) -> None:
         assert step_keys("{=({x^2+2y^2},{1})}") == [
             "conics_identify",
             "conics_identify_disc",
-            "conics_classify_ellipse",
+            "conics_represents_ellipse",
         ]
 
     def test_hyperbola(self) -> None:
         assert step_keys("{=({x^2-y^2},{1})}") == [
             "conics_identify",
             "conics_identify_disc",
-            "conics_classify_hyperbola",
+            "conics_represents_hyperbola",
         ]
 
     def test_parabola(self) -> None:
         assert step_keys("{=({y},{x^2})}") == [
             "conics_identify",
             "conics_identify_disc",
-            "conics_classify_parabola",
+            "conics_represents_parabola",
         ]
 
     def test_answer_is_equation(self) -> None:

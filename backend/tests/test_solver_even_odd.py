@@ -1,7 +1,11 @@
 """Тесты чётности/нечётности (E): команда ``even_odd``.
 
-Шаг-заключение ``function_even`` / ``function_odd`` / ``function_not_even_nor_odd``;
-ответ — исходное выражение.
+Шаг-заключение ``function_even_simple`` / ``function_odd_simple`` /
+``function_not_even_nor_odd_simple``; ответ — исходное выражение.
+
+Ключи без аргументов: подробный вариант (``function_even``) требует в ARG1
+условие (``f(−x) = f(x)``), которого решатель не строит, и текст показывал бы
+служебную метку.
 """
 
 from __future__ import annotations
@@ -24,19 +28,22 @@ def step_keys(source: str) -> list[str]:
 
 class TestEvenOdd:
     def test_even(self) -> None:
-        assert step_keys("{x^2}") == ["function_even_odd_notation", "function_even"]
+        assert step_keys("{x^2}") == ["function_even_odd_notation", "function_even_simple"]
 
     def test_odd(self) -> None:
-        assert step_keys("{x^3}") == ["function_even_odd_notation", "function_odd"]
+        assert step_keys("{x^3}") == ["function_even_odd_notation", "function_odd_simple"]
 
     def test_neither(self) -> None:
-        assert step_keys("{x^2+x}") == ["function_even_odd_notation", "function_not_even_nor_odd"]
+        assert step_keys("{x^2+x}") == [
+            "function_even_odd_notation",
+            "function_not_even_nor_odd_simple",
+        ]
 
     def test_cosine_even(self) -> None:
-        assert step_keys("{cos({x})}") == ["function_even_odd_notation", "function_even"]
+        assert step_keys("{cos({x})}") == ["function_even_odd_notation", "function_even_simple"]
 
     def test_sine_odd(self) -> None:
-        assert step_keys("{sin({x})}") == ["function_even_odd_notation", "function_odd"]
+        assert step_keys("{sin({x})}") == ["function_even_odd_notation", "function_odd_simple"]
 
     def test_answer_is_expression(self) -> None:
         answer = _vertical("{x^2}").solution
