@@ -33,6 +33,7 @@ from .complex import contains_imaginary, solve_complex, solve_imaginary_arithmet
 from .conditional import solve_conditional
 from .containers import solve_add_subtract, solve_container
 from .derivatives import solve_derivative
+from .diff_equations import diff_eq, is_diff_equation
 from .equations import solve_equation
 from .evaluate import solve_evaluate_expression, solve_mean
 from .fractions import solve_fraction
@@ -133,6 +134,12 @@ def solve(
         return build_solver_data(node, result)
 
     if node.type is CoreNodeType.EQUALS:
+        if is_diff_equation(node):
+            # y′/y″ в левой части вводит клавиатура напрямую, без команды:
+            # такое равенство — дифференциальное уравнение, а не обычное.
+            solution = diff_eq(node, ctx, [])
+            result.set_solution(solution)
+            return build_solver_data(node, result)
         abs_equation = solve_abs_equation(node, ctx.variables)
         if abs_equation is not None:
             return build_solver_data(node, abs_equation)

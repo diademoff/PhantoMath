@@ -96,6 +96,19 @@ def _order_of(node: CoreNode) -> int | None:
     return None
 
 
+def is_diff_equation(node: CoreNode) -> bool:
+    """Уравнение с производной в левой части (``y′ = …``, ``y″ = …``).
+
+    Такие задачи клавиатура вводит напрямую, без выбора команды: решатель
+    сам направляет их в ``diff_eq``, а не в общий разбор уравнений.
+    """
+    return (
+        node.type is T.EQUALS
+        and len(node.children) == 2
+        and _order_of(node.children[0]) is not None
+    )
+
+
 def _classification(equation: sympy.Eq, function: sympy.Function) -> str:
     """Ключ шага по классификации sympy."""
     try:
@@ -147,4 +160,5 @@ def _number(node: CoreNode) -> sympy.Expr:
 
 __all__ = [
     "diff_eq",
+    "is_diff_equation",
 ]

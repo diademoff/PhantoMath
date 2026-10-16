@@ -77,3 +77,23 @@ class TestDiffEq:
     def test_no_derivative(self) -> None:
         with pytest.raises(SolveError):
             solve(parse_protocol("{=({y},{x})}"), command="diff_eq")
+
+
+class TestDiffEqWithoutCommand:
+    """Уравнения с y′/y″ вводит клавиатура напрямую — команда не нужна."""
+
+    @pytest.mark.parametrize(
+        ("source", "first_step"),
+        [
+            ("{=({prime({y})},{y})}", "diff_eq_solve_by_separation"),
+            ("{=({prime({y})},{x+y})}", "diff_eq_solve_linear"),
+            ("{=({derivation2_prime({y})},{y})}", "diff_eq_solve"),
+        ],
+    )
+    def test_auto_routing(self, source: str, first_step: str) -> None:
+        vertical = solve(parse_protocol(source)).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
+        assert keys[0] == first_step
+        assert vertical.solution.type is T.EQUALS
+        assert vertical.solution.children[0].value == "y"
