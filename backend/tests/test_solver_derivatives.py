@@ -8,13 +8,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 import sympy
 
 from mymath_backend import CoreNode, load_explanations
 from mymath_backend import CoreNodeType as T
 from mymath_backend.explanations import DEFAULT_LOCALE
 from mymath_backend.input import parse_protocol
-from mymath_backend.solver import registered_types, solve
+from mymath_backend.solver import SolveError, registered_types, solve
 from mymath_backend.solver.sympy_bridge import to_sympy
 
 EXPLANATIONS = Path(__file__).resolve().parents[2] / "truth" / "data" / "explanations.json"
@@ -218,6 +219,15 @@ class TestNotation:
         vertical = solve(parse_protocol("{derivation2_prime({x^3})}")).result.vertical()
         assert vertical is not None and vertical.solution is not None
         assert vertical.solution.structural_eq(muli(c("6"), x()))
+
+    @pytest.mark.parametrize(
+        "source",
+        ["{derivation_prime({x},{y})}", "{nderivation({x},{2})}", "{prime({x},{y})}"],
+    )
+    def test_extra_child_rejected(self, source: str) -> None:
+        """Лишний ребёнок молча не отбрасывается."""
+        with pytest.raises(SolveError, match="одно выражение"):
+            solve(parse_protocol(source))
 
 
 class TestRegistration:

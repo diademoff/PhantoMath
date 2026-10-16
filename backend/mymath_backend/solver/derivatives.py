@@ -290,7 +290,7 @@ def solve_derivative(node: CoreNode, ctx: SolveContext) -> CoreNode:
     Сначала пробуем собственные правила (они дают аккуратную запись для
     многочленов), а для того, что таблица не знает, зовём sympy.
     """
-    ctx.require(len(node.children) >= 1, "производная без выражения")
+    ctx.require(len(node.children) == 1, "производная берёт одно выражение")
     expression = node.children[0]
     try:
         result = _diff(expression, ctx)
@@ -389,7 +389,7 @@ def solve_derivative_notation(node: CoreNode, ctx: SolveContext) -> CoreNode:
 
     Дети узла — выражение (как рисует Photomath: штрих ставится справа).
     """
-    ctx.require(len(node.children) >= 1, "производная без выражения")
+    ctx.require(len(node.children) == 1, "производная берёт одно выражение")
     expression = node.children[0]
     order = 2 if node.type is T.DERIVATION2_PRIME else 1
 
