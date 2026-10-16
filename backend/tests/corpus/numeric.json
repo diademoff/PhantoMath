@@ -1,0 +1,111 @@
+{
+  "module": "numeric",
+  "tasks": [
+    {
+      "id": "sine-equals-x",
+      "title": "sin x = x — единственный корень численно",
+      "input": "{=({sin({x})},{x})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "0"
+          }
+        ]
+      },
+      "steps": [
+        "graph_solution",
+        "calculate"
+      ]
+    },
+    {
+      "id": "power-x-in-exponent",
+      "title": "x^x = 2 — корень вне элементарных функций",
+      "input": "{=({x^x},{2})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "1.55961"
+          }
+        ]
+      },
+      "steps": [
+        "graph_solution",
+        "calculate"
+      ]
+    },
+    {
+      "id": "log-plus-linear",
+      "title": "ln x + x = 1 — точный корень 1",
+      "input": "{=({ln({x})+x},{1})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "1"
+          }
+        ]
+      },
+      "steps": [
+        "graph_solution",
+        "calculate"
+      ]
+    },
+    {
+      "id": "abs-plus-sine",
+      "title": "|x| + sin x = 1 — два численных корня",
+      "input": "{=({abs({x})+sin({x})},{1})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "-1.934563"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "0.510973"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "graph_solution",
+        "calculate_plural"
+      ]
+    }
+  ]
+}

@@ -50,6 +50,7 @@ from .intervals import solve_interval
 from .limits import solve_limit
 from .matrices import solve_determinant, solve_matrix
 from .methods import has_method_provider, methods_for
+from .numeric import solve_numeric_equation
 from .percentage import solve_percentage
 from .piecewise import solve_piecewise
 from .powers import solve_logarithm, solve_root
@@ -142,7 +143,15 @@ def solve(
     # системы, ...). Первый способ основной, остальные — альтернативы, между
     # которыми клиент переключается (`selectMethodText`).
     if has_method_provider(node.type):
-        methods = methods_for(node, ctx.variables)
+        try:
+            methods = methods_for(node, ctx.variables)
+        except SolveError as error:
+            # Аналитика не справилась (смешанные sin x = x, x^x = 2):
+            # пробуем численный перебор корней.
+            numeric = solve_numeric_equation(node, ctx.variables)
+            if numeric is None:
+                raise error
+            return build_solver_data(node, numeric)
         if methods:
             return _with_methods(node, methods)
 
@@ -193,10 +202,14 @@ def _simplify_fallback(node: CoreNode) -> SolveResult | None:
     """Упростить символьное выражение, если обычный маршрут не справился.
 
     Запасной путь для тождеств и формул: арифметика не пропускает
-    символьные операнды, поэтому ``sin²x + cos²x`` до неё не доходит.
-    Возвращает результат с шагом «Упростить» или ``None``, если упрощение
-    ничего не изменило — тогда важнее исходная ошибка.
+    символьные операнды, поэтому ``sin²x + cos²x`` до неё не доходит. Для
+    отношений (уравнений и неравенств) запасной путь молчит: «упрощение»
+    ``sin x > x`` выдавало переписанное неравенство вместо ответа, а это
+    обман пользователя. Возвращает результат с шагом «Упростить» или ``None``,
+    если упрощение ничего не изменило — тогда важнее исходная ошибка.
     """
+    if node.type in COMPARABLE:
+        return None
     try:
         expression = to_sympy(node)
         simplified = sympy.simplify(expression)
