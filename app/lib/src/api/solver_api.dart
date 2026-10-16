@@ -109,6 +109,38 @@ class GraphPoint {
   final double y;
 }
 
+/// Опорные точки графика: корни, пересечение с осью y, экстремумы, асимптоты.
+///
+/// Соответствует меткам `graph_rt_info_*` Photomath. Все списки могут быть
+/// пустыми; для кусочно-заданной функции приходит только признак [piecewise].
+class GraphAnnotations {
+  const GraphAnnotations({
+    this.roots = const [],
+    this.yIntercept,
+    this.maxima = const [],
+    this.minima = const [],
+    this.verticalAsymptotes = const [],
+    this.horizontalAsymptotes = const [],
+    this.piecewise = false,
+  });
+
+  final List<GraphPoint> roots;
+  final GraphPoint? yIntercept;
+  final List<GraphPoint> maxima;
+  final List<GraphPoint> minima;
+  final List<double> verticalAsymptotes;
+  final List<double> horizontalAsymptotes;
+  final bool piecewise;
+
+  bool get isEmpty =>
+      roots.isEmpty &&
+      yIntercept == null &&
+      maxima.isEmpty &&
+      minima.isEmpty &&
+      verticalAsymptotes.isEmpty &&
+      horizontalAsymptotes.isEmpty;
+}
+
 /// Данные для графика `y = f(x)`.
 class GraphData {
   const GraphData({
@@ -118,6 +150,7 @@ class GraphData {
     required this.yMin,
     required this.yMax,
     required this.variable,
+    this.annotations = const GraphAnnotations(),
   });
 
   final List<GraphPoint> points;
@@ -126,6 +159,7 @@ class GraphData {
   final double yMin;
   final double yMax;
   final String variable;
+  final GraphAnnotations annotations;
 }
 
 /// Клиент решателя.
@@ -240,8 +274,44 @@ class SolverApi {
       yMin: (body['yMin'] as num).toDouble(),
       yMax: (body['yMax'] as num).toDouble(),
       variable: body['variable'] as String? ?? 'x',
+      annotations: _parseAnnotations(body['annotations']),
     );
   }
+
+  /// Опорные точки графика из ответа бэкенда.
+  GraphAnnotations _parseAnnotations(Object? raw) {
+    if (raw is! Map<String, dynamic>) return const GraphAnnotations();
+    return GraphAnnotations(
+      roots: _points(raw['roots']),
+      yIntercept: _point(raw['yIntercept']),
+      maxima: _points(raw['maxima']),
+      minima: _points(raw['minima']),
+      verticalAsymptotes: _numbers(raw['verticalAsymptotes']),
+      horizontalAsymptotes: _numbers(raw['horizontalAsymptotes']),
+      piecewise: raw['piecewise'] == true,
+    );
+  }
+
+  List<GraphPoint> _points(Object? raw) {
+    final out = <GraphPoint>[];
+    for (final item in _asList(raw)) {
+      final point = _point(item);
+      if (point != null) out.add(point);
+    }
+    return out;
+  }
+
+  GraphPoint? _point(Object? raw) {
+    if (raw is List && raw.length >= 2 && raw[0] is num && raw[1] is num) {
+      return GraphPoint((raw[0] as num).toDouble(), (raw[1] as num).toDouble());
+    }
+    return null;
+  }
+
+  List<double> _numbers(Object? raw) => [
+    for (final item in _asList(raw))
+      if (item is num) item.toDouble(),
+  ];
 
   Future<bool> isHealthy() async {    try {
       final response = await _client.get(

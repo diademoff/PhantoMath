@@ -79,6 +79,71 @@ class _GraphPainter extends CustomPainter {
       }
     }
     canvas.drawPath(path, curve);
+    _annotations(canvas, size, sx, sy);
+  }
+
+  /// Опорные точки: корни, пересечение с осью y, экстремумы, асимптоты.
+  void _annotations(
+    Canvas canvas,
+    Size size,
+    double Function(double) sx,
+    double Function(double) sy,
+  ) {
+    final annotations = data.annotations;
+    final asymptote = Paint()
+      ..color = const Color(0x99C62828)
+      ..strokeWidth = 1;
+    for (final x in annotations.verticalAsymptotes) {
+      final dx = sx(x);
+      if (dx >= 0 && dx <= size.width) {
+        _dashed(canvas, Offset(dx, 0), Offset(dx, size.height), asymptote);
+      }
+    }
+    for (final y in annotations.horizontalAsymptotes) {
+      final dy = sy(y);
+      if (dy >= 0 && dy <= size.height) {
+        _dashed(canvas, Offset(0, dy), Offset(size.width, dy), asymptote);
+      }
+    }
+
+    final rootPaint = Paint()..color = const Color(0xFF2E7D32);
+    for (final point in annotations.roots) {
+      _dot(canvas, sx(point.x), sy(point.y), size, rootPaint);
+    }
+    final extremumPaint = Paint()..color = const Color(0xFF6A1B9A);
+    for (final point in [...annotations.maxima, ...annotations.minima]) {
+      _dot(canvas, sx(point.x), sy(point.y), size, extremumPaint);
+    }
+    final intercept = annotations.yIntercept;
+    if (intercept != null) {
+      _dot(
+        canvas,
+        sx(intercept.x),
+        sy(intercept.y),
+        size,
+        Paint()..color = const Color(0xFFEF6C00),
+      );
+    }
+  }
+
+  void _dot(Canvas canvas, double dx, double dy, Size size, Paint paint) {
+    if (dx < 0 || dx > size.width || dy < 0 || dy > size.height) return;
+    canvas.drawCircle(Offset(dx, dy), 3, paint);
+  }
+
+  /// Пунктирная линия: у асимптот сплошная читалась бы как график.
+  void _dashed(Canvas canvas, Offset from, Offset to, Paint paint) {
+    const dash = 6.0;
+    const gap = 4.0;
+    final total = (to - from).distance;
+    if (total == 0) return;
+    final direction = (to - from) / total;
+    var travelled = 0.0;
+    while (travelled < total) {
+      final end = math.min(travelled + dash, total);
+      canvas.drawLine(from + direction * travelled, from + direction * end, paint);
+      travelled = end + gap;
+    }
   }
 
   @override

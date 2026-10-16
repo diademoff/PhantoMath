@@ -30,6 +30,7 @@ from .base import (
 from .combinatorics import solve_arrangement, solve_choose, solve_factorial
 from .comparison import COMPARABLE, solve_comparison, solve_order
 from .complex import contains_imaginary, solve_complex, solve_imaginary_arithmetic
+from .conditional import solve_conditional
 from .containers import solve_container
 from .derivatives import solve_derivative
 from .equations import solve_equation
@@ -49,6 +50,7 @@ from .limits import solve_limit
 from .matrices import solve_determinant, solve_matrix
 from .methods import has_method_provider, methods_for
 from .percentage import solve_percentage
+from .piecewise import solve_piecewise
 from .powers import solve_logarithm, solve_root
 from .sequences import solve_sequence
 from .series import solve_series
@@ -247,6 +249,7 @@ __all__ = [
     "solve_choose",
     "solve_comparison",
     "solve_complex",
+    "solve_conditional",
     "solve_container",
     "solve_derivative",
     "solve_determinant",
@@ -267,6 +270,7 @@ __all__ = [
     "solve_membership",
     "solve_order",
     "solve_percentage",
+    "solve_piecewise",
     "solve_root",
     "solve_sequence",
     "solve_series",

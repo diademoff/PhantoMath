@@ -13,7 +13,7 @@ import sympy
 
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
-from .base import SolveContext, SolveError, Step
+from .base import SolveContext, SolveError, Step, solver_for
 from .sympy_bridge import from_sympy, to_sympy
 
 _RELATIONS = (
@@ -24,6 +24,18 @@ _RELATIONS = (
     T.GREATER_THAN,
     T.GREATER_THAN_EQUAL,
 )
+
+
+@solver_for(T.PIECEWISE_DEFINITION)
+def solve_piecewise(node: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Кусочная функция как объект: значение берётся командой ``piecewise_value``.
+
+    Без точки значение не определено, поэтому узел остаётся символьным — так
+    ``PIECEWISE_DEFINITION`` не считается «неподдерживаемым типом», и его можно
+    показать и построить график.
+    """
+    _ = ctx
+    return node
 
 
 def piecewise_value(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
@@ -94,4 +106,5 @@ def _compare(node_type: T, left: sympy.Expr, right: sympy.Expr) -> sympy.Basic:
 
 __all__ = [
     "piecewise_value",
+    "solve_piecewise",
 ]

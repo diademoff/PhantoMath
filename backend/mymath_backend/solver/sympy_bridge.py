@@ -68,6 +68,15 @@ _COMPLEX_CLASSES: dict[str, T] = {
     "conjugate": T.CONJUGATE,
 }
 
+# Отношения: тип -> конструктор sympy (для условий и сравнений).
+_RELATIONS: dict[T, type] = {
+    T.NOT_EQUALS: sympy.Ne,
+    T.LESS_THAN: sympy.Lt,
+    T.LESS_THAN_EQUAL: sympy.Le,
+    T.GREATER_THAN: sympy.Gt,
+    T.GREATER_THAN_EQUAL: sympy.Ge,
+}
+
 # Промежутки: тип -> (левый край открыт, правый край открыт). Дети — границы.
 INTERVALS: dict[T, tuple[bool, bool]] = {
     T.OPEN_OPEN_INTERVAL: (True, True),
@@ -158,6 +167,16 @@ def to_sympy(node: CoreNode) -> sympy.Expr:
         return sympy.Matrix(rows)
     if node_type is T.EQUALS:
         return sympy.Eq(*(to_sympy(child) for child in node.children))
+    if node_type in _RELATIONS:
+        left, right = node.children[0], node.children[1]
+        return _RELATIONS[node_type](to_sympy(left), to_sympy(right))
+    if node_type is T.CONDITIONAL_EXPRESSION and len(node.children) == 3:
+        # Условное выражение: [условие, ветвь «да», ветвь «нет»] -> Piecewise.
+        condition, then, otherwise = node.children
+        return sympy.Piecewise(
+            (to_sympy(then), to_sympy(condition)),
+            (to_sympy(otherwise), True),
+        )
     if node_type is T.SET:
         return sympy.FiniteSet(*(to_sympy(child) for child in node.children))
     if node_type is T.UNION:
@@ -253,6 +272,27 @@ def from_sympy(expr: sympy.Expr) -> CoreNode:
         return CoreNode.node(T.LN, from_sympy(arguments[0]))
     if isinstance(expr, sympy.Eq):
         return CoreNode.node(T.EQUALS, from_sympy(expr.lhs), from_sympy(expr.rhs))
+    if isinstance(expr, sympy.Ne):
+        return CoreNode.node(T.NOT_EQUALS, from_sympy(expr.lhs), from_sympy(expr.rhs))
+    if isinstance(expr, sympy.Lt):
+        return CoreNode.node(T.LESS_THAN, from_sympy(expr.lhs), from_sympy(expr.rhs))
+    if isinstance(expr, sympy.Le):
+        return CoreNode.node(T.LESS_THAN_EQUAL, from_sympy(expr.lhs), from_sympy(expr.rhs))
+    if isinstance(expr, sympy.Gt):
+        return CoreNode.node(T.GREATER_THAN, from_sympy(expr.lhs), from_sympy(expr.rhs))
+    if isinstance(expr, sympy.Ge):
+        return CoreNode.node(
+            T.GREATER_THAN_EQUAL, from_sympy(expr.lhs), from_sympy(expr.rhs)
+        )
+    if isinstance(expr, sympy.Piecewise) and len(expr.args) == 2:
+        (then, condition), (otherwise, default) = expr.args
+        if default is True or default is sympy.true:
+            return CoreNode.node(
+                T.CONDITIONAL_EXPRESSION,
+                from_sympy(condition),
+                from_sympy(then),
+                from_sympy(otherwise),
+            )
     if isinstance(expr, sympy.Interval):
         return _from_interval(expr)
     if expr is sympy.S.Reals:
