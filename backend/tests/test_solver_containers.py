@@ -48,9 +48,7 @@ class TestAddSubtract:
         assert vertical is not None and vertical.solution is not None
         assert vertical.solution.type is T.LIST
         assert [child.value for child in vertical.solution.children] == ["5", "-1"]
-        keys = [
-            sub.description.type for step in vertical.steps for sub in step.substeps
-        ]
+        keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
         assert keys == ["add", "sub"]
 
     def test_symbolic_echo(self) -> None:
