@@ -58,6 +58,21 @@ class TestToSympy:
         with pytest.raises(SolveError):
             to_sympy(node(T.LINE_SEGMENT, c("1")))
 
+    @pytest.mark.parametrize(
+        "problem",
+        [
+            node(T.LOG, var()),
+            node(T.POWER, var()),
+            node(T.DIVIDE, var()),
+            node(T.UNION, c("1"), c("2")),
+        ],
+    )
+    def test_malformed_node_is_solve_error(self, problem: object) -> None:
+        """Не та арность — понятный SolveError, а не IndexError/TypeError."""
+        assert isinstance(problem, CoreNode)
+        with pytest.raises(SolveError):
+            to_sympy(problem)
+
 
 class TestFromSympy:
     def test_integer_and_rational(self) -> None:

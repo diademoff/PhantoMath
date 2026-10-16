@@ -96,7 +96,22 @@ def _from_matrix_cell(cell: sympy.Expr) -> CoreNode:
 
 
 def to_sympy(node: CoreNode) -> sympy.Expr:
-    """Перевести узел в выражение sympy."""
+    """Перевести узел в выражение sympy.
+
+    Ошибка трансляции (не та арность, мусор в слотах, конструктор sympy
+    отклонил операнды) — это :class:`SolveError`, а не сырое исключение:
+    граница обязана отвечать понятным отказом.
+    """
+    try:
+        return _translate(node)
+    except SolveError:
+        raise
+    except (IndexError, KeyError, TypeError, ValueError, AttributeError, ZeroDivisionError) as error:
+        raise SolveError(f"узел {node.type} не переводится в sympy") from error
+
+
+def _translate(node: CoreNode) -> sympy.Expr:
+    """Собственно перевод узла в выражение sympy (см. :func:`to_sympy`)."""
     node_type = node.type
     if node_type is T.CONSTANT:
         text = (node.value or "").strip()

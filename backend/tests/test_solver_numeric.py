@@ -14,7 +14,7 @@ import pytest
 
 from mymath_backend import load_explanations
 from mymath_backend.input import parse_protocol
-from mymath_backend.solver import solve
+from mymath_backend.solver import SolveError, solve
 
 EXPLANATIONS = Path(__file__).resolve().parents[2] / "truth" / "data" / "explanations.json"
 
@@ -68,6 +68,12 @@ class TestNumericRoots:
     def test_steps_are_explained(self) -> None:
         keys = step_keys("{=({sin({x})},{x})}")
         assert keys == ["graph_solution", "calculate"]
+
+    def test_factorial_equation_is_refused_not_crashed(self) -> None:
+        # lambdify factorial(float) бросает TypeError: точка пропускается,
+        # корней нет — честный отказ исходного модуля, а не падение.
+        with pytest.raises(SolveError):
+            solve(parse_protocol("{=({factorial({x})},{6})}"))
 
 
 class TestFallbackPriority:

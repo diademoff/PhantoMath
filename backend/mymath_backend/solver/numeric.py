@@ -150,7 +150,7 @@ def _evaluate(function: Callable[[float], object], point: float) -> float | None
     """Значение в точке; ``None`` при провале (полюс, область определения)."""
     try:
         value = function(point)
-    except (ValueError, ZeroDivisionError, OverflowError):
+    except (ValueError, TypeError, ZeroDivisionError, OverflowError):
         return None
     if not isinstance(value, (int, float)):
         return None
