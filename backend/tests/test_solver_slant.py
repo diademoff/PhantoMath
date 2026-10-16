@@ -40,3 +40,9 @@ class TestSlantAsymptote:
     def test_no_slant(self) -> None:
         with pytest.raises(SolveError, match="наклонной"):
             run("{frac({x^2+1},{x^2-1})}")
+
+    def test_not_rational(self) -> None:
+        # Степень берётся у многочлена: у `exp(x)` она бросала
+        # `PolynomialError`, и ответ не уходил клиенту вовсе.
+        with pytest.raises(SolveError, match="рациональной"):
+            run("{exp({x})}")

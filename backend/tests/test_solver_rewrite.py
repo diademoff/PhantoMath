@@ -6,10 +6,12 @@
 
 from __future__ import annotations
 
+import pytest
+
 from mymath_backend import CoreNodeType as T
 from mymath_backend.input import parse_protocol
 from mymath_backend.results import CoreSolverVerticalResult
-from mymath_backend.solver import solve
+from mymath_backend.solver import SolveError, solve
 
 
 def _vertical(source: str, command: str) -> CoreSolverVerticalResult:
@@ -76,3 +78,10 @@ class TestMixedNumber:
         answer = _vertical("{frac({9},{4})}", "to_mixed").solution
         assert answer is not None
         assert [child.value for child in answer.children] == ["2", "1", "4"]
+
+    def test_percent_rejects_equation(self) -> None:
+        # Проценты берутся у числа: `Equality * 100` бросал `TypeError`,
+        # и ответ не уходил клиенту вовсе.
+        for source in ("{2x+3=7}", "{=({0.5},{0.25})}"):
+            with pytest.raises(SolveError, match="у числа"):
+                _vertical(source, "to_percent")

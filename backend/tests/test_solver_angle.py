@@ -6,10 +6,12 @@
 
 from __future__ import annotations
 
+import pytest
+
 from mymath_backend import CoreNodeType as T
 from mymath_backend.input import parse_protocol
 from mymath_backend.results import CoreSolverVerticalResult
-from mymath_backend.solver import solve
+from mymath_backend.solver import SolveError, solve
 
 
 def _vertical(source: str, command: str) -> CoreSolverVerticalResult:
@@ -61,3 +63,13 @@ class TestAngle:
     def test_full_turn(self) -> None:
         answer = _vertical("{deg({180})}", "to_radians").solution
         assert answer is not None and answer.value == "π"
+
+    def test_equation_rejected(self) -> None:
+        # Угол переводится у числа или угла. Без проверки `simplify` на `Eq`
+        # молча решал уравнение: `2x + 3 = 7` → `x = 2` под шагом
+        # «Выразите радианную меру», а `* 180/π` бросал `TypeError` и ответ
+        # не уходил вовсе.
+        for command in ("to_degrees", "to_radians"):
+            for source in ("{2x+3=7}", "{=({0.5},{0.25})}"):
+                with pytest.raises(SolveError, match="угла или числа"):
+                    _vertical(source, command)

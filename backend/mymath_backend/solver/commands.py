@@ -98,6 +98,22 @@ from .systems import system_check
 from .vectors import VECTOR_COMMANDS
 
 
+def _expression_value(node: CoreNode, message: str) -> sympy.Expr:
+    """Значение узла как выражение; отношение и логика отклоняются.
+
+    Команды-преобразования работают с числом или выражением. Без этой проверки
+    в sympy уходило ``Equality`` (или ``False``, если обе части — числа):
+    ``* 100`` и ``fraction(together(…))`` бросали ``TypeError`` — ответ не
+    уходил вовсе, и клиент видел обрыв соединения вместо ошибки; а
+    ``simplify`` молча **решал** уравнение (``2x + 3 = 7`` → ``x = 2`` под
+    шагом «Выразите радианную меру»).
+    """
+    value = to_sympy(node)
+    if not isinstance(value, sympy.Expr):
+        raise SolveError(message)
+    return value
+
+
 def _apply_side(
     node: CoreNode, ctx: SolveContext, key: str, transform: Callable[[sympy.Expr], sympy.Expr]
 ) -> CoreNode:
@@ -136,7 +152,11 @@ def simplify(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNod
 
 
 def to_fraction(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
-    """Десятичную дробь — в обыкновенную."""
+    """Десятичную дробь — в обыкновенную.
+
+    У уравнения преобразуются обе части (``_apply_side``): это команда-
+    перезапись, как ``factor``/``expand``.
+    """
     del args
     return _apply_side(node, ctx, "dec_to_frac", sympy.nsimplify)
 
@@ -253,7 +273,8 @@ def _rounding_digits(args: list[CoreNode]) -> int:
 def to_percent(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Число — в проценты."""
     del args
-    result = CoreNode.node(T.PERCENTAGE, from_sympy(sympy.sympify(to_sympy(node)) * 100))
+    value = _expression_value(node, "проценты берутся у числа")
+    result = CoreNode.node(T.PERCENTAGE, from_sympy(sympy.sympify(value) * 100))
     ctx.result.add(Step(left=node, right=result, key="rewrite_as_percent"))
     return result
 
@@ -701,7 +722,7 @@ def partial_fractions(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -
     рациональным (знаменатель зависит от переменной).
     """
     del args
-    expression = to_sympy(node)
+    expression = _expression_value(node, "простейшие дроби берутся у рационального выражения")
     _, denominator = sympy.fraction(sympy.together(expression))
     if denominator == 1 or not denominator.free_symbols:
         raise SolveError("простейшие дроби берутся у рационального выражения")
@@ -792,6 +813,10 @@ def slant_asymptote(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> 
     symbol = sympy.Symbol(ctx.variables[0])
     function = to_sympy(expression_node)
     numerator, denominator = sympy.fraction(sympy.together(function))
+    # Степень берётся только у многочлена: у ``exp(x)`` она бросает
+    # ``PolynomialError``, и ответ не уходил клиенту вовсе.
+    if numerator.is_polynomial(symbol) is not True or denominator.is_polynomial(symbol) is not True:
+        raise SolveError("наклонная асимптота берётся у рациональной функции")
     if sympy.degree(numerator, symbol) != sympy.degree(denominator, symbol) + 1:
         raise SolveError(
             "наклонной асимптоты нет",
@@ -1081,7 +1106,8 @@ def vertex(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
 def to_degrees(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Радианы — в градусы: угол оборачивается узлом ``DEGREE``."""
     del args
-    degrees = sympy.simplify(to_sympy(node) * 180 / sympy.pi)
+    value = _expression_value(node, "градусы берутся у угла или числа")
+    degrees = sympy.simplify(value * 180 / sympy.pi)
     result = CoreNode.node(T.DEGREE, from_sympy(degrees))
     ctx.result.add(Step(left=node, right=result, key="rewrite_deg"))
     return result
@@ -1090,7 +1116,8 @@ def to_degrees(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreN
 def to_radians(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Градусы — в радианы (узел ``DEGREE`` переводится в число)."""
     del args
-    result = from_sympy(sympy.simplify(to_sympy(node)))
+    value = _expression_value(node, "радианы берутся у угла или числа")
+    result = from_sympy(sympy.simplify(value))
     ctx.result.add(Step(left=node, right=result, key="rewrite_rad"))
     return result
 

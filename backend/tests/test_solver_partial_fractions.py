@@ -40,3 +40,9 @@ class TestPartialFractions:
     def test_not_rational(self) -> None:
         with pytest.raises(SolveError):
             run("{x^2+1}")
+
+    def test_equation(self) -> None:
+        # Уравнение — не выражение: `sympy.together` падал `TypeError`,
+        # ответ не уходил вовсе, клиент видел обрыв соединения.
+        with pytest.raises(SolveError, match="рационального"):
+            run("{=({x^2-5x+6},{0})}")
