@@ -91,6 +91,22 @@ def solve(
     модулей. Вызывающий сам решает, что показать пользователю: 404 с
     понятным текстом или 500.
     """
+    try:
+        return _solve_inner(
+            node, command=command, args=args, interval=interval, definitions=definitions
+        )
+    except RecursionError as error:
+        raise SolveError("слишком глубокое выражение") from error
+
+
+def _solve_inner(
+    node: CoreNode,
+    command: str | None = None,
+    args: list[CoreNode] | None = None,
+    interval: Interval | None = None,
+    definitions: list[CoreNode] | None = None,
+) -> CoreSolverData:
+    """Тело :func:`solve` (выделено ради перехвата глубины рекурсии)."""
     definition = parse_definition(node)
     if definition is not None:
         # Само определение — это ответ, а не задача: показываем его как есть.

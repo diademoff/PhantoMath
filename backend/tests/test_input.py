@@ -235,6 +235,11 @@ class TestErrors:
             parse_protocol("{=({2x+3},{7})} tail")
         assert "поз." in str(err.value)
 
+    def test_deep_nesting_is_protocol_error(self) -> None:
+        """600 скобок — ProtocolError, а не RecursionError наружу."""
+        with pytest.raises(ProtocolError, match="глубокая"):
+            parse_protocol("{" + "(" * 600 + "2+3" + ")" * 600 + "}")
+
 
 class TestJsonInput:
     def test_same_tree_from_both_formats(self) -> None:

@@ -159,11 +159,14 @@ class CoreNode:
         """
         payload = dict(data)
         extra = {k: payload.pop(k) for k in ("color", "crossed") if k in payload}
-        built: dict[str, Any] = {
-            "type": payload["type"],
-            "value": payload.get("value"),
-            "children": [cls.from_contract(c) for c in payload.get("children", [])],
-        }
+        try:
+            built: dict[str, Any] = {
+                "type": payload["type"],
+                "value": payload.get("value"),
+                "children": [cls.from_contract(c) for c in payload.get("children", [])],
+            }
+        except RecursionError as err:
+            raise ValueError("слишком глубокий узел") from err
         if extra:
             return CoreColoredNode(**built, **extra)
         return cls(**built)

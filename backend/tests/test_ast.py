@@ -49,6 +49,14 @@ class TestCoreNode:
         with pytest.raises(ValueError):
             CoreNode(type="НЕ_ИЗВЕСТЕН", value="1")
 
+    def test_deep_json_is_value_error(self) -> None:
+        """3000 уровней — ValueError, а не RecursionError наружу."""
+        data: dict[str, object] = {"type": "CONSTANT", "value": "1"}
+        for _ in range(3000):
+            data = {"type": "ADD", "children": [data, {"type": "CONSTANT", "value": "1"}]}
+        with pytest.raises(ValueError, match="глубокий"):
+            CoreNode.from_contract(data)
+
     def test_walk_visits_depth_first(self) -> None:
         tree = CoreNode.node(
             CoreNodeType.EQUALS,

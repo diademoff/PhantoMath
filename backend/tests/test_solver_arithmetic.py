@@ -97,6 +97,14 @@ class TestErrors:
         with pytest.raises(SolveError, match="деление на ноль"):
             solve(parse_protocol(source))
 
+    def test_deep_expression_is_solve_error(self) -> None:
+        """600 уровней — SolveError, а не RecursionError наружу."""
+        deep: CoreNode = CoreNode.constant("1")
+        for _ in range(600):
+            deep = CoreNode.node(T.ADD, deep, CoreNode.constant("1"))
+        with pytest.raises(SolveError, match="глубокое"):
+            solve(deep)
+
     def test_variable_is_reported_as_missing_module(self) -> None:
         """Арифметика не решает уравнения -- это разные модули."""
         with pytest.raises(SolveError, match="нужен модуль уравнений"):

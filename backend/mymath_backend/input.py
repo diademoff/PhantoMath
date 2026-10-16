@@ -627,15 +627,18 @@ def parse_protocol(source: str) -> CoreNode:
     >>> parse_protocol("{=({2x+3},{7})}").type.value
     'EQUALS'
     """
-    tokens = _tokenize(source)
-    if not tokens:
-        raise ProtocolError("пустая строка")
-    parser = _Parser(tokens)
-    node = parser.parse_expression()
-    if (leftover := parser.peek()) is not None:
-        raise ProtocolError(
-            f"поз. {leftover.pos}: неожиданный хвост {leftover.value!r} после разбора выражения"
-        )
+    try:
+        tokens = _tokenize(source)
+        if not tokens:
+            raise ProtocolError("пустая строка")
+        parser = _Parser(tokens)
+        node = parser.parse_expression()
+        if (leftover := parser.peek()) is not None:
+            raise ProtocolError(
+                f"поз. {leftover.pos}: неожиданный хвост {leftover.value!r} после разбора выражения"
+            )
+    except RecursionError as error:
+        raise ProtocolError("слишком глубокая вложенность выражения") from error
     return node
 
 
