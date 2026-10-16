@@ -78,8 +78,8 @@ class NotebookEntry {
       solution: solution is Map<String, dynamic>
           ? CoreNode.fromJson(solution)
           : null,
-      savedAt: DateTime.tryParse(json['savedAt'] as String? ?? '') ??
-          DateTime.now(),
+      savedAt:
+          DateTime.tryParse(json['savedAt'] as String? ?? '') ?? DateTime.now(),
       uuid: json['uuid'] as String? ?? '',
       version: json['version'] as int? ?? 1,
       source: json['source'] as String? ?? 'core',

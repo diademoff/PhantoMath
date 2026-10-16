@@ -311,26 +311,41 @@ OperatorBinding bindOperator(String name) {
   if (digit != null) return OperatorBinding(name, key: MathKey.digit(digit));
 
   final variable = _variables[name];
-  if (variable != null) return OperatorBinding(name, key: MathKey.variable(variable));
+  if (variable != null)
+    return OperatorBinding(name, key: MathKey.variable(variable));
 
   final constant = _constants[name];
-  if (constant != null) return OperatorBinding(name, key: MathKey.constant(constant));
+  if (constant != null)
+    return OperatorBinding(name, key: MathKey.constant(constant));
 
   final template = _templates[name];
-  if (template != null) return OperatorBinding(name, key: MathKey.template(template));
+  if (template != null)
+    return OperatorBinding(name, key: MathKey.template(template));
 
   final infix = _infix[name];
   if (infix != null) return OperatorBinding(name, key: MathKey.operator(infix));
 
   switch (name) {
     case 'CONTROL_MOVE_LEFT':
-      return OperatorBinding(name, key: const MathKey(MathKeyType.left, label: '◀'));
+      return OperatorBinding(
+        name,
+        key: const MathKey(MathKeyType.left, label: '◀'),
+      );
     case 'CONTROL_MOVE_RIGHT':
-      return OperatorBinding(name, key: const MathKey(MathKeyType.right, label: '▶'));
+      return OperatorBinding(
+        name,
+        key: const MathKey(MathKeyType.right, label: '▶'),
+      );
     case 'CONTROL_DELETE':
-      return OperatorBinding(name, key: const MathKey(MathKeyType.backspace, label: '⌫'));
+      return OperatorBinding(
+        name,
+        key: const MathKey(MathKeyType.backspace, label: '⌫'),
+      );
     case 'CONTROL_EMPTY':
-      return OperatorBinding(name, key: const MathKey(MathKeyType.clear, label: 'C'));
+      return OperatorBinding(
+        name,
+        key: const MathKey(MathKeyType.clear, label: 'C'),
+      );
     case 'HELPER_XYZ_SHEET':
       return OperatorBinding(name, key: const MathKey.panel(1, 'f(x)'));
     case 'HELPER_SHOW_SECONDARY_SHEET':
@@ -343,5 +358,6 @@ OperatorBinding bindOperator(String name) {
 }
 
 /// Каталог операторов по порядку `editor_operators`.
-List<OperatorBinding> operatorCatalog() =>
-    [for (final name in apkEditorOperators) bindOperator(name)];
+List<OperatorBinding> operatorCatalog() => [
+  for (final name in apkEditorOperators) bindOperator(name),
+];

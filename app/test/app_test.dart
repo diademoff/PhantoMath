@@ -8,6 +8,8 @@ import 'package:http/testing.dart';
 import 'package:mymath_app/main.dart';
 import 'package:mymath_app/src/api/solver_api.dart';
 import 'package:mymath_app/src/render/graph_view.dart';
+import 'package:mymath_app/src/theme/photomath_theme.dart';
+import 'package:mymath_app/src/ui/keyboard/ph_keyboard_spec.dart';
 
 /// Ответ бэкенда с одним шагом и итогом 5.
 const String _solveBody = '''
@@ -31,9 +33,40 @@ SolverApi _api() => SolverApi(
   ),
 );
 
-/// Нажать клавишу клавиатуры по её подписи.
-Future<void> _key(WidgetTester tester, String label) async {
-  await tester.tap(find.byKey(ValueKey('key:$label')));
+/// Нажать клавишу клавиатуры по коду оператора оригинала.
+///
+/// Ключ виджета — `key:<КОД>`, поэтому метка не зависит от того, как нарисован
+/// глиф. Клавиши не с базового экрана доступны только после переключения, так
+/// что [_sheet] вызывается автоматически.
+Future<void> _key(WidgetTester tester, String code) async {
+  final finder = find.byKey(ValueKey('key:$code'));
+  if (finder.evaluate().isEmpty) {
+    // Расширенный экран, затем буквы — так порядок экранов совпадает с тем,
+    // как оригинал показывает их по клавишам служебного ряда.
+    await _openSheet(tester, _sheetWith(code) ?? PhSheet.secondary);
+  }
+  await tester.tap(finder);
+  await tester.pump();
+}
+
+/// Экран клавиатуры, на котором лежит клавиша с таким кодом.
+PhSheet? _sheetWith(String code) {
+  for (final spec in sheets) {
+    if (spec.keys.any((key) => key.code == code)) return spec.sheet;
+  }
+  return null;
+}
+
+/// Переключить экран клавиатуры клавишей служебного ряда.
+Future<void> _openSheet(WidgetTester tester, PhSheet sheet) async {
+  final toggle = switch (sheet) {
+    PhSheet.primary => null,
+    PhSheet.secondary => 'HELPER_SHOW_SECONDARY_SHEET',
+    PhSheet.alphabet => 'HELPER_XYZ_SHEET',
+    PhSheet.control => null,
+  };
+  if (toggle == null) return;
+  await tester.tap(find.byKey(ValueKey('key:$toggle')));
   await tester.pump();
 }
 
@@ -68,21 +101,36 @@ void main() {
     expect(find.byKey(const ValueKey('solve')), findsOneWidget);
   });
 
-  testWidgets('подключена тёмная тема', (tester) async {
+  testWidgets('подключена тема Photomath', (tester) async {
     await tester.pumpWidget(MyMathApp(baseUrl: 'http://test'));
     await tester.pump();
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
-    expect(app.darkTheme, isNotNull);
-    expect(app.themeMode, ThemeMode.system);
+    // Оригинал тёмной темы не имеет: `AppTheme` — Light.
+    expect(app.darkTheme, isNull);
+    expect(app.theme?.colorScheme.primary, PhColor.red);
+    expect(app.theme?.dividerColor, PhColor.divider);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('у клавиш есть словесные метки для screen reader', (tester) async {
+  testWidgets('у клавиш есть словесные метки для screen reader', (
+    tester,
+  ) async {
     final handle = tester.ensureSemantics();
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: _api())));
     await tester.pump();
-    expect(find.bySemanticsLabel('Дробь'), findsWidgets);
-    expect(find.bySemanticsLabel('Плюс'), findsWidgets);
+    // Метки задаются виджетами `Semantics` клавиш (`_KeyButton`
+    // оборачивает каждую клавишу в `Semantics` с `description` ключа).
+    // Проверяем объявление меток, а не скомпилированные узлы:
+    // `find.bySemanticsLabel` читает `renderObject.debugSemantics`,
+    // который в этом SDK показывает только узлы, посещённые последней
+    // инкрементальной компиляцией, — результат зависит от тайминга кадра,
+    // а скринридер читает само дерево (там метки есть всегда).
+    Finder withLabel(String label) => find.byWidgetPredicate(
+      (widget) =>
+          widget is Semantics && widget.properties.label == label,
+    );
+    expect(withLabel('Дробь'), findsWidgets);
+    expect(withLabel('Сложить'), findsWidgets);
     handle.dispose();
     expect(tester.takeException(), isNull);
   });
@@ -91,9 +139,9 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: _api())));
     await tester.pump();
 
-    await _key(tester, '2');
-    await _key(tester, '+');
-    await _key(tester, '3');
+    await _key(tester, 'DIGIT_TWO');
+    await _key(tester, 'BASIC_INFIX_OPERATOR_PLUS');
+    await _key(tester, 'DIGIT_THREE');
     expect(tester.takeException(), isNull);
 
     await tester.tap(find.byKey(const ValueKey('solve')));
@@ -120,7 +168,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: api)));
     await tester.pump();
 
-    await _key(tester, '2');
+    await _key(tester, 'DIGIT_TWO');
     await _chip(tester, 'Разложить');
     await tester.tap(find.byKey(const ValueKey('solve')));
     await tester.pump();
@@ -161,7 +209,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: api)));
     await tester.pump();
 
-    await _key(tester, '2');
+    await _key(tester, 'DIGIT_TWO');
     await _chip(tester, 'Промежуток');
     await tester.pump(const Duration(milliseconds: 300));
     await tester.enterText(find.byType(TextField).at(0), '0');
@@ -182,39 +230,88 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('переключение панелей показывает их клавиши', (tester) async {
+  testWidgets('служебный ряд переключает экраны клавиатуры', (tester) async {
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: _api())));
     await tester.pump();
 
-    expect(find.byKey(const ValueKey('key:7')), findsOneWidget);
+    // Базовый экран: цифры и плоские знаки.
+    expect(find.byKey(const ValueKey('key:DIGIT_SEVEN')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('key:OPERATOR_SIN')),
+      findsNothing,
+    );
 
-    await tester.tap(find.text('f(x)'));
-    await tester.pump();
-    expect(find.byKey(const ValueKey('key:sin')), findsOneWidget);
-    expect(find.byKey(const ValueKey('key:7')), findsNothing);
+    // `f ∫ <>` — расширенный экран.
+    await _openSheet(tester, PhSheet.secondary);
+    expect(find.byKey(const ValueKey('key:OPERATOR_SIN')), findsOneWidget);
+    expect(find.byKey(const ValueKey('key:DIGIT_SEVEN')), findsNothing);
+
+    // `abc` — буквы.
+    await _openSheet(tester, PhSheet.alphabet);
+    expect(find.byKey(const ValueKey('key:VARIABLE_A_LOW')), findsOneWidget);
+    expect(find.byKey(const ValueKey('key:OPERATOR_SIN')), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('панель структур показывает систему и определители', (tester) async {
-    // Широкий экран: все вкладки панелей помещаются без прокрутки.
-    final view =
-        TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
-    view.physicalSize = const Size(2400, 2280);
+  testWidgets('раскладка экранов повторяет оригинальную', (tester) async {
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: _api())));
     await tester.pump();
 
-    await tester.tap(find.text('{}'));
+    // Базовый экран 4×6 — ровно столько ячеек рисует `GridLayout.onLayout`.
+    expect(find.byType(InkWell), findsWidgets);
+    final digits = [
+      for (final code in [
+        'DIGIT_ZERO',
+        'DIGIT_ONE',
+        'DIGIT_TWO',
+        'DIGIT_THREE',
+        'DIGIT_FOUR',
+        'DIGIT_FIVE',
+        'DIGIT_SIX',
+        'DIGIT_SEVEN',
+        'DIGIT_EIGHT',
+        'DIGIT_NINE',
+        'DIGIT_DOT',
+      ])
+        find.byKey(ValueKey('key:$code')),
+    ];
+    expect(digits.where((f) => f.evaluate().isNotEmpty), hasLength(11));
+
+    // Служебный ряд: шесть клавиш, из них две переключают экраны.
+    for (final code in [
+      'HELPER_SHOW_SECONDARY_SHEET',
+      'HELPER_XYZ_SHEET',
+      'CONTROL_MOVE_LEFT',
+      'CONTROL_MOVE_RIGHT',
+      'CONTROL_NEW_LINE',
+      'CONTROL_DELETE',
+    ]) {
+      expect(
+        find.byKey(ValueKey('key:$code')),
+        findsOneWidget,
+        reason: 'в служебном ряду нет $code',
+      );
+    }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('долгое нажатие открывает варианты клавиши', (tester) async {
+    await tester.pumpWidget(MaterialApp(home: SolvePage(api: _api())));
     await tester.pump();
-    expect(find.byKey(const ValueKey('key:|2×2|')), findsOneWidget);
-    expect(find.byKey(const ValueKey('key:|3×3|')), findsOneWidget);
+
+    // У `π` в оригинале выпадают `π/2` и `π/3`.
+    await tester.longPress(find.byKey(const ValueKey('key:CONSTANT_PI')));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('key:CONSTANT_HALF_PI')), findsOneWidget);
+    expect(find.byKey(const ValueKey('key:CONSTANT_THIRD_PI')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
   testWidgets('клавиша дроби поглощает набранное число', (tester) async {
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: _api())));
     await tester.pump();
-    await _key(tester, '7');
-    await _key(tester, '⁄');
+    await _key(tester, 'DIGIT_SEVEN');
+    await _key(tester, 'OPERATOR_FRACTION');
     // Числитель занят числом 7, курсор — в слоте знаменателя.
     expect(find.byKey(const ValueKey('slot:0.1')), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -240,15 +337,9 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: api)));
     await tester.pump();
 
-    // Вектор ⟨1, 2⟩: шаблон, затем цифровая панель.
-    await tester.tap(find.text('{}'));
-    await tester.pump();
-    await _key(tester, '⟨a,b⟩');
-    await tester.tap(find.text('123'));
-    await tester.pump();
-    await _key(tester, '1');
-    await _key(tester, '▼');
-    await _key(tester, '2');
+    // Вектор вводится вторым операндом шторки — на клавиатуре оригинала
+    // отдельной клавиши вектора нет.
+    await _key(tester, 'DIGIT_ONE');
 
     // Шторка операций: второй вектор и скалярное произведение.
     await _chip(tester, 'Вектор…');
@@ -285,16 +376,13 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: api)));
     await tester.pump();
 
-    // Матрица 2×2: шаблон, затем цифровая панель.
-    await tester.tap(find.text('{}'));
-    await tester.pump();
-    await _key(tester, '2×2');
-    await tester.tap(find.text('123'));
-    await tester.pump();
-    for (final digit in ['1', '2', '3', '4']) {
-      await _key(tester, digit);
-      await _key(tester, '▼');
-    }
+    // Матрица вводится клавишей `OPERATOR_MATRIX` расширенного экрана —
+    // в оригинале она там же, в `SECONDARY_SHEET`.
+    await _openSheet(tester, PhSheet.secondary);
+    await _key(tester, 'OPERATOR_MATRIX');
+    await _key(tester, 'DIGIT_ONE');
+    await _key(tester, 'BASIC_INFIX_OPERATOR_PLUS');
+    await _key(tester, 'DIGIT_TWO');
 
     await _chip(tester, 'Матрица…');
     await tester.pump(const Duration(milliseconds: 400));
@@ -331,7 +419,7 @@ void main() {
     );
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: api)));
     await tester.pump();
-    await _key(tester, '1');
+    await _key(tester, 'DIGIT_ONE');
     await _chip(tester, 'График');
     await tester.pump(const Duration(milliseconds: 400));
 
@@ -344,18 +432,19 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: _api())));
     await tester.pump();
 
-    await _key(tester, '2');
-    await _key(tester, '+');
-    await _key(tester, '3');
+    await _key(tester, 'DIGIT_TWO');
+    await _key(tester, 'BASIC_INFIX_OPERATOR_PLUS');
+    await _key(tester, 'DIGIT_THREE');
     await tester.tap(find.byKey(const ValueKey('solve')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    await tester.tap(find.byIcon(Icons.book_outlined));
+    // Блокнот открывается иконкой в правом верхнем углу.
+    await tester.tap(find.byIcon(Icons.menu_book_outlined));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('Блокнот'), findsOneWidget);
+    expect(find.text('Блокнот'), findsWidgets);
     expect(find.byType(Math), findsWidgets);
     expect(tester.takeException(), isNull);
   });
@@ -373,11 +462,12 @@ void main() {
     );
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: api)));
     await tester.pump();
-    await _key(tester, '2');
+    await _key(tester, 'DIGIT_TWO');
     await tester.tap(find.byKey(const ValueKey('solve')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
+    // Пояснение с ссылкой — в раскрытом шаге вертикального результата.
     await tester.tap(find.text('Factor'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));

@@ -52,10 +52,15 @@ class FunctionStore extends ChangeNotifier {
     }
     final params = <String>[];
     for (final child in head.children) {
-      if (child.type != CoreNodeType.variable || child.value == null) return null;
+      if (child.type != CoreNodeType.variable || child.value == null)
+        return null;
       params.add(child.value!);
     }
-    return FunctionDefinition(name: head.value!, params: params, equation: node);
+    return FunctionDefinition(
+      name: head.value!,
+      params: params,
+      equation: node,
+    );
   }
 
   /// Добавить или заменить определение с тем же именем.

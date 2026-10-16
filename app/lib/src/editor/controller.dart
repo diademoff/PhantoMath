@@ -82,6 +82,5 @@ class EditorController extends ChangeNotifier {
   void clear() => _apply(ed.clearEditor());
 
   /// Поставить курсор (например, тапом по формуле).
-  void focus(ed.EdCursor cursor) =>
-      _apply(_state.copyWith(cursor: cursor));
+  void focus(ed.EdCursor cursor) => _apply(_state.copyWith(cursor: cursor));
 }

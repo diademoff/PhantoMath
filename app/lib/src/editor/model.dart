@@ -83,16 +83,17 @@ class ENode {
       ENode(kind, value: value);
 
   /// Шаблон с пустыми слотами-рядами.
-  factory ENode.template(ENodeKind kind) => ENode(
-    kind,
-    children: [for (var i = 0; i < kind.arity; i++) ENode.row()],
-  );
+  factory ENode.template(ENodeKind kind) =>
+      ENode(kind, children: [for (var i = 0; i < kind.arity; i++) ENode.row()]);
 
   /// Пуст ли ряд (нет токенов).
   bool get isEmptyRow => kind == ENodeKind.row && children.isEmpty;
 
-  ENode copyWith({String? value, List<ENode>? children}) =>
-      ENode(kind, value: value ?? this.value, children: children ?? this.children);
+  ENode copyWith({String? value, List<ENode>? children}) => ENode(
+    kind,
+    value: value ?? this.value,
+    children: children ?? this.children,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -105,8 +106,7 @@ class ENode {
   int get hashCode => Object.hash(kind, value, Object.hashAll(children));
 
   @override
-  String toString() =>
-      value ?? '${kind.name}(${children.join(', ')})';
+  String toString() => value ?? '${kind.name}(${children.join(', ')})';
 }
 
 /// Состояние редактора: документ и курсор.
@@ -144,7 +144,11 @@ ENode _updateLeafRow(
   final children = List<ENode>.of(node.children);
   final target = children[step.child];
   final slots = List<ENode>.of(target.children);
-  slots[step.slot] = _updateLeafRow(slots[step.slot], steps.sublist(1), transform);
+  slots[step.slot] = _updateLeafRow(
+    slots[step.slot],
+    steps.sublist(1),
+    transform,
+  );
   children[step.child] = ENode(target.kind, children: slots);
   return ENode(node.kind, value: node.value, children: children);
 }
@@ -215,10 +219,7 @@ EditorState insertTemplate(EditorState state, ENodeKind kind) {
     return ENode.row(children);
   });
 
-  final newSteps = [
-    ...steps,
-    CursorStep(childIndex, kind.cursorSlot),
-  ];
+  final newSteps = [...steps, CursorStep(childIndex, kind.cursorSlot)];
   final offset = absorbs && kind.cursorAtEnd ? 1 : 0;
   return EditorState(document, EdCursor(steps: newSteps, offset: offset));
 }
@@ -255,8 +256,10 @@ EditorState backspace(EditorState state) {
     final step = cursor.steps.last;
     return EditorState(
       state.document,
-      EdCursor(steps: cursor.steps.sublist(0, cursor.steps.length - 1),
-          offset: step.child + 1),
+      EdCursor(
+        steps: cursor.steps.sublist(0, cursor.steps.length - 1),
+        offset: step.child + 1,
+      ),
     );
   }
   return state;
@@ -273,10 +276,7 @@ EditorState deleteForward(EditorState state) {
       final next = children[at];
       final text = next.value;
       if (next.kind == ENodeKind.constant && text != null && text.length > 1) {
-        children[at] = ENode.terminal(
-          ENodeKind.constant,
-          text.substring(1),
-        );
+        children[at] = ENode.terminal(ENodeKind.constant, text.substring(1));
       } else {
         children.removeAt(at);
       }
@@ -288,8 +288,10 @@ EditorState deleteForward(EditorState state) {
     final step = cursor.steps.last;
     return EditorState(
       state.document,
-      EdCursor(steps: cursor.steps.sublist(0, cursor.steps.length - 1),
-          offset: step.child),
+      EdCursor(
+        steps: cursor.steps.sublist(0, cursor.steps.length - 1),
+        offset: step.child,
+      ),
     );
   }
   return state;
@@ -305,8 +307,10 @@ EditorState moveLeft(EditorState state) {
     final step = cursor.steps.last;
     return EditorState(
       state.document,
-      EdCursor(steps: cursor.steps.sublist(0, cursor.steps.length - 1),
-          offset: step.child),
+      EdCursor(
+        steps: cursor.steps.sublist(0, cursor.steps.length - 1),
+        offset: step.child,
+      ),
     );
   }
   return state;
@@ -323,8 +327,10 @@ EditorState moveRight(EditorState state) {
     final step = cursor.steps.last;
     return EditorState(
       state.document,
-      EdCursor(steps: cursor.steps.sublist(0, cursor.steps.length - 1),
-          offset: step.child + 1),
+      EdCursor(
+        steps: cursor.steps.sublist(0, cursor.steps.length - 1),
+        offset: step.child + 1,
+      ),
     );
   }
   return state;
@@ -352,5 +358,4 @@ EditorState moveSlot(EditorState state, int delta) {
 }
 
 /// Очистить документ.
-EditorState clearEditor() =>
-    EditorState(ENode.row(), const EdCursor());
+EditorState clearEditor() => EditorState(ENode.row(), const EdCursor());

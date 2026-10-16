@@ -55,10 +55,7 @@ CoreNode _parseSequence(List<ENode> items) {
     var node = _atom(token);
     pos++;
     while (pos < items.length && items[pos].kind.isPostfix) {
-      node = CoreNode(
-        type: items[pos].kind.coreType,
-        children: [node],
-      );
+      node = CoreNode(type: items[pos].kind.coreType, children: [node]);
       pos++;
     }
     return node;
@@ -181,9 +178,7 @@ CoreNode _templateToCore(ENode template) {
     default:
       break;
   }
-  final children = [
-    for (final slot in template.children) _slotToCore(slot),
-  ];
+  final children = [for (final slot in template.children) _slotToCore(slot)];
   return CoreNode(type: template.kind.coreType, children: children);
 }
 
@@ -205,7 +200,9 @@ CoreNode _matrixToCore(ENode template) {
     for (var row = 0; row < size; row++)
       CoreNode(
         type: CoreNodeType.matrixRow,
-        children: [for (var col = 0; col < size; col++) cells[row * size + col]],
+        children: [
+          for (var col = 0; col < size; col++) cells[row * size + col],
+        ],
       ),
   ];
   return CoreNode(type: CoreNodeType.matrix, children: rows);

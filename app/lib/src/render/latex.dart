@@ -52,7 +52,10 @@ LatexOptions _current = LatexOptions.standard;
 /// Возвращает пустую строку для листьев без значения и для `EMPTY`:
 /// вызывающий покажет заглушку. Подсветка (`color`) и зачёркивание
 /// (`crossed`) оборачивают результат: это микро-анимация шага.
-String nodeToLatex(CoreNode node, [LatexOptions options = LatexOptions.standard]) {
+String nodeToLatex(
+  CoreNode node, [
+  LatexOptions options = LatexOptions.standard,
+]) {
   final previous = _current;
   _current = options;
   try {
@@ -322,7 +325,10 @@ String _nodeBody(CoreNode node) {
       return _wrap(node, '${_escape(node.value ?? 'f')}\\left(\$0\\right)');
 
     case CoreNodeType.functionInverse:
-      return _wrap(node, '${_escape(node.value ?? 'f')}^{-1}\\left(\$0\\right)');
+      return _wrap(
+        node,
+        '${_escape(node.value ?? 'f')}^{-1}\\left(\$0\\right)',
+      );
 
     // ── геометрия: отрезок и его длина ──────────────────────────────
     case CoreNodeType.lineSegment:
@@ -443,9 +449,8 @@ String _nodeBody(CoreNode node) {
     // ── составные ───────────────────────────────────────────────────
     case CoreNodeType.list:
       if (node.children.isEmpty) return _placeholder;
-      return [
-        for (final child in node.children) _childLatex(child),
-      ].join(r',\quad ');
+      return [for (final child in node.children) _childLatex(child)]
+          .join(r',\quad ');
 
     case CoreNodeType.system:
       return _wrap(node, r'\begin{cases}$0\end{cases}');
@@ -475,7 +480,8 @@ String _periodic(CoreNode node) {
 }
 
 /// Подставить детей в шаблон по позиционным плейсхолдерам.
-String _wrap(CoreNode node, String template) {  if (node.children.isEmpty) return '';
+String _wrap(CoreNode node, String template) {
+  if (node.children.isEmpty) return '';
   // Сначала плейсхолдеры без соответствующего ребёнка: иначе на следующем
   // проходе regex начнёт цеплять `$` уже вставленных формул.
   var out = template.replaceAllMapped(

@@ -115,10 +115,7 @@ class SettingsPage extends StatelessWidget {
 
   Widget _section(String title) => Padding(
     padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-    child: Text(
-      title,
-      style: const TextStyle(fontWeight: FontWeight.bold),
-    ),
+    child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
   );
 
   Widget _hint(String text) => Padding(

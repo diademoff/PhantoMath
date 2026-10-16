@@ -285,10 +285,7 @@ final KeyboardPanel _calculusPanel = KeyboardPanel(
       MathKey.template(ENodeKind.integral),
       MathKey.template(ENodeKind.integralDefinite),
     ],
-    [
-      MathKey.template(ENodeKind.limit),
-      MathKey.template(ENodeKind.sigma),
-    ],
+    [MathKey.template(ENodeKind.limit), MathKey.template(ENodeKind.sigma)],
   ],
 );
 
@@ -494,10 +491,7 @@ class _KeyButton extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 minimumSize: const Size(0, 48),
               ),
-              child: Text(
-                mathKey.label,
-                style: const TextStyle(fontSize: 18),
-              ),
+              child: Text(mathKey.label, style: const TextStyle(fontSize: 18)),
             ),
     );
     return Semantics(

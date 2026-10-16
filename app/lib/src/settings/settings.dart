@@ -162,10 +162,15 @@ class AppSettings extends ChangeNotifier {
       if (!await file.exists()) return;
       final raw = jsonDecode(await file.readAsString());
       if (raw is! Map<String, dynamic>) return;
-      _decimalSeparator = DecimalSeparator.fromId(raw['decimalSeparator'] as String?);
-      _binomialNotation = BinomialNotation.fromId(raw['binomialNotation'] as String?);
-      _multiplicationMethod =
-          MultiplicationMethod.fromId(raw['multiplicationMethod'] as String?);
+      _decimalSeparator = DecimalSeparator.fromId(
+        raw['decimalSeparator'] as String?,
+      );
+      _binomialNotation = BinomialNotation.fromId(
+        raw['binomialNotation'] as String?,
+      );
+      _multiplicationMethod = MultiplicationMethod.fromId(
+        raw['multiplicationMethod'] as String?,
+      );
       _divisionMethod = DivisionMethod.fromId(raw['divisionMethod'] as String?);
       notifyListeners();
     } on Object {

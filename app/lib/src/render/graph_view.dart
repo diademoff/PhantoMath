@@ -141,7 +141,11 @@ class _GraphPainter extends CustomPainter {
     var travelled = 0.0;
     while (travelled < total) {
       final end = math.min(travelled + dash, total);
-      canvas.drawLine(from + direction * travelled, from + direction * end, paint);
+      canvas.drawLine(
+        from + direction * travelled,
+        from + direction * end,
+        paint,
+      );
       travelled = end + gap;
     }
   }

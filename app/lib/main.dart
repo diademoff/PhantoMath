@@ -1,20 +1,45 @@
-/// Экран ввода и показа решения.
+/// Главный экран Photomath: ввод, решение и вертикальный результат.
 ///
-/// Сценарий: набираем выражение на своей клавиатуре (структурный редактор,
-/// `src/editor/`), отправляем бэкенду AST-JSON, получаем шаги с пояснениями
-/// и ответ. Камера вне объёма (решение пользователя).
+/// Раскладка собрана по `res/layout/activity_main.xml`,
+/// `res/layout/fragment_editor.xml`,
+/// `res/layout/view_main_navigation_drawer.xml` и
+/// `res/layout/activity_vertical_result.xml` (Photomath Plus 7.10.0,
+/// SHA-256 `64c633bb…e1bfd`, декод REA `decode_android_resources`):
+///
+/// ```
+/// ┌──────────────────────────────────────────┐
+/// │ ☰                          📖  ?          │  плавающие иконки
+/// │ ┌ поле ввода ─────────────── ✕ ┐         │
+/// │ │ 2x + 3 = 7                   │         │  @id/editor_view
+/// │ ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤         │  @id/solution_dotted_line
+/// │ ▌ x = 2                       │         │  @id/solution_line + решение
+/// │ ▌                              │         │
+/// │           [ Показать решение ]  │         │  @id/solution_button
+/// │ f ∫ <>  abc  ←  →  ⏎  ⌫         │         │  @id/control_layout
+/// │ ( ) 7 8 9 ÷                    │         │  @id/primary_layout
+/// └──────────────────────────────────────────┘
+/// ```
+///
+/// Результат — отдельный экран со сворачивающимся тулбаром
+/// «Шаги по решению» (`AppBarLayout` 110dip) и панелью
+/// `@id/controls` (назад + `PhotoMathButton` «Пояснить этапы»).
+/// Шторка — боковой `NavigationView` шириной 320dip.
+///
+/// Отличия от оригинала, вынужденные продуктом: камера вне scope
+/// (решение пользователя, `truth/09-decisions.md`), поэтому вместо видоискателя
+/// сразу открывается редактор; книжная полка, профессор и подписка тоже вне
+/// объёма (пункт Plus в шторке — заглушка, баннера нет). Белые иконки
+/// видоискателя (`menu_white`, `help_white`) заменены контурными: фон здесь
+/// белый, а не тёмный видоискатель. Блокнот, справка и настройки остаются.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
 
 import 'src/api/embedded_backend.dart';
 import 'src/api/solver_api.dart';
 import 'src/editor/controller.dart';
-import 'src/editor/convert.dart';
 import 'src/editor/editor_view.dart';
-import 'src/editor/keyboard.dart';
 import 'src/functions/function_store.dart';
 import 'src/model/core_node.dart';
 import 'src/notebook/notebook.dart';
@@ -23,6 +48,11 @@ import 'src/render/graph_view.dart';
 import 'src/render/latex.dart';
 import 'src/settings/settings.dart';
 import 'src/settings/settings_page.dart';
+import 'src/theme/photomath_theme.dart';
+import 'src/ui/keyboard/photomath_keyboard.dart';
+import 'src/ui/photomath_button.dart';
+import 'src/ui/solution_preview.dart';
+import 'src/ui/vertical_result.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -86,15 +116,19 @@ class _StartingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
+    return MaterialApp(
+      theme: PhotomathTheme.light(),
+      home: const Scaffold(
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 16),
-              Text('Запуск решателя…'),
+              Text(
+                'Запуск решателя…',
+                style: TextStyle(color: PhColor.grayDark),
+              ),
             ],
           ),
         ),
@@ -115,21 +149,20 @@ class MyMathApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'mymath',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2C6BED)),
-        useMaterial3: true,
+    // Тема оригинала одна: `AppTheme` — Light, тёмной в APK нет.
+    // `statusBarColor` оригинала — `#73000000` полупрозрачный чёрный.
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: PhColor.statusBar,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
       ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2C6BED),
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
+      child: MaterialApp(
+        title: 'mymath',
+        debugShowCheckedModeBanner: false,
+        theme: PhotomathTheme.light(),
+        home: SolvePage(api: SolverApi(baseUrl: baseUrl)),
       ),
-      themeMode: ThemeMode.system,
-      home: SolvePage(api: SolverApi(baseUrl: baseUrl)),
     );
   }
 }
@@ -172,6 +205,9 @@ class _SolvePageState extends State<SolvePage> {
   String _intervalMaxText = '';
 
   bool get _hasInterval => _intervalMin != null && _intervalMax != null;
+
+  /// Показывается ли вертикальный результат — отдельный экран, как в оригинале.
+  bool get _showResult => _current != null;
 
   /// Текущий способ решения (основной или выбранный переключателем).
   SolveResponse? get _current =>
@@ -219,6 +255,14 @@ class _SolvePageState extends State<SolvePage> {
     _settings.addListener(_onSettingsChanged);
     // Список определённых функций тоже обновляет экран.
     _functions.addListener(_onSettingsChanged);
+    // Видимость `@id/solution_button` и `@id/clear_button` повторяет
+    // редактор: в оригинале `EditorFragment` следит за вводом и
+    // показывает/прячет кнопку решения (`invisible` + `alpha=0/1`).
+    _editor.addListener(_onEditorChanged);
+  }
+
+  void _onEditorChanged() {
+    if (mounted) setState(() {});
   }
 
   void _onSettingsChanged() {
@@ -229,6 +273,7 @@ class _SolvePageState extends State<SolvePage> {
   void dispose() {
     _settings.removeListener(_onSettingsChanged);
     _functions.removeListener(_onSettingsChanged);
+    _editor.removeListener(_onEditorChanged);
     _editor.dispose();
     _notebook.dispose();
     _settings.dispose();
@@ -295,6 +340,7 @@ class _SolvePageState extends State<SolvePage> {
       setState(() {
         _error = err.message;
         _result = null;
+        _methods = const [];
       });
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -338,9 +384,8 @@ class _SolvePageState extends State<SolvePage> {
     final List<CoreNode> args;
     if (command == 'vector_scale') {
       if (numbers.length != 1) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Скаляр — одно число')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Скаляр — одно число')));
         return;
       }
       args = [numbers.first];
@@ -398,9 +443,8 @@ class _SolvePageState extends State<SolvePage> {
     final List<CoreNode> args;
     if (command == 'matrix_scale') {
       if (double.tryParse(text.trim()) == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Скаляр — число')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Скаляр — число')));
         return;
       }
       args = [CoreNode(type: CoreNodeType.constant, value: text.trim())];
@@ -412,7 +456,9 @@ class _SolvePageState extends State<SolvePage> {
       final matrix = _parseMatrix(text);
       if (matrix == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Матрица: строки через ;, ячейки через ,')),
+          const SnackBar(
+            content: Text('Матрица: строки через ;, ячейки через ,'),
+          ),
         );
         return;
       }
@@ -422,267 +468,689 @@ class _SolvePageState extends State<SolvePage> {
     _solveWith(command: command, args: args);
   }
 
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  // ─── Раскладка ──────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('mymath'),
-        actions: [
-          IconButton(
-            tooltip: 'Копировать результат',
-            icon: const Icon(Icons.copy_outlined),
-            onPressed: _current == null ? null : _copyResult,
-          ),
-          IconButton(
-            tooltip: 'Блокнот',
-            icon: const Icon(Icons.book_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => NotebookPage(
-                  notebook: _notebook,
-                  latexOptions: _latexOptions,
-                ),
-              ),
-            ),
-          ),
-          IconButton(
-            tooltip: 'Настройки',
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => SettingsPage(settings: _settings),
-              ),
-            ),
-          ),
-          PopupMenuButton<String>(
-            tooltip: 'Язык пояснений',
-            initialValue: _locale,
-            onSelected: (value) => setState(() => _locale = value),
-            itemBuilder: (context) => [
-              for (final locale in explanationLocales)
-                PopupMenuItem(value: locale, child: Text(locale)),
-            ],
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Center(child: Text(_locale)),
-            ),
-          ),
-        ],
-      ),
+      key: _scaffoldKey,
+      backgroundColor: PhColor.white,
+      // Шторка навигации оригинала (`@id/navigation_view` в
+      // `activity_main.xml`): боковой `NavigationView` шириной до 320dip
+      // (`drawer_width`), а не нижний лист.
+      drawer: _buildDrawer(),
       body: SafeArea(
-        child: Column(
+        bottom: false,
+        child: Stack(
           children: [
-            if (_error != null)
-              Container(
-                width: double.infinity,
-                color: theme.colorScheme.errorContainer,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: Text(
-                  _error!,
-                  style: TextStyle(color: theme.colorScheme.onErrorContainer),
-                ),
-              ),
-            Expanded(child: _buildBody(theme)),
-            const Divider(height: 1),
-            _preview(theme),
-            EditorView(
-              controller: _editor,
-              decimalSeparator: _settings.decimalSeparator,
+            // Контент: результат, если он есть, иначе редактор с клавиатурой.
+            Positioned.fill(
+              child: _showResult ? _buildResult() : _buildEditor(),
             ),
-            _definedFunctions(theme),
-            SizedBox(
-              height: 40,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Row(children: [
-                  for (final (command, label) in _commands)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: ChoiceChip(
-                        label: Text(label),
-                        selected: _command == command,
-                        onSelected: (_) => setState(() => _command = command),
-                      ),
-                    ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: ActionChip(
-                      avatar: const Icon(Icons.arrow_outward, size: 16),
-                      label: const Text('Вектор…'),
-                      onPressed: _openVectorSheet,
-                    ),
+            // `@id/menu_icon` — шторка навигации, слева сверху:
+            // `padding=12dip`, `marginTop=20dip`, `marginStart=4dip`.
+            Positioned(top: 20, left: 4, child: _menuButton()),
+            // `@id/notebook_icon` и `@id/help_icon` — справа сверху:
+            // `padding=14dip`, `marginTop=18dip` (у помощи дополнительно
+            // `marginEnd=8dip`, у блокнота `marginEnd=4dip` слева от помощи).
+            Positioned(
+              top: 18,
+              right: 4,
+              child: Row(
+                children: [
+                  _topIcon(
+                    tooltip: PhString.notebook,
+                    icon: Icons.menu_book_outlined,
+                    onPressed: _openNotebook,
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: ActionChip(
-                      avatar: const Icon(Icons.grid_on, size: 16),
-                      label: const Text('Матрица…'),
-                      onPressed: _openMatrixSheet,
-                    ),
+                  const SizedBox(width: 4),
+                  _topIcon(
+                    tooltip: 'Справка',
+                    icon: Icons.help_outline,
+                    onPressed: _openHelp,
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: ActionChip(
-                      avatar: const Icon(Icons.straighten, size: 16),
-                      label: Text(
-                        _hasInterval
-                            ? 'Промежуток: [$_intervalMinText; $_intervalMaxText]'
-                            : 'Промежуток',
-                      ),
-                      onPressed: _openIntervalDialog,
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: ActionChip(
-                      avatar: const Icon(Icons.show_chart, size: 16),
-                      label: const Text('График'),
-                      onPressed: _openGraph,
-                    ),
-                  ),
-                ]),
+                ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  key: const ValueKey('solve'),
-                  onPressed: _busy ? null : _solve,
-                  icon: _busy
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.check),
-                  label: const Text('Решить'),
-                ),
-              ),
-            ),
-            MathKeyboard(controller: _editor),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBody(ThemeData theme) {
-    final result = _current;
-    if (result == null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            'Наберите выражение на клавиатуре и нажмите «Решить»',
-            style: theme.textTheme.bodyMedium,
-            textAlign: TextAlign.center,
-          ),
-        ),
-      );
-    }
-    if (result.steps.isEmpty) {
-      return const Center(child: Text('Решатель не вернул шагов'));
-    }
-    return ListView(
-      padding: const EdgeInsets.all(16),
+  /// Верхняя иконка: 14dip отступ, как `padding=14dip` в `activity_main.xml`.
+  Widget _topIcon({
+    required String tooltip,
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    return IconButton(
+      tooltip: tooltip,
+      padding: const EdgeInsets.all(14),
+      icon: Icon(icon, size: 24),
+      color: PhColor.grayDark,
+      onPressed: onPressed,
+    );
+  }
+
+  /// Кнопка шторки — `@id/menu_icon`.
+  Widget _menuButton() {
+    return IconButton(
+      tooltip: 'Меню',
+      padding: const EdgeInsets.all(12),
+      icon: const Icon(Icons.menu, size: 24),
+      color: PhColor.grayDark,
+      onPressed: _openDrawer,
+    );
+  }
+
+  /// Экран ввода: поле, предпросмотр решения, команды и клавиатура.
+  Widget _buildEditor() {
+    return Column(
       children: [
-        if (_methods.length > 1) _methodSwitcher(theme),
-        for (final step in result.steps) ...[
-          for (final header in step.headers)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text(header, style: theme.textTheme.titleSmall),
-            ),
-          for (final substep in step.substeps)
-            _SubstepCard(
-              substep: substep,
-              theme: theme,
-              options: _latexOptions,
-              onLink: _onLink,
-              onCopy: _copyFormula,
-            ),
-        ],
-        if (result.solution != null) ...[
-          const SizedBox(height: 24),
-          Text('Ответ', style: theme.textTheme.titleSmall),
-          const SizedBox(height: 8),
-          _Math(latex: nodeToLatex(result.solution!, _latexOptions)),
-        ],
+        Expanded(child: _editorArea()),
+        _commandBar(),
+        // `@id/solution_button` — «Показать решение» над клавиатурой.
+        _showSolutionButton(),
+        PhotomathKeyboard(
+          controller: _editor,
+          decimalSeparator: _settings.decimalSeparator.symbol,
+        ),
       ],
     );
   }
 
-  /// Живой предпросмотр формулы: текущий ввод, собранный в LaTeX.
-  ///
-  /// Редактор рисует структурное дерево; здесь то же выражение показано
-  /// набором (`flutter_math`) — так видно, что именно уйдёт решателю.
-  Widget _preview(ThemeData theme) {
-    return AnimatedBuilder(
-      animation: _editor,
-      builder: (context, _) {
-        if (_editor.isEmpty) return const SizedBox.shrink();
-        final latex = nodeToLatex(
-          editorToCoreNode(_editor.document),
-          _latexOptions,
-        );
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-          alignment: Alignment.centerLeft,
-          child: Math.tex(
-            latex,
-            mathStyle: MathStyle.display,
-            onErrorFallback: (error) => const SizedBox.shrink(),
-          ),
-        );
-      },
+  /// Поле ввода, предпросмотр решения и ошибка — `fragment_editor.xml`.
+  Widget _editorArea() {
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(
+                top: PhGap.blockTop,
+                left: PhGap.editorStart,
+                // Справа поле под кнопку очистки — `layout_marginEnd=40dip`
+                // плюс сама кнопка.
+                right: 40,
+              ),
+              child: EditorView(
+                controller: _editor,
+                decimalSeparator: _settings.decimalSeparator,
+              ),
+            ),
+            // `@id/clear_button`: галочка справа сверху.
+            if (!_editor.isEmpty)
+              Positioned(
+                top: PhGap.blockTop,
+                right: 12,
+                child: IconButton(
+                  tooltip: 'Очистить',
+                  padding: const EdgeInsets.all(4),
+                  icon: const Icon(Icons.cancel, size: 24),
+                  color: PhColor.gray,
+                  onPressed: () => setState(_editor.clear),
+                ),
+              ),
+          ],
+        ),
+        // `@id/error`: текст 14sp тертичным с иконкой ошибки.
+        if (_error != null) _errorRow(),
+        // `@id/solution_container` + `@id/solution_line`: предпросмотр ответа.
+        if (_previewLatex case final preview?) SolutionPreview(latex: preview),
+        _definedFunctions(),
+      ],
     );
   }
 
-  /// Список определённых функций (`f(x) = …`) с возможностью убрать.
-  Widget _definedFunctions(ThemeData theme) {
+  /// LaTeX текущего ответа для предпросмотра над клавиатурой.
+  String? get _previewLatex {
+    final result = _current;
+    final solution = result?.solution;
+    if (solution == null) return null;
+    final latex = nodeToLatex(solution, _latexOptions);
+    return latex.isEmpty ? null : latex;
+  }
+
+  /// Строка ошибки — `@id/error`, 14sp `textColorTertiary` с иконкой.
+  Widget _errorRow() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(PhGap.stepSide, 24, PhGap.stepSide, 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 2),
+            child: Icon(
+              Icons.error_outline,
+              size: 18,
+              color: PhColor.grayLight,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _error!,
+              style: const TextStyle(fontSize: 14, color: PhColor.grayLight),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Определённые функции (`f(x) = …`) чипами, как подсказки над клавиатурой.
+  Widget _definedFunctions() {
     if (_functions.isEmpty) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.fromLTRB(PhGap.stepSide, 0, PhGap.stepSide, 8),
       child: Wrap(
         spacing: 8,
         runSpacing: 4,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Text('Функции:', style: theme.textTheme.labelMedium),
           for (final definition in _functions.definitions)
             Chip(
-              avatar: const Icon(Icons.functions, size: 16),
-              label: Text('${definition.name}(${definition.params.join(', ')})'),
+              label: Text(
+                '${definition.name}(${definition.params.join(', ')})',
+              ),
+              labelStyle: const TextStyle(
+                fontSize: 12,
+                color: PhColor.grayDark,
+              ),
+              backgroundColor: PhColor.surface,
+              side: const BorderSide(color: PhColor.separatorGray),
               onDeleted: () => _functions.remove(definition.name),
+              deleteIcon: const Icon(Icons.close, size: 16),
             ),
         ],
       ),
     );
   }
 
-  /// Переключатель способов решения.
-  Widget _methodSwitcher(ThemeData theme) {
-    return Row(
+  /// Команды и дополнительные действия.
+  ///
+  /// В оригинале этот выбор живёт в шторке (`view_main_navigation_drawer`),
+  /// здесь — горизонтальная лента, потому что шторка отдана навигации.
+  /// Лента — `SingleChildScrollView` + `Row`, а не `ListView`: все чипы
+  /// строятся сразу, поэтому дальние команды (`Промежуток`, `График`)
+  /// находятся поиском и доступны скроллу (`ensureVisible` в тестах).
+  Widget _commandBar() {
+    return SizedBox(
+      height: 40,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          children: [
+          for (final (command, label) in _commands)
+            Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: ChoiceChip(
+                label: Text(label),
+                labelStyle: TextStyle(
+                  fontSize: 12,
+                  color: _command == command ? PhColor.white : PhColor.grayDark,
+                ),
+                selected: _command == command,
+                selectedColor: PhColor.red,
+                backgroundColor: PhColor.surface,
+                side: const BorderSide(color: PhColor.separatorGray),
+                showCheckmark: false,
+                onSelected: (_) => setState(() => _command = command),
+              ),
+            ),
+          ActionChip(
+            avatar: const Icon(
+              Icons.arrow_outward,
+              size: 16,
+              color: PhColor.grayDark,
+            ),
+            label: const Text('Вектор…'),
+            labelStyle: const TextStyle(fontSize: 12, color: PhColor.grayDark),
+            backgroundColor: PhColor.surface,
+            side: const BorderSide(color: PhColor.separatorGray),
+            onPressed: _openVectorSheet,
+          ),
+          const SizedBox(width: 6),
+          ActionChip(
+            avatar: const Icon(
+              Icons.grid_on,
+              size: 16,
+              color: PhColor.grayDark,
+            ),
+            label: const Text('Матрица…'),
+            labelStyle: const TextStyle(fontSize: 12, color: PhColor.grayDark),
+            backgroundColor: PhColor.surface,
+            side: const BorderSide(color: PhColor.separatorGray),
+            onPressed: _openMatrixSheet,
+          ),
+          const SizedBox(width: 6),
+          ActionChip(
+            avatar: const Icon(
+              Icons.straighten,
+              size: 16,
+              color: PhColor.grayDark,
+            ),
+            label: Text(
+              _hasInterval
+                  ? 'Промежуток: [$_intervalMinText; $_intervalMaxText]'
+                  : 'Промежуток',
+            ),
+            labelStyle: const TextStyle(fontSize: 12, color: PhColor.grayDark),
+            backgroundColor: PhColor.surface,
+            side: const BorderSide(color: PhColor.separatorGray),
+            onPressed: _openIntervalDialog,
+          ),
+          const SizedBox(width: 6),
+          ActionChip(
+            avatar: const Icon(
+              Icons.show_chart,
+              size: 16,
+              color: PhColor.grayDark,
+            ),
+            label: const Text('График'),
+            labelStyle: const TextStyle(fontSize: 12, color: PhColor.grayDark),
+            backgroundColor: PhColor.surface,
+            side: const BorderSide(color: PhColor.separatorGray),
+            onPressed: _openGraph,
+          ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// `@id/solution_button` — `PhotoMathButton` оригинала.
+  ///
+  /// Пилюля радиусом 24dip (`ripple_rounded_corners_red_24`), `minWidth=120dip`,
+  /// текст 16sp белый + стрелка `next_white`, `elevation=4dip`,
+  /// отступ снизу 20dip, по центру над клавиатурой
+  /// (`constraintBottom_toTopOf=keyboard`, старт/конец к родителю).
+  /// Без ввода — `invisible` с `alpha=0`: место сохраняется (`Opacity`),
+  /// чтобы клавиатура не прыгала.
+  Widget _showSolutionButton() {
+    final enabled = !_editor.isEmpty && !_busy;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Center(
+        child: Opacity(
+          opacity: enabled ? 1 : 0,
+          child: PhButton(
+            key: const ValueKey('solve'),
+            label: _busy ? 'Решаем…' : PhString.showSolution,
+            onPressed: enabled ? _solve : null,
+            busy: _busy,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Экран вертикального результата — `activity_vertical_result.xml`.
+  ///
+  /// Оригинал — `CoordinatorLayout` с `AppBarLayout` высотой 110dip и
+  /// `CollapsingToolbarLayout`: развёрнутый заголовок 34sp жирный чёрный
+  /// (`ToolbarTitleTextExpanded`, `textColorHeader`) с полями
+  /// `expandedTitleMarginStart=16dip` / `expandedTitleMarginBottom=22dip`,
+  /// свёрнутый — 16sp по центру (`ToolbarTitleTextCollapsed`,
+  /// `collapsedTitleGravity=center_horizontal`), фон свёртки
+  /// `toolbarColor` (`#F8F8F8`), прокрутка `scroll|exitUntilCollapsed|snap`.
+  /// Здесь тот же эффект даёт `NestedScrollView` + `SliverAppBar`.
+  Widget _buildResult() {
+    final result = _current;
+    if (result == null) return const SizedBox.shrink();
+    return Column(
       children: [
-        Text(
-          'Способ ${_methodIndex + 1} из ${_methods.length}',
-          style: theme.textTheme.labelMedium,
+        Expanded(
+          child: NestedScrollView(
+            headerSliverBuilder: (context, innerScrolled) => [
+              SliverAppBar(
+                pinned: true,
+                expandedHeight: 110,
+                collapsedHeight: kToolbarHeight,
+                backgroundColor: PhColor.toolbar,
+                surfaceTintColor: Colors.transparent,
+                centerTitle: true,
+                title: const Text(
+                  PhString.stepsTitle,
+                  style: TextStyle(
+                    // `ToolbarTitleTextCollapsed`: 16sp, основной цвет.
+                    fontSize: 16,
+                    color: PhColor.grayDark,
+                  ),
+                ),
+                flexibleSpace: const FlexibleSpaceBar(
+                  titlePadding: EdgeInsets.only(left: 16, bottom: 22),
+                  title: Text(
+                    PhString.stepsTitle,
+                    style: TextStyle(
+                      // `ToolbarTitleTextExpanded`: 34sp, жирный, чёрный.
+                      fontSize: 34,
+                      fontWeight: FontWeight.bold,
+                      color: PhColor.black,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            body: VerticalResult(
+              result: result,
+              latexOptions: _latexOptions,
+              onLink: _onLink,
+              onCopy: _copyFormula,
+              methodSwitcher: _methods.length > 1 ? _methodSwitcher() : null,
+            ),
+          ),
         ),
-        const Spacer(),
-        TextButton(
-          onPressed: () =>
-              setState(() => _methodIndex = (_methodIndex + 1) % _methods.length),
-          child: Text(_result?.selectMethodText ?? 'Другой способ'),
-        ),
+        // `@id/back` и `@id/next` из `view_vertical_result_controls`.
+        _resultControls(),
       ],
+    );
+  }
+
+  /// Нижняя панель результата — `view_vertical_result_controls.xml`.
+  ///
+  /// `@id/controls`: `padding=8dip`, `layout_marginStart/End=24dip`,
+  /// `layout_marginBottom=32dip`, `gravity=center_horizontal`.
+  /// `@id/back`: 48×48dip, `padding=8dip`, белый скруглённый фон
+  /// (`ripple_rounded_corners_white_24`, радиус 24dip), `elevation=4dip`,
+  /// иконка `back_step`. `@id/next` — `PhotoMathButton` (`explain_steps`).
+  Widget _resultControls() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: 'Назад',
+            style: IconButton.styleFrom(
+              backgroundColor: PhColor.white,
+              elevation: 4,
+              padding: const EdgeInsets.all(8),
+              fixedSize: const Size(48, 48),
+            ),
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => setState(() {
+              _result = null;
+              _methods = const [];
+            }),
+          ),
+          const Spacer(),
+          PhButton(
+            label: _busy ? 'Решаем…' : PhString.explainSteps,
+            onPressed: _busy ? null : _solve,
+            busy: _busy,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Переключатель способов решения — строка «Альтернативная форма».
+  Widget _methodSwitcher() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        PhSize.accentBarWidth + PhGap.stepSide,
+        PhGap.blockTop,
+        PhGap.stepSide,
+        0,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              PhString.alternateForm,
+              style: const TextStyle(fontSize: 14, color: PhColor.red),
+            ),
+          ),
+          Text(
+            '${_methodIndex + 1}/${_methods.length}',
+            style: const TextStyle(fontSize: 14, color: PhColor.grayMedium),
+          ),
+          IconButton(
+            tooltip: 'Другой способ',
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.swap_horiz, size: 20),
+            color: PhColor.red,
+            onPressed: () => setState(
+              () => _methodIndex = (_methodIndex + 1) % _methods.length,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Действия ───────────────────────────────────────────────────────────
+
+  /// Открыть боковую шторку (`@id/navigation_view`).
+  void _openDrawer() {
+    _scaffoldKey.currentState?.openDrawer();
+  }
+
+  /// Боковая шторка — `res/layout/view_main_navigation_drawer.xml` 1 в 1.
+  ///
+  /// Оригинал: `ScrollView` + `ConstraintLayout` (`@id/menu_items`),
+  /// логотип `@id/menu_title` высотой 38dip (`marginTop=20dip`,
+  /// `marginStart=24dip`), пункты меню 18sp с полями `18dip` сверху/снизу
+  /// и `24dip` по бокам, зазор иконка–текст 16dip (`drawablePadding`).
+  /// Профиль (`@id/profile_container`) скрыт (`visibility=gone`) без входа —
+  /// здесь входа нет (решение пользователя, `truth/09-decisions.md`),
+  /// поэтому показан пункт входа. Подписка и баннер вне объёма продукта:
+  /// пункт Plus показывает заглушку, баннера нет.
+  /// «Настройки» и «Копировать результат» — наши пункты (в оригинале
+  /// настройки живут в профиле, а шаринг — в тулбаре результата);
+  /// отмечены тем же стилем, чтобы ряд выглядел цельно.
+  Widget _buildDrawer() {
+    return Drawer(
+      backgroundColor: PhColor.white,
+      // `drawer_width=320dip` (`android:maxWidth` шторки).
+      width: PhSize.drawerWidth,
+      child: SafeArea(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            // `@id/menu_title`: логотип, высота 38dip, отступы 20/24.
+            const Padding(
+              padding: EdgeInsets.only(top: 20, left: 24),
+              child: SizedBox(
+                height: 38,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'mymath',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: PhColor.red,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 25),
+            _drawerItem(
+              icon: Icons.login_outlined,
+              label: PhString.signIn,
+              onTap: () {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Вход вне объёма версии')),
+                );
+              },
+            ),
+            _drawerLanguageItem(),
+            _drawerItem(
+              icon: Icons.help_outline,
+              label: PhString.helpCenter,
+              onTap: () {
+                Navigator.of(context).pop();
+                _openHelp();
+              },
+            ),
+            _drawerItem(
+              icon: Icons.info_outline,
+              label: PhString.about,
+              onTap: () {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('mymath — решатель математики')),
+                );
+              },
+            ),
+            _drawerItem(
+              icon: Icons.workspace_premium_outlined,
+              label: PhString.plus,
+              onTap: () {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Подписка вне объёма версии')),
+                );
+              },
+            ),
+            const Divider(
+              height: 1,
+              indent: 24,
+              endIndent: 24,
+              color: PhColor.separatorGray,
+            ),
+            _drawerItem(
+              icon: Icons.menu_book_outlined,
+              label: PhString.notebook,
+              onTap: () {
+                Navigator.of(context).pop();
+                _openNotebook();
+              },
+            ),
+            _drawerItem(
+              icon: Icons.settings_outlined,
+              label: 'Настройки',
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => SettingsPage(settings: _settings),
+                  ),
+                );
+              },
+            ),
+            _drawerItem(
+              icon: Icons.copy_outlined,
+              label: 'Копировать результат',
+              enabled: _current != null,
+              onTap: () {
+                Navigator.of(context).pop();
+                _copyResult();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Пункт шторки: 18sp, поля 18/24, зазор иконка–текст 16dip.
+  Widget _drawerItem({
+    required IconData icon,
+    required String label,
+    required VoidCallback? onTap,
+    bool enabled = true,
+  }) {
+    return InkWell(
+      onTap: enabled ? onTap : null,
+      child: Padding(
+        padding: const EdgeInsets.only(
+          top: 18,
+          bottom: 18,
+          left: 24,
+          right: 24,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 24,
+              color: enabled ? PhColor.grayDark : PhColor.grayLight,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 18,
+                  color: enabled ? PhColor.grayDark : PhColor.grayLight,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Пункт языка — `@id/menu_item_language`: иконка + подпись 18sp
+  /// и текущее значение 14sp под ней; здесь значение — язык пояснений
+  /// (`ru`/`en`, решение пользователя).
+  Widget _drawerLanguageItem() {
+    return InkWell(
+      onTap: () {
+        setState(() => _locale = _locale == 'ru' ? 'en' : 'ru');
+      },
+      child: Padding(
+        padding: const EdgeInsets.only(
+          top: 18,
+          bottom: 18,
+          left: 24,
+          right: 24,
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.translate, size: 24, color: PhColor.grayDark),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    PhString.language,
+                    style: TextStyle(fontSize: 18, color: PhColor.grayDark),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _locale,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: PhColor.grayMedium,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openNotebook() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            NotebookPage(notebook: _notebook, latexOptions: _latexOptions),
+      ),
+    );
+  }
+
+  /// Справка: возможности приложения и настройки ввода.
+  Future<void> _openHelp() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) => const _HelpSheet(),
     );
   }
 
@@ -714,9 +1182,8 @@ class _SolvePageState extends State<SolvePage> {
       );
     } on SolveFailure catch (err) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(err.message)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(err.message)));
     }
   }
 
@@ -724,10 +1191,8 @@ class _SolvePageState extends State<SolvePage> {
   Future<void> _openIntervalDialog() async {
     final bounds = await showDialog<({String min, String max})>(
       context: context,
-      builder: (context) => _IntervalDialog(
-        min: _intervalMinText,
-        max: _intervalMaxText,
-      ),
+      builder: (context) =>
+          _IntervalDialog(min: _intervalMinText, max: _intervalMaxText),
     );
     if (bounds == null) return;
 
@@ -771,19 +1236,18 @@ class _SolvePageState extends State<SolvePage> {
         : _plainText(result);
     await Clipboard.setData(ClipboardData(text: text));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Скопировано')),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Скопировано')));
   }
 
   /// Текст решения без формул: шаги и пояснения (для копирования).
   String _plainText(SolveResponse result) {
     final buffer = StringBuffer();
-    for (final step in result.steps) {
-      for (final header in step.headers) {
+    for (final group in result.steps) {
+      for (final header in group.headers) {
         buffer.writeln(header);
       }
-      for (final substep in step.substeps) {
+      for (final substep in group.substeps) {
         final left = substep.left == null
             ? ''
             : nodeToLatex(substep.left!, _latexOptions);
@@ -806,9 +1270,8 @@ class _SolvePageState extends State<SolvePage> {
     if (latex.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: latex));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Скопировано')),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Скопировано')));
   }
 
   /// Нажатие на ссылку в тексте шага.
@@ -827,9 +1290,19 @@ class _SolvePageState extends State<SolvePage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(link.label, style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                link.label,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: PhColor.grayDark,
+                ),
+              ),
               const SizedBox(height: 12),
-              Text(link.definition, style: Theme.of(context).textTheme.bodyLarge),
+              Text(
+                link.definition,
+                style: const TextStyle(fontSize: 16, color: PhColor.grayDark),
+              ),
             ],
           ),
         ),
@@ -841,164 +1314,103 @@ class _SolvePageState extends State<SolvePage> {
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('«${link.label}»: пояснение понятия появится позже')),
+      SnackBar(
+        content: Text('«${link.label}»: пояснение понятия появится позже'),
+      ),
     );
   }
 }
 
-/// Карточка подшага: выражение, стрелка, выражение и пояснение.
+/// Лист справки — замена экрана «Как пользоваться» оригинала.
 ///
-/// Если у подшага есть вложенный результат (`subresult`) — он показывается
-/// раскрываемым блоком «Подробнее»: это углублённое пояснение шага.
-class _SubstepCard extends StatelessWidget {
-  const _SubstepCard({
-    required this.substep,
-    required this.theme,
-    required this.options,
-    required this.onLink,
-    required this.onCopy,
-  });
-
-  final Substep substep;
-  final ThemeData theme;
-  final LatexOptions options;
-  final void Function(ExplanationLink link) onLink;
-  final void Function(String latex) onCopy;
+/// Оригинал (`activity_how_to_use.xml`) — карусель с картинками; здесь тот же
+/// перечень возможностей текстом.
+class _HelpSheet extends StatelessWidget {
+  const _HelpSheet();
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                if (substep.left != null)
-                  Expanded(
-                    child: _Math(latex: nodeToLatex(substep.left!, options)),
-                  ),
-                if (substep.left != null && substep.right != null)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8),
-                    child: Icon(Icons.arrow_forward, size: 18),
-                  ),
-                if (substep.right != null)
-                  Expanded(
-                    child: _Math(latex: nodeToLatex(substep.right!, options)),
-                  ),
-                IconButton(
-                  tooltip: 'Копировать шаг',
-                  visualDensity: VisualDensity.compact,
-                  icon: const Icon(Icons.copy_outlined, size: 18),
-                  onPressed: _copyText,
-                ),
-              ],
-            ),
-            if (substep.text != null && substep.text!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              _ExplanationText(
-                substep: substep,
-                style: theme.textTheme.bodyMedium ?? const TextStyle(),
-                onLink: onLink,
-              ),
-            ],
-            if (substep.detail.isNotEmpty) _detail(context),
-          ],
-        ),
+    const items = <(IconData, String, String)>[
+      (
+        Icons.backspace_outlined,
+        'Клавиатура',
+        'Служебный ряд переключает экраны: abc — буквы, f ∫ <> — расширенная панель. Удержание клавиши открывает варианты: у π — π/2 и π/3, у x — y и z, у √ — ∛ и корень n.',
       ),
-    );
-  }
-
-  /// Строка для копирования: `было → стало`.
-  void _copyText() {
-    final left = substep.left == null ? '' : nodeToLatex(substep.left!, options);
-    final right =
-        substep.right == null ? '' : nodeToLatex(substep.right!, options);
-    final text = [left, right].where((part) => part.isNotEmpty).join(' → ');
-    onCopy(text);
-  }
-
-  /// Раскрываемое углублённое пояснение шага (вложенные подшаги).
-  Widget _detail(BuildContext context) {
-    return Theme(
-      data: theme.copyWith(dividerColor: Colors.transparent),
-      child: ExpansionTile(
-        tilePadding: EdgeInsets.zero,
-        childrenPadding: const EdgeInsets.only(left: 8),
-        title: Text('Подробнее', style: theme.textTheme.labelLarge),
+      (
+        Icons.touch_app_outlined,
+        'Структурный ввод',
+        'Дробь, корень, степень и модуль вставляются шаблонами и поглощают предыдущий операнд. Тап по элементу в поле ставит курсор.',
+      ),
+      (
+        Icons.functions,
+        'Функции',
+        'Введите f(x) = … — определение запомнится и подставится в следующие задачи. Из него же берётся обратная функция.',
+      ),
+      (
+        Icons.show_chart,
+        'График',
+        'Кнопка «График» рисует функцию по точкам и отмечает корни, пересечения с осью y и экстремумы.',
+      ),
+      (
+        Icons.settings_outlined,
+        'Настройки',
+        'Десятичный разделитель, нотация биномиального коэффициента и методы умножения.',
+      ),
+    ];
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+      ),
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
         children: [
-          for (final step in substep.detail) ...[
-            for (final header in step.headers)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Text(header, style: theme.textTheme.labelMedium),
-                ),
+          const Text(
+            'Как пользоваться',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: PhColor.grayDark,
+            ),
+          ),
+          const SizedBox(height: 16),
+          for (final (icon, title, body) in items)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(icon, size: 24, color: PhColor.red),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: PhColor.grayDark,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          body,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: PhColor.grayMedium,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            for (final nested in step.substeps)
-              _SubstepCard(
-                substep: nested,
-                theme: theme,
-                options: options,
-                onLink: onLink,
-                onCopy: onCopy,
-              ),
-          ],
+            ),
         ],
       ),
     );
-  }
-}
-
-/// Текст пояснения со ссылками.
-///
-/// Ссылки приходят как метки (текст уже содержит их), поэтому метки
-/// отыскиваются в строке по порядку следования и становятся нажимаемыми.
-class _ExplanationText extends StatelessWidget {
-  const _ExplanationText({
-    required this.substep,
-    required this.style,
-    required this.onLink,
-  });
-
-  final Substep substep;
-  final TextStyle style;
-  final void Function(ExplanationLink link) onLink;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = substep.text ?? '';
-    final linkStyle = TextStyle(
-      color: Theme.of(context).colorScheme.primary,
-      decoration: TextDecoration.underline,
-    );
-    final spans = <InlineSpan>[];
-    var cursor = 0;
-    for (final link in substep.links) {
-      final index = text.indexOf(link.label, cursor);
-      if (index < 0) continue;
-      if (index > cursor) {
-        spans.add(TextSpan(text: text.substring(cursor, index)));
-      }
-      spans.add(
-        WidgetSpan(
-          alignment: PlaceholderAlignment.middle,
-          child: GestureDetector(
-            onTap: () => onLink(link),
-            child: Text(link.label, style: linkStyle),
-          ),
-        ),
-      );
-      cursor = index + link.label.length;
-    }
-    if (cursor < text.length) {
-      spans.add(TextSpan(text: text.substring(cursor)));
-    }
-    return Text.rich(TextSpan(children: spans), style: style);
   }
 }
 
@@ -1024,7 +1436,7 @@ class _VectorSheetState extends State<_VectorSheet> {
   }
 
   Widget _action(String command, String label, TextEditingController input) {
-    return FilledButton.tonal(
+    return OutlinedButton(
       onPressed: () => widget.onRun(command, input.text),
       child: Text(label),
     );
@@ -1042,9 +1454,13 @@ class _VectorSheetState extends State<_VectorSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
+          const Text(
             'Операции с вектором',
-            style: Theme.of(context).textTheme.titleMedium,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: PhColor.grayDark,
+            ),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -1079,33 +1495,6 @@ class _VectorSheetState extends State<_VectorSheet> {
             child: _action('vector_scale', '× скаляр', _scalar),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Формула с защитой от невалидного LaTeX.///
-/// `flutter_math` падает на кривом вводе; пользовательский ввод не должен
-/// ронять экран, поэтому ошибка показывается как есть.
-class _Math extends StatelessWidget {
-  const _Math({required this.latex});
-
-  final String latex;
-
-  @override
-  Widget build(BuildContext context) {
-    if (latex.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Semantics(
-      label: 'Формула',
-      child: Math.tex(
-        latex,
-        mathStyle: MathStyle.display,
-        onErrorFallback: (error) => Text(
-          latex,
-          style: TextStyle(color: Theme.of(context).colorScheme.error),
-        ),
       ),
     );
   }
@@ -1204,7 +1593,7 @@ class _MatrixSheetState extends State<_MatrixSheet> {
   }
 
   Widget _action(String command, String label, TextEditingController input) {
-    return FilledButton.tonal(
+    return OutlinedButton(
       onPressed: () => widget.onRun(command, input.text),
       child: Text(label),
     );
@@ -1222,9 +1611,13 @@ class _MatrixSheetState extends State<_MatrixSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
+          const Text(
             'Операции с матрицей',
-            style: Theme.of(context).textTheme.titleMedium,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: PhColor.grayDark,
+            ),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -1262,19 +1655,19 @@ class _MatrixSheetState extends State<_MatrixSheet> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              FilledButton.tonal(
+              OutlinedButton(
                 onPressed: () => widget.onRun('matrix_transpose', ''),
                 child: const Text('Транспонировать'),
               ),
-              FilledButton.tonal(
+              OutlinedButton(
                 onPressed: () => widget.onRun('matrix_inverse', ''),
                 child: const Text('Обратная'),
               ),
-              FilledButton.tonal(
+              OutlinedButton(
                 onPressed: () => widget.onRun('matrix_inverse_gauss', ''),
                 child: const Text('Обратная (Гаусс)'),
               ),
-              FilledButton.tonal(
+              OutlinedButton(
                 onPressed: () => widget.onRun('matrix_determinant', ''),
                 child: const Text('Определитель'),
               ),

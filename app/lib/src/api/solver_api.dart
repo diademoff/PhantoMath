@@ -206,7 +206,9 @@ class SolverApi {
           },
         // Определения функций: вызовы f(…) подставляются перед решением.
         if (definitions.isNotEmpty)
-          'definitions': [for (final definition in definitions) _toJson(definition)],
+          'definitions': [
+            for (final definition in definitions) _toJson(definition),
+          ],
       }),
     );
 
@@ -313,10 +315,9 @@ class SolverApi {
       if (item is num) item.toDouble(),
   ];
 
-  Future<bool> isHealthy() async {    try {
-      final response = await _client.get(
-        Uri.parse('$baseUrl/api/v1/health'),
-      );
+  Future<bool> isHealthy() async {
+    try {
+      final response = await _client.get(Uri.parse('$baseUrl/api/v1/health'));
       return response.statusCode == 200;
     } on Object {
       return false;

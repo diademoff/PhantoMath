@@ -76,8 +76,7 @@ class _EditorViewState extends State<EditorView> {
 
   /// Ряд токенов; [steps] — путь до него (пустой у корня).
   Widget _row(ed.ENode row, List<ed.CursorStep> steps) {
-    final cursorHere =
-        listEquals(_cursor.steps, steps) || row.children.isEmpty;
+    final cursorHere = listEquals(_cursor.steps, steps) || row.children.isEmpty;
     if (row.children.isEmpty) {
       // Пустой слот: показываем курсор, если он здесь, иначе — рамку-слот.
       final isFocused = listEquals(_cursor.steps, steps);
@@ -87,9 +86,7 @@ class _EditorViewState extends State<EditorView> {
         onTap: () => _focus(ed.EdCursor(steps: steps, offset: 0)),
         child: SizedBox(
           height: _fs * 0.9,
-          child: isFocused
-              ? _cursorBar()
-              : _emptySlot(),
+          child: isFocused ? _cursorBar() : _emptySlot(),
         ),
       );
     }
@@ -136,10 +133,7 @@ class _EditorViewState extends State<EditorView> {
       behavior: HitTestBehavior.opaque,
       onTap: () => _focus(
         ed.EdCursor(
-          steps: [
-            ...steps,
-            ed.CursorStep(index, node.kind.cursorSlot),
-          ],
+          steps: [...steps, ed.CursorStep(index, node.kind.cursorSlot)],
           offset: 0,
         ),
       ),
@@ -241,9 +235,17 @@ class _EditorViewState extends State<EditorView> {
       case ENodeKind.ln:
         return _function('ln', slots[0]);
       case ENodeKind.log10:
-        return _rowOf([const Text('log'), _sub(const Text('10')), _functionTail(slots[0])]);
+        return _rowOf([
+          const Text('log'),
+          _sub(const Text('10')),
+          _functionTail(slots[0]),
+        ]);
       case ENodeKind.log:
-        return _rowOf([const Text('log'), _sub(slots[1]), _functionTail(slots[0])]);
+        return _rowOf([
+          const Text('log'),
+          _sub(slots[1]),
+          _functionTail(slots[0]),
+        ]);
       case ENodeKind.exp:
         return _rowOf([const Text('e'), _sup(slots[0])]);
       case ENodeKind.floor:
@@ -251,10 +253,7 @@ class _EditorViewState extends State<EditorView> {
       case ENodeKind.sign:
         return _function('sgn', slots[0]);
       case ENodeKind.derivative:
-        return _rowOf([
-          const Text('d/dx'),
-          _functionTail(slots[0]),
-        ]);
+        return _rowOf([const Text('d/dx'), _functionTail(slots[0])]);
       case ENodeKind.integral:
         return _rowOf([const Text('∫'), slots[0], const Text(' dx')]);
       case ENodeKind.integralDefinite:
@@ -350,7 +349,10 @@ class _EditorViewState extends State<EditorView> {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         if (degree != null)
-          Transform.translate(offset: const Offset(2, -4), child: _small(degree)),
+          Transform.translate(
+            offset: const Offset(2, -4),
+            child: _small(degree),
+          ),
         Text('√', style: TextStyle(fontSize: _fs * 1.1, height: 1)),
         Container(
           padding: const EdgeInsets.only(left: 2, top: 2),
@@ -392,7 +394,8 @@ class _EditorViewState extends State<EditorView> {
   }
 
   /// Ограничители: скобки, модуль, пол.
-  Widget _delimited(    String left,
+  Widget _delimited(
+    String left,
     Widget content,
     String right, {
     bool bars = false,
@@ -410,11 +413,8 @@ class _EditorViewState extends State<EditorView> {
       _rowOf([Text(name), _functionTail(argument)]);
 
   /// Обратная функция: имя с верхним индексом −1 и аргумент в скобках.
-  Widget _inverseFunction(String name, Widget argument) => _rowOf([
-    Text(name),
-    _sup(const Text('−1')),
-    _functionTail(argument),
-  ]);
+  Widget _inverseFunction(String name, Widget argument) =>
+      _rowOf([Text(name), _sup(const Text('−1')), _functionTail(argument)]);
 
   /// Отрезок: черта над концами (``AB``).
   Widget _overline(List<Widget> slots) {
@@ -437,11 +437,7 @@ class _EditorViewState extends State<EditorView> {
   /// Хвост функции: `( аргумент )`.
   Widget _functionTail(Widget argument) {
     final style = TextStyle(fontSize: _fs * 1.1, height: 1);
-    return _rowOf([
-      Text('(', style: style),
-      argument,
-      Text(')', style: style),
-    ]);
+    return _rowOf([Text('(', style: style), argument, Text(')', style: style)]);
   }
 
   /// Биномиальный коэффициент.
@@ -483,10 +479,8 @@ class _EditorViewState extends State<EditorView> {
   Widget _cursorBar() =>
       _BlinkingCursor(key: const ValueKey('cursor'), height: _fs * 1.15);
 
-  InlineSpan _cursorSpan() => WidgetSpan(
-    alignment: PlaceholderAlignment.middle,
-    child: _cursorBar(),
-  );
+  InlineSpan _cursorSpan() =>
+      WidgetSpan(alignment: PlaceholderAlignment.middle, child: _cursorBar());
 
   /// Рамка пустого слота.
   Widget _emptySlot() {
@@ -586,9 +580,7 @@ class _BlinkingCursorState extends State<_BlinkingCursor>
   @override
   Widget build(BuildContext context) {
     return FadeTransition(
-      opacity: _controller.drive(
-        Tween<double>(begin: 0.15, end: 1),
-      ),
+      opacity: _controller.drive(Tween<double>(begin: 0.15, end: 1)),
       child: Container(
         width: 2,
         height: widget.height,

@@ -38,7 +38,9 @@ class NotebookPage extends StatelessWidget {
         builder: (context, _) {
           final entries = notebook.entries;
           if (entries.isEmpty) {
-            return const Center(child: Text('Пусто: решённые задачи появятся здесь'));
+            return const Center(
+              child: Text('Пусто: решённые задачи появятся здесь'),
+            );
           }
           return ListView.builder(
             padding: const EdgeInsets.all(12),
@@ -119,15 +121,16 @@ class _Metadata extends StatelessWidget {
       runSpacing: 4,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        for (final chip in chips)
-          Text(chip, style: theme.textTheme.labelSmall),
+        for (final chip in chips) Text(chip, style: theme.textTheme.labelSmall),
       ],
     );
   }
 
   String _time(DateTime value) {
     final local = value.toLocal().toIso8601String();
-    return local.length >= 16 ? local.substring(0, 16).replaceAll('T', ' ') : local;
+    return local.length >= 16
+        ? local.substring(0, 16).replaceAll('T', ' ')
+        : local;
   }
 }
 
