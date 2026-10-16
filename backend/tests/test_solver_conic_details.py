@@ -67,6 +67,34 @@ class TestConicDetails:
         assert center_step.right is not None and center_step.right.type is T.LIST
         assert [child.value for child in center_step.right.children] == ["1", "-2"]
 
-    def test_rotated_unsupported(self) -> None:
-        with pytest.raises(SolveError, match="xy"):
-            run("{=({x^2+xy+y^2},{1})}")
+    def test_rotated_ellipse_is_solved(self) -> None:
+        # Член xy больше не отказ: поворот осей даёт канонический вид и точки.
+        keys, solution = run("{=({x^2+xy+y^2},{1})}")
+        assert "conics_identify_std_form" in keys
+        assert "conics_since_ellipse" in keys
+        assert "graph_rt_info_foci" in keys
+        assert solution.type is T.EQUALS
+
+
+class TestRotated:
+    """Повёрнутые коники (член ``xy``): поворот осей вместо отказа."""
+
+    def test_rotated_ellipse_steps(self) -> None:
+        keys, solution = run("{=({x^2+xy+y^2},{1})}")
+        assert "conics_identify_std_form" in keys
+        assert "conics_since_ellipse" in keys
+        assert solution.type is T.EQUALS
+
+    def test_rotated_hyperbola_has_asymptotes(self) -> None:
+        keys, _ = run("{=({x^2+3xy-y^2},{1})}")
+        assert "graph_rt_info_asymptotes" in keys
+        assert "conics_since_hyperbola" in keys
+
+    def test_rotated_parabola_has_directrix(self) -> None:
+        keys, _ = run("{=({x^2+2xy+y^2+x},{0})}")
+        assert "conics_since_parabola" in keys
+        assert "graph_rt_info_directrix" in keys
+
+    def test_imaginary_ellipse_rejected(self) -> None:
+        with pytest.raises(SolveError, match="действительных точек"):
+            run("{=({x^2+xy+y^2},{-1})}")
