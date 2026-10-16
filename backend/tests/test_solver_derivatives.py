@@ -229,3 +229,13 @@ class TestRegistration:
             T.PRIME,
             T.DERIVATION2_PRIME,
         } <= registered_types()
+
+
+class TestRealFallback:
+    """Sympy-откат дифференцирует по вещественной переменной."""
+
+    def test_abs_derivative_is_sign(self) -> None:
+        vertical = solve(parse_protocol("{derivation_prime({abs({x})})}")).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        assert vertical.solution.type is T.SIGN
+        assert vertical.solution.children[0].value == "x"

@@ -439,9 +439,17 @@ def nth_derivative(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> C
 
 
 def _sympy_derivative(expression: CoreNode, ctx: SolveContext) -> CoreNode:
-    """Производная через sympy — на случай, если таблица правил не покрывает."""
+    """Производная через sympy — на случай, если таблица правил не покрывает.
+
+    Переменная объявляется вещественной: без этого sympy раскладывает
+    ``|x|`` через ``re``/``im`` и ``Derivative`` и результат не переводится
+    в узлы. С вещественным символом ``d|x|/dx`` даёт ``sign(x)``.
+    """
     var = ctx.variables[0] if ctx.variables else "x"
-    computed = sympy.simplify(sympy.diff(to_sympy(expression), sympy.Symbol(var)))
+    symbol = sympy.Symbol(var, real=True)
+    computed = sympy.simplify(
+        sympy.diff(to_sympy(expression).subs(sympy.Symbol(var), symbol), symbol)
+    )
     try:
         return from_sympy(computed)
     except SolveError as err:

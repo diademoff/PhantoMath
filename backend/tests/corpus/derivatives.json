@@ -293,11 +293,19 @@
       "solution": {
         "type": "MULTIPLY_IMPLICIT",
         "children": [
-          {"type": "CONSTANT", "value": "2"},
-          {"type": "VARIABLE", "value": "x"}
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          },
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          }
         ]
       },
-      "steps": ["find_derivative"]
+      "steps": [
+        "find_derivative"
+      ]
     },
     {
       "id": "second-prime-notation",
@@ -306,11 +314,37 @@
       "solution": {
         "type": "MULTIPLY_IMPLICIT",
         "children": [
-          {"type": "CONSTANT", "value": "6"},
-          {"type": "VARIABLE", "value": "x"}
+          {
+            "type": "CONSTANT",
+            "value": "6"
+          },
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          }
         ]
       },
-      "steps": ["derive_higher_order", "second_derivative"]
+      "steps": [
+        "derive_higher_order",
+        "second_derivative"
+      ]
+    },
+    {
+      "id": "abs-derivative",
+      "title": "d/dx |x| — знак",
+      "input": "{derivation_prime({abs({x})})}",
+      "solution": {
+        "type": "SIGN",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          }
+        ]
+      },
+      "steps": [
+        "find_derivative"
+      ]
     }
   ]
 }
