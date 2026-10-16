@@ -104,6 +104,25 @@ class TestSolve:
         status, _ = post(port, "/api/v1/solve", {"node": {"type": "НЕТ"}})
         assert status == 422
 
+    def test_unexpected_exception_is_500_not_dropped(
+        self, port: int, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Неожиданное исключение — 500 с текстом, а не обрыв соединения.
+
+        Раньше исключение вне ``SolveError``/``ValueError``/``ProtocolError``
+        уносило поток обработки: ответ не уходил вовсе, и клиент получал
+        ``ClientException`` вместо ошибки — показать пользователю было нечего.
+        """
+
+        def boom(*args: object, **kwargs: object) -> None:
+            raise RuntimeError("внутренняя поломка")
+
+        monkeypatch.setattr(device.service, "solve_request", boom)
+        status, body = post(port, "/api/v1/solve", {"node": num("1")})
+        assert status == 500
+        assert body["detail"]["message"] == "внутренняя ошибка решателя"
+        assert body["detail"]["kind"] == "RuntimeError"
+
 
 class TestParseAndGraph:
     def test_parse(self, port: int) -> None:

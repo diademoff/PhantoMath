@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import json
 import os
+import sys
+import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
@@ -88,10 +90,31 @@ class _Handler(BaseHTTPRequestHandler):
         except SolveError as err:
             self._send(422, {"detail": {"message": str(err), "explanation": err.explanation_key}})
             return
+        except Exception as err:  # последний рубеж
+            # Неожиданное исключение раньше убивало поток обработки: ответ не
+            # уходил вовсе, клиент получал обрыв соединения и не мог показать
+            # пользователю ничего осмысленного. Теперь это 500 с текстом, а
+            # трассировка остаётся в логе приложения.
+            self._log_exception()
+            self._send(
+                500,
+                {
+                    "detail": {
+                        "message": "внутренняя ошибка решателя",
+                        "kind": type(err).__name__,
+                    }
+                },
+            )
+            return
         if result is None:
             self._send(404, {"detail": "not found"})
             return
         self._send(200, result)
+
+    def _log_exception(self) -> None:
+        """Напечатать трассировку: на устройстве stdout уходит в лог."""
+        print("необработанное исключение в запросе:", file=sys.stderr, flush=True)
+        traceback.print_exc(file=sys.stderr)
 
     def _dispatch(self, payload: dict[str, Any]) -> dict[str, Any] | None:
         """Маршрутизация POST по пути."""
