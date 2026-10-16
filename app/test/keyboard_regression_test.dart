@@ -4,22 +4,27 @@ import 'package:mymath_app/main.dart';
 import 'package:mymath_app/src/api/solver_api.dart';
 import 'package:mymath_app/src/editor/editor_view.dart';
 import 'package:mymath_app/src/model/core_node.dart';
+import 'package:mymath_app/src/theme/phanto_theme.dart';
 
 void main() {
   testWidgets('variants reopen while entering successive system lines', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(1080, 2280);
-    tester.view.devicePixelRatio = 3;
+    tester.view.physicalSize = const Size(1080, 2340);
+    tester.view.devicePixelRatio = 2.625;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
       MaterialApp(
+        theme: PhantoTheme.dark(),
         home: SolvePage(api: SolverApi(baseUrl: 'http://test')),
       ),
     );
     Future<void> key(String code) async {
-      await tester.tap(find.byKey(ValueKey('key:$code')));
+      final finder = find.byKey(ValueKey('key:$code'));
+      await tester.ensureVisible(finder);
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(finder);
       await tester.pump();
     }
 
@@ -45,6 +50,7 @@ void main() {
         .widget<EditorView>(find.byType(EditorView))
         .controller;
     expect(editor.toCoreNode().type, CoreNodeType.system);
+    expect(editor.document.children.where((n) => n.value == 'x'), hasLength(2));
     expect(tester.takeException(), isNull);
   });
 }

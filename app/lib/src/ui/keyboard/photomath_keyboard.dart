@@ -26,6 +26,7 @@ class PhotomathKeyboard extends StatefulWidget {
 
 class _PhotomathKeyboardState extends State<PhotomathKeyboard> {
   PhSheet _sheet = PhSheet.primary;
+  final Map<String, int> _interactionEpoch = {};
   EditorController get _editor => widget.controller;
 
   void _apply(PhKey key) {
@@ -131,7 +132,14 @@ class _PhotomathKeyboardState extends State<PhotomathKeyboard> {
         ),
       ),
     );
-    if (selected != null && mounted) _apply(selected);
+    if (!mounted) return;
+    // A modal takes the active long-press pointer away from InkResponse. Reset
+    // that key's interaction state, not the editor, layout or scroll position.
+    setState(
+      () =>
+          _interactionEpoch[key.code] = (_interactionEpoch[key.code] ?? 0) + 1,
+    );
+    if (selected != null) _apply(selected);
   }
 
   Future<void> _catalog() async {
@@ -322,6 +330,9 @@ class _PhotomathKeyboardState extends State<PhotomathKeyboard> {
                         child: Opacity(
                           opacity: enabled ? 1 : .35,
                           child: Material(
+                            key: ValueKey(
+                              '${key.code}:${_interactionEpoch[key.code] ?? 0}',
+                            ),
                             color: key.type == PhKeyType.digit
                                 ? colors.surface
                                 : colors.surfaceContainerHighest,
