@@ -54,18 +54,28 @@ def vector_length(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> Co
     return _record(node, from_sympy(sympy.sqrt(vector.dot(vector))), ctx)
 
 
+def _require_same_shape(first: sympy.Matrix, second: sympy.Matrix) -> None:
+    """Размерности операндов совпадают, иначе операция не определена."""
+    if first.shape != second.shape:
+        raise SolveError("векторы должны быть одной размерности")
+
+
 def vector_add(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Сложение векторов."""
     if not args:
         raise SolveError("для сложения нужен второй вектор")
-    return _record(node, _vector_node(_components(node) + _components(args[0])), ctx)
+    first, second = _components(node), _components(args[0])
+    _require_same_shape(first, second)
+    return _record(node, _vector_node(first + second), ctx)
 
 
 def vector_subtract(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Вычитание векторов."""
     if not args:
         raise SolveError("для вычитания нужен второй вектор")
-    return _record(node, _vector_node(_components(node) - _components(args[0])), ctx)
+    first, second = _components(node), _components(args[0])
+    _require_same_shape(first, second)
+    return _record(node, _vector_node(first - second), ctx)
 
 
 def vector_scale(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
@@ -80,7 +90,9 @@ def vector_dot(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreN
     """Скалярное произведение."""
     if not args:
         raise SolveError("для скалярного произведения нужен второй вектор")
-    product = _components(node).dot(_components(args[0]))
+    first, second = _components(node), _components(args[0])
+    _require_same_shape(first, second)
+    product = first.dot(second)
     return _record(node, from_sympy(sympy.simplify(product)), ctx)
 
 

@@ -91,6 +91,16 @@ class TestUnsupported:
                 args=[vector(c("3"), c("4"))],
             )
 
+    @pytest.mark.parametrize("command", ["vector_add", "vector_subtract", "vector_dot"])
+    def test_mismatched_dimensions(self, command: str) -> None:
+        """Векторы разной длины — понятный SolveError, а не ShapeError."""
+        with pytest.raises(SolveError, match="одной размерности"):
+            solve(
+                vector(c("1"), c("2")),
+                command=command,
+                args=[vector(c("1"), c("2"), c("3"))],
+            )
+
 
 class TestExplanationKeys:
     def test_key_exists(self) -> None:
