@@ -489,31 +489,40 @@ class _SolvePageState extends State<SolvePage> {
             Positioned.fill(
               child: _showResult ? _buildResult() : _buildEditor(),
             ),
-            // `@id/menu_icon` — шторка навигации, слева сверху:
-            // `padding=12dip`, `marginTop=20dip`, `marginStart=4dip`.
-            Positioned(top: 20, left: 4, child: _menuButton()),
-            // `@id/notebook_icon` и `@id/help_icon` — справа сверху:
-            // `padding=14dip`, `marginTop=18dip` (у помощи дополнительно
+            // Плавающие иконки принадлежат экрану ввода (`activity_main.xml`):
+            // `@id/menu_icon` — шторка навигации, слева сверху
+            // (`padding=12dip`, `marginTop=20dip`, `marginStart=4dip`);
+            // `@id/notebook_icon` и `@id/help_icon` — справа сверху
+            // (`padding=14dip`, `marginTop=18dip`, у помощи дополнительно
             // `marginEnd=8dip`, у блокнота `marginEnd=4dip` слева от помощи).
-            Positioned(
-              top: 18,
-              right: 4,
-              child: Row(
-                children: [
-                  _topIcon(
-                    tooltip: PhString.notebook,
-                    icon: Icons.menu_book_outlined,
-                    onPressed: _openNotebook,
-                  ),
-                  const SizedBox(width: 4),
-                  _topIcon(
-                    tooltip: 'Справка',
-                    icon: Icons.help_outline,
-                    onPressed: _openHelp,
-                  ),
-                ],
+            //
+            // На экране результата их нет: у него своя панель
+            // (`activity_vertical_result.xml`), и в её `@id/toolbar` нет
+            // навигационной иконки (`contentInsetStartWithNavigation=0dip`),
+            // а `@id/share_button` и `@id/toolbar_ribbon` — `visibility=gone`.
+            // Возврат оттуда — нижняя `@id/back`.
+            if (!_showResult) ...[
+              Positioned(top: 20, left: 4, child: _menuButton()),
+              Positioned(
+                top: 18,
+                right: 4,
+                child: Row(
+                  children: [
+                    _topIcon(
+                      tooltip: PhString.notebook,
+                      icon: Icons.menu_book_outlined,
+                      onPressed: _openNotebook,
+                    ),
+                    const SizedBox(width: 4),
+                    _topIcon(
+                      tooltip: 'Справка',
+                      icon: Icons.help_outline,
+                      onPressed: _openHelp,
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),
@@ -799,7 +808,8 @@ class _SolvePageState extends State<SolvePage> {
   /// свёрнутый — 16sp по центру (`ToolbarTitleTextCollapsed`,
   /// `collapsedTitleGravity=center_horizontal`), фон свёртки
   /// `toolbarColor` (`#F8F8F8`), прокрутка `scroll|exitUntilCollapsed|snap`.
-  /// Здесь тот же эффект даёт `NestedScrollView` + `SliverAppBar`.
+  /// Здесь тот же эффект даёт `NestedScrollView` + `SliverAppBar`, а оба вида
+  /// заголовка перекрещиваются в `_CollapsingToolbarTitle`.
   Widget _buildResult() {
     final result = _current;
     if (result == null) return const SizedBox.shrink();
@@ -814,27 +824,17 @@ class _SolvePageState extends State<SolvePage> {
                 collapsedHeight: kToolbarHeight,
                 backgroundColor: PhColor.toolbar,
                 surfaceTintColor: Colors.transparent,
-                centerTitle: true,
-                title: const Text(
-                  PhString.stepsTitle,
-                  style: TextStyle(
-                    // `ToolbarTitleTextCollapsed`: 16sp, основной цвет.
-                    fontSize: 16,
-                    color: PhColor.grayDark,
-                  ),
-                ),
-                flexibleSpace: const FlexibleSpaceBar(
-                  titlePadding: EdgeInsets.only(left: 16, bottom: 22),
-                  title: Text(
-                    PhString.stepsTitle,
-                    style: TextStyle(
-                      // `ToolbarTitleTextExpanded`: 34sp, жирный, чёрный.
-                      fontSize: 34,
-                      fontWeight: FontWeight.bold,
-                      color: PhColor.black,
-                    ),
-                  ),
-                ),
+                // В `@id/toolbar` оригинала нет навигационной иконки
+                // (`contentInsetStartWithNavigation=0dip`), а шторка живёт
+                // на экране ввода. Иначе `Scaffold` подставит сюда
+                // гамбургер поверх заголовка.
+                automaticallyImplyLeading: false,
+                // Заголовок живёт только в `flexibleSpace`: свой `title`
+                // у `SliverAppBar` даёт второй, неубираемый заголовок.
+                // При `pinned: true` Flutter считает `toolbarOpacity`
+                // равным 1 (`app_bar.dart`), поэтому `FlexibleSpaceBar.title`
+                // не гаснет и накладывается на `title`.
+                flexibleSpace: const _CollapsingToolbarTitle(),
               ),
             ],
             body: VerticalResult(
@@ -1317,6 +1317,78 @@ class _SolvePageState extends State<SolvePage> {
       SnackBar(
         content: Text('«${link.label}»: пояснение понятия появится позже'),
       ),
+    );
+  }
+}
+
+/// Заголовок сворачивающегося тулбара — `CollapsingToolbarLayout`.
+///
+/// Оба вида заголовка рисуются здесь, а не через `SliverAppBar.title` +
+/// `FlexibleSpaceBar.title`: при `pinned: true` `toolbarOpacity` равен 1
+/// (`app_bar.dart`), поэтому заголовок `FlexibleSpaceBar` не гаснет и
+/// накладывается на заголовок `AppBar` — на экране остаются два текста
+/// друг поверх друга. Здесь крупный вид уступает мелкому перекрёстным
+/// затуханием на второй половине сворачивания, как в оригинале.
+class _CollapsingToolbarTitle extends StatelessWidget {
+  const _CollapsingToolbarTitle();
+
+  /// Высота развёрнутого тулбара — `AppBarLayout` 110dip.
+  static const double _expandedHeight = 110;
+
+  /// Доля сворачивания, на которой виды заголовка сменяют друг друга.
+  static const Interval _crossfade = Interval(0.5, 1.0, curve: Curves.easeIn);
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 0 — тулбар свёрнут, 1 — развёрнут.
+        final double expanded = ((constraints.maxHeight - kToolbarHeight) /
+                (_expandedHeight - kToolbarHeight))
+            .clamp(0.0, 1.0);
+        final double showExpanded = _crossfade.transform(expanded);
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            // `ToolbarTitleTextCollapsed`: 16sp, основной цвет, по центру
+            // строки тулбара (`collapsedTitleGravity=center_horizontal`).
+            Opacity(
+              opacity: 1 - showExpanded,
+              child: const Align(
+                alignment: Alignment.topCenter,
+                child: SizedBox(
+                  height: kToolbarHeight,
+                  child: Center(
+                    child: Text(
+                      PhString.stepsTitle,
+                      style: TextStyle(fontSize: 16, color: PhColor.grayDark),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // `ToolbarTitleTextExpanded`: 34sp, жирный, чёрный, поля
+            // `expandedTitleMarginStart=16dip` и `…Bottom=22dip`.
+            Opacity(
+              opacity: showExpanded,
+              child: const Align(
+                alignment: Alignment.bottomLeft,
+                child: Padding(
+                  padding: EdgeInsets.only(left: 16, bottom: 22),
+                  child: Text(
+                    PhString.stepsTitle,
+                    style: TextStyle(
+                      fontSize: 34,
+                      fontWeight: FontWeight.bold,
+                      color: PhColor.black,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

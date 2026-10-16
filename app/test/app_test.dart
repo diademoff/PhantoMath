@@ -439,7 +439,13 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    // Блокнот открывается иконкой в правом верхнем углу.
+    // На экране результата своих иконок нет (`activity_vertical_result.xml`:
+    // `@id/toolbar` без навигационной иконки), назад — нижняя `@id/back`.
+    await tester.tap(find.byTooltip('Назад'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Блокнот открывается иконкой в правом верхнем углу экрана ввода.
     await tester.tap(find.byIcon(Icons.menu_book_outlined));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
