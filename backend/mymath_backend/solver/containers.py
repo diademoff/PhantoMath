@@ -75,6 +75,7 @@ def solve_add_subtract(node: CoreNode, ctx: SolveContext) -> CoreNode:
 
 
 __all__ = [
+    "solve_add_subtract",
     "solve_container",
     "solve_notation",
 ]
