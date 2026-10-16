@@ -166,9 +166,8 @@ class MyMathApp extends StatelessWidget {
     // `statusBarColor` оригинала — `#73000000` полупрозрачный чёрный.
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
-        statusBarColor: PhColor.statusBar,
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: Colors.transparent,
       ),
       child: MaterialApp(
         title: 'PhantoMath',
@@ -213,6 +212,7 @@ class _SolvePageState extends State<SolvePage> {
   int _methodIndex = 0;
   String? _error;
   bool _busy = false;
+  bool _expandSteps = false;
   int _requestGeneration = 0;
   Object? _lastDocument;
 
@@ -685,10 +685,9 @@ class _SolvePageState extends State<SolvePage> {
               ),
               labelStyle: const TextStyle(
                 fontSize: 12,
-                color: PhColor.grayDark,
               ),
-              backgroundColor: PhColor.surface,
-              side: const BorderSide(color: PhColor.separatorGray),
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              side: BorderSide(color: Theme.of(context).colorScheme.outline),
               onDeleted: () => _functions.remove(definition.name),
               deleteIcon: const Icon(Icons.close, size: 16),
             ),
@@ -823,7 +822,7 @@ class _SolvePageState extends State<SolvePage> {
                 pinned: true,
                 expandedHeight: 110,
                 collapsedHeight: kToolbarHeight,
-                backgroundColor: PhColor.toolbar,
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                 surfaceTintColor: Colors.transparent,
                 // В `@id/toolbar` оригинала нет навигационной иконки
                 // (`contentInsetStartWithNavigation=0dip`), а шторка живёт
@@ -840,6 +839,7 @@ class _SolvePageState extends State<SolvePage> {
             ],
             body: VerticalResult(
               result: result,
+              expandAll: _expandSteps,
               latexOptions: _latexOptions,
               onLink: _onLink,
               onCopy: _copyFormula,
@@ -868,23 +868,19 @@ class _SolvePageState extends State<SolvePage> {
           IconButton(
             tooltip: 'Назад',
             style: IconButton.styleFrom(
-              backgroundColor: PhColor.white,
+               backgroundColor: Theme.of(context).colorScheme.surface,
               elevation: 4,
               padding: const EdgeInsets.all(8),
               fixedSize: const Size(48, 48),
             ),
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => setState(() {
-              _result = null;
-              _methods = const [];
-            }),
+             onPressed: _backToInput,
           ),
-          const Spacer(),
-          PhButton(
-            label: _busy ? 'Решаем…' : PhString.explainSteps,
-            onPressed: _busy ? null : _solve,
-            busy: _busy,
-          ),
+          const SizedBox(width: 12),
+          Expanded(child: PhButton(
+             label: _expandSteps ? 'Свернуть этапы' : PhString.explainSteps,
+             onPressed: () => setState(() => _expandSteps = !_expandSteps),
+          )),
         ],
       ),
     );
@@ -904,18 +900,18 @@ class _SolvePageState extends State<SolvePage> {
           Expanded(
             child: Text(
               PhString.alternateForm,
-              style: const TextStyle(fontSize: 14, color: PhColor.red),
+              style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.primary),
             ),
           ),
           Text(
             '${_methodIndex + 1}/${_methods.length}',
-            style: const TextStyle(fontSize: 14, color: PhColor.grayMedium),
+            style: Theme.of(context).textTheme.bodySmall,
           ),
           IconButton(
             tooltip: 'Другой способ',
             visualDensity: VisualDensity.compact,
             icon: const Icon(Icons.swap_horiz, size: 20),
-            color: PhColor.red,
+            color: Theme.of(context).colorScheme.primary,
             onPressed: () => setState(
               () => _methodIndex = (_methodIndex + 1) % _methods.length,
             ),
@@ -995,7 +991,6 @@ class _SolvePageState extends State<SolvePage> {
               height: 1,
               indent: 24,
               endIndent: 24,
-              color: PhColor.separatorGray,
             ),
             _drawerItem(
               icon: Icons.menu_book_outlined,
@@ -1088,7 +1083,7 @@ class _SolvePageState extends State<SolvePage> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.translate, size: 24, color: PhColor.grayDark),
+            const Icon(Icons.translate, size: 24),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -1096,14 +1091,13 @@ class _SolvePageState extends State<SolvePage> {
                 children: [
                   const Text(
                     PhString.language,
-                    style: TextStyle(fontSize: 18, color: PhColor.grayDark),
+                    style: TextStyle(fontSize: 18),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     _locale,
                     style: const TextStyle(
                       fontSize: 14,
-                      color: PhColor.grayMedium,
                     ),
                   ),
                 ],
@@ -1275,13 +1269,12 @@ class _SolvePageState extends State<SolvePage> {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: PhColor.grayDark,
               ),
             ),
             const SizedBox(height: 12),
             Text(
               link.definition,
-              style: const TextStyle(fontSize: 16, color: PhColor.grayDark),
+              style: const TextStyle(fontSize: 16),
             ),
           ],
         ),
@@ -1330,7 +1323,7 @@ class _CollapsingToolbarTitle extends StatelessWidget {
                   child: Center(
                     child: Text(
                       PhString.stepsTitle,
-                      style: TextStyle(fontSize: 16, color: PhColor.grayDark),
+                      style: TextStyle(fontSize: 16),
                     ),
                   ),
                 ),
@@ -1349,7 +1342,6 @@ class _CollapsingToolbarTitle extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 34,
                       fontWeight: FontWeight.bold,
-                      color: PhColor.black,
                     ),
                   ),
                 ),
@@ -1411,7 +1403,6 @@ class _HelpSheet extends StatelessWidget {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: PhColor.grayDark,
             ),
           ),
           const SizedBox(height: 16),
@@ -1421,7 +1412,7 @@ class _HelpSheet extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(icon, size: 24, color: PhColor.red),
+                  Icon(icon, size: 24, color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
@@ -1431,7 +1422,6 @@ class _HelpSheet extends StatelessWidget {
                           title,
                           style: const TextStyle(
                             fontSize: 16,
-                            color: PhColor.grayDark,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -1439,7 +1429,6 @@ class _HelpSheet extends StatelessWidget {
                           body,
                           style: const TextStyle(
                             fontSize: 14,
-                            color: PhColor.grayMedium,
                             height: 1.35,
                           ),
                         ),
@@ -1500,7 +1489,6 @@ class _VectorSheetState extends State<_VectorSheet> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: PhColor.grayDark,
             ),
           ),
           const SizedBox(height: 12),
@@ -1657,7 +1645,6 @@ class _MatrixSheetState extends State<_MatrixSheet> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: PhColor.grayDark,
             ),
           ),
           const SizedBox(height: 12),
