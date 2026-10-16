@@ -129,8 +129,17 @@ class TestUnsupported:
         assert roots_of("{=({x^3},{1})}") == ["1"]
 
     def test_two_variables(self) -> None:
-        with pytest.raises(SolveError, match="одно неизвестное"):
-            solve(parse_protocol("{=({x+y},{1})}"))
+        # Больше одной буквы: параметрическое решение относительно x, альтернатива -- y.
+        group = _group("{=({x+y},{1})}")
+        assert group.select_method_text is not None
+        assert group.select_method_text.type == "select_method"
+        assert len(group.entries) == 2
+        assert _method_keys(group.entries[0]) == ["eq_param_write", "eq_linear_param_j_final"]
+        assert _method_keys(group.entries[1]) == ["eq_param_write", "eq_linear_param_j_final"]
+        solution = CoreSolverVerticalResult.from_contract(group.entries[0].result).solution
+        assert solution is not None and solution.type is T.EQUALS
+        assert solution.children[0].value == "x"
+        assert solution.children[1].type is T.SUBTRACT
 
     def test_rational_equation_is_solved(self) -> None:
         # 1/x = 2 -> x = 1/2; рациональные уравнения поддержаны (A1).

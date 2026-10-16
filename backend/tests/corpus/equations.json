@@ -289,6 +289,85 @@
       "steps": [
         "eq_linar_divide_both_sides"
       ]
+    },
+    {
+      "id": "two-radicals",
+      "title": "√x + √(x+1) = 2 — два возведения в квадрат",
+      "input": "{=({root2({x})+root2({x+1})},{2})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "9/16"
+          }
+        ]
+      },
+      "steps": [
+        "rel_restrictions_find",
+        "rel_restrictions_root_base_neg",
+        "rel_restrictions_root_base_neg",
+        "eq_irrational_simple_square",
+        "eq_irrational_simple_square",
+        "move",
+        "eq_linar_divide_both_sides"
+      ]
+    },
+    {
+      "id": "degree-nine",
+      "title": "x⁹ = 1 — степень выше потолка прошлых версий",
+      "input": "{=({x^9},{1})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "1"
+          }
+        ]
+      },
+      "steps": [
+        "solve_by_factoring"
+      ]
+    },
+    {
+      "id": "parametric-linear",
+      "title": "x + y = 1 — относительно x, y параметр",
+      "input": "{=({x+y},{1})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "SUBTRACT",
+            "children": [
+              {
+                "type": "CONSTANT",
+                "value": "1"
+              },
+              {
+                "type": "VARIABLE",
+                "value": "y"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "eq_param_write",
+        "eq_linear_param_j_final"
+      ]
     }
   ]
 }

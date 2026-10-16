@@ -47,8 +47,11 @@ Poly = dict[int, Fraction]
 _HEADER = CoreRichText(type="eq_solve_short")
 """Заголовок шага: «Решите уравнение»."""
 
-_MAX_DEGREE = 8
+_MAX_DEGREE = 16
 """Потолок степени при построении многочлена: защита от роста вычислений."""
+
+_MAX_SQUARINGS = 4
+"""Потолок возведений в квадрат у иррационального уравнения: по одному на радикал."""
 
 _POLY_ZERO: Poly = {}
 
@@ -117,7 +120,9 @@ def poly_of(node: CoreNode, var: str) -> Poly:
     if node.type is T.VARIABLE:
         if node.value == var:
             return {1: Fraction(1)}
-        raise SolveError(f"переменная {node.value!r} не поддерживается: одно неизвестное")
+        raise SolveError(
+            f"переменная {node.value!r} не поддерживается: одно неизвестное", "eq_param"
+        )
     if node.type in (T.ADD,):
         result: Poly = _POLY_ZERO
         for child in node.children:
@@ -362,6 +367,81 @@ def _quad_root(
     return CoreNode(type=T.FRACTION, children=[numerator, _const(denominator)])
 
 
+def _pick_primary(variables: list[str]) -> str:
+    """Неизвестное для параметрического решения: x предпочитается остальным."""
+    return "x" if "x" in variables else variables[0]
+
+
+def _solve_parametric(node: CoreNode, var: str, ctx: SolveContext) -> CoreNode:
+    """Решить уравнение относительно одной буквы, остальные считать параметрами.
+
+    ``a*x + b = 0`` -> ``x = -b/a`` с шагами ``eq_param_write`` и
+    ``eq_linear_param_j_final`` (аргумент -- переменная). Корни берёт sympy;
+    явно комплексные отбрасываются, проверка подстановкой мягкая: выражение
+    с параметром может не упроститься к нулю.
+    """
+    lhs, rhs = node.children
+    symbol = sympy.Symbol(var)
+    try:
+        expression = to_sympy(lhs) - to_sympy(rhs)
+    except SolveError as error:
+        raise SolveError("уравнение с параметрами не решается") from error
+    try:
+        found = sympy.solve(expression, symbol)
+    except (NotImplementedError, TypeError, ValueError) as error:
+        raise SolveError("уравнение с параметрами не решается") from error
+    if not found:
+        raise SolveError("нет решений относительно переменной", "eq_linear_param_sol_simple")
+
+    roots: list[sympy.Expr] = []
+    for root in found:
+        if root.is_real is False:
+            continue
+        if any(sympy.simplify(root - known) == 0 for known in roots):
+            continue
+        roots.append(root)
+    if not roots:
+        raise SolveError("нет действительных решений относительно переменной")
+    roots.sort(key=_sort_key)
+
+    equations = [
+        CoreNode.node(T.EQUALS, CoreNode.variable(var), from_sympy(root)) for root in roots
+    ]
+    answer = equations[0] if len(equations) == 1 else CoreNode.node(T.LIST, *equations)
+    ctx.result.add(Step(left=node, right=None, key="eq_param_write"), [_HEADER])
+    ctx.result.add(
+        Step(left=node, right=answer, key="eq_linear_param_j_final", args=[CoreNode.variable(var)]),
+        [_HEADER],
+    )
+    return answer
+
+
+def _parametric_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
+    """Способы параметрического решения: основной -- относительно x, дальше -- по буквам.
+
+    ``x + y = 1`` даёт два способа: «относительно x» (``x = 1 - y``) и
+    «относительно y». Букв больше трёх -- берём первые три: переключатель
+    способов не резиновый.
+    """
+    primary = _pick_primary(variables)
+    order = [primary, *[var for var in variables if var != primary][:2]]
+    methods: list[SolveResult] = []
+    last_error: SolveError | None = None
+    for var in order:
+
+        def action(n: CoreNode, c: SolveContext, *, target: str = var) -> CoreNode:
+            return _solve_parametric(n, target, c)
+
+        try:
+            methods.append(_run(node, variables, action))
+        except SolveError as error:
+            last_error = error
+    if not methods:
+        assert last_error is not None
+        raise last_error
+    return methods
+
+
 def _alternative_result(
     node: CoreNode,
     variables: list[str],
@@ -477,13 +557,31 @@ def _has_radical(expression: sympy.Expr) -> bool:
     )
 
 
+def _isolate_and_square(lhs: sympy.Expr, rhs: sympy.Expr) -> tuple[sympy.Expr, sympy.Expr] | None:
+    """Изолировать слагаемое с радикалом и возвести обе части в квадрат.
+
+    Уравнение ``f = g`` приводится к виду ``r = -h``, где ``r`` -- первое
+    слагаемое разности ``f - g`` с радикалом, ``h`` -- остальные слагаемые;
+    затем ``r² = h²``. ``None`` -- слагаемого с радикалом нет.
+    """
+    expr = sympy.expand(lhs - rhs)
+    terms = expr.args if isinstance(expr, sympy.Add) else (expr,)
+    for term in terms:
+        if _has_radical(term):
+            rest = expr - term
+            return sympy.expand(term**2), sympy.expand(rest**2)
+    return None
+
+
 def _solve_radical(node: CoreNode, variables: list[str], ctx: SolveContext) -> CoreNode | None:
     """Решить иррациональное уравнение возведением в квадрат.
 
-    Берётся одно возведение в квадрат (один радикал): уравнение ``f = g``
-    превращается в ``f² = g²``, решается как многочлен, затем посторонние
-    корни отсеиваются подстановкой в исходное ``f - g``. Возвращает ``None``,
-    если радикалов нет или одним возведением их не убрать.
+    Каждое возведение снимает один радикал: уравнение ``f = g`` превращается
+    в ``r² = h²`` и так до многочлена без корней (не более
+    ``_MAX_SQUARINGS`` возведений). Полученное уравнение решается как
+    многочлен, посторонние корни отсеиваются подстановкой в исходное
+    ``f - g``. Возвращает ``None``, если радикалов нет или снять их не
+    удаётся.
     """
     var = variables[0]
     lhs, rhs = node.children
@@ -495,12 +593,24 @@ def _solve_radical(node: CoreNode, variables: list[str], ctx: SolveContext) -> C
         return None
 
     add_restriction_steps(node, variables, ctx, left - right)
-    squared = CoreNode.node(T.EQUALS, from_sympy(left**2), from_sympy(right**2))
-    if _has_radical(to_sympy(squared)):
-        return None  # радикал остался — нужно несколько возведений, не берём
+    current = node
+    pair = (left, right)
+    for _ in range(_MAX_SQUARINGS):
+        if not _has_radical(pair[0] - pair[1]):
+            break
+        isolated = _isolate_and_square(*pair)
+        if isolated is None:
+            break
+        squared = CoreNode.node(T.EQUALS, from_sympy(isolated[0]), from_sympy(isolated[1]))
+        ctx.result.add(
+            Step(left=current, right=squared, key="eq_irrational_simple_square"), [_HEADER]
+        )
+        current, pair = squared, isolated
 
-    ctx.result.add(Step(left=node, right=squared, key="eq_irrational_simple_square"), [_HEADER])
-    answer = solve_equation(squared, ctx)
+    if _has_radical(pair[0] - pair[1]):
+        return None  # радикал остался — нужно больше возведений, чем позволяем
+
+    answer = solve_equation(current, ctx)
     return _verify_roots(answer, left - right, var, ctx)
 
 
@@ -717,6 +827,9 @@ def solve_equation(node: CoreNode, ctx: SolveContext) -> CoreNode:
         len(node.children) == 2,
         "уравнение должно связывать две части",
     )
+    if len(ctx.variables) > 1:
+        # Больше одной буквы: решаем относительно основной, остальные -- параметры.
+        return _solve_parametric(node, _pick_primary(ctx.variables), ctx)
     ctx.require(
         len(ctx.variables) == 1,
         "поддерживается одно неизвестное: системы и параметры идут следующими",
@@ -765,7 +878,13 @@ def solve_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
     Квадратное — формулой и, если корни рациональны, разложением на множители.
     Рациональное — приведением к общему знаменателю и решением числителя.
     """
-    if len(node.children) != 2 or len(variables) != 1:
+    if len(node.children) != 2:
+        raise SolveError("уравнение должно связывать две части")
+    if len(variables) > 1:
+        # Больше одной буквы: каждый способ решает относительно своей;
+        # переключатель selectMethodText позволяет выбрать неизвестное.
+        return _parametric_methods(node, variables)
+    if len(variables) != 1:
         raise SolveError("поддерживается одно неизвестное")
     var = variables[0]
     lhs, rhs = node.children
