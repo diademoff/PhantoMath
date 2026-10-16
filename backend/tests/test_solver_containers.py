@@ -39,3 +39,22 @@ class TestContainers:
 
     def test_geometry_registered(self) -> None:
         assert T.LINE_SEGMENT in registered_types()
+
+
+class TestAddSubtract:
+    def test_numeric_branches(self) -> None:
+        problem = CoreNode.node(T.ADD_SUBTRACT, c("2"), c("3"))
+        vertical = solve(problem).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        assert vertical.solution.type is T.LIST
+        assert [child.value for child in vertical.solution.children] == ["5", "-1"]
+        keys = [
+            sub.description.type for step in vertical.steps for sub in step.substeps
+        ]
+        assert keys == ["add", "sub"]
+
+    def test_symbolic_echo(self) -> None:
+        problem = CoreNode.node(T.ADD_SUBTRACT, CoreNode.variable("x"), c("2"))
+        vertical = solve(problem).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        assert vertical.solution.type is T.ADD_SUBTRACT
