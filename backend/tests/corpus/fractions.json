@@ -28,6 +28,18 @@
       ]
     },
     {
+      "id": "denominator-one",
+      "title": "дробь со знаменателем 1: шаг деления на единицу",
+      "input": "{frac({6},{1})}",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "6"
+      },
+      "steps": [
+        "div_with_one"
+      ]
+    },
+    {
       "id": "mixed-number",
       "title": "смешанное число в неправильную дробь",
       "input": "{mfrac({2},{1},{3})}",

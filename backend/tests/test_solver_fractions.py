@@ -66,6 +66,18 @@ class TestFractions:
     def test_already_reduced_has_no_step(self) -> None:
         assert step_keys(frac(CoreNode.constant("1"), CoreNode.constant("3"))) == []
 
+    def test_denominator_one_gets_step(self) -> None:
+        """`frac(6,1)` — то же деление на единицу, что и `6 ÷ 1`.
+
+        Без шага экран «Шаги по решению» оставался пустым, хотя запись
+        менялась (`frac(6,1)` → `6`), и одинаковые на вид `6/1` и `6 ÷ 1`
+        давали разное число шагов.
+        """
+        node = frac(CoreNode.constant("6"), CoreNode.constant("1"))
+        assert step_keys(node) == ["div_with_one"]
+        assert args_of(node) == [["1"]]
+        assert value_of(node) == "6"
+
     def test_reduction_uses_gcd_step(self) -> None:
         keys = step_keys(frac(C4, CoreNode.constant("8")))
         assert keys == ["frac_reduce_reduce", "frac_reduce_out"]

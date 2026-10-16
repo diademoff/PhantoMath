@@ -7,7 +7,8 @@
   дальше с ним работает арифметика, поэтому ``1/3 + 1/6`` складывается;
 * переводит смешанное число в неправильную дробь (``2 1/3`` -> ``7/3``).
 
-Ключи шагов: ``frac_reduce_out`` (ARG1 -- общий делитель) и
+Ключи шагов: ``frac_reduce_out`` (ARG1 -- общий делитель),
+``div_with_one`` (ARG1 -- знаменатель, если он равен единице) и
 ``convert_mixed_number``. Алгебраические дроби (с неизвестным) -- следующий
 модуль, здесь они отклоняются.
 """
@@ -71,6 +72,18 @@ def _solve_fraction(node: CoreNode, ctx: SolveContext) -> CoreNode:
                 right=result,
                 key="frac_reduce_out",
                 args=[CoreNode.constant(str(common))],
+            )
+        )
+    elif denominator == 1:
+        # Дробь со знаменателем 1 — то же деление на единицу, что и `6 ÷ 1`
+        # (`div_with_one` в арифметике). Без шага экран «Шаги по решению»
+        # оставался пустым, хотя запись менялась: `frac(6,1)` → `6`.
+        ctx.result.add(
+            Step(
+                left=node,
+                right=result,
+                key="div_with_one",
+                args=[node.children[1]],
             )
         )
     return result
