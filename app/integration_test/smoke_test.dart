@@ -15,16 +15,58 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mymath_app/main.dart' as app;
+import 'package:mymath_app/src/render/graph_view.dart';
+import 'package:mymath_app/src/editor/editor_view.dart';
 
 Future<void> _tapKey(WidgetTester tester, String code) async {
-  await tester.tap(find.byKey(ValueKey('key:$code')));
-  await tester.pump();
+  final finder = find.byKey(ValueKey('key:$code'));
+  for (var i = 0; i < 20 && finder.evaluate().isEmpty; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  if (finder.evaluate().isEmpty) {
+    final editors = tester.widgetList<EditorView>(find.byType(EditorView));
+    fail(
+      'Missing $code; editor=${editors.map((e) => e.controller.document)}; '
+      'cursor=${editors.map((e) => e.controller.cursor)}; '
+      'sheets=${find.byType(BottomSheet).evaluate().length}; '
+      'texts=${tester.widgetList<Text>(find.byType(Text)).map((t) => t.data).whereType<String>().toList()}',
+    );
+  }
+  final modal =
+      tester.widget(finder) is ListTile ||
+      find
+          .ancestor(of: finder, matching: find.byType(ListTile))
+          .evaluate()
+          .isNotEmpty;
+  await tester.ensureVisible(finder);
+  await tester.pump(const Duration(milliseconds: 50));
+  await tester.tap(finder);
+  await tester.pump(const Duration(milliseconds: 50));
+  if (modal) {
+    for (
+      var i = 0;
+      i < 20 && find.byType(BottomSheet).evaluate().isNotEmpty;
+      i++
+    ) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await tester.pump(const Duration(milliseconds: 100));
+  }
 }
 
 /// Долгое нажатие: открывает выпадающее меню клавиши.
 Future<void> _longPressKey(WidgetTester tester, String code) async {
-  await tester.longPress(find.byKey(ValueKey('key:$code')));
+  await tester.ensureVisible(find.byKey(ValueKey('key:$code')));
+  await tester.pump(const Duration(milliseconds: 100));
+  final gesture = await tester.startGesture(
+    tester.getCenter(find.byKey(ValueKey('key:$code'))),
+  );
+  for (var i = 0; i < 20 && find.byType(BottomSheet).evaluate().isEmpty; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  await gesture.up();
   await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
 }
 
 Future<void> _digits(WidgetTester tester, String digits) async {
@@ -154,6 +196,11 @@ void main() {
     await _tapKey(tester, 'VARIABLE_Y_LOW');
     await _tapKey(tester, 'BASIC_INFIX_OPERATOR_EQUALS');
     await _digits(tester, '1');
+    final system = tester
+        .widget<EditorView>(find.byType(EditorView))
+        .controller;
+    expect(system.document.children.where((n) => n.value == 'x'), hasLength(2));
+    expect(system.document.children.where((n) => n.value == 'y'), hasLength(2));
     await tester.tap(find.byKey(const ValueKey('solve')));
     expect(await _waitSolved(tester), isTrue, reason: 'система не решилась');
     await shot('system');
@@ -178,5 +225,50 @@ void main() {
     expect(await _waitSolved(tester), isFalse, reason: 'ожидалась ошибка');
     expect(find.textContaining('факториал'), findsWidgets);
     await shot('factorial_error');
+
+    // 7. Точная трасса деления и управление этапами на настоящем устройстве.
+    await _clearEditor(tester);
+    await _digits(tester, '96');
+    await _tapKey(tester, 'BASIC_INFIX_OPERATOR_DIVIDE');
+    await _digits(tester, '4');
+    await tester.tap(find.byKey(const ValueKey('solve')));
+    expect(await _waitSolved(tester), isTrue);
+    await tester.tap(find.text('Деление столбиком'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Этап 1 из 8'), findsOneWidget);
+    await tester.tap(find.text('Далее'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Этап 2 из 8'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await _backToEditor(tester);
+    await _clearEditor(tester);
+
+    // 8. Живой график, масштаб и информационная панель.
+    await _tapKey(tester, 'VARIABLE_X_LOW');
+    await _tapKey(tester, 'OPERATOR_POWER_TWO');
+    await tester.tap(find.text('График'));
+    await tester.pump();
+    for (var i = 0; i < 60 && find.byType(GraphView).evaluate().isEmpty; i++) {
+      await tester.pump(const Duration(milliseconds: 250));
+    }
+    expect(find.byType(GraphView), findsOneWidget);
+    final graph = tester.state<GraphViewState>(find.byType(GraphView));
+    final width = graph.viewport.width;
+    await tester.tap(find.byTooltip('Увеличить'));
+    await tester.pump();
+    expect(graph.viewport.width, width / 2);
+    await tester.tap(find.text('По центру'));
+    await tester.pump();
+    expect(graph.viewport.width, width);
+    await tester.tap(find.text('Сведения'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Сведения о графике'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await shot('graph_details');
   });
 }

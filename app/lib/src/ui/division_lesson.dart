@@ -89,12 +89,24 @@ class _DivisionLessonState extends State<DivisionLesson> {
           ),
       ],
     );
-    Widget sourceLine() => SizedBox(width: (trace.dividend.length + trace.decimalPlaces) * cell, height: rowHeight,
-      child: Stack(children: [
-        cells(trace.dividend + '0' * trace.decimalPlaces, highlight: true),
-        if (trace.decimalPlaces > 0) Positioned(left: trace.dividend.length * cell - 5, bottom: 0,
-          child: Text(widget.separator, style: const TextStyle(fontFamily: 'monospace', fontSize: 22))),
-      ]));
+    Widget sourceLine() => SizedBox(
+      width: (trace.dividend.length + trace.decimalPlaces) * cell,
+      height: rowHeight,
+      child: Stack(
+        children: [
+          cells(trace.dividend + '0' * trace.decimalPlaces, highlight: true),
+          if (trace.decimalPlaces > 0)
+            Positioned(
+              left: trace.dividend.length * cell - 5,
+              bottom: 0,
+              child: Text(
+                widget.separator,
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 22),
+              ),
+            ),
+        ],
+      ),
+    );
     Widget row(
       String text,
       int column, {
