@@ -81,6 +81,8 @@ class EditorController extends ChangeNotifier {
   /// Курсор вниз (следующий слот шаблона).
   void moveDown() => _apply(ed.moveSlot(_state, 1));
 
+  void nextSlot() => _apply(ed.nextSlot(_state));
+
   /// Очистить документ.
   void clear() => _apply(ed.clearEditor());
 

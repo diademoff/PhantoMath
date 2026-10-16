@@ -1,519 +1,159 @@
-/// Клавиатура Photomath — виджет с геометрией оригинала.
-///
-/// Раскладка повторяет `res/layout/view_editor_keyboard.xml` и расчёт
-/// `com.microblink.photomath.editor.keyboard.view.GridLayout.onMeasure`:
-///
-/// * высота экрана = доля высоты окна (`ofFullHeight`: 8% для служебного
-///   ряда, 33% для сетки клавиш);
-/// * ячейка = (высота − (рядов + 1) × `rowPadding`) / рядов по вертикали и
-///   (ширина − (столбцов + 1) × `columnPadding`) / столбцов по горизонтали;
-/// * отступ 2dip (`keyboard_column_padding` / `keyboard_row_padding`) стоит
-///   и между ячейками, и по краям — как в `onLayout`, где координата
-///   считается от единицы, а не от нуля;
-/// * клавиша — прямоугольник со скруглением 2dip поверх однотонной заливки
-///   (`drawable/keyboard_button_background`), подпись `#4C4F54`.
-library;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
-
 import '../../editor/controller.dart';
 import '../../editor/keyboard.dart';
-import '../../theme/photomath_theme.dart';
 import 'ph_keyboard_spec.dart';
 
-/// Клавиатура Photomath: служебный ряд + сетка клавиш выбранного экрана.
+/// Stable numeric block, minimum 48dp keys, persistent alphabet and an explicit
+/// catalog for variants (long press is a shortcut, never the only way).
 class PhotomathKeyboard extends StatefulWidget {
-  const PhotomathKeyboard({
-    super.key,
-    required this.controller,
-    this.decimalSeparator = '.',
-  });
-
+  const PhotomathKeyboard({super.key, required this.controller, this.decimalSeparator = '.'});
   final EditorController controller;
-
-  /// Разделитель из профиля (`DecimalSeparator` оригинала) — на нём
-  /// перерисовывается клавиша `DIGIT_DOT`.
   final String decimalSeparator;
-
   @override
   State<PhotomathKeyboard> createState() => _PhotomathKeyboardState();
 }
 
 class _PhotomathKeyboardState extends State<PhotomathKeyboard> {
   PhSheet _sheet = PhSheet.primary;
-
-  /// Код клавиши, у которой сейчас показано выпадающее меню.
-  String? _extended;
-
-  /// Позиция ячейки внутри текущего экрана — по ней открывается меню.
-  (int, int)? _anchor;
-
   EditorController get _editor => widget.controller;
 
-  PhSheetSpec get _grid => sheetOf(_sheet);
-
-  @override
-  void dispose() {
-    _closeExtensions();
-    super.dispose();
-  }
-
-  void _closeExtensions() {
-    if (_extended == null) return;
-    _extended = null;
-    _anchor = null;
-  }
-
-  /// Переключение экрана: `HELPER_XYZ_SHEET` и `HELPER_SHOW_SECONDARY_SHEET`
-  /// оригинала открывают `ALPHABET_SHEET` и `SECONDARY_SHEET`.
-  void _openSheet(PhSheet sheet) => setState(() => _sheet = sheet);
-
-  /// Нажатие клавиши: `KeyboardView$h$a` оригинала.
-  ///
-  /// Оригинал (`KeyboardView.a`, jadx) после любой обычной клавиши
-  /// возвращает сетку на `PRIMARY_SHEET`: цифры всегда под рукой, а за
-  /// функциями ходят тогглом `f ∫ <>` / `abc`.
-  void _press(PhKey key) {
-    _closeExtensions();
+  void _apply(PhKey key) {
     final action = key.action;
     if (action == null) return;
-    _apply(action);
-    if (_sheet != PhSheet.primary) {
-      setState(() => _sheet = PhSheet.primary);
-    }
-  }
-
-  /// Раздать действие редактору (`MathKey` → `EditorController`).
-  void _apply(MathKey action) {
     switch (action.type) {
-      case MathKeyType.digit:
-        _editor.typeDigit(action.value!);
-      case MathKeyType.variable:
-        _editor.typeVariable(action.value!);
-      case MathKeyType.operator:
-        _editor.insertOperator(action.kind!);
-      case MathKeyType.template:
-        _editor.insertTemplate(action.kind!);
-      case MathKeyType.newline:
-        _editor.newLine();
-      case MathKeyType.backspace:
-        _editor.backspace();
-      case MathKeyType.delete:
-        _editor.deleteForward();
-      case MathKeyType.left:
-        _editor.moveLeft();
-      case MathKeyType.right:
-        _editor.moveRight();
-      case MathKeyType.up:
-        _editor.moveUp();
-      case MathKeyType.down:
-        _editor.moveDown();
-      case MathKeyType.clear:
-        _editor.clear();
-      case MathKeyType.panel:
-        // Панели `operators.dart` указывают номера старой раскладки; здесь
-        // экраны Photomath, поэтому маршрутизируем по самой клавише.
-        break;
+      case MathKeyType.digit: _editor.typeDigit(action.value!);
+      case MathKeyType.variable: _editor.typeVariable(action.value!);
+      case MathKeyType.operator: _editor.insertOperator(action.kind!);
+      case MathKeyType.template: _editor.insertTemplate(action.kind!);
+      case MathKeyType.newline: _editor.newLine();
+      case MathKeyType.backspace: _editor.backspace();
+      case MathKeyType.delete: _editor.deleteForward();
+      case MathKeyType.left: _editor.moveLeft();
+      case MathKeyType.right: _editor.moveRight();
+      case MathKeyType.up: _editor.moveUp();
+      case MathKeyType.down: _editor.moveDown();
+      case MathKeyType.clear: _editor.clear();
+      case MathKeyType.panel: break;
     }
-  }
-
-  /// Служебная клавиша: переключение экрана либо действие редактора.
-  ///
-  /// Тогглы повторяют `KeyboardView.a` оригинала (jadx): повторное нажатие
-  /// `HELPER_XYZ_SHEET` / `HELPER_SHOW_SECONDARY_SHEET` на своём экране
-  /// возвращает `PRIMARY_SHEET`; любая другая служебная клавиша тоже
-  /// возвращает сетку на primary (`else`-ветка `a`: `this.i = PRIMARY`).
-  void _pressControl(PhKey key) {
-    switch (key.code) {
-      case 'HELPER_XYZ_SHEET':
-        _openSheet(
-          _sheet == PhSheet.alphabet ? PhSheet.primary : PhSheet.alphabet,
-        );
-        return;
-      case 'HELPER_SHOW_SECONDARY_SHEET':
-        _openSheet(
-          _sheet == PhSheet.secondary ? PhSheet.primary : PhSheet.secondary,
-        );
-        return;
-      case 'CONTROL_MOVE_LEFT':
-        _editor.moveLeft();
-      case 'CONTROL_MOVE_RIGHT':
-        _editor.moveRight();
-      case 'CONTROL_DELETE':
-        _editor.backspace();
-      case 'CONTROL_NEW_LINE':
-        // Новая строка системы: строки документа решаются совместно.
-        _editor.newLine();
-        break;
-    }
-    if (_sheet != PhSheet.primary) {
+    if (_sheet == PhSheet.secondary && action.type != MathKeyType.left && action.type != MathKeyType.right) {
       setState(() => _sheet = PhSheet.primary);
     }
   }
 
-  /// Меню долгого нажатия (`f286c` оригинала).
-  ///
-  /// Открывается только если у клавиши есть расширение
-  /// (`KeyboardKeyView.g`: `z2 && extensions != null && length > 0`).
-  void _showExtensions(PhKey key, int row, int column) {
-    final items = extensionsOf(key.code);
-    if (items.isEmpty) return;
-    setState(() {
-      _extended = key.code;
-      _anchor = (row, column);
-    });
+  void _toggle(PhSheet sheet) => setState(() => _sheet = _sheet == sheet ? PhSheet.primary : sheet);
+
+  List<PhKey> get _primary {
+    final byCode = {for (final k in primarySheet().keys) k.code: k};
+    return [for (final code in const [
+      'OPERATOR_LEFT_BRACKET', 'OPERATOR_RIGHT_BRACKET', 'OPERATOR_ROOT_TWO', 'OPERATOR_POWER_TWO', 'OPERATOR_FRACTION',
+      'VARIABLE_X_LOW', 'DIGIT_SEVEN', 'DIGIT_EIGHT', 'DIGIT_NINE', 'BASIC_INFIX_OPERATOR_DIVIDE',
+      'CONSTANT_PI', 'DIGIT_FOUR', 'DIGIT_FIVE', 'DIGIT_SIX', 'BASIC_INFIX_OPERATOR_MULTIPLY',
+      'BASIC_INFIX_OPERATOR_PERCENTAGE', 'DIGIT_ONE', 'DIGIT_TWO', 'DIGIT_THREE', 'BASIC_INFIX_OPERATOR_MINUS',
+      'BASIC_INFIX_OPERATOR_EQUALS', 'DIGIT_ZERO', 'DIGIT_DOT', 'CONTROL_DELETE', 'BASIC_INFIX_OPERATOR_PLUS',
+    ]) code == 'CONTROL_DELETE' ? controlSheet().keys.last : byCode[code]!];
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.sizeOf(context).height;
-    return Material(
-      color: PhColor.keyboardBackground,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildSheet(controlSheet(), screenHeight, isControl: true),
-          _buildSheet(_grid, screenHeight, isControl: false),
-        ],
-      ),
-    );
+  Future<void> _variants(PhKey key) async {
+    final variants = extensionsOf(key.code);
+    if (variants.isEmpty) return;
+    final selected = await showModalBottomSheet<PhKey>(context: context, builder: (context) => SafeArea(
+      child: ListView(shrinkWrap: true, padding: const EdgeInsets.fromLTRB(16, 0, 16, 24), children: [
+        Text(key.description, style: Theme.of(context).textTheme.titleLarge),
+        for (final k in variants) ListTile(key: ValueKey('key:${k.code}'),
+          minTileHeight: 56, title: Text(k.description),
+          trailing: SizedBox(width: 64, child: _glyph(k)),
+          onTap: k.action == null ? null : () => Navigator.pop(context, k)),
+      ]),
+    ));
+    if (selected != null && mounted) _apply(selected);
   }
 
-  /// Один экран: сетка `rows × columns` высотой `ofFullHeight` окна.
-  Widget _buildSheet(
-    PhSheetSpec spec,
-    double screenHeight, {
-    required bool isControl,
-  }) {
-    final height = screenHeight * spec.ofFullHeight;
-    // Меню долгого нажатия живёт только в сетке клавиш: служебный ряд
-    // (`ofFullHeight=8%`) слишком низок для всплывающего окна, а долгое
-    // нажатие там всё равно ничего не открывает (`onLongPress=null`).
-    final showMenu = !isControl && _extended != null && _anchor != null;
-    return SizedBox(
-      height: height,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned.fill(
-            child: Padding(
-              padding: const EdgeInsets.all(PhSize.keyPadding),
-              child: _Grid(
-                spec: spec,
-                keys: _keysOf(spec).take(spec.cellCount).toList(),
-                onPress: isControl ? _pressControl : _press,
-                onLongPress: isControl ? null : _showExtensions,
-              ),
-            ),
-          ),
-          if (showMenu)
-            _ExtensionMenu(
-              anchor: _anchor!,
-              code: _extended!,
-              onDismiss: _closeExtensions,
-              onPick: (key) {
-                _closeExtensions();
-                _press(key);
-              },
-            ),
-        ],
-      ),
-    );
-  }
-
-  /// Разделитель из профиля подставляется в клавишу `DIGIT_DOT`.
-  ///
-  /// Оригинал делает это в конструкторе `g`: `new f(DIGIT_DOT,
-  /// decimalSeparator.g)`, то есть точка или запятая берётся из настроек
-  /// профиля, а не из локали.
-  List<PhKey> _keysOf(PhSheetSpec spec) => [
-    for (final key in spec.keys)
-      if (key.code == 'DIGIT_DOT')
-        PhKey(
-          key.code,
-          key.type,
-          widget.decimalSeparator,
-          description: key.description,
-        )
-      else
-        key,
-  ];
-}
-
-/// Сетка клавиш: равные ячейки с отступом 2dip, как в `GridLayout.onLayout`.
-class _Grid extends StatelessWidget {
-  const _Grid({
-    required this.spec,
-    required this.keys,
-    required this.onPress,
-    required this.onLongPress,
-  });
-
-  final PhSheetSpec spec;
-  final List<PhKey> keys;
-  final void Function(PhKey key) onPress;
-
-  /// `null` на служебном ряду: там долгое нажатие ничего не открывает.
-  final void Function(PhKey key, int row, int column)? onLongPress;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Ширина и высота ячейки считаются той же формулой, что и в
-        // `GridLayout.onMeasure`: из доступного места вычитаются все
-        // промежутки, включая крайние.
-        final cellWidth =
-            (constraints.maxWidth -
-                (spec.columnCount + 1) * PhSize.keyPadding) /
-            spec.columnCount;
-        final cellHeight =
-            (constraints.maxHeight - (spec.rowCount + 1) * PhSize.keyPadding) /
-            spec.rowCount;
-        return Column(
-          children: [
-            for (var row = 0; row < spec.rowCount; row++)
-              SizedBox(
-                height: cellHeight + PhSize.keyPadding,
-                child: Row(
-                  children: [
-                    for (var column = 0; column < spec.columnCount; column++)
-                      Builder(
-                        builder: (context) {
-                          final key = _at(row, column);
-                          return SizedBox(
-                            width: cellWidth + PhSize.keyPadding,
-                            child: Padding(
-                              padding: const EdgeInsets.all(
-                                PhSize.keyPadding / 2,
-                              ),
-                              child: _KeyButton(
-                                // Ключ виджета — код оператора оригинала:
-                                // он не меняется при смене экрана и не
-                                // зависит от того, как нарисован глиф.
-                                key: ValueKey(
-                                  key.code.isEmpty
-                                      ? '${spec.sheet.name}:$row:$column'
-                                      : 'key:${key.code}',
-                                ),
-                                width: cellWidth,
-                                height: cellHeight,
-                                phKey: key,
-                                onPressed: onPress,
-                                onLongPressed: onLongPress == null
-                                    ? null
-                                    : (pressed) =>
-                                          onLongPress!(pressed, row, column),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                  ],
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
-
-  PhKey _at(int row, int column) {
-    final index = spec.columnCount * row + column;
-    if (index < keys.length) return keys[index];
-    return const PhKey('', PhKeyType.grid, '');
-  }
-}
-
-/// Клавиша: скруглённый прямоугольник с заливкой по типу и глифом.
-class _KeyButton extends StatelessWidget {
-  const _KeyButton({
-    super.key,
-    required this.width,
-    required this.height,
-    required this.phKey,
-    required this.onPressed,
-    this.onLongPressed,
-  });
-
-  final double width;
-  final double height;
-  final PhKey phKey;
-  final void Function(PhKey key) onPressed;
-  final void Function(PhKey key)? onLongPressed;
-
-  bool get _isSpacer => phKey.code.isEmpty;
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isSpacer) return const SizedBox.shrink();
-    final enabled = phKey.action != null;
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      label: phKey.description,
-      child: SizedBox(
-        width: width,
-        height: height,
-        // Неподдержанные решателем клавиши (`_unsupported` в `operators.dart`:
-        // `aₙ`, перевод строки) видны, но приглушены — иначе они выглядят
-        // рабочими и молча глотают нажатие.
-        child: Opacity(
-          opacity: enabled ? 1.0 : 0.35,
-          child: Material(
-            color: keyBackground(phKey.type),
-            borderRadius: BorderRadius.circular(PhSize.keyRadius),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: enabled ? () => onPressed(phKey) : null,
-              onLongPress: onLongPressed == null
-                  ? null
-                  : () => onLongPressed!(phKey),
-              splashColor: PhColor.gray30,
-              highlightColor: PhColor.gray30,
-              child: Center(child: _glyph(context)),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Глиф клавиши.
-  ///
-  /// Оригинал рисует математические подписи движком (`MathTextView` с
-  /// кеглем `keyViewTextSize × 0.85`), а иконки — векторными картинками
-  /// 58×52dip: подпись всегда занимает одну ячейку и не выходит за неё.
-  /// Здесь то же самое делает [FittedBox]: широкая формула вроде `a/b`
-  /// ужимается до ширины клавиши, узкая остаётся натурального размера.
-  Widget _glyph(BuildContext context) {
-    final color = PhColor.keyboardText;
-    if (_isControlGlyph) {
-      return Icon(_controlIcon, size: PhSize.keyTextSize * 1.4, color: color);
+  Future<void> _catalog() async {
+    final keys = <String, PhKey>{};
+    for (final spec in sheets) {
+      for (final k in spec.keys) {
+        if (k.code.isNotEmpty && k.type != PhKeyType.control && k.action != null) keys[k.code] = k;
+        for (final v in extensionsOf(k.code)) {
+          if (v.action != null) keys[v.code] = v;
+        }
+      }
     }
-    final glyph = phKey.glyph;
-    if (glyph.isEmpty) return const SizedBox.shrink();
-    final style = TextStyle(
-      fontSize: PhSize.keyTextSize * PhSize.keyGlyphScale,
-      color: color,
-    );
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Math.tex(
-          glyph,
-          mathStyle: MathStyle.display,
-          textStyle: style,
-          onErrorFallback: (error) => Text(phKey.description, style: style),
-        ),
-      ),
-    );
+    final selected = await showModalBottomSheet<PhKey>(context: context, isScrollControlled: true,
+      builder: (context) => SafeArea(child: SizedBox(height: MediaQuery.sizeOf(context).height * .75,
+        child: ListView(padding: const EdgeInsets.all(16), children: [
+          Text('Все символы', style: Theme.of(context).textTheme.titleLarge),
+          for (final k in keys.values) ListTile(minTileHeight: 56, title: Text(k.description),
+            onTap: () => Navigator.pop(context, k)),
+        ]),
+      )));
+    if (selected != null && mounted) _apply(selected);
   }
 
-  bool get _isControlGlyph =>
-      phKey.type == PhKeyType.control &&
-      const {
-        'CONTROL_MOVE_LEFT',
-        'CONTROL_MOVE_RIGHT',
-        'CONTROL_NEW_LINE',
-        'CONTROL_DELETE',
-      }.contains(phKey.code);
+  Widget _control(String code, String label, IconData icon, VoidCallback onTap) =>
+    IconButton(key: ValueKey('key:$code'), tooltip: label, onPressed: onTap, icon: Icon(icon, size: 22));
 
-  IconData get _controlIcon => switch (phKey.code) {
-    'CONTROL_MOVE_LEFT' => Icons.arrow_left,
-    'CONTROL_MOVE_RIGHT' => Icons.arrow_right,
-    'CONTROL_NEW_LINE' => Icons.keyboard_return,
-    'CONTROL_DELETE' => Icons.backspace_outlined,
-    _ => Icons.circle,
-  };
-}
-
-/// Выпадающее меню долгого нажатия — аналог `f286c` оригинала.
-class _ExtensionMenu extends StatelessWidget {
-  const _ExtensionMenu({
-    required this.anchor,
-    required this.code,
-    required this.onDismiss,
-    required this.onPick,
-  });
-
-  /// Строка и столбец ячейки, у которой открыто меню.
-  final (int, int) anchor;
-
-  /// Код клавиши, у которой открыто меню.
-  final String code;
-
-  /// Закрыть меню тапом мимо.
-  final VoidCallback onDismiss;
-
-  final void Function(PhKey key) onPick;
+  Widget _glyph(PhKey key) {
+    if (key.code == 'CONTROL_DELETE') return const Icon(Icons.backspace_outlined, size: 22);
+    final glyph = key.code == 'DIGIT_DOT' ? widget.decimalSeparator : key.glyph;
+    return FittedBox(fit: BoxFit.scaleDown, child: Math.tex(glyph,
+      textStyle: TextStyle(fontSize: 21, color: Theme.of(context).colorScheme.onSurface),
+      onErrorFallback: (_) => Text(key.description, style: const TextStyle(fontSize: 16))));
+  }
 
   @override
   Widget build(BuildContext context) {
-    final items = extensionsOf(code);
-    if (items.isEmpty) return const SizedBox.shrink();
-    // Меню выскакивает над клавишей и прижато к краю экрана, если клавиша
-    /// у края — как всплывающее окно оригинала (`keyboard_selected_extension`
-    /// рисуется отдельным слоем поверх сетки).
-    final column = anchor.$2;
-    final alignment = Alignment(
-      ((column + 0.5) / 6 * 2 - 1).clamp(-0.95, 0.95),
-      0.55,
-    );
-    return Positioned.fill(
-      child: GestureDetector(
-        onTap: onDismiss,
-        child: Align(
-          alignment: alignment,
-          child: Material(
-            color: PhColor.white,
-            elevation: 4,
-            borderRadius: BorderRadius.circular(PhSize.keyRadius),
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (final key in items)
-                  InkWell(
-                    // Ключ — код оператора оригинала, как у клавиш сетки:
-                    // тесты и скринридер находят пункт по тому же ключу.
-                    key: ValueKey('key:${key.code}'),
-                    onTap: () => onPick(key),
-                    child: Container(
-                      height: 44,
-                      alignment: Alignment.center,
-                      color: keyBackground(key.type),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Math.tex(
-                            key.glyph,
-                            mathStyle: MathStyle.display,
-                            textStyle: const TextStyle(
-                              fontSize: 17,
-                              color: PhColor.keyboardText,
-                            ),
-                            onErrorFallback: (error) => Text(
-                              key.description,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: PhColor.keyboardText,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+    final colors = Theme.of(context).colorScheme;
+    return Material(color: colors.surfaceContainerLow, child: ListenableBuilder(
+      listenable: _editor, builder: (context, _) => Column(mainAxisSize: MainAxisSize.min, children: [
+        SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: [
+          _control('HELPER_SHOW_SECONDARY_SHEET', 'Функции', Icons.functions, () => _toggle(PhSheet.secondary)),
+          _control('HELPER_XYZ_SHEET', 'Буквы', Icons.abc, () => _toggle(PhSheet.alphabet)),
+          _control('CONTROL_MOVE_LEFT', 'Курсор влево', Icons.chevron_left, _editor.moveLeft),
+          _control('CONTROL_MOVE_RIGHT', 'Курсор вправо', Icons.chevron_right, _editor.moveRight),
+          _control('CONTROL_NEW_LINE', 'Новая строка', Icons.keyboard_return, _editor.newLine),
+          if (_sheet != PhSheet.primary) _control('CONTROL_DELETE', 'Удалить', Icons.backspace_outlined, _editor.backspace),
+          IconButton(tooltip: 'Все символы', onPressed: _catalog, icon: const Icon(Icons.more_horiz)),
+          if (_editor.cursor.steps.isNotEmpty) TextButton(onPressed: _editor.nextSlot, child: const Text('Далее')),
+        ])),
+        LayoutBuilder(builder: (context, constraints) {
+          final keys = switch (_sheet) {
+            PhSheet.primary => _primary,
+            PhSheet.alphabet => alphabetSheet().keys.where((k) => k.code.isNotEmpty).toList(),
+            _ => secondarySheet().keys,
+          };
+          final columns = ((constraints.maxWidth - 16) / 52).floor().clamp(1, 5);
+          final textScale = MediaQuery.textScalerOf(context).scale(1);
+          final height = (48 * textScale).clamp(48.0, 80.0);
+          return SizedBox(height: height * 5 + 32, child: GridView.builder(
+            key: ValueKey(_sheet),
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 12),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: columns,
+              mainAxisExtent: height, crossAxisSpacing: 4, mainAxisSpacing: 4),
+            itemCount: keys.length,
+            itemBuilder: (context, index) {
+              final key = keys[index];
+              final enabled = key.action != null;
+              return Semantics(button: true, enabled: enabled, label: key.description,
+                child: Opacity(opacity: enabled ? 1 : .35, child: Material(
+                  color: key.type == PhKeyType.digit ? colors.surface : colors.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(10), clipBehavior: Clip.antiAlias,
+                  child: InkWell(key: ValueKey('key:${key.code}'),
+                    onTap: enabled ? () => _apply(key) : null,
+                    onLongPress: extensionsOf(key.code).isEmpty ? null : () => _variants(key),
+                    child: Stack(children: [
+                      Center(child: Padding(padding: const EdgeInsets.all(8), child: _glyph(key))),
+                      if (extensionsOf(key.code).isNotEmpty) Positioned(right: 5, bottom: 3,
+                        child: Icon(Icons.more_horiz, size: 12, color: colors.onSurfaceVariant)),
+                    ]),
                   ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+                )),
+              );
+            },
+          ));
+        }),
+        if (_sheet != PhSheet.primary) TextButton(onPressed: () => _toggle(_sheet), child: const Text('123 · Цифры')),
+      ]),
+    ));
   }
 }

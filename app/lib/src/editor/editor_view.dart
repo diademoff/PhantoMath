@@ -38,6 +38,7 @@ class EditorView extends StatefulWidget {
 }
 
 class _EditorViewState extends State<EditorView> {
+  final _caretAnchor = GlobalKey();
   ed.ENode get _document => widget.controller.document;
   ed.EdCursor get _cursor => widget.controller.cursor;
   double get _fs => widget.fontSize;
@@ -48,6 +49,10 @@ class _EditorViewState extends State<EditorView> {
     return AnimatedBuilder(
       animation: widget.controller,
       builder: (context, _) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final anchor = _caretAnchor.currentContext;
+          if (mounted && anchor != null) Scrollable.ensureVisible(anchor, alignment: .6);
+        });
         return Semantics(
           label: 'Поле ввода математического выражения',
           child: Container(
@@ -92,7 +97,7 @@ class _EditorViewState extends State<EditorView> {
     }
     final spans = <InlineSpan>[];
     for (var i = 0; i < row.children.length; i++) {
-      if (cursorHere && i == _cursor.offset) spans.add(_cursorSpan());
+      if (cursorHere && i == _cursor.offset && _cursor.textOffset == null) spans.add(_cursorSpan());
       if (row.children[i].kind == ENodeKind.newline) {
         // Перевод строки: разрыв линии, курсор встаёт до/после него
         // общей логикой смещений.
@@ -109,7 +114,11 @@ class _EditorViewState extends State<EditorView> {
     if (cursorHere && _cursor.offset >= row.children.length) {
       spans.add(_cursorSpan());
     }
-    return Text.rich(TextSpan(children: spans));
+    final content = Text.rich(TextSpan(children: spans));
+    if (!cursorHere || steps.isEmpty) return content;
+    return DecoratedBox(decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.primary.withValues(alpha: .07),
+      borderRadius: BorderRadius.circular(4)), child: content);
   }
 
   /// Один токен ряда: терминал, шаблон или вложенный ряд.
@@ -121,12 +130,27 @@ class _EditorViewState extends State<EditorView> {
 
   /// Терминал: тап ставит курсор сразу за ним.
   Widget _terminal(ed.ENode node, List<ed.CursorStep> steps, int index) {
-    return GestureDetector(
+    final text = _display(node);
+    final numeric = node.kind == ENodeKind.constant && RegExp(r'^[0-9.,]+$').hasMatch(text);
+    final inside = listEquals(_cursor.steps, steps) && _cursor.offset == index ? _cursor.textOffset : null;
+    return Builder(builder: (tokenContext) => GestureDetector(
       key: ValueKey('tok:${_pathKey(steps)}:$index'),
       behavior: HitTestBehavior.opaque,
-      onTap: () => _focus(ed.EdCursor(steps: steps, offset: index + 1)),
-      child: Text(_display(node), style: _terminalStyle(node.kind)),
-    );
+      onTapUp: (details) {
+        final box = tokenContext.findRenderObject() as RenderBox;
+        final at = (details.localPosition.dx / box.size.width * text.length).round().clamp(0, text.length);
+        if (numeric && at > 0 && at < text.length) {
+          _focus(ed.EdCursor(steps: steps, offset: index, textOffset: at));
+        } else {
+          _focus(ed.EdCursor(steps: steps, offset: at == 0 ? index : index + 1));
+        }
+      },
+      child: inside == null ? Text(text, style: _terminalStyle(node.kind)) : Row(mainAxisSize: MainAxisSize.min, children: [
+        Text(text.substring(0, inside), style: _terminalStyle(node.kind)),
+        _cursorBar(),
+        Text(text.substring(inside), style: _terminalStyle(node.kind)),
+      ]),
+    ));
   }
 
   /// Шаблон: тап по декору ставит курсор в его основной слот.
@@ -482,8 +506,8 @@ class _EditorViewState extends State<EditorView> {
   );
 
   /// Курсор в виде вертикальной черты.
-  Widget _cursorBar() =>
-      _BlinkingCursor(key: const ValueKey('cursor'), height: _fs * 1.15);
+  Widget _cursorBar() => SizedBox(key: _caretAnchor,
+      child: _BlinkingCursor(key: const ValueKey('cursor'), height: _fs * 1.15));
 
   InlineSpan _cursorSpan() =>
       WidgetSpan(alignment: PlaceholderAlignment.middle, child: _cursorBar());
@@ -575,7 +599,17 @@ class _BlinkingCursorState extends State<_BlinkingCursor>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 500),
-  )..repeat(reverse: true);
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controller.stop();
+    } else {
+      _controller.repeat(reverse: true);
+    }
+  }
 
   @override
   void dispose() {
@@ -585,6 +619,9 @@ class _BlinkingCursorState extends State<_BlinkingCursor>
 
   @override
   Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      return Container(width: 2, height: widget.height, color: Theme.of(context).colorScheme.primary);
+    }
     return FadeTransition(
       opacity: _controller.drive(Tween<double>(begin: 0.15, end: 1)),
       child: Container(
