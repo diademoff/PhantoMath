@@ -32,8 +32,12 @@ from .base import SolveContext, SolveError, Step, solver_for
 from .domain import add_restriction_steps
 from .equations import _poly_expr, poly_of
 from .sympy_bridge import from_sympy, to_sympy
+from .trig_equations import looks_trigonometric
 
 _HEADER = CoreRichText(type="ineq_solve_short")
+
+_PARAMETER = "k"
+"""Имя параметра периода в общем решении неравенства: ``π/6 + 2πk < x``."""
 
 _RELATIONS = (
     T.LESS_THAN,
@@ -85,17 +89,23 @@ def solve_inequality(node: CoreNode, ctx: SolveContext) -> CoreNode:
             poly[degree] = poly.get(degree, Fraction(0)) - coeff
             if poly[degree] == 0:
                 del poly[degree]
-    except SolveError:
+    except SolveError as error:
         for solver in (
             _rational_inequality,
             _irrational_inequality,
             _abs_inequality,
             _transcendental_inequality,
+            _trig_inequality,
         ):
             answer = solver(node, var, ctx)
             if answer is not None:
                 return answer
-        raise
+        # Прежний «уравнение с узлом SIN не решается» здесь вводил в заблуждение:
+        # это неравенство, и ни один специальный путь его не взял.
+        raise SolveError(
+            "неравенство не решается: выражение не сводится к многочлену, дроби, "
+            "корню, модулю, показателю или периоду"
+        ) from error
 
     degree = max(poly) if poly else 0
     if degree == 0:
@@ -182,7 +192,10 @@ def _compound_inequality(node: CoreNode, var: str, ctx: SolveContext) -> CoreNod
     except (TypeError, ValueError, NotImplementedError):
         return None
     result_set = pieces[0] if len(pieces) == 1 else sympy.Intersection(*pieces)
-    answer = from_sympy(sympy.simplify(result_set))
+    try:
+        answer = from_sympy(sympy.simplify(result_set))
+    except SolveError:
+        return None
     ctx.result.add(Step(left=node, right=answer, key="ineq_solve_separate"), [_HEADER])
     return answer
 
@@ -218,7 +231,10 @@ def _abs_inequality(node: CoreNode, var: str, ctx: SolveContext) -> CoreNode | N
         values = sympy.solveset(_relational(node.type, expression), symbol, sympy.S.Reals)
     except (TypeError, ValueError, NotImplementedError):
         return None
-    answer = from_sympy(values)
+    try:
+        answer = from_sympy(values)
+    except SolveError:
+        return None
     ctx.result.add(
         Step(left=node, right=answer, key="ineq_separate_abs", args=[CoreNode.constant("2")]),
         [_HEADER],
@@ -241,6 +257,173 @@ def _transcendental_inequality(node: CoreNode, var: str, ctx: SolveContext) -> C
     return _inequality_set(node, expression, key, ctx)
 
 
+def _trig_period(expression: sympy.Expr, symbol: sympy.Symbol) -> sympy.Expr | None:
+    """Наименьший период выражения: ``periodicity`` или проверка по определению.
+
+    ``sympy.periodicity`` не знает модуль от периода (``|sin x|`` с периодом
+    ``π``), поэтому при отказе кандидаты ``π`` и ``2π`` проверяются прямым
+    тождеством ``f(x+T) = f(x)``. Подходящий кандидат может быть и больше
+    минимального периода -- решение от этого не неверно, лишь не сокращено.
+    """
+    try:
+        period = sympy.periodicity(expression, symbol)
+    except (TypeError, ValueError):
+        period = None
+    if period is not None and period.is_number and period > 0:
+        return period
+    for candidate in (sympy.pi, 2 * sympy.pi):
+        try:
+            if sympy.simplify(expression.subs(symbol, symbol + candidate) - expression) == 0:
+                return candidate
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
+def _trig_inequality(node: CoreNode, var: str, ctx: SolveContext) -> CoreNode | None:
+    """Периодическое тригонометрическое неравенство: ответ на одном периоде + ``kT``.
+
+    ``sympy.solveset`` на ``Reals`` теряет периодичность (``sin x > 1/2``
+    сужает до главного промежутка), поэтому множество решений берут на одном
+    периоде ``[0; T]`` и продолжают сдвигом на ``T·k``: границы промежутков
+    записываются как ``π/6 + 2πk``. Если ``solveset`` не берёт отношение на
+    периоде (``|sin x| > 1/2``), применяют метод интервалов: нули уравнения
+    режут период, знак проверяют в серединах дуг. Ключи -- ``trig_find_period``
+    и ``trig_general_sol``, ответ -- промежуток или объединение.
+    """
+    if not looks_trigonometric(node):
+        return None
+    expression = _difference(node)
+    if expression is None:
+        return None
+    plain = sympy.Symbol(var)
+    symbol = sympy.Symbol(var, real=True)
+    expression = expression.subs(plain, symbol)
+    if expression.free_symbols != {symbol}:
+        return None
+    period = _trig_period(expression, symbol)
+    if period is None:
+        return None
+
+    pieces = _period_pieces(node, expression, symbol, period)
+    x = CoreNode.variable(var)
+    if pieces is None:
+        return None
+    if not pieces:
+        ctx.result.add(Step(left=node, right=None, key="rel_el_of_zero", args=[x]), [_HEADER])
+        return CoreNode.empty()
+
+    parameter = sympy.Symbol(_PARAMETER)
+    if any(start is sympy.S.NegativeInfinity for start, _, _, _ in pieces):
+        answer = _all_reals()
+        ctx.result.add(Step(left=node, right=answer, key="rel_el_of_r", args=[x]), [_HEADER])
+        return answer
+    intervals: list[CoreNode] = []
+    for start_value, end_value, left_closed, right_closed in pieces:
+        start = from_sympy(start_value + period * parameter)
+        end = from_sympy(end_value + period * parameter)
+        intervals.append(_interval(start, end, left_closed, right_closed))
+
+    ctx.result.add(Step(left=node, right=None, key="trig_find_period"), [_HEADER])
+    answer = intervals[0] if len(intervals) == 1 else _union(intervals)
+    ctx.result.add(
+        Step(
+            left=node,
+            right=answer,
+            key="trig_general_sol",
+            args=[from_sympy(period * parameter)],
+        ),
+        [_HEADER],
+    )
+    return answer
+
+
+def _period_pieces(
+    node: CoreNode, expression: sympy.Expr, symbol: sympy.Symbol, period: sympy.Expr
+) -> list[tuple[sympy.Expr, sympy.Expr, bool, bool]] | None:
+    """Куски решений на одном периоде ``(начало, конец, левый закрыт, правый закрыт)``.
+
+    Сначала ``solveset`` на промежутке ``[0; T]``; его ответ переводят в
+    куски. Если ``solveset`` сдаётся (``ConditionSet`` -- так бывает с
+    ``|sin x|``), нули уравнения режут период на дуги, и каждая дуга
+    проверяется подстановкой середины (метод интервалов). ``None`` -- случай
+    не для модуля; пустой список -- решений нет.
+    """
+    try:
+        base = sympy.solveset(
+            _relational(node.type, expression), symbol, domain=sympy.Interval(0, period)
+        )
+    except (TypeError, ValueError, NotImplementedError):
+        return None
+    if base is sympy.S.EmptySet:
+        return []
+    if isinstance(base, sympy.Interval) and base.start == 0 and base.end == period:
+        return [(sympy.S.NegativeInfinity, sympy.S.Infinity, False, False)]
+    if not isinstance(base, sympy.ConditionSet):
+        pieces: list[tuple[sympy.Expr, sympy.Expr, bool, bool]] = []
+        for piece in base.args if isinstance(base, sympy.Union) else (base,):
+            if not isinstance(piece, sympy.Interval):
+                return None
+            pieces.append((piece.start, piece.end, not piece.left_open, not piece.right_open))
+        return pieces
+
+    return _chart_pieces(node, expression, symbol, period)
+
+
+def _chart_pieces(
+    node: CoreNode, expression: sympy.Expr, symbol: sympy.Symbol, period: sympy.Expr
+) -> list[tuple[sympy.Expr, sympy.Expr, bool, bool]] | None:
+    """Метод интервалов на периоде: нули режут окружность, знак в серединах дуг."""
+    try:
+        zeros_set = sympy.solveset(
+            sympy.Eq(expression, 0), symbol, domain=sympy.Interval(0, period)
+        )
+    except (TypeError, ValueError, NotImplementedError):
+        return None
+    if not isinstance(zeros_set, sympy.FiniteSet):
+        return None
+    zeros = sorted({sympy.simplify(z) for z in zeros_set.args}, key=lambda z: float(sympy.N(z)))
+    if any(z == period for z in zeros):
+        # x = T совпадает с x = 0 на периодической окружности.
+        zeros = [z for z in zeros if z != period]
+    if not zeros:
+        holds = _relation_holds_value(node, expression, symbol, period / 2)
+        if holds is None:
+            return None
+        return [(sympy.S.NegativeInfinity, sympy.S.Infinity, False, False)] if holds else []
+
+    closed = node.type in (T.LESS_THAN_EQUAL, T.GREATER_THAN_EQUAL)
+    count = len(zeros)
+    pieces: list[tuple[sympy.Expr, sympy.Expr, bool, bool]] = []
+    for index in range(count):
+        start = zeros[index]
+        end = zeros[(index + 1) % count]
+        end_wrapped = end if index + 1 < count else end + period
+        middle = (start + end_wrapped) / 2
+        holds = _relation_holds_value(node, expression, symbol, middle)
+        if holds is None:
+            return None
+        if holds:
+            pieces.append((start, end_wrapped, closed, closed))
+    return pieces
+
+
+def _relation_holds_value(
+    node: CoreNode, expression: sympy.Expr, symbol: sympy.Symbol, value: sympy.Expr
+) -> bool | None:
+    """Верно ли отношение ``f ⋚ 0`` в точке; ``None``, если истина не вычисляется."""
+    try:
+        difference = sympy.simplify(expression.subs(symbol, value))
+        resolved = sympy.simplify(_relational(node.type, difference))
+    except (TypeError, ValueError):
+        return None
+    if resolved is sympy.true:
+        return True
+    if resolved is sympy.false:
+        return False
+    return None
+
+
 def _difference(node: CoreNode) -> sympy.Expr | None:
     """Разность частей неравенства в sympy или ``None``."""
     lhs, rhs = node.children
@@ -253,14 +436,22 @@ def _difference(node: CoreNode) -> sympy.Expr | None:
 def _inequality_set(
     node: CoreNode, expression: sympy.Expr, key: str, ctx: SolveContext
 ) -> CoreNode | None:
-    """Множество решений неравенства через ``sympy.solveset``."""
+    """Множество решений неравенства через ``sympy.solveset``.
+
+    ``None`` -- sympy вернул множество, которое не переводится в узлы
+    (например, ``ConditionSet`` для ``|sin x| > 1/2``): тогда путь не наш и
+    вызывающий пробует следующий решатель.
+    """
     symbol = sympy.Symbol(ctx.variables[0])
     try:
         values = sympy.solveset(_relational(node.type, expression), symbol, sympy.S.Reals)
     except (TypeError, ValueError, NotImplementedError):
         return None
+    try:
+        answer = from_sympy(values)
+    except SolveError:
+        return None
     add_restriction_steps(node, ctx.variables, ctx, expression)
-    answer = from_sympy(values)
     ctx.result.add(Step(left=node, right=answer, key=key), [_HEADER])
     return answer
 

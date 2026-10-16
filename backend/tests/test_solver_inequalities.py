@@ -280,3 +280,48 @@ class TestRegistration:
             T.GREATER_THAN_EQUAL,
             T.NOT_EQUALS,
         } <= registered_types()
+
+
+class TestPeriodicInequality:
+    """Тригонометрическое неравенство без отрезка: общий ответ с ``+kT``."""
+
+    def test_sine_greater_than_half(self) -> None:
+        problem = ineq(T.GREATER_THAN, node(T.SIN, var("x")), node(T.FRACTION, c("1"), c("2")))
+        solution = solution_of(problem)
+        assert solution.type is T.OPEN_OPEN_INTERVAL
+        assert step_keys(problem) == ["trig_find_period", "trig_general_sol"]
+        names = {child.value for child in solution.walk() if child.type is T.VARIABLE}
+        assert "k" in names
+
+    def test_non_strict_keeps_closed_ends(self) -> None:
+        problem = ineq(
+            T.GREATER_THAN_EQUAL, node(T.SIN, var("x")), node(T.FRACTION, c("1"), c("2"))
+        )
+        assert solution_of(problem).type is T.CLOSED_CLOSED_INTERVAL
+
+    def test_abs_sine_uses_shorter_period(self) -> None:
+        # ``solveset`` не берёт |sin| на периоде -- вступает метод интервалов.
+        problem = ineq(
+            T.GREATER_THAN,
+            node(T.ABS, node(T.SIN, var("x"))),
+            node(T.FRACTION, c("1"), c("2")),
+        )
+        solution = solution_of(problem)
+        assert solution.type is T.OPEN_OPEN_INTERVAL
+        assert step_keys(problem) == ["trig_find_period", "trig_general_sol"]
+
+    def test_tangent_period_pi(self) -> None:
+        problem = ineq(T.GREATER_THAN, node(T.TAN, var("x")), c("0"))
+        solution = solution_of(problem)
+        assert solution.type is T.OPEN_OPEN_INTERVAL
+
+    def test_true_for_all_reals(self) -> None:
+        problem = ineq(T.LESS_THAN, node(T.SIN, var("x")), c("2"))
+        solution = solution_of(problem)
+        assert solution.type is T.OPEN_OPEN_INTERVAL
+        assert solution.children[0].type is T.NEGATIVE
+
+    def test_no_solution(self) -> None:
+        problem = ineq(T.GREATER_THAN, node(T.SIN, var("x")), c("2"))
+        assert solution_of(problem).type is T.EMPTY
+        assert step_keys(problem) == ["rel_el_of_zero"]
