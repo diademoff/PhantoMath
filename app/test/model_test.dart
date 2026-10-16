@@ -391,6 +391,42 @@ void main() {
       api.close();
     });
 
+    test('сообщение из тела 500 доходит до пользователя', () async {
+      final api = _apiWith(_response(
+        '{"detail":{"message":"внутренняя ошибка решателя","kind":"TypeError"}}',
+        500,
+      ));
+      await expectLater(
+        api.solve(bin(CoreNodeType.add, c2, c3)),
+        throwsA(isA<SolveFailure>().having(
+          (e) => e.message,
+          'message',
+          'внутренняя ошибка решателя',
+        )),
+      );
+      api.close();
+    });
+
+    test('обрыв соединения — SolveFailure, а не исключение транспорта', () async {
+      // На устройстве обработчик закрывал соединение, и необработанный
+      // `ClientException` оставлял пользователя без ответа и без ошибки.
+      final api = SolverApi(
+        baseUrl: 'http://test',
+        client: MockClient(
+          (request) async => throw http.ClientException('Connection closed'),
+        ),
+      );
+      await expectLater(
+        api.solve(bin(CoreNodeType.add, c2, c3)),
+        throwsA(isA<SolveFailure>().having(
+          (e) => e.message,
+          'message',
+          'Нет связи с решателем',
+        )),
+      );
+      api.close();
+    });
+
     test('тело ошибки без detail не приводит к падению', () async {
       final api = _apiWith(_response('не json', 422));
       await expectLater(

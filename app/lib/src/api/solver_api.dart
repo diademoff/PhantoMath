@@ -186,37 +186,30 @@ class SolverApi {
     CoreNode? intervalMax,
     List<CoreNode> definitions = const [],
   }) async {
-    final response = await _client.post(
-      Uri.parse('$baseUrl/api/v1/solve'),
-      headers: const {'content-type': 'application/json'},
-      body: jsonEncode({
-        'node': _toJson(node),
-        'locale': locale,
-        'render': render,
-        if (command != null)
-          'action': {
-            'command': command,
-            'args': [for (final arg in args) _toJson(arg)],
-          },
-        // Промежуток отбора корней: применим к тригонометрическим уравнениям.
-        if (intervalMin != null && intervalMax != null)
-          'interval': {
-            'min': _toJson(intervalMin),
-            'max': _toJson(intervalMax),
-          },
-        // Определения функций: вызовы f(…) подставляются перед решением.
-        if (definitions.isNotEmpty)
-          'definitions': [
-            for (final definition in definitions) _toJson(definition),
-          ],
-      }),
-    );
+    final response = await _post(Uri.parse('$baseUrl/api/v1/solve'), {
+      'node': _toJson(node),
+      'locale': locale,
+      'render': render,
+      if (command != null)
+        'action': {
+          'command': command,
+          'args': [for (final arg in args) _toJson(arg)],
+        },
+      // Промежуток отбора корней: применим к тригонометрическим уравнениям.
+      if (intervalMin != null && intervalMax != null)
+        'interval': {
+          'min': _toJson(intervalMin),
+          'max': _toJson(intervalMax),
+        },
+      // Определения функций: вызовы f(…) подставляются перед решением.
+      if (definitions.isNotEmpty)
+        'definitions': [
+          for (final definition in definitions) _toJson(definition),
+        ],
+    });
 
-    if (response.statusCode == 422) {
-      throw _failure(response);
-    }
     if (response.statusCode != 200) {
-      throw SolveFailure('Бэкенд ответил кодом ${response.statusCode}');
+      throw _failure(response);
     }
     return _parseSolve(jsonDecode(response.body) as Map<String, dynamic>);
   }
@@ -225,13 +218,11 @@ class SolverApi {
   ///
   /// Нужен для отладки ввода: показывает, что именно бэкенд понял.
   Future<CoreNode> parse(String source) async {
-    final response = await _client.post(
-      Uri.parse('$baseUrl/api/v1/parse'),
-      headers: const {'content-type': 'application/json'},
-      body: jsonEncode({'source': source}),
-    );
+    final response = await _post(Uri.parse('$baseUrl/api/v1/parse'), {
+      'source': source,
+    });
     if (response.statusCode != 200) {
-      throw SolveFailure('Не удалось разобрать выражение');
+      throw _failure(response, fallback: 'Не удалось разобрать выражение');
     }
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     return CoreNode.fromJson(body['node'] as Map<String, dynamic>);
@@ -247,16 +238,12 @@ class SolverApi {
     double xMax = 10,
     int samples = 400,
   }) async {
-    final response = await _client.post(
-      Uri.parse('$baseUrl/api/v1/graph'),
-      headers: const {'content-type': 'application/json'},
-      body: jsonEncode({
-        'node': _toJson(node),
-        'xMin': xMin,
-        'xMax': xMax,
-        'samples': samples,
-      }),
-    );
+    final response = await _post(Uri.parse('$baseUrl/api/v1/graph'), {
+      'node': _toJson(node),
+      'xMin': xMin,
+      'xMax': xMax,
+      'samples': samples,
+    });
     if (response.statusCode != 200) {
       throw _failure(response);
     }
@@ -326,9 +313,26 @@ class SolverApi {
 
   void close() => _client.close();
 
-  // ── разбор ответа ─────────────────────────────────────────────────
+  // ── запрос и разбор ответа ────────────────────────────────────────
 
-  SolveFailure _failure(http.Response response) {
+  /// Выполнить POST, превратив сбой транспорта в [SolveFailure].
+  ///
+  /// Обрыв соединения — такой же ожидаемый исход, как `422`: на устройстве
+  /// обработчик закрывал соединение, и приложение падало необработанным
+  /// `ClientException`, не показывая пользователю ничего.
+  Future<http.Response> _post(Uri uri, Map<String, Object?> body) async {
+    try {
+      return await _client.post(
+        uri,
+        headers: const {'content-type': 'application/json'},
+        body: jsonEncode(body),
+      );
+    } on Object {
+      throw const SolveFailure('Нет связи с решателем');
+    }
+  }
+
+  SolveFailure _failure(http.Response response, {String? fallback}) {
     try {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
       final detail = body['detail'];
@@ -341,6 +345,10 @@ class SolverApi {
       if (detail is String) return SolveFailure(detail);
     } on Object {
       // Тело не разобралось — сообщаем код, детали не придумаем.
+    }
+    if (fallback != null) return SolveFailure(fallback);
+    if (response.statusCode != 422) {
+      return SolveFailure('Решатель ответил кодом ${response.statusCode}');
     }
     return SolveFailure('Задача не решена');
   }
