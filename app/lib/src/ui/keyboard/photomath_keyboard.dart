@@ -355,18 +355,24 @@ class _KeyButton extends StatelessWidget {
       child: SizedBox(
         width: width,
         height: height,
-        child: Material(
-          color: keyBackground(phKey.type),
-          borderRadius: BorderRadius.circular(PhSize.keyRadius),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: enabled ? () => onPressed(phKey) : null,
-            onLongPress: onLongPressed == null
-                ? null
-                : () => onLongPressed!(phKey),
-            splashColor: PhColor.gray30,
-            highlightColor: PhColor.gray30,
-            child: Center(child: _glyph(context)),
+        // Неподдержанные решателем клавиши (`_unsupported` в `operators.dart`:
+        // `aₙ`, перевод строки) видны, но приглушены — иначе они выглядят
+        // рабочими и молча глотают нажатие.
+        child: Opacity(
+          opacity: enabled ? 1.0 : 0.35,
+          child: Material(
+            color: keyBackground(phKey.type),
+            borderRadius: BorderRadius.circular(PhSize.keyRadius),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: enabled ? () => onPressed(phKey) : null,
+              onLongPress: onLongPressed == null
+                  ? null
+                  : () => onLongPressed!(phKey),
+              splashColor: PhColor.gray30,
+              highlightColor: PhColor.gray30,
+              child: Center(child: _glyph(context)),
+            ),
           ),
         ),
       ),
