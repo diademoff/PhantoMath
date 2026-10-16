@@ -9,6 +9,7 @@ import 'package:mymath_app/main.dart';
 import 'package:mymath_app/src/api/solver_api.dart';
 import 'package:mymath_app/src/render/graph_view.dart';
 import 'package:mymath_app/src/theme/photomath_theme.dart';
+import 'package:mymath_app/src/theme/phanto_theme.dart';
 import 'package:mymath_app/src/ui/keyboard/ph_keyboard_spec.dart';
 
 /// Ответ бэкенда с одним шагом и итогом 5.
@@ -105,10 +106,9 @@ void main() {
     await tester.pumpWidget(MyMathApp(baseUrl: 'http://test'));
     await tester.pump();
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
-    // Оригинал тёмной темы не имеет: `AppTheme` — Light.
-    expect(app.darkTheme, isNull);
-    expect(app.theme?.colorScheme.primary, PhColor.red);
-    expect(app.theme?.dividerColor, PhColor.divider);
+    expect(app.darkTheme, isNotNull);
+    expect(app.theme?.colorScheme.primary, PhantoTheme.light().colorScheme.primary);
+    expect(app.title, 'PhantoMath');
     expect(tester.takeException(), isNull);
   });
 

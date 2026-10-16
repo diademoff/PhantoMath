@@ -49,6 +49,7 @@ import 'src/render/latex.dart';
 import 'src/settings/settings.dart';
 import 'src/settings/settings_page.dart';
 import 'src/theme/photomath_theme.dart';
+import 'src/theme/phanto_theme.dart';
 import 'src/ui/keyboard/photomath_keyboard.dart';
 import 'src/ui/photomath_button.dart';
 import 'src/ui/solution_preview.dart';
@@ -158,9 +159,11 @@ class MyMathApp extends StatelessWidget {
         statusBarBrightness: Brightness.dark,
       ),
       child: MaterialApp(
-        title: 'mymath',
+        title: 'PhantoMath',
         debugShowCheckedModeBanner: false,
-        theme: PhotomathTheme.light(),
+        theme: PhantoTheme.light(),
+        darkTheme: PhantoTheme.dark(),
+        themeMode: ThemeMode.system,
         home: SolvePage(api: SolverApi(baseUrl: baseUrl)),
       ),
     );
