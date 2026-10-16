@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from .ast import CoreNode
+from .translations import SUPPLEMENTARY
 
 DEFAULT_LOCALE = "default"
 ARG_PATTERN = re.compile(r"ARG(\d+)")
@@ -63,6 +64,28 @@ class ExplanationNotFoundError(KeyError):
     """Ключа нет ни в одном языке."""
 
 
+def _with_supplementary(
+    entries: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Дополнить извлечённый словарь нашими переводами.
+
+    Заполняются только отсутствующие языки: данные из ``resources.arsc``
+    остаются неприкосновенными (см. :mod:`mymath_backend.translations`).
+    """
+    if not SUPPLEMENTARY:
+        return entries
+    merged = dict(entries)
+    for key, templates in SUPPLEMENTARY.items():
+        payload = merged.get(key)
+        if payload is None:
+            continue
+        current = payload.get("templates", {})
+        missing = {locale: text for locale, text in templates.items() if locale not in current}
+        if missing:
+            merged[key] = {**payload, "templates": {**current, **missing}}
+    return merged
+
+
 class Explanations:
     """Словарь объяснений с подстановкой аргументов.
 
@@ -80,8 +103,8 @@ class Explanations:
 
     def __init__(self, entries: dict[str, dict[str, Any]]) -> None:
         """Принять словарь в формате ``explanations.json``."""
-        self._entries = entries
-        self._fallbacks = self._build_fallbacks(entries)
+        self._entries = _with_supplementary(entries)
+        self._fallbacks = self._build_fallbacks(self._entries)
 
     @staticmethod
     def _build_fallbacks(entries: dict[str, dict[str, Any]]) -> dict[str, str]:

@@ -6,6 +6,7 @@ truth/data/explanations.json. Формат шаблонов разобран в 
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -17,6 +18,7 @@ from mymath_backend.explanations import (
     Explanations,
     load_explanations,
 )
+from mymath_backend.translations import SUPPLEMENTARY
 
 TRUTH = Path(__file__).resolve().parents[2] / "truth" / "data"
 EXPLANATIONS = TRUTH / "explanations.json"
@@ -74,6 +76,38 @@ class TestCorpusIntegrity:
         }
         assert len(from_apk) == 3020
         assert from_apk <= set(explanations.keys())
+
+
+class TestSupplementary:
+    """Наши переводы: заполняют пробелы, извлечённые данные не трогают.
+
+    Русский шаблон есть не у всех ключей `arsc`, и продукт (только `ru`/`en`)
+    молча показывал английский текст в русском шаге.
+    """
+
+    def test_russian_text_appears(self, explanations: Explanations) -> None:
+        rendered = explanations.render("conics_identify_disc", [], "ru")
+        assert rendered.locale == "ru"
+        assert rendered.text == SUPPLEMENTARY["conics_identify_disc"]["ru"]
+
+    def test_extracted_artifact_untouched(self) -> None:
+        """Дополнение живёт в коде: файл-артефакт остаётся как извлекли."""
+        raw = json.loads(EXPLANATIONS.read_text(encoding="utf-8"))
+        assert "ru" not in raw["conics_identify_disc"]["templates"]
+
+    def test_only_missing_locales_are_filled(self) -> None:
+        raw = json.loads(EXPLANATIONS.read_text(encoding="utf-8"))
+        problems: list[str] = []
+        for key, templates in SUPPLEMENTARY.items():
+            if key not in raw:
+                problems.append(f"{key}: нет в извлечённом словаре")
+                continue
+            for locale, text in templates.items():
+                if locale in raw[key]["templates"]:
+                    problems.append(f"{key}/{locale}: язык уже есть в словаре")
+                if not text.strip():
+                    problems.append(f"{key}/{locale}: пустой текст")
+        assert problems == []
 
 
 class TestRendering:
