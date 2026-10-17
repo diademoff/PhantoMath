@@ -1601,9 +1601,18 @@ def _after_moving_left(
     return moved
 
 
+def _square_split(n: int) -> tuple[int, int]:
+    """``n = big^2 * small`` with the largest ``big``."""
+    big = max(d for d in range(1, isqrt(n) + 1) if n % (d * d) == 0)
+    return big, n // (big * big)
+
+
 def _pure_square_formulas(node: CoreNode, var: str, c: int) -> list[SolveResult]:
     """``x^2 - k^2 = 0`` by the roots formula and the PQ formula, as captured for x^2 - 4 = 0."""
     k = isqrt(-c)
+    exact = k * k == -c
+    n = -c
+    big, small = _square_split(n)
     x, two, num = CoreNode.variable(var), _num(2), _num
     la, lb, lc = (CoreNode.variable(v) for v in "abc")
     p, q = CoreNode.variable("p"), CoreNode.variable("q")
@@ -1678,45 +1687,90 @@ def _pure_square_formulas(node: CoreNode, var: str, c: int) -> list[SolveResult]
     formula.add_group(
         CoreRichText(type="remove_zero", args=[zero]), Step(summed, plain, "add_with_zero", [zero])
     )
-    rooted = fraction(_node(T.ADD_SUBTRACT, num(2 * k)), two)
-    formula.add_group(
-        "calculate_short",
-        Step(
-            plain,
-            rooted,
-            "root_square",
-            [],
-            subresult=_detail(_node(T.ROOT2, num(-4 * c)), num(2 * k)),
-        ),
-    )
-    plus = fraction(num(2 * k), two)
-    minus = fraction(_node(T.NEGATIVE, num(2 * k)), two)
-    listed = _node(T.LIST, plus, minus)
-    formula.add_group("quad_separate", Step(rooted, listed, "quad_separate_signs", list(_SIGNS)))
-    low, high = _eq(x, num(-k)), _eq(x, num(k))
-    answer = _node(T.LIST, high, low)
-    formula.add_group(
-        "frac_reduce_frac",
-        Step(
-            listed,
-            _node(T.LIST, high, minus),
-            "frac_reduce",
-            [two],
-            subresult=_detail(plus.children[1], num(k)),
-        ),
-        Step(
-            _node(T.LIST, high, minus),
-            answer,
-            "frac_reduce",
-            [two],
-            subresult=_detail(minus.children[1], num(-k)),
-        ),
-    )
-    formula.add_group(
-        CoreRichText(type="solution_eq_num", args=[two]),
-        Step(answer, answer, "solution_eq_num", [two]),
-    )
-    formula.set_solution(answer)
+    if exact:
+        rooted = fraction(_node(T.ADD_SUBTRACT, num(2 * k)), two)
+        formula.add_group(
+            "calculate_short",
+            Step(
+                plain,
+                rooted,
+                "root_square",
+                [],
+                subresult=_detail(_node(T.ROOT2, num(-4 * c)), num(2 * k)),
+            ),
+        )
+        plus = fraction(num(2 * k), two)
+        minus = fraction(_node(T.NEGATIVE, num(2 * k)), two)
+        listed = _node(T.LIST, plus, minus)
+        formula.add_group(
+            "quad_separate", Step(rooted, listed, "quad_separate_signs", list(_SIGNS))
+        )
+        low, high = _eq(x, num(-k)), _eq(x, num(k))
+        answer = _node(T.LIST, high, low)
+        formula.add_group(
+            "frac_reduce_frac",
+            Step(
+                listed,
+                _node(T.LIST, high, minus),
+                "frac_reduce",
+                [two],
+                subresult=_detail(plus.children[1], num(k)),
+            ),
+            Step(
+                _node(T.LIST, high, minus),
+                answer,
+                "frac_reduce",
+                [two],
+                subresult=_detail(minus.children[1], num(-k)),
+            ),
+        )
+        formula.add_group(
+            CoreRichText(type="solution_eq_num", args=[two]),
+            Step(answer, answer, "solution_eq_num", [two]),
+        )
+        formula.set_solution(answer)
+    else:
+        root_part = _node(T.ROOT2, num(small)) if small > 1 else None
+
+        def surd(factor: int) -> CoreNode:
+            if root_part is None:
+                return num(factor)
+            return root_part if factor == 1 else _node(T.MULTIPLY_IMPLICIT, num(factor), root_part)
+
+        formula.add_group(
+            "simplify",
+            Step(
+                plain,
+                fraction(_node(T.ADD_SUBTRACT, surd(2 * big)), two),
+                "root_simplify",
+                [],
+                subresult=_detail(_node(T.ROOT2, num(4 * n)), surd(2 * big)),
+            ),
+        )
+        reduced_plus = fraction(surd(2 * big), two)
+        reduced_minus = fraction(_node(T.NEGATIVE, surd(2 * big)), two)
+        pair_form = _node(T.LIST, reduced_plus, reduced_minus)
+        formula.add_group(
+            "quad_separate",
+            Step(
+                fraction(_node(T.ADD_SUBTRACT, surd(2 * big)), two),
+                pair_form,
+                "quad_separate_signs",
+                list(_SIGNS),
+            ),
+        )
+        half_state = _node(T.LIST, _eq(x, surd(big)), reduced_minus)
+        answer = _node(T.LIST, _eq(x, surd(big)), _eq(x, _node(T.NEGATIVE, surd(big))))
+        formula.add_group(
+            "simplify_msg",
+            Step(pair_form, half_state, "simplify"),
+            Step(half_state, answer, "simplify"),
+        )
+        formula.add_group(
+            CoreRichText(type="solution_eq_num", args=[two]),
+            Step(answer, answer, "solution_eq_num", [two]),
+        )
+        formula.set_solution(answer)
 
     # -- the PQ formula
     pq = SolveResult()
@@ -1739,34 +1793,77 @@ def _pure_square_formulas(node: CoreNode, var: str, c: int) -> list[SolveResult]
     pq.add_group(
         "quad_formula_abc_simple", Step(node, first, "quad_formula_pq", [p_standard, p_template])
     )
-    divided = _eq(
-        x,
-        _node(
-            T.ADD_SUBTRACT,
-            _node(T.NEGATIVE, zero),
+    if exact:
+        divided = _eq(
+            x,
             _node(
-                T.ROOT2, _node(T.SUBTRACT, _node(T.POWER, _node(T.BRACKET, zero), two), _paren(c))
+                T.ADD_SUBTRACT,
+                _node(T.NEGATIVE, zero),
+                _node(
+                    T.ROOT2,
+                    _node(T.SUBTRACT, _node(T.POWER, _node(T.BRACKET, zero), two), _paren(c)),
+                ),
             ),
-        ),
-    )
-    valued = _eq(x, _node(T.ADD_SUBTRACT, _node(T.NEGATIVE, zero), num(k)))
-    pq.add_group(
-        ["divide", "calculate_short"],
-        Step(first, divided, "div_zero", [zero]),
-        Step(divided, valued, "calculate_direct"),
-    )
-    cleaned = _eq(x, _node(T.ADD_SUBTRACT, num(k)))
-    pq.add_group(
-        CoreRichText(type="remove_zero", args=[zero]),
-        Step(valued, cleaned, "add_with_zero", [zero]),
-    )
-    pair = _node(T.LIST, _eq(x, num(k)), _eq(x, num(-k)))
-    pq.add_group("quad_separate", Step(cleaned, pair, "quad_separate_signs", list(_SIGNS)))
-    pq.add_group(
-        CoreRichText(type="solution_eq_num", args=[two]), Step(pair, pair, "solution_eq_num", [two])
-    )
-    pq.set_solution(pair)
-    return [formula, pq]
+        )
+        valued = _eq(x, _node(T.ADD_SUBTRACT, _node(T.NEGATIVE, zero), num(k)))
+        pq.add_group(
+            ["divide", "calculate_short"],
+            Step(first, divided, "div_zero", [zero]),
+            Step(divided, valued, "calculate_direct"),
+        )
+        cleaned = _eq(x, _node(T.ADD_SUBTRACT, num(k)))
+        pq.add_group(
+            CoreRichText(type="remove_zero", args=[zero]),
+            Step(valued, cleaned, "add_with_zero", [zero]),
+        )
+        pair = _node(T.LIST, _eq(x, num(k)), _eq(x, num(-k)))
+        pq.add_group("quad_separate", Step(cleaned, pair, "quad_separate_signs", list(_SIGNS)))
+        pq.add_group(
+            CoreRichText(type="solution_eq_num", args=[two]),
+            Step(pair, pair, "solution_eq_num", [two]),
+        )
+        pq.set_solution(pair)
+    else:
+        no_one = _node(T.NEGATIVE, zero)
+        root_of = _node(T.ROOT2, num(n))
+
+        def pq_state(first_part: CoreNode, inner_part: CoreNode) -> CoreNode:
+            return _eq(x, _node(T.ADD_SUBTRACT, first_part, _node(T.ROOT2, inner_part)))
+
+        half_sq = _node(T.POWER, _node(T.BRACKET, zero_half), two)
+        step1 = pq_state(no_one, _node(T.SUBTRACT, half_sq, _paren(c)))
+        step2 = pq_state(no_one, _node(T.SUBTRACT, _node(T.POWER, zero, two), _paren(c)))
+        step3 = pq_state(no_one, _node(T.ADD, _node(T.POWER, zero, two), num(n)))
+        pq.add_group(
+            ["divide", "remove_bracket_short"],
+            Step(first, step1, "div_zero", [zero]),
+            Step(step1, step2, "div_zero", [zero]),
+            Step(step2, step3, "neg_neg_arg", [num(-1)]),
+        )
+        step4 = _eq(
+            x,
+            _node(T.ADD_SUBTRACT, _node(T.ROOT2, _node(T.ADD, _node(T.POWER, zero, two), num(n)))),
+        )
+        step5 = _eq(x, _node(T.ADD_SUBTRACT, _node(T.ROOT2, _node(T.ADD, zero, num(n)))))
+        pq.add_group(
+            ["remove_zero", "pow_zero"],
+            Step(step3, step4, "add_with_zero", [zero]),
+            Step(step4, step5, "pow_zero", [zero]),
+        )
+        step6 = _eq(x, _node(T.ADD_SUBTRACT, root_of))
+        pq.add_group(
+            CoreRichText(type="remove_zero", args=[zero]),
+            Step(step5, step6, "add_with_zero", [zero]),
+        )
+        pair = _node(T.LIST, _eq(x, root_of), _eq(x, _node(T.NEGATIVE, root_of)))
+        pq.add_group("quad_separate", Step(step6, pair, "quad_separate_signs", list(_SIGNS)))
+        pq.add_group(
+            CoreRichText(type="solution_eq_num", args=[two]),
+            Step(pair, pair, "solution_eq_num", [two]),
+        )
+        pq.set_solution(pair)
+    # the PQ card was captured for a square-free n only (x^2 - 2)
+    return [formula, pq] if exact or big == 1 else [formula]
 
 
 def methods(
@@ -1789,6 +1886,8 @@ def methods(
             others = [_difference_of_squares(_Family(var, ia, ib, ic))]
             others += _pure_square_formulas(zero_form, var, ic)
             shown += [_after_moving_left(node, zero_form, m) for m in others] if direct else others
+        elif not direct:
+            shown += _pure_square_formulas(node, var, ic)
         if isqrt(-ic) ** 2 != -ic:
             shown += _two_real_cards(node, ia, ib, ic)
         return [m for m in shown if m]

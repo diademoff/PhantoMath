@@ -333,8 +333,8 @@ class TestMethods:
 
     def test_irrational_quadratic_has_the_extraction_and_the_discriminant_cards(self) -> None:
         group = _group("{=({x^2-2},{0})}")
-        assert len(group.entries) == 3
-        assert _method_keys(group.entries[1])[-1] == "eq_quad_disc_solution_all_gt"
+        assert len(group.entries) == 5
+        assert _method_keys(group.entries[3])[-1] == "eq_quad_disc_solution_all_gt"
 
     def test_bracket_times_number_is_divide_move_calculate(self) -> None:
         # Photomath 7.10.0 on device: 2(x+1)=8 is three rows and a single method.
