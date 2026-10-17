@@ -295,7 +295,7 @@ class TestMethods:
     def test_negative_discriminant_gives_complex_roots_and_the_discriminant_cards(self) -> None:
         # Photomath 7.10.0 on device: x^2 + 2x + 5 = 0 has the roots -1 +- 2i.
         group = _group("{=({x^2+2x+5},{0})}")
-        assert len(group.entries) == 4
+        assert len(group.entries) == 9
         assert _method_keys(group.entries[0]) == [
             "quad_formula_abc",
             "mul_with_one",

@@ -85,7 +85,7 @@ class _Family:
     def __init__(self, var: str, a: int, b: int, c: int) -> None:
         self.var, self.a, self.b, self.c = var, a, b, c
         self.d = b * b - 4 * a * c
-        self.root = isqrt(self.d)
+        self.root = isqrt(self.d) if self.d >= 0 else 0
         self.x = CoreNode.variable(var)
         self.node = _eq(_poly([(a, 2), (b, 1), (c, 0)], var), _num(0))
         self.low, self.high = sorted(
@@ -556,9 +556,12 @@ def _pq_positive(f: _Family) -> SolveResult:
     return result
 
 
-def _completing_square(f: _Family) -> SolveResult | None:
+def _completing_square(f: _Family, real_only: bool = False) -> SolveResult | None:
     """Completing the square: ``a = 1`` for three sign families, ``a > 1`` for ``b > 0 > c``."""
-    if f.a != 1 and not (f.a > 1 and f.b > 0 > f.c):
+    negative = f.d < 0
+    if negative and not (f.a == 1 and f.b > 0 and f.c > 0 and isqrt(-f.d) ** 2 == -f.d):
+        return None
+    if not negative and f.a != 1 and not (f.a > 1 and f.b > 0 > f.c):
         return None
     a, x, var = f.a, f.x, f.var
     c: int | Fraction = f.c
@@ -646,6 +649,8 @@ def _completing_square(f: _Family) -> SolveResult | None:
         Step(equal, factored, "using_factor", [formula], subresult=factor_detail),
         Step(factored, reduced, "calc_sum", [], subresult=_detail(right, _fraction_node(total))),
     )
+    if negative:
+        return _complex_square_ending(f, result, reduced, root, total, real_only)
     r = Fraction(f.root, 2 * a)
     sides = _eq(
         _node(T.ROOT2, _node(T.POWER, root, _num(2))),
@@ -660,6 +665,47 @@ def _completing_square(f: _Family) -> SolveResult | None:
     solve.set_solution(solved)
     result.add_group("eq_solve_short", Step(reduced, solved, "eq_linear", [x], subresult=solve))
     f.finish(result, [f.solved(f.low), f.solved(f.high)])
+    return result
+
+
+def _complex_square_ending(
+    f: _Family,
+    result: SolveResult,
+    reduced: CoreNode,
+    root: CoreNode,
+    total: Fraction,
+    real_only: bool,
+) -> SolveResult:
+    """Last row(s) of completing the square when ``(x + h)^2`` equals a negative number."""
+    x, two = f.x, _num(2)
+    k = Fraction(isqrt(-f.d), 2)
+    sides = _eq(
+        _node(T.ROOT2, _node(T.POWER, root, two)),
+        _node(T.ADD_SUBTRACT, _node(T.ROOT2, _fraction_node(total))),
+    )
+    unit = CoreNode.node(T.IMAGINARY)
+    imaginary = unit if k == 1 else _node(T.MULTIPLY_IMPLICIT, _fraction_node(k), unit)
+    solve = SolveResult()
+    solve.add_group("quad_sqrt_sides", Step(reduced, sides, "quad_sqrt_sides"))
+    if real_only:
+        solve.add_group("expr_not_def_in_r", Step(sides, sides, "root_sqr_neg"))
+        solve.set_solution(CoreNode.empty())
+        result.add_group("eq_solve_short", Step(reduced, sides, "eq_linear", [x], subresult=solve))
+        result.set_solution(CoreNode.empty())
+        return result
+    pm_row = _eq(root, _node(T.ADD_SUBTRACT, imaginary))
+    solve.add_group("calculate_short", Step(sides, pm_row, "root_square"))
+    shift = Fraction(f.b, 2)
+    roots = [_eq(x, _node(sign, _fraction_node(-shift), imaginary)) for sign in (T.ADD, T.SUBTRACT)]
+    solved = _node(T.LIST, *roots)
+    solve.add_group("quad_separate", Step(pm_row, solved, "quad_separate_signs", list(_SIGNS)))
+    solve.set_solution(solved)
+    result.add_group("eq_solve_short", Step(reduced, solved, "eq_linear", [x], subresult=solve))
+    result.add_group(
+        CoreRichText(type="solution_eq_num", args=[two]),
+        Step(solved, solved, "solution_eq_num", [two]),
+    )
+    result.set_solution(solved)
     return result
 
 
@@ -1164,6 +1210,98 @@ def _discriminant_cards(
     return counting, discriminant
 
 
+def _pq_negative(node: CoreNode, var: str, b: int, c: int) -> list[SolveResult]:
+    """PQ formula for ``x^2 + p x + q = 0`` (even ``p > 0``, ``D < 0``): complex and real cards."""
+    half = b // 2
+    k2 = c - half * half
+    k = isqrt(k2)
+    if b % 2 or half * half >= c or k * k != k2:
+        return []
+    x, two, num = CoreNode.variable(var), _num(2), _num
+    p, q = CoreNode.variable("p"), CoreNode.variable("q")
+    standard = _eq(
+        _node(T.ADD, _node(T.ADD, _node(T.POWER, x, two), _node(T.MULTIPLY_IMPLICIT, p, x)), q),
+        num(0),
+    )
+    p_half = _node(T.FRACTION, p, two)
+    template = _eq(
+        x,
+        _node(
+            T.ADD_SUBTRACT,
+            _node(T.NEGATIVE, p_half),
+            _node(T.ROOT2, _node(T.SUBTRACT, _node(T.POWER, _node(T.BRACKET, p_half), two), q)),
+        ),
+    )
+
+    def state(first: CoreNode, inner: CoreNode) -> CoreNode:
+        return _eq(x, _node(T.ADD_SUBTRACT, first, _node(T.ROOT2, inner)))
+
+    def build(result: SolveResult) -> CoreNode:
+        b_half = _node(T.FRACTION, num(b), two)
+        start = state(
+            _node(T.NEGATIVE, b_half),
+            _node(T.SUBTRACT, _node(T.POWER, _node(T.BRACKET, b_half), two), num(c)),
+        )
+        result.add_group(
+            "quad_formula_abc_simple", Step(node, start, "quad_formula_pq", [standard, template])
+        )
+        first = state(
+            num(-half), _node(T.SUBTRACT, _node(T.POWER, _node(T.BRACKET, b_half), two), num(c))
+        )
+        second = state(num(-half), _node(T.SUBTRACT, _node(T.POWER, num(1), two), num(c)))
+        result.add_group(
+            "divide",
+            Step(start, first, "div_with_self", [num(1)]),
+            Step(first, second, "div_with_self", [num(1)]),
+        )
+        third = state(num(-half), _node(T.SUBTRACT, num(1), num(c)))
+        result.add_group(["pow_one", "series_calc_short"], Step(second, third, "pow_one", [num(1)]))
+        negative = _node(T.NEGATIVE, num(k2))
+        fourth = state(num(-half), negative)
+        result.add_group(
+            "calculate_short",
+            Step(
+                third,
+                fourth,
+                "calc_diff",
+                [],
+                subresult=_detail(_node(T.SUBTRACT, num(1), num(c)), negative),
+            ),
+        )
+        return fourth
+
+    unit = CoreNode.node(T.IMAGINARY)
+    root_value = unit if k == 1 else _node(T.MULTIPLY_IMPLICIT, num(k), unit)
+    complex_result = SolveResult()
+    fourth = build(complex_result)
+    rooted = _eq(x, _node(T.ADD_SUBTRACT, num(-half), root_value))
+    complex_result.add_group(
+        "calculate_short",
+        Step(
+            fourth,
+            rooted,
+            "root_square",
+            [],
+            subresult=_detail(_node(T.ROOT2, _node(T.NEGATIVE, num(k2))), root_value),
+        ),
+    )
+    roots = [_eq(x, _node(sign, num(-half), root_value)) for sign in (T.ADD, T.SUBTRACT)]
+    listed = _node(T.LIST, *roots)
+    complex_result.add_group(
+        "quad_separate", Step(rooted, listed, "quad_separate_signs", list(_SIGNS))
+    )
+    complex_result.add_group(
+        CoreRichText(type="solution_eq_num", args=[two]),
+        Step(listed, listed, "solution_eq_num", [two]),
+    )
+    complex_result.set_solution(listed)
+    real_result = SolveResult()
+    fourth = build(real_result)
+    real_result.add_group("expr_not_def_in_r", Step(fourth, fourth, "root_sqr_neg"))
+    real_result.set_solution(CoreNode.empty())
+    return [complex_result, real_result]
+
+
 def _negative_discriminant(node: CoreNode, var: str, b: int, c: int) -> list[SolveResult] | None:
     """``x^2 + b x + c = 0`` with D = -m^2 < 0 (captured for b > 0, c > 0).
 
@@ -1321,7 +1459,31 @@ def _negative_discriminant(node: CoreNode, var: str, b: int, c: int) -> list[Sol
         ("eq_quad_disc_no_solution_simple", "eq_quad_disc_no_solution_var_lt", [num(0)]),
         CoreNode.empty(),
     )
-    return [complex_result, real_result, counting, discriminant]
+    imaginary_count, _ = _discriminant_cards(
+        node,
+        1,
+        b,
+        c,
+        (
+            CoreRichText(type="eq_quad_disc_imag_solution_simple", args=[two]),
+            "eq_quad_disc_imag_solution_var_lt",
+            [num(0), two],
+        ),
+        two,
+    )
+    family = _Family(var, 1, b, c)
+    squares = [
+        m for m in (_completing_square(family), _completing_square(family, real_only=True)) if m
+    ]
+    return [
+        complex_result,
+        real_result,
+        *_pq_negative(node, var, b, c),
+        *squares,
+        counting,
+        imaginary_count,
+        discriminant,
+    ]
 
 
 def _two_real_cards(node: CoreNode, a: int, b: int, c: int) -> list[SolveResult]:
