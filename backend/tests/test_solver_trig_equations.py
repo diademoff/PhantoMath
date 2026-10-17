@@ -73,7 +73,18 @@ class TestGeneralSolution:
     def test_sine_two_series(self) -> None:
         problem = eq(node(T.SIN, x()), half())
         assert series_offsets(problem) == {sympy.pi / 6, 5 * sympy.pi / 6}
-        assert step_keys(problem) == ["trig_find_period", "trig_general_sol"]
+        assert step_keys(problem) == [
+            "trig_eq_two_sollutions",
+            "trig_eq_isolate",
+            "trig_eq_isolate",
+            "trig_arcus",
+            "trig_arcus",
+            "trig_eq_fun_period",
+            "trig_eq_fun_period",
+            "eq_linear",
+            "trig_eq_positive_period",
+            "solution_eq_num",
+        ]
 
     def test_cosine_two_series(self) -> None:
         problem = eq(node(T.COS, x()), half())

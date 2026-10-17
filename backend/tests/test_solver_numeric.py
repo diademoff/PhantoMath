@@ -80,7 +80,18 @@ class TestFallbackPriority:
     def test_periodic_single_sine_stays_analytic(self) -> None:
         # Численный модуль не перехватывает то, что решает тригонометрия.
         keys = step_keys("{=({sin({x})},{1/2})}")
-        assert keys == ["trig_find_period", "trig_general_sol"]
+        assert keys == [
+            "trig_eq_two_sollutions",
+            "trig_eq_isolate",
+            "trig_eq_isolate",
+            "trig_arcus",
+            "trig_arcus",
+            "trig_eq_fun_period",
+            "trig_eq_fun_period",
+            "eq_linear",
+            "trig_eq_positive_period",
+            "solution_eq_num",
+        ]
 
 
 class TestExplanationKeys:

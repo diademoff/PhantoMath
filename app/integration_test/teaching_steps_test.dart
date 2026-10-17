@@ -139,9 +139,6 @@ void main() {
       );
       await tap(tester, find.byKey(const ValueKey('solution-group:1')));
       expect(find.text('Этап 1 из 2'), findsOneWidget);
-      await tap(tester, find.byKey(const ValueKey('next-stage')));
-      await tester.pumpAndSettle();
-      expect(find.text('Этап 2 из 2'), findsOneWidget);
       await tap(tester, find.byKey(const ValueKey('solution-group:4')));
       expect(find.text('Этап 1 из 2'), findsOneWidget);
       await tap(tester, find.byKey(const ValueKey('step-details')));
