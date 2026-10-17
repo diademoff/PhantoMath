@@ -418,5 +418,47 @@
   "section": "limits",
   "pm": "<lim>x3<R>2x+1",
   "proto": "{lim({3},{2x+1})}"
+ },
+ {
+  "id": "log_eq",
+  "section": "logarithms",
+  "pm": "<log10>x<R>=2",
+  "proto": "{=({log10({x})},{2})}"
+ },
+ {
+  "id": "abs_lin",
+  "section": "absolute_value",
+  "pm": "<abs>2x-1<R>=5",
+  "proto": "{=({abs({2x-1})},{5})}"
+ },
+ {
+  "id": "quad_common",
+  "section": "quadratic_equations",
+  "pm": "x<sq>-x=0",
+  "proto": "{=({x^2-x},{0})}"
+ },
+ {
+  "id": "int_6x",
+  "section": "integrals",
+  "pm": "<int>6x<R>x",
+  "proto": "{integral({6x})}"
+ },
+ {
+  "id": "int_5",
+  "section": "integrals",
+  "pm": "<int>5<R>x",
+  "proto": "{integral({5})}"
+ },
+ {
+  "id": "ineq_both",
+  "section": "inequalities",
+  "pm": "3x-2<lt>x+4",
+  "proto": "{<({3x-2},{x+4})}"
+ },
+ {
+  "id": "frac_x3",
+  "section": "linear_equations",
+  "pm": "<frac>x<R>3<R>=2",
+  "proto": "{=({frac({x},{3})},{2})}"
  }
 ]

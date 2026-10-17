@@ -742,6 +742,78 @@ def _reciprocal_equation(node: CoreNode, var: str) -> SolveResult | None:
     return result
 
 
+def _log10_equation(node: CoreNode, var: str) -> list[SolveResult] | None:
+    """``log10(x) = n`` for an integer ``n >= 1``: the two cards Photomath 7.10.0 shows."""
+    left, right = node.children
+    if not (
+        left.type is T.LOG10
+        and left.children[0].type is T.VARIABLE
+        and left.children[0].value == var
+        and right.type is T.CONSTANT
+        and (right.value or "").isdigit()
+        and int(right.value or 0) >= 1
+    ):
+        return None
+    n = int(right.value or 0)
+    eq, x, zero, ten = (
+        CoreNode.node,
+        CoreNode.variable(var),
+        _const(Fraction(0)),
+        _const(Fraction(10)),
+    )
+    power = eq(T.POWER, ten, right)
+    converted = _equation(var, power)
+    law = eq(
+        T.EQUALS,
+        eq(T.LOG, CoreNode.variable("x"), CoreNode.variable("a")),
+        CoreNode.variable("b"),
+    )
+    law_power = eq(
+        T.EQUALS,
+        CoreNode.variable("x"),
+        eq(T.POWER, CoreNode.variable("a"), CoreNode.variable("b")),
+    )
+    convert = Step(node, converted, "eq_log_formula_convert", [law, law_power])
+
+    def restricted(equation: CoreNode) -> CoreNode:
+        return eq(T.LIST, equation, eq(T.GREATER_THAN, x, zero))
+
+    start = restricted(node)
+    domain = SolveResult()
+    domain.add_group(
+        CoreRichText(type="rel_restrictions_log_arg", args=[x, x, zero]),
+        Step(node, eq(T.GREATER_THAN, x, zero), "rel_restrictions_log_arg", [x, x, zero]),
+    )
+    domain.set_solution(start)
+    primary = SolveResult()
+    primary.add_group(
+        "rel_restrictions_range",
+        Step(node, start, "rel_restrictions_range", subresult=domain),
+    )
+    with_domain = restricted(converted)
+    primary.add_group(
+        "log_convert_to_exp",
+        Step(start, with_domain, "eq_log_formula_convert", [law, law_power]),
+    )
+    value = _equation(var, _const(Fraction(10**n)))
+    solved = restricted(value)
+    primary.add_group(
+        "calculate_short",
+        Step(
+            with_domain,
+            solved,
+            "pow",
+            subresult=quadratic_pm._detail(power, _const(Fraction(10**n))),
+        ),
+    )
+    primary.add_group("solution_check_sol", Step(solved, value, "rel_restrictions_check"))
+    primary.set_solution(value)
+    rewrite = SolveResult()
+    rewrite.add_group("log_convert_to_exp", convert)
+    rewrite.set_solution(converted)
+    return [primary, rewrite]
+
+
 def _linear_solution(
     node: CoreNode,
     lhs: CoreNode,
@@ -1858,6 +1930,8 @@ def solve_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
         return [bracket]
     if (reciprocal := _reciprocal_equation(node, var)) is not None:
         return [reciprocal]
+    if (logarithm := _log10_equation(node, var)) is not None:
+        return logarithm
     try:
         poly = _sub(poly_of(lhs, var), poly_of(rhs, var))
     except SolveError:

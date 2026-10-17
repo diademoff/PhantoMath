@@ -430,3 +430,16 @@ def test_scaled_square_divides_first_on_every_card() -> None:
     assert len(group.entries) == 4
     assert _method_keys(group.entries[0])[0] == "eq_linear_div"
     assert _method_keys(group.entries[1])[:2] == ["rel_move_left_const", "eq_linear_div"]
+
+
+def test_log10_equation_has_the_solve_and_rewrite_cards() -> None:
+    # Photomath 7.10.0 on device: log10(x)=2 is four rows plus a "rewrite as a power" card.
+    group = _group("{=({log10({x})},{2})}")
+    assert len(group.entries) == 2
+    assert _method_keys(group.entries[0]) == [
+        "rel_restrictions_range",
+        "eq_log_formula_convert",
+        "pow",
+        "rel_restrictions_check",
+    ]
+    assert _method_keys(group.entries[1]) == ["eq_log_formula_convert"]
