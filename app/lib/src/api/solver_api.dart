@@ -35,6 +35,7 @@ class SolveResponse {
     this.solution,
     this.methods = const [],
     this.selectMethodText,
+    this.header,
   });
 
   /// Шаги решения по порядку следования.
@@ -48,12 +49,18 @@ class SolveResponse {
 
   /// Подпись переключателя способов («показать другой способ»).
   final String? selectMethodText;
+  final String? header;
 }
 
 /// Шаг решения: список подшагов под общим заголовком.
 class SolveStep {
-  const SolveStep({this.headers = const [], this.substeps = const []});
+  const SolveStep({
+    this.id = '',
+    this.headers = const [],
+    this.substeps = const [],
+  });
 
+  final String id;
   final List<String> headers;
   final List<Substep> substeps;
 }
@@ -82,6 +89,10 @@ class Substep {
     this.explanationKey,
     this.links = const [],
     this.detail = const [],
+    this.id = '',
+    this.subresult,
+    this.parts = const [],
+    this.theory,
   });
 
   final CoreNode? left;
@@ -99,6 +110,52 @@ class Substep {
   /// Раскрываемое углублённое пояснение шага (`subresult`): вложенные шаги.
   /// Пусто, если у шага нет деталей.
   final List<SolveStep> detail;
+  final String id;
+  final SolveResponse? subresult;
+  final List<ExplanationPart> parts;
+  final TheoryArticle? theory;
+}
+
+class ExplanationPart {
+  const ExplanationPart({this.text, this.node});
+  final String? text;
+  final CoreNode? node;
+}
+
+class TheoryArticle {
+  const TheoryArticle({
+    required this.id,
+    required this.title,
+    required this.summary,
+    this.formula = '',
+    this.conditions = '',
+    this.example = '',
+    this.mistake = '',
+  });
+  final String id;
+  final String title;
+  final String summary;
+  final String formula;
+  final String conditions;
+  final String example;
+  final String mistake;
+
+  static TheoryArticle? parse(Object? raw) {
+    if (raw is! Map<String, dynamic> ||
+        raw['title'] is! String ||
+        raw['summary'] is! String) {
+      return null;
+    }
+    return TheoryArticle(
+      id: raw['id'] as String? ?? '',
+      title: raw['title'] as String,
+      summary: raw['summary'] as String,
+      formula: raw['formula'] as String? ?? '',
+      conditions: raw['conditions'] as String? ?? '',
+      example: raw['example'] as String? ?? '',
+      mistake: raw['mistake'] as String? ?? '',
+    );
+  }
 }
 
 /// Точка графика.
@@ -381,6 +438,7 @@ class SolverApi {
       solution: primary.solution ?? _node(topSolution),
       methods: methods.length > 1 ? methods : const [],
       selectMethodText: selectLabel,
+      header: primary.header,
     );
   }
 
@@ -390,6 +448,9 @@ class SolverApi {
     return SolveResponse(
       steps: _parseSteps(raw),
       solution: _node(raw['solutionNode']),
+      header: raw['header'] is Map<String, dynamic>
+          ? _headerText(raw['header'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -403,6 +464,7 @@ class SolverApi {
       if (step is! Map<String, dynamic>) continue;
       out.add(
         SolveStep(
+          id: step['id'] as String? ?? 'step:${out.length}',
           headers: [
             for (final h in _asList(step['headers']))
               if (h is Map<String, dynamic>) _headerText(h),
@@ -423,6 +485,7 @@ class SolverApi {
     final left = json['left'] as Map<String, dynamic>?;
     final right = json['right'] as Map<String, dynamic>?;
     return Substep(
+      id: json['id'] as String? ?? '',
       left: left == null ? null : CoreNode.fromJson(left),
       right: right == null ? null : CoreNode.fromJson(right),
       text: explanation?['text'] as String? ?? _textOf(description ?? {}),
@@ -430,6 +493,18 @@ class SolverApi {
           explanation?['key'] as String? ?? description?['type'] as String?,
       links: _parseLinks(explanation?['links']),
       detail: _parseSteps(json['subresult']),
+      subresult: json['subresult'] is Map<String, dynamic>
+          ? _parseVertical(json['subresult'])
+          : null,
+      parts: [
+        for (final part in _asList(explanation?['parts']))
+          if (part is Map<String, dynamic>)
+            ExplanationPart(
+              text: part['text'] as String?,
+              node: _node(part['node']),
+            ),
+      ],
+      theory: TheoryArticle.parse(explanation?['theory']),
     );
   }
 

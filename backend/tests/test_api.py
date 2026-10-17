@@ -43,7 +43,9 @@ class TestHealth:
     def test_reports_explanations_loaded(self, client: TestClient) -> None:
         body = client.get("/api/v1/health").json()
         assert body["status"] == "ok"
-        assert body["explanations"] == 3252
+        from mymath_backend.service import explanations
+
+        assert body["explanations"] == len(explanations())
 
 
 class TestParse:
@@ -207,7 +209,7 @@ class TestSolveEquations:
         body = solve(client, node, locale="ru")
         steps = body["result"]["groups"][0]["entries"][0]["result"]["steps"]
         header = steps[0]["headers"][0]
-        assert header["explanation"]["text"] == "Решите уравнение"
+        assert header["explanation"]["text"] == "Соберём члены с неизвестным"
         assert header["explanation"]["locale"] == "ru"
 
 

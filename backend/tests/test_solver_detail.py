@@ -45,5 +45,15 @@ class TestDetail:
         with_detail = [sub for sub in substeps(equation) if sub.subresult is not None]
         assert with_detail, "итоговый шаг корней раскрывается"
         keys = detail_keys(with_detail[-1])
-        assert "eq_quad_disc_calculate" in keys
-        assert any(key in ("quad_final_single", "quad_final_multi") for key in keys)
+        assert "lesson_root_formula" in keys
+        assert "lesson_root_numerator" in keys
+        assert "lesson_root_denominator" in keys
+        assert "lesson_root_reduce" in keys
+        disc = next(
+            sub for sub in substeps(equation) if sub.description.type == "eq_quad_disc_calculate"
+        )
+        assert detail_keys(disc) == [
+            "lesson_disc_square",
+            "lesson_disc_product",
+            "lesson_disc_subtract",
+        ]

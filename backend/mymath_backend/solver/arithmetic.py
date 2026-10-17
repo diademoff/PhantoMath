@@ -129,7 +129,21 @@ def solve_arithmetic(node: CoreNode, ctx: SolveContext) -> CoreNode:
     values = [_value_of(c) for c in folded]
     result, key = _apply(node.type, values)
     constant = CoreNode.constant(format_number(result))
-    ctx.result.add(Step(left=node, right=constant, key=key, args=_step_args(key, node, constant)))
+    from .fractions import addition_detail, product_detail
+
+    detail = addition_detail(node.type, values, constant) or product_detail(
+        node.type, values, constant
+    )
+    ctx.result.add_group(
+        detail.header if detail and detail.header else key,
+        Step(
+            left=CoreNode(node.type, children=folded),
+            right=constant,
+            key=key,
+            args=_step_args(key, node, constant),
+            subresult=detail,
+        ),
+    )
     return constant
 
 

@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import os
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -32,6 +33,7 @@ from .node_types import CoreNodeType as T
 from .results import CoreSolverGroup, Entry, ResultGroupType
 from .solver import SolveError, solve
 from .solver.equations import poly_of
+from .teaching import theory
 
 # Продукт поддерживает только два языка (решение пользователя, см.
 # truth/09-decisions.md). В данных английский хранится как `default`.
@@ -103,6 +105,17 @@ def _render_view(key: str, args: list[CoreNode], locale: str) -> dict[str, Any]:
             "missing": True,
         }
     rendered = explanations().render(key, args, used_locale)
+    # Keep arguments as math trees instead of flattening fractions/roots into
+    # debug strings. The plain text remains for older clients.
+    marked = explanations().render(
+        key, args, used_locale, render_arg=lambda n: f"\ufff0{args.index(n)}\ufff1"
+    )
+    parts: list[dict[str, Any]] = []
+    for part in re.split(r"(\ufff0\d+\ufff1)", marked.text):
+        if part.startswith("\ufff0") and part.endswith("\ufff1"):
+            parts.append({"type": "math", "node": args[int(part[1:-1])].to_contract()})
+        elif part:
+            parts.append({"type": "text", "text": part})
     return {
         "key": key,
         "text": rendered.text,
@@ -117,6 +130,8 @@ def _render_view(key: str, args: list[CoreNode], locale: str) -> dict[str, Any]:
         ],
         "tail_label": rendered.tail_label,
         "missing": rendered.missing_key,
+        "parts": parts,
+        "theory": theory(key, used_locale),
     }
 
 
@@ -126,7 +141,7 @@ def _render_rich(rich: dict[str, Any], locale: str) -> dict[str, Any]:
     return _render_view(rich["type"], args, locale)
 
 
-def attach_text(node: dict[str, Any], locale: str) -> dict[str, Any]:
+def attach_text(node: dict[str, Any], locale: str, _path: str = "solution") -> dict[str, Any]:
     """Дописать тексты пояснений в узлы ответа.
 
     Мутирует копию ответа: фронт получает и дерево, и готовые строки,
@@ -134,9 +149,20 @@ def attach_text(node: dict[str, Any], locale: str) -> dict[str, Any]:
     лишний ключ ``explanation`` просто игнорируется.
     """
     out = dict(node)
+    if "substeps" in out or "description" in out:
+        out.setdefault("id", _path)
     description = out.get("description")
     if isinstance(description, dict) and "type" in description:
         out["explanation"] = _render_rich(description, locale)
+        if not out["explanation"].get("theory"):
+            nested = out.get("subresult")
+            if isinstance(nested, dict) and nested.get("header", {}).get("type") in (
+                "lesson_fraction_sum",
+                "lesson_fraction_product",
+            ):
+                out["explanation"]["theory"] = theory(
+                    "lesson_fraction_sum", normalize_locale(locale)
+                )
     # Заголовки шагов — тоже `CoreRichText`, но лежат списком, а не под
     # ключом `description`, поэтому разворачиваются отдельно.
     headers = out.get("headers")
@@ -147,6 +173,9 @@ def attach_text(node: dict[str, Any], locale: str) -> dict[str, Any]:
             else h
             for h in headers
         ]
+    header = out.get("header")
+    if isinstance(header, dict) and "type" in header:
+        out["header"] = {**header, "explanation": _render_rich(header, locale)}
     # Подпись переключателя способов решения — тоже `CoreRichText`.
     select = out.get("selectMethodText")
     if isinstance(select, dict) and "type" in select:
@@ -154,13 +183,16 @@ def attach_text(node: dict[str, Any], locale: str) -> dict[str, Any]:
     for key in ("children", "substeps", "steps", "entries"):
         value = out.get(key)
         if isinstance(value, list):
-            out[key] = [attach_text(v, locale) if isinstance(v, dict) else v for v in value]
+            out[key] = [
+                attach_text(v, locale, f"{_path}/{key}/{i}") if isinstance(v, dict) else v
+                for i, v in enumerate(value)
+            ]
     # Вложенные результаты: `result` (группа) и `subresult` (раскрываемое
     # углублённое пояснение шага) — тоже `CoreSolverVerticalResult`.
     for key in ("result", "subresult"):
         nested = out.get(key)
         if isinstance(nested, dict):
-            out[key] = attach_text(nested, locale)
+            out[key] = attach_text(nested, locale, f"{_path}/{key}")
     return out
 
 
@@ -267,7 +299,7 @@ def solve_request(
         if isinstance(groups, list):
             for index, group in enumerate(groups):
                 if isinstance(group, dict):
-                    groups[index] = attach_text(group, locale)
+                    groups[index] = attach_text(group, locale, f"solution/groups/{index}")
     return out
 
 

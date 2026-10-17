@@ -9,7 +9,7 @@ import '../settings/settings.dart';
 import 'division_lesson.dart';
 import 'transformation_lesson.dart';
 
-class VerticalResult extends StatelessWidget {
+class VerticalResult extends StatefulWidget {
   const VerticalResult({
     super.key,
     required this.result,
@@ -33,8 +33,49 @@ class VerticalResult extends StatelessWidget {
   final DivisionMethod divisionMethod;
 
   @override
+  State<VerticalResult> createState() => _VerticalResultState();
+}
+
+class _VerticalResultState extends State<VerticalResult> {
+  int active = 0;
+  final stages = <String, int>{};
+  final anchors = <String, GlobalKey>{};
+
+  @override
+  void didUpdateWidget(covariant VerticalResult oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.result != widget.result) {
+      active = 0;
+      stages.clear();
+      anchors.clear();
+    }
+  }
+
+  String identity(int index) => '${widget.result.steps[index].id}:$index';
+
+  void select(int index, {int? stage}) {
+    setState(() {
+      active = index;
+      if (stage != null) stages[identity(index)] = stage;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final target = anchors[identity(index)]?.currentContext;
+      if (target != null) {
+        Scrollable.ensureVisible(
+          target,
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 180),
+          alignment: 0.1,
+        );
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    var number = 0;
+    final result = widget.result;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       children: [
@@ -56,7 +97,7 @@ class VerticalResult extends StatelessWidget {
                   children: [
                     Expanded(
                       child: StepEquation(
-                        latex: nodeToLatex(solution, latexOptions),
+                        latex: nodeToLatex(solution, widget.latexOptions),
                         fontSize: 28,
                       ),
                     ),
@@ -65,15 +106,16 @@ class VerticalResult extends StatelessWidget {
               ],
             ),
           ),
-        ?methodSwitcher,
-        if (problem != null && DivisionTrace.fromNode(problem!) != null)
+        ?widget.methodSwitcher,
+        if (widget.problem != null &&
+            DivisionTrace.fromNode(widget.problem!) != null)
           TextButton.icon(
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => DivisionLesson(
-                  trace: DivisionTrace.fromNode(problem!)!,
-                  method: divisionMethod,
-                  separator: latexOptions.decimalSeparator.symbol,
+                  trace: DivisionTrace.fromNode(widget.problem!)!,
+                  method: widget.divisionMethod,
+                  separator: widget.latexOptions.decimalSeparator.symbol,
                 ),
               ),
             ),
@@ -85,140 +127,308 @@ class VerticalResult extends StatelessWidget {
             padding: EdgeInsets.all(16),
             child: Text('Для этой задачи подробные шаги не предоставлены.'),
           ),
-        for (final group in result.steps) ...[
-          for (final header in group.headers.where((h) => h.isNotEmpty))
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Text(
-                header,
-                style: Theme.of(context).textTheme.titleMedium,
+        if (result.header case final header? when header.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Text(header, style: Theme.of(context).textTheme.titleLarge),
+          ),
+        for (var i = 0; i < result.steps.length; i++)
+          if (result.steps[i].substeps.isNotEmpty) _group(context, i),
+      ],
+    );
+  }
+
+  Widget _group(BuildContext context, int index) {
+    final group = widget.result.steps[index];
+    final id = identity(index);
+    final stage = (stages[id] ?? 0).clamp(0, group.substeps.length - 1);
+    final selected = active == index;
+    final title = group.headers.where((h) => h.isNotEmpty).join(' · ');
+    final substep = group.substeps[stage];
+    final colors = Theme.of(context).colorScheme;
+    final anchor = anchors.putIfAbsent(id, GlobalKey.new);
+    return Card(
+      key: anchor,
+      margin: const EdgeInsets.only(bottom: 12),
+      color: selected ? colors.surfaceContainerLow : colors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: selected ? colors.primary : colors.outlineVariant,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Semantics(
+            selected: selected,
+            button: true,
+            child: InkWell(
+              key: ValueKey('solution-group:$index'),
+              onTap: () => select(index),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Шаг ${index + 1}',
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      title.isEmpty ? 'Преобразование' : title,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    if (!selected) ...[
+                      const SizedBox(height: 8),
+                      if (group.substeps.last.right ?? group.substeps.first.left
+                          case final node?)
+                        StepEquation(
+                          latex: nodeToLatex(node, widget.latexOptions),
+                        ),
+                      Text('${group.substeps.length} этап(а) · Открыть'),
+                    ],
+                  ],
+                ),
               ),
             ),
-          for (final step in group.substeps)
-            _Step(
-              key: ValueKey('step:${number++}:$expandAll'),
-              number: number,
-              substep: step,
-              latexOptions: latexOptions,
-              onLink: onLink,
-              onCopy: onCopy,
-              expanded: expandAll,
+          ),
+          if (selected)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (group.substeps.length > 1) ...[
+                    Text(
+                      'Этап ${stage + 1} из ${group.substeps.length}',
+                      key: ValueKey('stage-counter:$index'),
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(
+                      value: (stage + 1) / group.substeps.length,
+                      semanticsLabel:
+                          'Этап ${stage + 1} из ${group.substeps.length}',
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  if (substep.text != null &&
+                      !substep.text!.startsWith('step_'))
+                    _Instruction(
+                      substep: substep,
+                      options: widget.latexOptions,
+                      onLink: widget.onLink,
+                    ),
+                  const SizedBox(height: 12),
+                  if (substep.left case final left?)
+                    StepEquation(latex: nodeToLatex(left, widget.latexOptions)),
+                  if (substep.right case final right?) ...[
+                    if (substep.left != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Icon(
+                          Icons.south,
+                          size: 18,
+                          color: colors.primary,
+                        ),
+                      ),
+                    StepEquation(
+                      latex: nodeToLatex(right, widget.latexOptions),
+                    ),
+                  ],
+                  _actions(context, substep),
+                  const Divider(),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (stage > 0)
+                        TextButton.icon(
+                          key: const ValueKey('previous-stage'),
+                          icon: const Icon(Icons.chevron_left),
+                          label: const Text('Предыдущий этап'),
+                          onPressed: () => select(index, stage: stage - 1),
+                        ),
+                      if (stage < group.substeps.length - 1)
+                        FilledButton.tonalIcon(
+                          key: const ValueKey('next-stage'),
+                          icon: const Icon(Icons.chevron_right),
+                          label: const Text('Следующий этап'),
+                          onPressed: () => select(index, stage: stage + 1),
+                        )
+                      else if (index + 1 < widget.result.steps.length)
+                        FilledButton.tonalIcon(
+                          key: const ValueKey('next-group'),
+                          icon: const Icon(Icons.arrow_downward),
+                          label: const Text('Следующий шаг'),
+                          onPressed: () => select(index + 1),
+                        ),
+                      if (stage == 0 && index > 0)
+                        TextButton(
+                          onPressed: () => select(index - 1),
+                          child: const Text('Предыдущий шаг'),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _actions(BuildContext context, Substep substep) {
+    final frames = transformationFrames(substep, widget.latexOptions);
+    final nested =
+        substep.subresult ??
+        (substep.detail.isEmpty ? null : SolveResponse(steps: substep.detail));
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        if (nested != null && nested.steps.any((s) => s.substeps.isNotEmpty))
+          TextButton.icon(
+            key: const ValueKey('step-details'),
+            icon: const Icon(Icons.account_tree_outlined),
+            label: const Text('Подробнее'),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => Scaffold(
+                  appBar: AppBar(title: const Text('Подробный разбор')),
+                  body: VerticalResult(
+                    result: nested,
+                    latexOptions: widget.latexOptions,
+                    onLink: widget.onLink,
+                    onCopy: widget.onCopy,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        if (substep.theory case final article?)
+          TextButton.icon(
+            key: const ValueKey('step-theory'),
+            icon: const Icon(Icons.lightbulb_outline),
+            label: const Text('Почему?'),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => _TheoryPage(article: article),
+              ),
+            ),
+          ),
+        if (frames.isNotEmpty)
+          TextButton.icon(
+            icon: const Icon(Icons.play_circle_outline),
+            label: const Text('Показать преобразование'),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => TransformationLesson(frames: frames),
+              ),
+            ),
+          ),
       ],
     );
   }
 }
 
-class _Step extends StatelessWidget {
-  const _Step({
-    super.key,
-    required this.number,
+class _Instruction extends StatelessWidget {
+  const _Instruction({
     required this.substep,
-    required this.latexOptions,
+    required this.options,
     required this.onLink,
-    required this.onCopy,
-    this.expanded = false,
   });
-  final int number;
   final Substep substep;
-  final LatexOptions latexOptions;
+  final LatexOptions options;
   final void Function(ExplanationLink) onLink;
-  final void Function(String) onCopy;
-  final bool expanded;
-
-  Widget equation(CoreNode node) =>
-      StepEquation(latex: nodeToLatex(node, latexOptions));
-
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final frames = transformationFrames(substep, latexOptions);
-    final hasDetails =
-        frames.isNotEmpty ||
-        substep.detail.isNotEmpty ||
-        substep.links.any((link) => link.definition.isNotEmpty);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ExpansionTile(
-        enabled: hasDetails,
-        initiallyExpanded: expanded,
-        maintainState: true,
-        shape: const Border(),
-        collapsedShape: const Border(),
-        tilePadding: const EdgeInsets.all(16),
-        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        trailing: hasDetails
-            ? Icon(Icons.keyboard_arrow_down, color: colors.onSurfaceVariant)
-            : const SizedBox.shrink(),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    if (!substep.parts.any((p) => p.node != null)) {
+      return ExplanationText(
+        text: substep.text ?? '',
+        links: substep.links,
+        onLink: onLink,
+      );
+    }
+    // Short coefficients stay in the sentence; compound arguments use display
+    // blocks below so a root/fraction can scroll instead of overflowing prose.
+    if (substep.links.isEmpty &&
+        substep.parts.every(
+          (p) =>
+              p.node == null ||
+              (p.node!.children.isEmpty && (p.node!.value?.length ?? 0) <= 4),
+        )) {
+      final style = Theme.of(context).textTheme.bodyLarge!;
+      return Text.rich(
+        TextSpan(
           children: [
-            Text('Шаг $number', style: Theme.of(context).textTheme.bodySmall),
-            const SizedBox(height: 12),
-            if (substep.left case final left?) equation(left),
-            if (substep.right case final right?) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Icon(Icons.south, size: 18, color: colors.primary),
-              ),
-              equation(right),
-            ],
+            for (final part in substep.parts)
+              if (part.node case final node?)
+                WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
+                  child: Math.tex(
+                    nodeToLatex(node, options),
+                    mathStyle: MathStyle.text,
+                    textStyle: style.copyWith(
+                      fontSize: MediaQuery.textScalerOf(context)
+                          .scale(style.fontSize!),
+                    ),
+                    onErrorFallback: (_) => Text(node.value ?? ''),
+                  ),
+                )
+              else
+                TextSpan(text: part.text),
           ],
         ),
-        subtitle: substep.text == null || substep.text!.startsWith('step_')
-            ? null
-            : Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: ExplanationText(
-                  text: substep.text!,
-                  links: substep.links,
-                  onLink: onLink,
-                ),
-              ),
-        children: [
-          if (frames.isNotEmpty)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => TransformationLesson(frames: frames),
-                  ),
-                ),
-                icon: const Icon(Icons.play_circle_outline),
-                label: const Text('Показать преобразование'),
-              ),
-            ),
-          for (final group in substep.detail) ...[
-            for (final header in group.headers.where((h) => h.isNotEmpty))
-              Text(header, style: Theme.of(context).textTheme.titleMedium),
-            for (var i = 0; i < group.substeps.length; i++)
-              _Step(
-                number: i + 1,
-                substep: group.substeps[i],
-                latexOptions: latexOptions,
-                onLink: onLink,
-                onCopy: onCopy,
-              ),
-          ],
-          for (final link in substep.links.where(
-            (l) => l.definition.isNotEmpty,
-          ))
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(link.label),
-              trailing: const Icon(Icons.info_outline),
-              onTap: () => onLink(link),
-            ),
-        ],
-      ),
+        style: style,
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final part in substep.parts)
+          if (part.node case final node?)
+            StepEquation(latex: nodeToLatex(node, options), fontSize: 20)
+          else if (part.text case final text? when text.trim().isNotEmpty)
+            ExplanationText(text: text, links: substep.links, onLink: onLink),
+      ],
     );
   }
+}
+
+class _TheoryPage extends StatelessWidget {
+  const _TheoryPage({required this.article});
+  final TheoryArticle article;
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Теория')),
+    body: ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        Text(article.title, style: Theme.of(context).textTheme.headlineSmall),
+        const SizedBox(height: 16),
+        Text(article.summary),
+        if (article.formula.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: StepEquation(latex: article.formula),
+          ),
+        for (final section in [
+          ('Условия применения', article.conditions),
+          ('Пример', article.example),
+          ('Частая ошибка', article.mistake),
+        ])
+          if (section.$2.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Text(section.$1, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(section.$2),
+          ],
+      ],
+    ),
+  );
 }
 
 /// Long equations scroll instead of shrinking text below a readable size.

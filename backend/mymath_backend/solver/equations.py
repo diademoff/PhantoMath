@@ -186,6 +186,38 @@ def _equation(var: str, right: CoreNode) -> CoreNode:
     return CoreNode(type=T.EQUALS, children=[CoreNode.variable(var), right])
 
 
+def _ordered_polynomial(coefficients: list[sympy.Expr], var: str) -> CoreNode:
+    """Teaching form: descending powers, not SymPy's positive-terms-first order."""
+    expression: CoreNode | None = None
+    for index, coefficient in enumerate(coefficients):
+        if coefficient == 0:
+            continue
+        degree = len(coefficients) - index - 1
+        negative = coefficient.is_negative is True
+        magnitude = -coefficient if negative else coefficient
+        term = from_sympy(magnitude)
+        if degree:
+            base = CoreNode.variable(var)
+            if degree > 1:
+                base = CoreNode.node(T.POWER, base, CoreNode.constant(str(degree)))
+            term = (
+                base
+                if magnitude == 1
+                else CoreNode.node(
+                    T.MULTIPLY_IMPLICIT,
+                    CoreNode.node(T.BRACKET, term) if term.type in (T.ADD, T.SUBTRACT) else term,
+                    base,
+                )
+            )
+        elif negative and term.type in (T.ADD, T.SUBTRACT):
+            term = CoreNode.node(T.BRACKET, term)
+        if expression is None:
+            expression = CoreNode.node(T.NEGATIVE, term) if negative else term
+        else:
+            expression = CoreNode.node(T.SUBTRACT if negative else T.ADD, expression, term)
+    return expression if expression is not None else CoreNode.constant("0")
+
+
 def _perfect_sqrt(value: Fraction) -> Fraction | None:
     """Точный рациональный квадратный корень или ``None``."""
     if value < 0:
@@ -232,36 +264,106 @@ def _linear_solution(
                 CoreNode(type=T.DIVIDE, children=[rhs, _const(a)]),
             ],
         )
-        ctx.result.add(
+        detail = SolveResult()
+        divided = CoreNode.node(
+            T.EQUALS,
+            from_sympy(to_sympy(lhs) / sympy.Rational(a)),
+            from_sympy(to_sympy(rhs) / sympy.Rational(a)),
+        )
+        detail.add_group(
+            "lesson_divide",
+            Step(node, after_divide, "lesson_divide_sides", [_const(a)]),
+            Step(after_divide, divided, "lesson_simplify"),
+        )
+        detail.set_solution(divided)
+        ctx.result.add_group(
+            "lesson_divide",
             Step(
                 left=node,
                 right=after_divide,
                 key="eq_linar_divide_both_sides",
                 args=[_const(a)],
+                subresult=detail,
             ),
-            [_HEADER],
         )
-        ctx.result.add(Step(left=after_divide, right=solution, key="move"), [_HEADER])
+        ctx.result.add_group(
+            "lesson_isolate",
+            Step(left=divided, right=solution, key="move", subresult=_linear_balance(divided, var)),
+        )
         return solution
 
     after_move = CoreNode(type=T.EQUALS, children=[_x_term(a, var), _const(-b)])
-    already = poly_of(lhs, var) == {1: a} and poly_of(rhs, var) == {0: -b}
+    already = poly_of(lhs, var) == {1: a} and poly_of(rhs, var) == ({0: -b} if b else {})
 
     left = node
-    if b != 0 and not already:
-        ctx.result.add(Step(left=node, right=after_move, key="move"), [_HEADER])
+    if not already:
+        ctx.result.add_group(
+            "lesson_isolate",
+            Step(left=node, right=after_move, key="move", subresult=_linear_balance(node, var)),
+        )
         left = after_move
     if a != 1:
-        ctx.result.add(
+        divided = CoreNode.node(
+            T.EQUALS,
+            CoreNode.node(T.FRACTION, left.children[0], _const(a)),
+            CoreNode.node(T.FRACTION, left.children[1], _const(a)),
+        )
+        detail = SolveResult()
+        detail.add_group(
+            "lesson_divide",
+            Step(left, divided, "lesson_divide_sides", [_const(a)]),
+            Step(divided, solution, "lesson_simplify"),
+        )
+        detail.set_solution(solution)
+        ctx.result.add_group(
+            "lesson_divide",
             Step(
                 left=left,
                 right=solution,
                 key="eq_linar_divide_both_sides",
                 args=[_const(a)],
+                subresult=detail,
             ),
-            [_HEADER],
         )
     return solution
+
+
+def _linear_balance(node: CoreNode, var: str) -> SolveResult:
+    """Show the actual operation on BOTH sides, including variables on the right."""
+    detail = SolveResult()
+    left, right = (poly_of(child, var) for child in node.children)
+    current = node
+    normalized = CoreNode.node(
+        T.EQUALS,
+        *[
+            _ordered_polynomial([sympy.Rational(_coeff(p, 1)), sympy.Rational(_coeff(p, 0))], var)
+            for p in (left, right)
+        ],
+    )
+    if not current.structural_eq(normalized):
+        detail.add_group("lesson_isolate", Step(current, normalized, "lesson_collect"))
+        current = normalized
+    for operand in (_x_term(_coeff(right, 1), var), _const(_coeff(left, 0))):
+        if to_sympy(operand) == 0:
+            continue
+        balanced = CoreNode.node(
+            T.EQUALS,
+            *[
+                CoreNode.node(T.SUBTRACT, child, CoreNode.node(T.BRACKET, operand))
+                for child in current.children
+            ],
+        )
+        simplified = CoreNode.node(
+            T.EQUALS, *[from_sympy(sympy.expand(to_sympy(child))) for child in balanced.children]
+        )
+        detail.add_group(
+            "lesson_isolate",
+            Step(current, balanced, "lesson_balance", [operand]),
+            Step(balanced, simplified, "lesson_simplify"),
+        )
+        current = simplified
+    detail.set_solution(current)
+    return detail
 
 
 def _quadratic_solution(
@@ -298,14 +400,23 @@ def _quadratic_solution(
             _equation(var, _quad_root(-b, root, 2 * a, plus=a > 0)),
         )
 
-    ctx.result.add(
+    normalized = CoreNode.node(
+        T.EQUALS,
+        _ordered_polynomial([sympy.Rational(a), sympy.Rational(b), sympy.Rational(c)], var),
+        CoreNode.constant("0"),
+    )
+    normalization = SolveResult()
+    normalization.add_group("lesson_standard", Step(node, normalized, "lesson_normalize"))
+    normalization.set_solution(normalized)
+    ctx.result.add_group(
+        "lesson_standard",
         Step(
             left=node,
-            right=None,
+            right=normalized,
             key="eq_quad_coeff_identify",
             args=[_const(a), _const(b), _const(c)],
+            subresult=normalization if not node.structural_eq(normalized) else None,
         ),
-        [_HEADER],
     )
     disc_expression = CoreNode.node(
         T.SUBTRACT,
@@ -318,17 +429,18 @@ def _quadratic_solution(
     )
     disc_substitution = CoreNode.node(T.EQUALS, CoreNode.variable("D"), disc_expression)
     disc_value = CoreNode.node(T.EQUALS, CoreNode.variable("D"), _const(discriminant))
-    ctx.result.add(
-        Step(left=_discriminant_formula(), right=disc_substitution, key="eq_quad_disc"), [_HEADER]
-    )
-    ctx.result.add(
+    ctx.result.add_group(
+        "lesson_discriminant",
+        Step(left=_discriminant_formula(), right=disc_substitution, key="eq_quad_disc"),
         Step(
             left=disc_substitution,
             right=disc_value,
             key="eq_quad_disc_calculate",
             args=[_const(discriminant)],
+            subresult=_discriminant_detail(
+                _const(a), _const(b), _const(c), disc_substitution, disc_value
+            ),
         ),
-        [_HEADER],
     )
     key = "solve_by_factoring" if factoring else "eq_quad_solve_in_r"
     substituted = _quadratic_substitution(a, b, discriminant, var)
@@ -336,14 +448,22 @@ def _quadratic_solution(
         substituted = CoreNode.node(
             T.EQUALS, from_sympy(sympy.factor(_poly_expr(poly, var))), CoreNode.constant("0")
         )
-    ctx.result.add(
+    ctx.result.add_group(
+        "lesson_roots",
         Step(
             left=substituted,
             right=solution,
             key=key,
-            subresult=_quadratic_detail(discriminant, solution, substituted, factoring=factoring),
+            subresult=_quadratic_detail(
+                _const(a),
+                _const(b),
+                _const(discriminant),
+                solution,
+                substituted,
+                factoring=factoring,
+                var=var,
+            ),
         ),
-        [_HEADER],
     )
     return solution
 
@@ -399,6 +519,22 @@ def _constant_quadratic(node: CoreNode, var: str, ctx: SolveContext) -> CoreNode
     if d.is_nonnegative is not True:
         return None
     coeff = [from_sympy(value) for value in (a, b, c)]
+    normalized = CoreNode.node(
+        T.EQUALS, _ordered_polynomial([a, b, c], var), CoreNode.constant("0")
+    )
+    normalization = SolveResult()
+    normalization.add_group("lesson_standard", Step(node, normalized, "lesson_normalize"))
+    normalization.set_solution(normalized)
+    ctx.result.add_group(
+        "lesson_standard",
+        Step(
+            node,
+            normalized,
+            "eq_quad_coeff_identify",
+            args=coeff,
+            subresult=normalization if not node.structural_eq(normalized) else None,
+        ),
+    )
     disc = CoreNode.node(
         T.EQUALS,
         CoreNode.variable("D"),
@@ -448,12 +584,28 @@ def _constant_quadratic(node: CoreNode, var: str, ctx: SolveContext) -> CoreNode
             for operation in (T.SUBTRACT, T.ADD)
         ],
     )
-    ctx.result.add(Step(left=_discriminant_formula(), right=disc, key="eq_quad_disc"), [_HEADER])
-    ctx.result.add(
-        Step(left=disc, right=calculated, key="eq_quad_disc_calculate", args=[from_sympy(d)]),
-        [_HEADER],
+    ctx.result.add_group(
+        "lesson_discriminant",
+        Step(left=_discriminant_formula(), right=disc, key="eq_quad_disc"),
+        Step(
+            left=disc,
+            right=calculated,
+            key="eq_quad_disc_calculate",
+            args=[from_sympy(d)],
+            subresult=_discriminant_detail(coeff[0], coeff[1], coeff[2], disc, calculated),
+        ),
     )
-    ctx.result.add(Step(left=substitutions, right=solution, key="eq_quad_solve_in_r"), [_HEADER])
+    ctx.result.add_group(
+        "lesson_roots",
+        Step(
+            left=substitutions,
+            right=solution,
+            key="eq_quad_solve_in_r",
+            subresult=_quadratic_detail(
+                coeff[0], coeff[1], from_sympy(d), solution, substitutions, factoring=False, var=var
+            ),
+        ),
+    )
     return solution
 
 
@@ -473,20 +625,124 @@ def _quadratic_substitution(a: Fraction, b: Fraction, d: Fraction, var: str) -> 
     return CoreNode.node(T.LIST, *roots)
 
 
-def _quadratic_detail(
-    discriminant: Fraction, solution: CoreNode, substituted: CoreNode, *, factoring: bool
+def _discriminant_detail(
+    a: CoreNode, b: CoreNode, c: CoreNode, start: CoreNode, end: CoreNode
 ) -> SolveResult:
-    """Раскрываемое пояснение корней: значение дискриминанта и итог.
-
-    Показывает вычисленный дискриминант и финальную запись корней — то, что
-    в развёрнутом виде объясняет формулу.
-    """
     detail = SolveResult()
-    detail_ctx = SolveContext(result=detail, variables=[])
-    detail_ctx.step(None, None, "eq_quad_disc_calculate", _const(discriminant))
-    detail_ctx.step(None, substituted, "solve_by_factoring" if factoring else "eq_quad_formula")
-    single = solution.type is T.EQUALS
-    detail_ctx.step(None, solution, "quad_final_single" if single else "quad_final_multi")
+    square = from_sympy(sympy.simplify(to_sympy(b) ** 2))
+    product = from_sympy(sympy.simplify(4 * to_sympy(a) * to_sympy(c)))
+    expression = start.children[1]
+    squared = CoreNode.node(
+        T.EQUALS, CoreNode.variable("D"), CoreNode.node(T.SUBTRACT, square, expression.children[1])
+    )
+    multiplied = CoreNode.node(
+        T.EQUALS,
+        CoreNode.variable("D"),
+        CoreNode.node(T.SUBTRACT, square, CoreNode.node(T.BRACKET, product)),
+    )
+    detail.add_group(
+        "lesson_discriminant",
+        Step(start, squared, "lesson_disc_square"),
+        Step(squared, multiplied, "lesson_disc_product"),
+        Step(multiplied, end, "lesson_disc_subtract"),
+    )
+    detail.set_solution(end)
+    return detail
+
+
+def _quadratic_detail(
+    a: CoreNode,
+    b: CoreNode,
+    discriminant: CoreNode,
+    solution: CoreNode,
+    substituted: CoreNode,
+    *,
+    factoring: bool,
+    var: str,
+) -> SolveResult:
+    """Actual arithmetic for each branch, not a repetition of the final answer."""
+    detail = SolveResult(header="lesson_roots")
+    if factoring:
+        equations = solution.children if solution.type is T.LIST else [solution]
+        zero_equations = [
+            CoreNode.node(
+                T.EQUALS,
+                CoreNode.node(T.SUBTRACT, CoreNode.variable(var), eq.children[1]),
+                CoreNode.constant("0"),
+            )
+            for eq in equations
+        ]
+        branches = (
+            zero_equations[0]
+            if len(zero_equations) == 1
+            else CoreNode.node(T.LIST, *zero_equations)
+        )
+        detail.add_group(
+            "lesson_roots",
+            Step(substituted, branches, "lesson_factor_zero"),
+            Step(branches, solution, "lesson_simplify"),
+        )
+    else:
+        # The general formula uses two explicit branches rather than a literal
+        # ± token, retaining an ordinary, editable AST at every level.
+        def branch(
+            operation: T, minus_b: CoreNode, radical: CoreNode, denominator: CoreNode
+        ) -> CoreNode:
+            return _equation(
+                var,
+                CoreNode.node(T.FRACTION, CoreNode.node(operation, minus_b, radical), denominator),
+            )
+
+        generic = CoreNode.node(
+            T.LIST,
+            *[
+                branch(
+                    op,
+                    CoreNode.node(T.NEGATIVE, CoreNode.variable("b")),
+                    CoreNode.node(T.ROOT2, CoreNode.variable("D")),
+                    CoreNode.node(T.MULTIPLY, CoreNode.constant("2"), CoreNode.variable("a")),
+                )
+                for op in (T.SUBTRACT, T.ADD)
+            ],
+        )
+        detail.add_group(
+            "lesson_root_substitute", Step(generic, substituted, "lesson_root_formula")
+        )
+        for branch_index, original in enumerate(substituted.children):
+            current = original
+            fraction = original.children[1]
+            numerator, denominator = fraction.children
+            radical = from_sympy(sympy.sqrt(to_sympy(discriminant)))
+            sqrt_step = _equation(
+                var,
+                CoreNode.node(
+                    T.FRACTION,
+                    CoreNode.node(numerator.type, numerator.children[0], radical),
+                    denominator,
+                ),
+            )
+            numeric_numerator = from_sympy(sympy.simplify(to_sympy(numerator)))
+            numerator_step = _equation(
+                var, CoreNode.node(T.FRACTION, numeric_numerator, denominator)
+            )
+            denominator_step = _equation(
+                var, CoreNode.node(T.FRACTION, numeric_numerator, from_sympy(2 * to_sympy(a)))
+            )
+            final = _equation(var, from_sympy(sympy.simplify(to_sympy(fraction))))
+            stages = []
+            for next_node, key in (
+                (sqrt_step, "lesson_root_sqrt"),
+                (numerator_step, "lesson_root_numerator"),
+                (denominator_step, "lesson_root_denominator"),
+                (final, "lesson_root_reduce"),
+            ):
+                if not current.structural_eq(next_node):
+                    stages.append(Step(current, next_node, key))
+                    current = next_node
+            if stages:
+                detail.add_group(
+                    "lesson_root_minus" if branch_index == 0 else "lesson_root_plus", *stages
+                )
     detail.set_solution(solution)
     return detail
 

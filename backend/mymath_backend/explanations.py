@@ -123,7 +123,9 @@ class Explanations:
     @classmethod
     def from_file(cls, path: str | Path) -> Explanations:
         """Загрузить словарь из JSON-файла."""
-        return cls(json.loads(Path(path).read_text(encoding="utf-8")))
+        from .teaching import TEMPLATES
+
+        return cls(json.loads(Path(path).read_text(encoding="utf-8")) | TEMPLATES)
 
     # -- доступ --------------------------------------------------------
 

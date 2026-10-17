@@ -234,7 +234,6 @@ class _SolvePageState extends State<SolvePage> {
   int _methodIndex = 0;
   String? _error;
   bool _busy = false;
-  final bool _expandSteps = true;
   Timer? _previewTimer;
   SolveResponse? _previewAnswer;
   Future<SolveResponse>? _previewRequest;
@@ -1124,7 +1123,6 @@ class _SolvePageState extends State<SolvePage> {
               result: result,
               problem: _editor.toCoreNode(),
               divisionMethod: _settings.divisionMethod,
-              expandAll: _expandSteps,
               latexOptions: _latexOptions,
               onLink: _onLink,
               onCopy: _copyFormula,

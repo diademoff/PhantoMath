@@ -18,6 +18,7 @@ from mymath_backend.explanations import (
     Explanations,
     load_explanations,
 )
+from mymath_backend.teaching import TEMPLATES
 from mymath_backend.translations import SUPPLEMENTARY
 
 TRUTH = Path(__file__).resolve().parents[2] / "truth" / "data"
@@ -31,7 +32,9 @@ def explanations() -> Explanations:
 
 class TestCorpusIntegrity:
     def test_key_count(self, explanations: Explanations) -> None:
-        assert len(explanations) == 3252
+        artifact = json.loads(EXPLANATIONS.read_text(encoding="utf-8"))
+        assert len(artifact) == 3252  # the research artifact remains intact
+        assert set(explanations) == set(artifact) | set(TEMPLATES)
 
     def test_every_key_has_english(self, explanations: Explanations) -> None:
         without = [k for k in explanations if explanations.raw_template(k, DEFAULT_LOCALE) is None]

@@ -84,8 +84,10 @@ class TestLinear:
 
     def test_header_on_every_step(self) -> None:
         vertical = vertical_of("{=({2x+3},{7})}")
-        for step in vertical.steps:
-            assert [h.type for h in step.step_headers] == ["eq_solve_short"]
+        assert [[h.type for h in step.step_headers] for step in vertical.steps] == [
+            ["lesson_isolate"],
+            ["lesson_divide"],
+        ]
 
 
 class TestQuadratic:

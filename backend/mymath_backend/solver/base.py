@@ -59,7 +59,7 @@ class Step:
 
 
 class SolveResult:
-    """Накопитель шагов одного поражения.
+    """Накопитель шагов одного решения.
 
     Решатель наполняет его по ходу работы и в конце отдаёт в API. Хранит
     шаги в плоском списке, группируя в ``CoreSolverVerticalStep`` по
@@ -92,6 +92,11 @@ class SolveResult:
     def set_solution(self, node: CoreNode) -> None:
         """Итоговый ответ."""
         self.solution = node
+
+    def add_group(self, title: str, *steps: Step) -> None:
+        """Explicit teaching boundary; identical titles never merge groups."""
+        if steps:
+            self._steps.append(([CoreRichText(type=title)], list(steps)))
 
     def __len__(self) -> int:
         """Всего подшагов."""
