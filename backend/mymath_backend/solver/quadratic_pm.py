@@ -813,8 +813,11 @@ def _is_difference_of_squares(f: _Family) -> bool:
     return f.a == 1 and f.b == 0 and f.c < 0 and isqrt(-f.c) ** 2 == -f.c
 
 
-def _extraction(node: CoreNode, var: str, c: int) -> SolveResult:
-    """``x^2 + c = 0`` with ``c < 0``: move the constant, take the root, split the signs."""
+def _extraction(node: CoreNode, var: str, c: int, moved_already: bool = False) -> SolveResult:
+    """``x^2 + c = 0`` with ``c < 0``: move the constant, take the root, split the signs.
+
+    ``moved_already`` is for ``x^2 = k``, where Photomath takes the root straight away.
+    """
     x, size = CoreNode.variable(var), -c
     exact = isqrt(size) ** 2 == size
     root = _num(isqrt(size)) if exact else _node(T.ROOT2, _num(size))
@@ -829,9 +832,10 @@ def _extraction(node: CoreNode, var: str, c: int) -> SolveResult:
     swap.add_group("rel_swap_right_const", Step(node, balanced, "rel_swap_right_const"))
     swap.add_group("remove_opposites", Step(balanced, moved, "remove_opposites"))
     swap.set_solution(moved)
-    result.add_group(
-        "rel_move_right_const_msg", Step(node, moved, "rel_move_right_const", subresult=swap)
-    )
+    if not moved_already:
+        result.add_group(
+            "rel_move_right_const_msg", Step(node, moved, "rel_move_right_const", subresult=swap)
+        )
     plus_minus = _eq(x, _node(T.ADD_SUBTRACT, root))
     rooted = _eq(_node(T.ROOT2, square), _node(T.ADD_SUBTRACT, _node(T.ROOT2, _num(size))))
     take = None
@@ -1411,6 +1415,30 @@ def inequality_rows(
     return True
 
 
+def _after_moving_left(
+    node: CoreNode, zero_form: CoreNode, result: SolveResult | None
+) -> SolveResult | None:
+    """``x^2 = k`` for the cards that work on ``x^2 - k = 0``: one row moving ``k`` to the left."""
+    if result is None:
+        return None
+    constant = node.children[1]
+    balanced = _eq(
+        _node(T.SUBTRACT, node.children[0], constant), _node(T.SUBTRACT, constant, constant)
+    )
+    swap = SolveResult()
+    swap.add_group("rel_swap_left_const", Step(node, balanced, "rel_swap_left_const"))
+    swap.add_group("remove_opposites", Step(balanced, zero_form, "remove_opposites"))
+    swap.set_solution(zero_form)
+    moved = SolveResult()
+    moved.add_group(
+        "rel_move_left_const_msg",
+        Step(node, zero_form, "rel_move_left_const", subresult=swap),
+    )
+    moved.extend(result)
+    moved.set_solution(result.solution or zero_form)
+    return moved
+
+
 def _pure_square_formulas(node: CoreNode, var: str, c: int) -> list[SolveResult]:
     """``x^2 - k^2 = 0`` by the roots formula and the PQ formula, as captured for x^2 - 4 = 0."""
     k = isqrt(-c)
@@ -1592,10 +1620,13 @@ def methods(
     if d < 0 and ia == 1 and (negative := _negative_discriminant(node, var, ib, ic)) is not None:
         return negative
     if ia == 1 and ib == 0 and ic < 0:
-        shown: list[SolveResult | None] = [_extraction(node, var, ic)]
+        direct = node.children[1].type is T.CONSTANT and node.children[1].value != "0"
+        shown: list[SolveResult | None] = [_extraction(node, var, ic, moved_already=direct)]
         if isqrt(-ic) ** 2 == -ic:
-            shown.append(_difference_of_squares(_Family(var, ia, ib, ic)))
-            shown += _pure_square_formulas(node, var, ic)
+            zero_form = _Family(var, ia, ib, ic).node
+            others = [_difference_of_squares(_Family(var, ia, ib, ic))]
+            others += _pure_square_formulas(zero_form, var, ic)
+            shown += [_after_moving_left(node, zero_form, m) for m in others] if direct else others
         if isqrt(-ic) ** 2 != -ic:
             shown += _two_real_cards(node, ia, ib, ic)
         return [m for m in shown if m]

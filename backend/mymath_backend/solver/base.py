@@ -105,6 +105,10 @@ class SolveResult:
             heads = [CoreRichText(type=t) if isinstance(t, str) else t for t in titles]
             self._steps.append((heads, list(steps)))
 
+    def extend(self, other: SolveResult) -> None:
+        """Append the groups of another result (its solution is not taken)."""
+        self._steps.extend((list(heads), list(steps)) for heads, steps in other._steps)
+
     def __len__(self) -> int:
         """Всего подшагов."""
         return sum(len(steps) for _, steps in self._steps)

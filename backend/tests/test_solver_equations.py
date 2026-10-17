@@ -414,3 +414,11 @@ def test_completing_the_square_divides_by_a_first_when_a_is_above_one() -> None:
     group = _group("{=({2x^2+3x-2},{0})}")
     square = _method_keys(group.entries[3])
     assert square[:3] == ["rel_move_right_const", "eq_linear_div", "conics_add_both"]
+
+
+def test_square_equal_to_a_number_moves_the_constant_only_on_the_other_cards() -> None:
+    # Photomath 7.10.0 on device: x^2=9 takes the root at once, the other cards move 9 left first.
+    group = _group("{=({x^2},{9})}")
+    assert len(group.entries) == 4
+    assert _method_keys(group.entries[0])[0] == "quad_sqrt_sides"
+    assert all(_method_keys(entry)[0] == "rel_move_left_const" for entry in group.entries[1:])
