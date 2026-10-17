@@ -135,10 +135,9 @@
         ]
       },
       "steps": [
-        "eq_quad_coeff_identify",
-        "eq_quad_disc",
-        "eq_quad_disc_calculate",
-        "eq_quad_solve_in_r"
+        "using_factor",
+        "eq_quad_exp_zero",
+        "rel_move_right_const"
       ]
     },
     {

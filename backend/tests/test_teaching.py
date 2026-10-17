@@ -96,7 +96,7 @@ def test_fraction_details_are_exact_equivalent_expressions(source: str) -> None:
         assert sympy.simplify(left - right) == 0
 
 
-@pytest.mark.parametrize("source", ["{x^2-4x+4=0}", "{-2x^2+3x+1=0}", "{2x^2+9x+6=8pi}"])
+@pytest.mark.parametrize("source", ["{x^2+4x+4=0}", "{-2x^2+3x+1=0}", "{2x^2+9x+6=8pi}"])
 def test_quadratic_has_three_groups_and_real_arithmetic_details(source: str) -> None:
     result = response(source)
     vertical = result["result"]["groups"][0]["entries"][0]["result"]

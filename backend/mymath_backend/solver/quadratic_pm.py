@@ -651,6 +651,204 @@ def _difference_of_squares(f: _Family) -> SolveResult | None:
     return result
 
 
+def _double_root(node: CoreNode, var: str, b: int, c: int) -> list[SolveResult] | None:
+    """``x^2 - 2m x + m^2 = 0`` (D = 0): factoring, roots formula, PQ formula (captured shapes)."""
+    m = isqrt(c) if c > 0 else 0
+    if b >= 0 or b != -2 * m or m * m != c or m == 0:
+        return None
+    x, zero, two, num = CoreNode.variable(var), _num(0), _num(2), _num
+    root = num(m)
+    solution = _eq(x, root)
+    base = _node(T.SUBTRACT, x, root)
+
+    # -- factoring: (x - m)^2 = 0 -> x - m = 0 -> x = m
+    a_, b_ = CoreNode.variable("a"), CoreNode.variable("b")
+    formula = _eq(
+        _node(
+            T.ADD,
+            _node(T.SUBTRACT, _node(T.POWER, a_, two), _node(T.MULTIPLY, two, a_, b_)),
+            _node(T.POWER, b_, two),
+        ),
+        _node(T.POWER, _node(T.BRACKET, _node(T.SUBTRACT, a_, b_)), two),
+    )
+    squared = _eq(_node(T.POWER, _node(T.BRACKET, base), two), zero)
+    factoring = SolveResult()
+    factor_detail = SolveResult()
+    factor_detail.add_group(
+        CoreRichText(type="using_factor", args=[formula]),
+        Step(node, squared, "using_factor", [formula]),
+    )
+    factor_detail.set_solution(squared)
+    factoring.add_group(
+        "factorise_call", Step(node, squared, "using_factor", [formula], subresult=factor_detail)
+    )
+    equated = _eq(base, zero)
+    factoring.add_group(
+        CoreRichText(type="log_set_base_zero", args=[zero]),
+        Step(squared, equated, "eq_quad_exp_zero", [zero]),
+    )
+    balanced = _eq(_node(T.ADD, base, root), _node(T.ADD, zero, root))
+    move = SolveResult()
+    move.add_group("rel_swap_right_const", Step(equated, balanced, "rel_swap_right_const"))
+    move.add_group("remove_opposites", Step(balanced, solution, "remove_opposites"))
+    move.set_solution(solution)
+    factoring.add_group(
+        "rel_move_right_const_msg",
+        Step(equated, solution, "rel_move_right_const", subresult=move),
+    )
+    factoring.set_solution(solution)
+
+    # -- roots formula
+    def state(first: CoreNode, inner: CoreNode | None, denominator: CoreNode) -> CoreNode:
+        tail = _node(T.ROOT2, inner) if inner is not None else zero
+        return _eq(x, _node(T.FRACTION, _node(T.ADD_SUBTRACT, first, tail), denominator))
+
+    letters = [CoreNode.variable(v) for v in "abc"]
+    la, lb, lc = letters
+    standard = _eq(
+        _node(
+            T.ADD,
+            _node(
+                T.ADD,
+                _node(T.MULTIPLY_IMPLICIT, la, _node(T.POWER, x, two)),
+                _node(T.MULTIPLY_IMPLICIT, lb, x),
+            ),
+            lc,
+        ),
+        zero,
+    )
+    template = _eq(
+        x,
+        _node(
+            T.FRACTION,
+            _node(
+                T.ADD_SUBTRACT,
+                _node(T.NEGATIVE, lb),
+                _node(
+                    T.ROOT2,
+                    _node(
+                        T.SUBTRACT,
+                        _node(T.POWER, lb, two),
+                        _node(T.MULTIPLY, num(4), la, lc),
+                    ),
+                ),
+            ),
+            _node(T.MULTIPLY, two, la),
+        ),
+    )
+    b_sq = _node(T.POWER, _paren(b), two)
+    minus_b = _node(T.NEGATIVE, _paren(b))
+    start = state(
+        minus_b,
+        _node(T.SUBTRACT, b_sq, _node(T.MULTIPLY, num(4), num(1), num(c))),
+        _node(T.MULTIPLY, two, num(1)),
+    )
+    formula_m = SolveResult()
+    formula_m.add_group(
+        "quad_formula_abc_simple", Step(node, start, "quad_formula_abc", [standard, template])
+    )
+    no_den = state(minus_b, _node(T.SUBTRACT, b_sq, _node(T.MULTIPLY, num(4), num(1), num(c))), two)
+    short = _node(T.SUBTRACT, b_sq, _node(T.MULTIPLY, num(4), num(c)))
+    no_one = state(minus_b, short, two)
+    flipped = state(num(-b), short, two)
+    powered = state(num(-b), _node(T.SUBTRACT, num(b * b), _node(T.MULTIPLY, num(4), num(c))), two)
+    equal_squares = _node(T.SUBTRACT, num(b * b), num(4 * c))
+    multiplied = state(num(-b), equal_squares, two)
+    formula_m.add_group(
+        ["calculate_short", "remove_bracket_short", "find_value"],
+        Step(start, no_den, "mul_with_one", [num(1)]),
+        Step(no_den, no_one, "mul_with_one", [num(1)]),
+        Step(no_one, flipped, "neg_neg_arg", [num(-1)]),
+        Step(flipped, powered, "pow", [], subresult=_evaluate(b_sq)),
+        Step(
+            powered, multiplied, "mul", [], subresult=_evaluate(_node(T.MULTIPLY, num(4), num(c)))
+        ),
+    )
+    cancelled = state(num(-b), num(0), two)
+    formula_m.add_group(
+        "sub_with_self_del_num", Step(multiplied, cancelled, "sub_with_self", [num(0)])
+    )
+    rooted = _eq(x, _node(T.FRACTION, _node(T.ADD_SUBTRACT, num(-b), num(0)), two))
+    formula_m.add_group("root", Step(cancelled, rooted, "root_one", [num(0)]))
+    halved = _eq(x, _node(T.FRACTION, num(-b), two))
+    formula_m.add_group(
+        CoreRichText(type="remove_zero", args=[num(0)]),
+        Step(rooted, halved, "add_with_zero", [num(0)]),
+    )
+    reduction = SolveResult()
+    reduction.add_group(
+        CoreRichText(type="frac_reduce", args=[two]), Step(halved, solution, "frac_reduce", [two])
+    )
+    reduction.set_solution(solution)
+    formula_m.add_group(
+        "frac_reduce_frac", Step(halved, solution, "frac_reduce", [two], subresult=reduction)
+    )
+    formula_m.set_solution(solution)
+
+    # -- PQ formula
+    pq = SolveResult()
+    p, q = CoreNode.variable("p"), CoreNode.variable("q")
+    p_standard = _eq(
+        _node(
+            T.ADD,
+            _node(T.ADD, _node(T.POWER, x, two), _node(T.MULTIPLY_IMPLICIT, p, x)),
+            q,
+        ),
+        zero,
+    )
+    p_half = _node(T.FRACTION, p, two)
+    p_template = _eq(
+        x,
+        _node(
+            T.ADD_SUBTRACT,
+            _node(T.NEGATIVE, p_half),
+            _node(
+                T.ROOT2,
+                _node(T.SUBTRACT, _node(T.POWER, _node(T.BRACKET, p_half), two), q),
+            ),
+        ),
+    )
+    half_b = _node(T.FRACTION, _paren(b), two)
+    p_start = _eq(
+        x,
+        _node(
+            T.ADD_SUBTRACT,
+            _node(T.NEGATIVE, half_b),
+            _node(
+                T.ROOT2, _node(T.SUBTRACT, _node(T.POWER, _node(T.BRACKET, half_b), two), num(c))
+            ),
+        ),
+    )
+    pq.add_group(
+        "quad_formula_abc_simple", Step(node, p_start, "quad_formula_pq", [p_standard, p_template])
+    )
+    neg_m = _paren(-m)
+    first = _eq(
+        x,
+        _node(
+            T.ADD_SUBTRACT,
+            _node(T.NEGATIVE, neg_m),
+            _node(
+                T.ROOT2, _node(T.SUBTRACT, _node(T.POWER, _node(T.BRACKET, half_b), two), num(c))
+            ),
+        ),
+    )
+    second = _eq(x, _node(T.ADD_SUBTRACT, _node(T.NEGATIVE, neg_m), zero))
+    pq.add_group(
+        ["frac_reduce_frac", "calculate_short"],
+        Step(p_start, first, "frac_reduce", [two], subresult=_detail(half_b, neg_m)),
+        Step(first, second, "calculate_direct"),
+    )
+    plain = _eq(x, _node(T.ADD_SUBTRACT, num(m), zero))
+    pq.add_group("remove_bracket_short", Step(second, plain, "neg_neg_arg", [num(-1)]))
+    pq.add_group(
+        CoreRichText(type="remove_zero", args=[num(0)]),
+        Step(plain, solution, "add_with_zero", [num(0)]),
+    )
+    pq.set_solution(solution)
+    return [factoring, formula_m, pq]
+
+
 def methods(
     node: CoreNode, var: str, a: Fraction, b: Fraction, c: Fraction
 ) -> list[SolveResult] | None:
@@ -659,6 +857,8 @@ def methods(
         return None
     ia, ib, ic = int(a), int(b), int(c)
     d = ib * ib - 4 * ia * ic
+    if d == 0 and ia == 1 and (double := _double_root(node, var, ib, ic)) is not None:
+        return double
     if ia == 1 and ib == 0 and ic < 0:
         shown: list[SolveResult | None] = [_extraction(node, var, ic)]
         if isqrt(-ic) ** 2 == -ic:
