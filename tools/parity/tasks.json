@@ -1,25 +1,152 @@
 [
- {"id":"arith_order","section":"arithmetic","pm":"2+3*4","proto":"{2+3*4}"},
- {"id":"arith_paren","section":"arithmetic","pm":"2*(3+4)","proto":"{2*(3+4)}"},
- {"id":"arith_mixed","section":"arithmetic","pm":"100/4+6","proto":"{100/4+6}"},
- {"id":"frac_add","section":"fractions","pm":"<frac>1<R>2<R>+<frac>1<R>3<R>","proto":"{frac({1},{2})+frac({1},{3})}"},
- {"id":"frac_mul","section":"fractions","pm":"<frac>2<R>3<R>*<frac>3<R>4<R>","proto":"{frac({2},{3})*frac({3},{4})}"},
- {"id":"frac_div","section":"fractions","pm":"<frac>3<R>4<R>/<frac>1<R>2<R>","proto":"{frac({3},{4})/frac({1},{2})}"},
- {"id":"frac_reduce","section":"fractions","pm":"<frac>6<R>8<R>","proto":"{frac({6},{8})}"},
- {"id":"root_perfect","section":"powers_roots","pm":"<sqrt>16<R>","proto":"{root2({16})}"},
- {"id":"root_irrational","section":"powers_roots","pm":"<sqrt>12<R>","proto":"{root2({12})}"},
- {"id":"lin_basic","section":"linear_equations","pm":"2x+3=7","proto":"{=({2x+3},{7})}"},
- {"id":"lin_both","section":"linear_equations","pm":"3x-1=2x+4","proto":"{=({3x-1},{2x+4})}"},
- {"id":"lin_frac","section":"linear_equations","pm":"<frac>x<R>2<R>=5","proto":"{=({frac({x},{2})},{5})}"},
- {"id":"quad_factor","section":"quadratic_equations","pm":"x<sq>-5x+6=0","proto":"{=({x^2-5x+6},{0})}"},
- {"id":"quad_complex","section":"quadratic_equations","pm":"x<sq>+2x+5=0","proto":"{=({x^2+2x+5},{0})}"},
- {"id":"quad_diff_sq","section":"quadratic_equations","pm":"x<sq>-4=0","proto":"{=({x^2-4},{0})}"},
- {"id":"quad_lead","section":"quadratic_equations","pm":"2x<sq>+3x-2=0","proto":"{=({2x^2+3x-2},{0})}"},
- {"id":"ineq_lin","section":"inequalities","pm":"2x+1<lt>5","proto":"{<({2x+1},{5})}"},
- {"id":"ineq_quad","section":"inequalities","pm":"x<sq>-5x+6<lt>0","proto":"{<({x^2-5x+6},{0})}"},
- {"id":"abs_eq","section":"absolute_value","pm":"<abs>x-2<R>=3","proto":"{=({abs({x-2})},{3})}"},
- {"id":"radical_eq","section":"radical_equations","pm":"<sqrt>x<R>=2","proto":"{=({root2({x})},{2})}"},
- {"id":"trig_value","section":"trigonometry","pm":"<sin>30<deg>","proto":"{sin({deg({30})})}"},
- {"id":"trig_eq","section":"trigonometry","pm":"<sin>x<R>=<frac>1<R>2<R>","proto":"{=({sin({x})},{frac({1},{2})})}"},
- {"id":"fact_5","section":"combinatorics","pm":"5<fact>","proto":"{factorial({5})}"}
+ {
+  "id": "arith_order",
+  "section": "arithmetic",
+  "pm": "2+3*4",
+  "proto": "{2+3*4}"
+ },
+ {
+  "id": "arith_paren",
+  "section": "arithmetic",
+  "pm": "2*(3+4)",
+  "proto": "{2*(3+4)}"
+ },
+ {
+  "id": "arith_mixed",
+  "section": "arithmetic",
+  "pm": "100/4+6",
+  "proto": "{100/4+6}"
+ },
+ {
+  "id": "frac_add",
+  "section": "fractions",
+  "pm": "<frac>1<R>2<R>+<frac>1<R>3<R>",
+  "proto": "{frac({1},{2})+frac({1},{3})}"
+ },
+ {
+  "id": "frac_mul",
+  "section": "fractions",
+  "pm": "<frac>2<R>3<R>*<frac>3<R>4<R>",
+  "proto": "{frac({2},{3})*frac({3},{4})}"
+ },
+ {
+  "id": "frac_div",
+  "section": "fractions",
+  "pm": "<frac>3<R>4<R>/<frac>1<R>2<R>",
+  "proto": "{frac({3},{4})/frac({1},{2})}"
+ },
+ {
+  "id": "frac_reduce",
+  "section": "fractions",
+  "pm": "<frac>6<R>8<R>",
+  "proto": "{frac({6},{8})}"
+ },
+ {
+  "id": "root_perfect",
+  "section": "powers_roots",
+  "pm": "<sqrt>16<R>",
+  "proto": "{root2({16})}"
+ },
+ {
+  "id": "root_irrational",
+  "section": "powers_roots",
+  "pm": "<sqrt>12<R>",
+  "proto": "{root2({12})}"
+ },
+ {
+  "id": "lin_basic",
+  "section": "linear_equations",
+  "pm": "2x+3=7",
+  "proto": "{=({2x+3},{7})}"
+ },
+ {
+  "id": "lin_both",
+  "section": "linear_equations",
+  "pm": "3x-1=2x+4",
+  "proto": "{=({3x-1},{2x+4})}"
+ },
+ {
+  "id": "lin_frac",
+  "section": "linear_equations",
+  "pm": "<frac>x<R>2<R>=5",
+  "proto": "{=({frac({x},{2})},{5})}"
+ },
+ {
+  "id": "quad_factor",
+  "section": "quadratic_equations",
+  "pm": "x<sq>-5x+6=0",
+  "proto": "{=({x^2-5x+6},{0})}"
+ },
+ {
+  "id": "quad_complex",
+  "section": "quadratic_equations",
+  "pm": "x<sq>+2x+5=0",
+  "proto": "{=({x^2+2x+5},{0})}"
+ },
+ {
+  "id": "quad_diff_sq",
+  "section": "quadratic_equations",
+  "pm": "x<sq>-4=0",
+  "proto": "{=({x^2-4},{0})}"
+ },
+ {
+  "id": "quad_lead",
+  "section": "quadratic_equations",
+  "pm": "2x<sq>+3x-2=0",
+  "proto": "{=({2x^2+3x-2},{0})}"
+ },
+ {
+  "id": "ineq_lin",
+  "section": "inequalities",
+  "pm": "2x+1<lt>5",
+  "proto": "{<({2x+1},{5})}"
+ },
+ {
+  "id": "ineq_quad",
+  "section": "inequalities",
+  "pm": "x<sq>-5x+6<lt>0",
+  "proto": "{<({x^2-5x+6},{0})}"
+ },
+ {
+  "id": "abs_eq",
+  "section": "absolute_value",
+  "pm": "<abs>x-2<R>=3",
+  "proto": "{=({abs({x-2})},{3})}"
+ },
+ {
+  "id": "radical_eq",
+  "section": "radical_equations",
+  "pm": "<sqrt>x<R>=2",
+  "proto": "{=({root2({x})},{2})}"
+ },
+ {
+  "id": "trig_value",
+  "section": "trigonometry",
+  "pm": "<sin>30<deg>",
+  "proto": "{sin({deg({30})})}"
+ },
+ {
+  "id": "trig_eq",
+  "section": "trigonometry",
+  "pm": "<sin>x<R>=<frac>1<R>2<R>",
+  "proto": "{=({sin({x})},{frac({1},{2})})}"
+ },
+ {
+  "id": "fact_5",
+  "section": "combinatorics",
+  "pm": "5<fact>",
+  "proto": "{factorial({5})}"
+ },
+ {
+  "id": "frac_add_reduce",
+  "section": "fractions",
+  "pm": "<frac>1<R>2<R>+<frac>1<R>6<R>",
+  "proto": "{frac({1},{2})+frac({1},{6})}"
+ },
+ {
+  "id": "frac_sub",
+  "section": "fractions",
+  "pm": "<frac>3<R>4<R>-<frac>1<R>6<R>",
+  "proto": "{frac({3},{4})-frac({1},{6})}"
+ }
 ]

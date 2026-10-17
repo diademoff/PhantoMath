@@ -162,6 +162,7 @@ def _stage(name: str, root) -> dict:
     """Current stage: its description and the rows of its detail screen (if any)."""
     ids = ("/collapsed_description", "/description", "/title")
     st = {"text": _text(root, "description"), "nested": []}
+    (CAP / f"{name}.png").write_bytes(ui.adb("exec-out", "screencap", "-p", binary=True))
     exp = ui.find(root, "id:substep_expand_button")
     if exp:
         ui.adb("shell", "input", "tap", str(exp[0]), str(exp[1]))
@@ -174,11 +175,19 @@ def _stage(name: str, root) -> dict:
     return st
 
 
-def walk(name: str) -> list[dict]:
-    """Groups as Photomath presents them: a card pager of stages per main step.
+def _pages(root) -> int:
+    """Pager pages of the expanded card: children of substep_bullets (1 if absent)."""
+    for n in root.iter("node"):
+        if n.get("resource-id", "").endswith("/substep_bullets"):
+            return max(len(list(n)), 1)
+    return 1
 
-    Row 0 is tapped, «Далее» then advances group by group; the arrow inside a
-    card pages through its stages. Each stage may open a detail screen.
+
+def walk(name: str) -> list[dict]:
+    """Rows of the list = main steps; each row's card pages = stages.
+
+    Row 0 is tapped, «Далее» then moves row by row; inside a row the arrow pages
+    through the dots (substep_bullets). Every page may open a detail screen.
     """
     for _ in range(6):  # collect_scroll left the list scrolled down
         ui.adb("shell", "input", "swipe", "540", "700", "540", "1800", "250")
@@ -199,18 +208,15 @@ def walk(name: str) -> list[dict]:
             ui.adb("shell", "input", "tap", str(nxt[0]), str(nxt[1]))
             time.sleep(1.5)
             root = ui.dump(f"{name}_g{i}")
+        pages = _pages(root)
         stages = [_stage(f"{name}_{i}", root)]
-        for k in range(6):
-            root = ui.dump(f"{name}_g{i}")
-            nxt = ui.find(root, "id:substep_next_button")
+        for k in range(pages - 1):
+            nxt = ui.find(ui.dump(f"{name}_g{i}"), "id:substep_next_button")
             if not nxt:
                 break
             ui.adb("shell", "input", "tap", str(nxt[0]), str(nxt[1]))
             time.sleep(1.2)
-            st = _stage(f"{name}_{i}_{k}", ui.dump(f"{name}_g{i}"))
-            if st["text"] == stages[-1]["text"]:
-                break
-            stages.append(st)
+            stages.append(_stage(f"{name}_{i}_{k}", ui.dump(f"{name}_g{i}")))
         stages = [st for st in stages if st["text"]]
         if not stages:
             break
