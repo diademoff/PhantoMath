@@ -286,6 +286,34 @@ def _abs_against_number(node: CoreNode, var: str, ctx: SolveContext) -> CoreNode
     return answer
 
 
+def _square_above_negative(
+    node: CoreNode, var: str, poly: dict[int, Fraction], ctx: SolveContext
+) -> CoreNode | None:
+    """``x^2 + k > 0`` with ``k > 0``: move ``k``, then an even power is never below zero."""
+    c = poly.get(0, Fraction(0))
+    if node.type is not T.GREATER_THAN or set(poly) != {2, 0} or poly[2] != 1 or c <= 0:
+        return None
+    x, eq = CoreNode.variable(var), CoreNode.node
+    zero, number = _const(Fraction(0)), _const(c)
+    squared = eq(T.POWER, x, CoreNode.constant("2"))
+    moved = eq(T.GREATER_THAN, squared, _const(-c))
+    balanced = eq(
+        T.GREATER_THAN, eq(T.SUBTRACT, node.children[0], number), eq(T.SUBTRACT, zero, number)
+    )
+    swap = SolveResult()
+    swap.add_group("rel_swap_right_const", Step(node, balanced, "rel_swap_right_const"))
+    swap.add_group("remove_opposites", Step(balanced, moved, "remove_opposites"))
+    swap.set_solution(moved)
+    ctx.result.add_group(
+        "rel_move_right_const_msg", Step(node, moved, "rel_move_right_const", subresult=swap)
+    )
+    answer = _all_reals()
+    ctx.result.add_group(
+        "rel_el_of_r", Step(moved, answer, "rel_terminators_pow_all_sol", [x, zero])
+    )
+    return answer
+
+
 def _square_above_number(
     node: CoreNode, var: str, poly: dict[int, Fraction], ctx: SolveContext
 ) -> CoreNode | None:
@@ -610,6 +638,8 @@ def _quadratic_inequality(
     below = node.type in (T.LESS_THAN, T.LESS_THAN_EQUAL)
     closed = node.type in (T.LESS_THAN_EQUAL, T.GREATER_THAN_EQUAL)
 
+    if (shown := _square_above_negative(node, var, poly, ctx)) is not None:
+        return shown
     if discriminant < 0:
         # Знак постоянен: его задаёт старший коэффициент. Утверждение верно
         # для всех, когда требуемый знак совпадает с фактическим.

@@ -67,7 +67,7 @@
           {"type": "CONSTANT", "value": "∞"}
         ]
       },
-      "steps": ["ineq_quad_lead_pos_t"]
+      "steps": ["rel_move_right_const", "rel_terminators_pow_all_sol"]
     },
     {
       "id": "always-false",
