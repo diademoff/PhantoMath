@@ -38,7 +38,7 @@ class TestFactorial:
     def test_five(self) -> None:
         problem = node(T.FACTORIAL, c("5"))
         assert value_of(problem) == "120"
-        assert step_keys(problem) == ["factorial_calculate"]
+        assert step_keys(problem) == ["factorial_formula", "product"]
 
     def test_zero(self) -> None:
         assert value_of(node(T.FACTORIAL, c("0"))) == "1"

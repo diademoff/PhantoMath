@@ -16,12 +16,13 @@ from math import comb, factorial, perm
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
 from .arithmetic import as_fraction
-from .base import SolveContext, SolveError, Step, route, solver_for
+from .base import SolveContext, SolveError, SolveResult, Step, route, solver_for
 
 _CHOOSES = (T.CHOOSE, T.CHOOSE_LEFT_SUBSCRIPT_RIGHT_SUBSCRIPT)
 _ARRANGEMENTS = (T.PARTIAL_PERMUTATION_LEFT_SUBSCRIPT_RIGHT_SUBSCRIPT, T.VARIATION)
 
 _MAX_FACTORIAL = 1000
+_EXPANDED_FACTORIAL = 20  # longer products are not written out
 
 
 def _integer(node: CoreNode, ctx: SolveContext, message: str) -> int:
@@ -39,6 +40,31 @@ def solve_factorial(node: CoreNode, ctx: SolveContext) -> CoreNode:
     )
     ctx.require(argument <= _MAX_FACTORIAL, "факториал слишком большой")
     result = CoreNode.constant(str(factorial(argument)))
+    if 2 <= argument <= _EXPANDED_FACTORIAL:
+        product = CoreNode.node(
+            T.MULTIPLY, *[CoreNode.constant(str(k)) for k in range(argument, 0, -1)]
+        )
+        n, dots = CoreNode.variable("n"), CoreNode.variable("…")
+        formula = CoreNode.node(
+            T.EQUALS,
+            CoreNode.node(T.FACTORIAL, n),
+            CoreNode.node(
+                T.MULTIPLY,
+                n,
+                CoreNode.node(T.BRACKET, CoreNode.node(T.SUBTRACT, n, CoreNode.constant("1"))),
+                dots,
+                CoreNode.constant("2"),
+                CoreNode.constant("1"),
+            ),
+        )
+        detail = SolveResult()
+        detail.set_solution(route(product, SolveContext(result=detail)))
+        # Photomath 7.10.0 on device: expand n!, then calculate the product (with its own detail).
+        ctx.result.add_group(
+            "factorial_calculate", Step(node, product, "factorial_formula", [formula])
+        )
+        ctx.result.add_group("calculate_short", Step(product, result, "product", subresult=detail))
+        return result
     ctx.result.add(Step(left=node, right=result, key="factorial_calculate"))
     return result
 

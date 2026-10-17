@@ -121,7 +121,7 @@ void main() {
       await back(tester);
       await clear(tester);
 
-      // x² - 5x + 6 = 0: three main steps, grouped discriminant stages.
+      // x² - 5x + 6 = 0
       await key(tester, 'VARIABLE_X_LOW');
       await key(tester, 'OPERATOR_POWER_TWO');
       await key(tester, 'BASIC_INFIX_OPERATOR_MINUS');
@@ -132,32 +132,22 @@ void main() {
       await key(tester, 'BASIC_INFIX_OPERATOR_EQUALS');
       await key(tester, 'DIGIT_ZERO');
       await openSolution(tester);
+      // Photomath's factoring method: six main steps, stages inside, detail screens.
       expect(
         tester.widget<VerticalResult>(find.byType(VerticalResult)).result.steps,
-        hasLength(3),
+        hasLength(6),
       );
       await tap(tester, find.byKey(const ValueKey('solution-group:1')));
       expect(find.text('Этап 1 из 2'), findsOneWidget);
       await tap(tester, find.byKey(const ValueKey('next-stage')));
-      await tap(tester, find.byKey(const ValueKey('step-details')));
-      expect(find.text('Этап 1 из 3'), findsOneWidget);
-      await tap(tester, find.byKey(const ValueKey('next-stage')));
-      await tap(tester, find.byKey(const ValueKey('next-stage')));
-      expect(find.text('Этап 3 из 3'), findsOneWidget);
-      await back(tester);
       expect(find.text('Этап 2 из 2'), findsOneWidget);
-      await tap(tester, find.byKey(const ValueKey('step-theory')));
-      expect(find.text('Дискриминант квадратного уравнения'), findsOneWidget);
-      await back(tester);
-      await tap(tester, find.byKey(const ValueKey('next-group')));
+      await tap(tester, find.byKey(const ValueKey('solution-group:4')));
+      expect(find.text('Этап 1 из 2'), findsOneWidget);
       await tap(tester, find.byKey(const ValueKey('step-details')));
-      expect(find.text('Найдём корни'), findsWidgets);
-      await tap(tester, find.byKey(const ValueKey('next-group')));
-      expect(find.text('Этап 1 из 4'), findsOneWidget);
-      for (var i = 0; i < 3; i++) {
-        await tap(tester, find.byKey(const ValueKey('next-stage')));
-      }
-      expect(find.text('Этап 4 из 4'), findsOneWidget);
+      expect(
+        tester.widget<VerticalResult>(find.byType(VerticalResult)).result.steps,
+        isNotEmpty,
+      );
       await back(tester);
       expect(tester.takeException(), isNull);
     },

@@ -5,57 +5,98 @@
       "id": "factorial-5",
       "title": "факториал 5",
       "input": "{factorial({5})}",
-      "solution": {"type": "CONSTANT", "value": "120"},
-      "steps": ["factorial_calculate"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "120"
+      },
+      "steps": [
+        "factorial_formula",
+        "product"
+      ]
     },
     {
       "id": "factorial-0",
       "title": "факториал нуля",
       "input": "{factorial({0})}",
-      "solution": {"type": "CONSTANT", "value": "1"},
-      "steps": ["factorial_calculate"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "1"
+      },
+      "steps": [
+        "factorial_calculate"
+      ]
     },
     {
       "id": "choose-5-2",
       "title": "биномиальный коэффициент C(5, 2)",
       "input": "{choose({5},{2})}",
-      "solution": {"type": "CONSTANT", "value": "10"},
-      "steps": ["choose_calculate"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "10"
+      },
+      "steps": [
+        "choose_calculate"
+      ]
     },
     {
       "id": "choose-5-5",
       "title": "C(5, 5) = 1",
       "input": "{choose({5},{5})}",
-      "solution": {"type": "CONSTANT", "value": "1"},
-      "steps": ["choose_calculate"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "1"
+      },
+      "steps": [
+        "choose_calculate"
+      ]
     },
     {
       "id": "permutation-5-2",
       "title": "перестановки P(5, 2)",
       "input": "{permutation({5},{2})}",
-      "solution": {"type": "CONSTANT", "value": "20"},
-      "steps": ["permutation_calculate"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "20"
+      },
+      "steps": [
+        "permutation_calculate"
+      ]
     },
     {
       "id": "variation-5-2",
       "title": "размещения A(5, 2)",
       "input": "{variation({5},{2})}",
-      "solution": {"type": "CONSTANT", "value": "20"},
-      "steps": ["variation_not_allowed_calculate"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "20"
+      },
+      "steps": [
+        "variation_not_allowed_calculate"
+      ]
     },
     {
       "id": "choose-6-3",
       "title": "биномиальный коэффициент C(6, 3)",
       "input": "{choose({6},{3})}",
-      "solution": {"type": "CONSTANT", "value": "20"},
-      "steps": ["choose_calculate"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "20"
+      },
+      "steps": [
+        "choose_calculate"
+      ]
     },
     {
       "id": "permutation-3-3",
       "title": "перестановки P(3, 3) = 3!",
       "input": "{permutation({3},{3})}",
-      "solution": {"type": "CONSTANT", "value": "6"},
-      "steps": ["permutation_calculate"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "6"
+      },
+      "steps": [
+        "permutation_calculate"
+      ]
     }
   ]
 }
