@@ -234,7 +234,25 @@ def solve_logarithm(node: CoreNode, ctx: SolveContext) -> CoreNode:
 
     if result is None:
         return node
+    if ctx.depth == 0 and node.type is T.LOG10 and _integer(result) not in (None, 0):
+        return _log10_rows(node, result, ctx)
     ctx.result.add(Step(left=node, right=result, key=_KEY_CALCULATE))
+    return result
+
+
+def _log10_rows(node: CoreNode, result: CoreNode, ctx: SolveContext) -> CoreNode:
+    """``log10(10^k)`` in Photomath 7.10.0's rows: write the argument as a power of 10, simplify."""
+    eq, num = CoreNode.node, CoreNode.constant
+    value = _integer(node.children[0]) or 1
+    exponent = _exact_log(value, 10) or 0
+    powered = eq(T.LOG10, eq(T.POWER, num("10"), num(str(exponent))))
+    ctx.result.add_group("write_as_exp_short", Step(node, powered, "pow_to_same_base", [num("10")]))
+    x = CoreNode.variable("x")
+    rule = eq(T.EQUALS, eq(T.LOG10, eq(T.POWER, num("10"), x)), x)
+    detail = SolveResult()
+    detail.add_group("using_sim", Step(powered, result, "using_sim", [rule]))
+    detail.set_solution(result)
+    ctx.result.add_group("simplify", Step(powered, result, "using_sim", [rule], subresult=detail))
     return result
 
 

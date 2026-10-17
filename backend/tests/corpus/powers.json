@@ -50,7 +50,8 @@
         "value": "3"
       },
       "steps": [
-        "calculate_short"
+        "pow_to_same_base",
+        "using_sim"
       ]
     },
     {

@@ -148,7 +148,7 @@ def test_symbolic_and_negative_power_branches_are_not_invented() -> None:
 
 @pytest.mark.parametrize(
     "left",
-    [node(T.LOG, n(8), n(2)), node(T.LOG10, n(1000)), node(T.LN, n(sympy.E)), node(T.LN, n(1))],
+    [node(T.LOG, n(8), n(2)), node(T.LN, n(sympy.E)), node(T.LN, n(1))],
 )
 def test_log_definition_and_exact_substitution(left: CoreNode) -> None:
     result = SolveResult()
