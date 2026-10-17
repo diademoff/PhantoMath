@@ -20,10 +20,10 @@ from __future__ import annotations
 
 from fractions import Fraction
 
-from ..ast import CoreNode
+from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType
 from ..node_types import CoreNodeType as T
-from .base import SolveContext, SolveError, Step, route, solver_for
+from .base import SolveContext, SolveError, SolveResult, Step, route, solver_for
 
 KEY_CALCULATE = "calculate_short"
 
@@ -157,9 +157,18 @@ def solve_arithmetic(node: CoreNode, ctx: SolveContext) -> CoreNode:
         # Photomath 7.10.0 on device: n^2 is written as n x n, then multiplied.
         base = folded[0]
         product = CoreNode.node(T.MULTIPLY, base, base)
-        ctx.result.add_group(
-            "write_as_mul_short", Step(CoreNode(node.type, children=folded), product, "pow_to_mul")
-        )
+        power = CoreNode(node.type, children=folded)
+        if ctx.depth > 0:  # part of a larger expression: one stage, the rows on its detail screen
+            inner = SolveResult()
+            inner.add_group("write_as_mul_short", Step(power, product, "pow_to_mul"))
+            inner.add_group("calculate_short", Step(product, constant, "mul"))
+            inner.set_solution(constant)
+            ctx.result.add(
+                Step(power, constant, "pow", subresult=inner),
+                [CoreRichText(type="calculate_short")],
+            )
+            return constant
+        ctx.result.add_group("write_as_mul_short", Step(power, product, "pow_to_mul"))
         ctx.result.add_group("calculate_short", Step(product, constant, "mul"))
         return constant
     detail = product_detail(node.type, values, constant)

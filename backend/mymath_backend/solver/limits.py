@@ -17,7 +17,7 @@ import sympy
 
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
-from .base import SolveContext, SolveError, Step, solver_for
+from .base import SolveContext, SolveError, SolveResult, Step, route, solver_for
 from .sympy_bridge import from_sympy, to_sympy
 
 _LIMITS = (T.LIMIT, T.LIMIT_LEFT, T.LIMIT_RIGHT)
@@ -65,6 +65,9 @@ def solve_limit(node: CoreNode, ctx: SolveContext) -> CoreNode:
     if not isinstance(value, sympy.Expr) or value is sympy.nan or value.has(sympy.Limit):
         raise SolveError("предел не существует или не вычисляется")
 
+    if _power_at_point(node, expression, point, var, ctx):
+        return from_sympy(sympy.simplify(value))
+
     classification = _classification(expression_value, symbol, point_value, value, node.type, var)
     if classification is not None:
         key, classification_args = classification
@@ -77,6 +80,40 @@ def solve_limit(node: CoreNode, ctx: SolveContext) -> CoreNode:
         raise SolveError("предел не существует или не вычисляется") from err
     ctx.result.add(Step(left=node, right=result, key="limit_solve"))
     return result
+
+
+def _power_at_point(
+    node: CoreNode,
+    expression: CoreNode,
+    point: CoreNode,
+    var: str,
+    ctx: SolveContext,
+) -> bool:
+    """``lim x->a x^n`` (integer a, n >= 2), Photomath 7.10.0's rows: substitute, then evaluate."""
+    if not (
+        node.type is T.LIMIT
+        and expression.type is T.POWER
+        and expression.children[0].type is T.VARIABLE
+        and expression.children[0].value == var
+        and expression.children[1].type is T.CONSTANT
+        and (expression.children[1].value or "").isdigit()
+        and int(expression.children[1].value or "0") >= 2
+        and point.type is T.CONSTANT
+        and (point.value or "").isdigit()
+    ):
+        return False
+    substituted = CoreNode.node(T.POWER, point, expression.children[1])
+    detail = SolveResult()
+    detail.add_group(
+        "limit_solve_insert_value",
+        Step(node, substituted, "limit_solve_insert_value", [point]),
+    )
+    detail.set_solution(substituted)
+    ctx.result.add_group("find_value", Step(node, substituted, "limit_solve", subresult=detail))
+    evaluation = SolveResult()
+    route(substituted, SolveContext(result=evaluation, depth=1))
+    ctx.result.add_group("find_value", *list(evaluation))
+    return True
 
 
 def _classification(

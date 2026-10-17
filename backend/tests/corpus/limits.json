@@ -10,8 +10,8 @@
         "value": "4"
       },
       "steps": [
-        "limit_solve_insert_value",
-        "limit_solve"
+        "limit_solve",
+        "pow"
       ]
     },
     {
@@ -44,22 +44,45 @@
       "id": "at-negative-infinity",
       "title": "предел x³ на −∞ равен −∞",
       "input": "{lim({-infty},{x^3})}",
-      "solution": {"type": "NEGATIVE", "children": [{"type": "CONSTANT", "value": "∞"}]},
-      "steps": ["limit_poly_neg_inf_pos_lead_odd", "limit_solve"]
+      "solution": {
+        "type": "NEGATIVE",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "∞"
+          }
+        ]
+      },
+      "steps": [
+        "limit_poly_neg_inf_pos_lead_odd",
+        "limit_solve"
+      ]
     },
     {
       "id": "left-linear",
       "title": "левосторонний предел x + 1 при x → 0 равен 1",
       "input": "{lim_left({0},{x+1})}",
-      "solution": {"type": "CONSTANT", "value": "1"},
-      "steps": ["limit_common_left", "limit_solve"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "1"
+      },
+      "steps": [
+        "limit_common_left",
+        "limit_solve"
+      ]
     },
     {
       "id": "right-linear",
       "title": "правосторонний предел x + 1 при x → 0 равен 1",
       "input": "{lim_right({0},{x+1})}",
-      "solution": {"type": "CONSTANT", "value": "1"},
-      "steps": ["limit_common_right", "limit_solve"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "1"
+      },
+      "steps": [
+        "limit_common_right",
+        "limit_solve"
+      ]
     },
     {
       "id": "right-reciprocal",

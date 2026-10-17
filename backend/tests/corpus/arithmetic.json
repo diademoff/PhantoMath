@@ -36,8 +36,7 @@
         "value": "512"
       },
       "steps": [
-        "pow_to_mul",
-        "mul",
+        "pow",
         "calculate_short"
       ]
     },
