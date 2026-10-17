@@ -56,7 +56,7 @@ class TestSolve:
         assert solution.type is T.LESS_THAN
         assert solution.children[0].value == "x"
         assert solution.children[1].value == "2"
-        assert step_keys(problem) == ["move", "ineq_linear_div"]
+        assert step_keys(problem) == ["rel_move_right_const", "sub", "ineq_linear_div"]
 
     def test_negative_coefficient_flips(self) -> None:
         problem = ineq(T.LESS_THAN, muli(c("-2"), var("x")), c("4"))
@@ -88,7 +88,7 @@ class TestSolve:
         problem = ineq(T.LESS_THAN, node(T.ADD, muli(c("2"), var("x")), c("1")), c("5"))
         vertical = solve(problem).result.vertical()
         assert vertical is not None
-        assert [h.type for h in vertical.steps[0].step_headers] == ["ineq_solve_short"]
+        assert [h.type for h in vertical.steps[0].step_headers] == ["rel_move_right_const_msg"]
 
 
 class TestQuadratic:

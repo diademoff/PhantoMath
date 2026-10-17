@@ -30,7 +30,7 @@ from ..node_types import CoreNodeType as T
 from .arithmetic import format_number
 from .base import SolveContext, SolveError, Step, solver_for
 from .domain import add_restriction_steps
-from .equations import _poly_expr, poly_of
+from .equations import _linear_rows, _poly_expr, poly_of
 from .sympy_bridge import from_sympy, to_sympy
 from .trig_equations import looks_trigonometric
 
@@ -119,6 +119,10 @@ def solve_inequality(node: CoreNode, ctx: SolveContext) -> CoreNode:
     value = -b / a
     # При делении на отрицательное число знак неравенства меняется.
     final_type = node.type if a > 0 else _FLIP[node.type]
+
+    rows = _linear_rows(node, lhs, rhs, var, ctx, relation=node.type, flipped=_FLIP[node.type])
+    if rows is not None:
+        return rows
 
     left = node
     already = poly_of(lhs, var) == {1: a} and poly_of(rhs, var) == {0: -b}
