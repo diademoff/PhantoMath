@@ -17,6 +17,11 @@ from ..node_types import CoreNodeType as T
 from .arithmetic import format_number
 from .base import SolveContext, SolveResult, Step, route
 
+_SIGNS = (
+    CoreNode.variable("+"),
+    CoreNode.variable("−"),
+)  # arguments of "one with + and one with -"
+
 
 def _num(value: int | Fraction) -> CoreNode:
     return CoreNode.constant(format_number(Fraction(value)))
@@ -285,7 +290,7 @@ def _formula(f: _Family) -> SolveResult | None:
     ]
     listed = _node(T.LIST, *branches)
     result.add_group(
-        "quad_separate", Step(rooted, listed, "quad_separate_signs", [_num(1), _num(-1)])
+        "quad_separate", Step(rooted, listed, "quad_separate_signs", [_SIGNS[0], _SIGNS[1]])
     )
     roots = [Fraction(-b + r, 2 * a), Fraction(-b - r, 2 * a)]
     result.add_group(
@@ -305,6 +310,88 @@ def _formula(f: _Family) -> SolveResult | None:
     return result
 
 
+def _is_difference_of_squares(f: _Family) -> bool:
+    return f.a == 1 and f.b == 0 and f.c < 0 and isqrt(-f.c) ** 2 == -f.c
+
+
+def _extraction(f: _Family) -> SolveResult | None:
+    """``x^2 - m^2 = 0``: move the constant, take the root of both sides, split the signs."""
+    if not _is_difference_of_squares(f):
+        return None
+    m, x = isqrt(-f.c), f.x
+    result = SolveResult()
+    square = _node(T.POWER, x, _num(2))
+    moved = _eq(square, _num(-f.c))
+    balanced = _eq(
+        _node(T.ADD, _node(T.SUBTRACT, square, _num(-f.c)), _num(-f.c)),
+        _node(T.ADD, _num(0), _num(-f.c)),
+    )
+    swap = SolveResult()
+    swap.add_group("rel_swap_right_const", Step(f.node, balanced, "rel_swap_right_const"))
+    swap.add_group("remove_opposites", Step(balanced, moved, "remove_opposites"))
+    swap.set_solution(moved)
+    result.add_group(
+        "rel_move_right_const_msg", Step(f.node, moved, "rel_move_right_const", subresult=swap)
+    )
+    plus_minus = _eq(x, _node(T.ADD_SUBTRACT, _num(m)))
+    rooted = _eq(_node(T.ROOT2, square), _node(T.ADD_SUBTRACT, _node(T.ROOT2, _num(-f.c))))
+    take = SolveResult()
+    take.add_group("quad_sqrt_sides", Step(moved, rooted, "quad_sqrt_sides"))
+    take.add_group("calculate_short", Step(rooted, plus_minus, "root_square"))
+    take.set_solution(plus_minus)
+    result.add_group("simplify_eq", Step(moved, plus_minus, "quad_sqrt_sides", subresult=take))
+    solved = [f.solved(Fraction(-m)), f.solved(Fraction(m))]
+    listed = _node(T.LIST, *solved)
+    result.add_group("quad_separate", Step(plus_minus, listed, "quad_separate_signs", list(_SIGNS)))
+    f.finish(result, solved)
+    return result
+
+
+def _difference_of_squares(f: _Family) -> SolveResult | None:
+    """``x^2 - m^2 = (x - m)(x + m)``: factor by the formula, split the cases, solve each."""
+    if not _is_difference_of_squares(f):
+        return None
+    m, var, x = isqrt(-f.c), f.var, f.x
+    result = SolveResult()
+    minus, plus = _poly([(1, 1), (-m, 0)], var), _poly([(1, 1), (m, 0)], var)
+    product = _eq(_node(T.MULTIPLY, _node(T.BRACKET, minus), _node(T.BRACKET, plus)), _num(0))
+    a, b = CoreNode.variable("a"), CoreNode.variable("b")
+    formula = _eq(
+        _node(T.SUBTRACT, _node(T.POWER, a, _num(2)), _node(T.POWER, b, _num(2))),
+        _node(
+            T.MULTIPLY,
+            _node(T.BRACKET, _node(T.SUBTRACT, a, b)),
+            _node(T.BRACKET, _node(T.ADD, a, b)),
+        ),
+    )
+    detail = SolveResult()
+    detail.add_group("using_factor", Step(f.node, product, "using_factor", [formula]))
+    detail.set_solution(product)
+    result.add_group(
+        "factorise_call", Step(f.node, product, "using_factor", [formula], subresult=detail)
+    )
+    cases = [_eq(minus, _num(0)), _eq(plus, _num(0))]
+    listed = _node(T.LIST, *cases)
+    result.add_group(
+        "eq_separate_short", Step(product, listed, "quad_separate_zero_product", [_num(0)])
+    )
+    result.add_group(
+        "eq_solve_short_plural",
+        *[
+            Step(
+                listed,
+                f.solved(Fraction(root)),
+                "eq_linear",
+                [x],
+                subresult=_solve_linear(case, var),
+            )
+            for case, root in zip(cases, (m, -m), strict=True)
+        ],
+    )
+    f.finish(result, [f.solved(Fraction(-m)), f.solved(Fraction(m))])
+    return result
+
+
 def methods(
     node: CoreNode, var: str, a: Fraction, b: Fraction, c: Fraction
 ) -> list[SolveResult] | None:
@@ -313,8 +400,11 @@ def methods(
         return None
     ia, ib, ic = int(a), int(b), int(c)
     d = ib * ib - 4 * ia * ic
-    if ia == 0 or ib == 0 or ic == 0 or d <= 0 or isqrt(d) ** 2 != d:
+    if ia == 0 or ic == 0 or d <= 0 or isqrt(d) ** 2 != d:
         return None
     family = _Family(var, ia, ib, ic)
+    if ib == 0:
+        built = [m for m in (_extraction(family), _difference_of_squares(family)) if m]
+        return built or None
     built = [m for m in (_factoring(family), _formula(family)) if m]
     return built or None

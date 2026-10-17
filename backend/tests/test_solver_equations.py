@@ -226,6 +226,23 @@ class TestMethods:
         assert _method_keys(group.entries[0])[0] == "write_as_diff"
         assert _method_keys(group.entries[1])[0] == "quad_formula_abc"
 
+    def test_difference_of_squares_has_root_extraction_then_factoring(self) -> None:
+        # Photomath 7.10.0 on device: x^2 - 4 = 0.
+        group = _group("{=({x^2-4},{0})}")
+        assert _method_keys(group.entries[0]) == [
+            "rel_move_right_const",
+            "quad_sqrt_sides",
+            "quad_separate_signs",
+            "solution_eq_num",
+        ]
+        assert _method_keys(group.entries[1]) == [
+            "using_factor",
+            "quad_separate_zero_product",
+            "eq_linear",
+            "eq_linear",
+            "solution_eq_num",
+        ]
+
     def test_other_quadratics_keep_formula_then_factoring(self) -> None:
         group = _group("{=({x^2+5x+6},{0})}")
         assert _method_keys(group.entries[0]) == [

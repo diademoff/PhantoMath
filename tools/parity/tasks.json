@@ -178,5 +178,107 @@
   "section": "fractions",
   "pm": "<frac>1<R>2<R>+1",
   "proto": "{frac({1},{2})+1}"
+ },
+ {
+  "id": "trig_cos60",
+  "section": "trigonometry",
+  "pm": "<cos>60<deg>",
+  "proto": "{cos({deg({60})})}"
+ },
+ {
+  "id": "trig_tan45",
+  "section": "trigonometry",
+  "pm": "<tan>45<deg>",
+  "proto": "{tan({deg({45})})}"
+ },
+ {
+  "id": "abs_neg",
+  "section": "absolute_value",
+  "pm": "<abs>-5<R>",
+  "proto": "{abs({-5})}"
+ },
+ {
+  "id": "pow_5sq",
+  "section": "powers_roots",
+  "pm": "5<sq>",
+  "proto": "{5^2}"
+ },
+ {
+  "id": "quad_double",
+  "section": "quadratic_equations",
+  "pm": "x<sq>-4x+4=0",
+  "proto": "{=({x^2-4x+4},{0})}"
+ },
+ {
+  "id": "quad_irr",
+  "section": "quadratic_equations",
+  "pm": "x<sq>-2=0",
+  "proto": "{=({x^2-2},{0})}"
+ },
+ {
+  "id": "quad_pos",
+  "section": "quadratic_equations",
+  "pm": "x<sq>+4x+3=0",
+  "proto": "{=({x^2+4x+3},{0})}"
+ },
+ {
+  "id": "quad_negc",
+  "section": "quadratic_equations",
+  "pm": "x<sq>-x-6=0",
+  "proto": "{=({x^2-x-6},{0})}"
+ },
+ {
+  "id": "ineq_gt",
+  "section": "inequalities",
+  "pm": "3x-2<gt>7",
+  "proto": "{>({3x-2},{7})}"
+ },
+ {
+  "id": "ineq_neg",
+  "section": "inequalities",
+  "pm": "-2x<lt>4",
+  "proto": "{<({-2x},{4})}"
+ },
+ {
+  "id": "ineq_quad_gt",
+  "section": "inequalities",
+  "pm": "x<sq>-4<gt>0",
+  "proto": "{>({x^2-4},{0})}"
+ },
+ {
+  "id": "lin_neg",
+  "section": "linear_equations",
+  "pm": "-2x+3=7",
+  "proto": "{=({-2x+3},{7})}"
+ },
+ {
+  "id": "lin_paren",
+  "section": "linear_equations",
+  "pm": "2(x+1)=8",
+  "proto": "{=({2*(x+1)},{8})}"
+ },
+ {
+  "id": "dec_add",
+  "section": "arithmetic",
+  "pm": "2,5+0,5",
+  "proto": "{2.5+0.5}"
+ },
+ {
+  "id": "cos_eq",
+  "section": "trigonometry",
+  "pm": "<cos>x<R>=<frac>1<R>2<R>",
+  "proto": "{=({cos({x})},{1/2})}"
+ },
+ {
+  "id": "tan_eq",
+  "section": "trigonometry",
+  "pm": "<tan>x<R>=1",
+  "proto": "{=({tan({x})},{1})}"
+ },
+ {
+  "id": "sqrt_sum",
+  "section": "powers_roots",
+  "pm": "<sqrt>9<R>+<sqrt>16<R>",
+  "proto": "{root2({9})+root2({16})}"
  }
 ]
