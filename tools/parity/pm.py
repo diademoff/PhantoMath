@@ -158,37 +158,63 @@ def _text(root, rid: str) -> str:
     return ""
 
 
-def walk(name: str) -> list[dict]:
-    """Per top-level step: its description and the rows of its 'detailed steps' screen."""
+def _stage(name: str, root) -> dict:
+    """Current stage: its description and the rows of its detail screen (if any)."""
     ids = ("/collapsed_description", "/description", "/title")
-    root = ui.dump(f"{name}_list")
-    n_rows = sum(1 for n, _, _ in ui.nodes(root)
-                 if n.get("resource-id", "").endswith("/collapsed_description"))
+    st = {"text": _text(root, "description"), "nested": []}
+    exp = ui.find(root, "id:substep_expand_button")
+    if exp:
+        ui.adb("shell", "input", "tap", str(exp[0]), str(exp[1]))
+        time.sleep(2)
+        nroot = ui.dump(f"{name}_d")
+        st["nested"] = [n.get("text") for n, _, _ in ui.nodes(nroot)
+                        if n.get("resource-id", "").endswith(ids) and n.get("text")]
+        ui.adb("shell", "input", "keyevent", "KEYCODE_BACK")
+        time.sleep(1.2)
+    return st
+
+
+def walk(name: str) -> list[dict]:
+    """Groups as Photomath presents them: a card pager of stages per main step.
+
+    Row 0 is tapped, «Далее» then advances group by group; the arrow inside a
+    card pages through its stages. Each stage may open a detail screen.
+    """
+    for _ in range(6):  # collect_scroll left the list scrolled down
+        ui.adb("shell", "input", "swipe", "540", "700", "540", "1800", "250")
+    time.sleep(0.5)
+    rows = [c for n, c, _ in ui.nodes(ui.dump(f"{name}_top"))
+            if n.get("resource-id", "").endswith("/collapsed_description")]
+    if not rows:
+        return []
+    ui.adb("shell", "input", "tap", "540", str(rows[0][1] - 44))
+    time.sleep(1.5)
     out = []
-    for i in range(n_rows):
-        root = ui.dump(f"{name}_r{i}")
-        rows = [c for n, c, _ in ui.nodes(root)
-                if n.get("resource-id", "").endswith("/collapsed_description")]
-        if i >= len(rows):
-            break
-        ui.adb("shell", "input", "tap", "540", str(rows[i][1] - 44))
-        time.sleep(1.5)
-        root = ui.dump(f"{name}_e{i}")
-        step = {"text": _text(root, "description"), "nested": []}
-        exp = ui.find(root, "id:substep_expand_button")
-        if exp:
-            ui.adb("shell", "input", "tap", str(exp[0]), str(exp[1]))
-            time.sleep(2)
-            nroot = ui.dump(f"{name}_d{i}")
-            step["nested"] = [n.get("text") for n, _, _ in ui.nodes(nroot)
-                              if n.get("resource-id", "").endswith(ids) and n.get("text")]
-            ui.adb("shell", "input", "keyevent", "KEYCODE_BACK")
+    for i in range(14):
+        root = ui.dump(f"{name}_g{i}")
+        if i:
+            nxt = ui.find(root, "id:next")
+            if not nxt:
+                break
+            ui.adb("shell", "input", "tap", str(nxt[0]), str(nxt[1]))
+            time.sleep(1.5)
+            root = ui.dump(f"{name}_g{i}")
+        stages = [_stage(f"{name}_{i}", root)]
+        for k in range(6):
+            root = ui.dump(f"{name}_g{i}")
+            nxt = ui.find(root, "id:substep_next_button")
+            if not nxt:
+                break
+            ui.adb("shell", "input", "tap", str(nxt[0]), str(nxt[1]))
             time.sleep(1.2)
-        close = ui.find(ui.dump(), "id:substep_close_button")
-        if close:
-            ui.adb("shell", "input", "tap", str(close[0]), str(close[1]))
-            time.sleep(1)
-        out.append(step)
+            st = _stage(f"{name}_{i}_{k}", ui.dump(f"{name}_g{i}"))
+            if st["text"] == stages[-1]["text"]:
+                break
+            stages.append(st)
+        stages = [st for st in stages if st["text"]]
+        if not stages:
+            break
+        out.append({"stages": stages})
     return out
 
 
@@ -230,6 +256,8 @@ def crawl(task_id: str, keys: str) -> dict:
         time.sleep(3)
         (CAP / f"{task_id}_steps.png").write_bytes(
             ui.adb("exec-out", "screencap", "-p", binary=True))
+        n_rows = sum(1 for n, _, _ in ui.nodes(ui.dump(f"{task_id}_rows"))
+                     if n.get("resource-id", "").endswith("/collapsed_description"))
         steps = collect_scroll(f"{task_id}_steps", {"collapsed_description", "title"}, 5)
         res["steps"] = [{"text": t, "keys": keys_for(t, kmap)} for t in steps]
         res["walk"] = walk(task_id)

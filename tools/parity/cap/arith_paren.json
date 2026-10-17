@@ -28,5 +28,19 @@
     "graph_rt_info_solution"
    ]
   }
+ ],
+ "walk": [
+  {
+   "stages": [
+    {
+     "text": "Сложите числа",
+     "nested": []
+    },
+    {
+     "text": "Умножьте числа",
+     "nested": []
+    }
+   ]
+  }
  ]
 }

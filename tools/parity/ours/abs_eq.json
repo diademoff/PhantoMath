@@ -4,25 +4,27 @@
   {
    "steps": [
     {
-     "key": "abs_separate",
-     "text": "Используя определение модуля, выделите для модуля x - 2 возможных случая",
      "headers": [],
-     "detail": [],
-     "theory": false
-    },
-    {
-     "key": "eq_abs_branch",
-     "text": "Используя определение модуля, представьте уравнение с модулем в виде двух отдельных уравнений",
-     "headers": [],
-     "detail": [],
-     "theory": false
-    },
-    {
-     "key": "quad_final_single",
-     "text": "Окончательное решение",
-     "headers": [],
-     "detail": [],
-     "theory": false
+     "stages": [
+      {
+       "key": "abs_separate",
+       "text": "Используя определение модуля, выделите для модуля x - 2 возможных случая",
+       "detail": [],
+       "theory": false
+      },
+      {
+       "key": "eq_abs_branch",
+       "text": "Используя определение модуля, представьте уравнение с модулем в виде двух отдельных уравнений",
+       "detail": [],
+       "theory": false
+      },
+      {
+       "key": "quad_final_single",
+       "text": "Окончательное решение",
+       "detail": [],
+       "theory": false
+      }
+     ]
     }
    ]
   }

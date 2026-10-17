@@ -4,237 +4,246 @@
   {
    "steps": [
     {
-     "key": "eq_quad_coeff_identify",
-     "text": "В стандартном виде ax² + bx + c = 0 коэффициенты равны: a = 1, b = -5, c = 6.",
      "headers": [
       "Приведём уравнение к стандартному виду"
      ],
-     "detail": [],
-     "theory": true
-    },
-    {
-     "key": "eq_quad_disc",
-     "text": "Запишем D = b² − 4ac и подставим коэффициенты вместе с их знаками.",
-     "headers": [
-      "Найдём дискриминант"
-     ],
-     "detail": [],
-     "theory": true
-    },
-    {
-     "key": "eq_quad_disc_calculate",
-     "text": "Вычислим значение дискриминанта: D = 1. По его знаку определяем число действительных корней.",
-     "headers": [
-      "Найдём дискриминант"
-     ],
-     "detail": [
+     "stages": [
       {
-       "key": "lesson_disc_square",
-       "text": "Сначала возведём коэффициент b в квадрат. Скобки сохраняют знак отрицательного числа.",
-       "headers": [
-        "Найдём дискриминант"
-       ],
-       "detail": [],
-       "theory": true
-      },
-      {
-       "key": "lesson_disc_product",
-       "text": "Вычислим произведение 4ac, учитывая знаки коэффициентов.",
-       "headers": [
-        "Найдём дискриминант"
-       ],
-       "detail": [],
-       "theory": true
-      },
-      {
-       "key": "lesson_disc_subtract",
-       "text": "Вычтем 4ac из b². Полученное число — дискриминант D.",
-       "headers": [
-        "Найдём дискриминант"
-       ],
+       "key": "eq_quad_coeff_identify",
+       "text": "В стандартном виде ax² + bx + c = 0 коэффициенты равны: a = 1, b = -5, c = 6.",
        "detail": [],
        "theory": true
       }
-     ],
-     "theory": true
+     ]
     },
     {
-     "key": "eq_quad_solve_in_r",
-     "text": "Подставим дискриминант в формулу корней. Вычислим ветви со знаком минус и плюс; при D = 0 они совпадают.",
+     "headers": [
+      "Найдём дискриминант"
+     ],
+     "stages": [
+      {
+       "key": "eq_quad_disc",
+       "text": "Запишем D = b² − 4ac и подставим коэффициенты вместе с их знаками.",
+       "detail": [],
+       "theory": true
+      },
+      {
+       "key": "eq_quad_disc_calculate",
+       "text": "Вычислим значение дискриминанта: D = 1. По его знаку определяем число действительных корней.",
+       "detail": [
+        {
+         "headers": [
+          "Найдём дискриминант"
+         ],
+         "stages": [
+          {
+           "key": "lesson_disc_square",
+           "text": "Сначала возведём коэффициент b в квадрат. Скобки сохраняют знак отрицательного числа.",
+           "detail": [],
+           "theory": true
+          },
+          {
+           "key": "lesson_disc_product",
+           "text": "Вычислим произведение 4ac, учитывая знаки коэффициентов.",
+           "detail": [],
+           "theory": true
+          },
+          {
+           "key": "lesson_disc_subtract",
+           "text": "Вычтем 4ac из b². Полученное число — дискриминант D.",
+           "detail": [],
+           "theory": true
+          }
+         ]
+        }
+       ],
+       "theory": true
+      }
+     ]
+    },
+    {
      "headers": [
       "Найдём корни"
      ],
-     "detail": [
+     "stages": [
       {
-       "key": "lesson_root_formula",
-       "text": "Используем формулу корней для ax² + bx + c = 0, где a ≠ 0.",
-       "headers": [
-        "Подставим значения в формулу"
+       "key": "eq_quad_solve_in_r",
+       "text": "Подставим дискриминант в формулу корней. Вычислим ветви со знаком минус и плюс; при D = 0 они совпадают.",
+       "detail": [
+        {
+         "headers": [
+          "Подставим значения в формулу"
+         ],
+         "stages": [
+          {
+           "key": "lesson_root_formula",
+           "text": "Используем формулу корней для ax² + bx + c = 0, где a ≠ 0.",
+           "detail": [],
+           "theory": true
+          }
+         ]
+        },
+        {
+         "headers": [
+          "Вычислим корень со знаком минус"
+         ],
+         "stages": [
+          {
+           "key": "lesson_root_sqrt",
+           "text": "Упростим квадратный корень из дискриминанта; иррациональное значение оставим точным.",
+           "detail": [],
+           "theory": true
+          },
+          {
+           "key": "lesson_root_numerator",
+           "text": "Вычислим числитель этой ветви формулы.",
+           "detail": [],
+           "theory": true
+          },
+          {
+           "key": "lesson_root_denominator",
+           "text": "Вычислим знаменатель 2a. Он не равен нулю.",
+           "detail": [],
+           "theory": true
+          },
+          {
+           "key": "lesson_root_reduce",
+           "text": "Упростим полученную дробь и запишем корень.",
+           "detail": [],
+           "theory": true
+          }
+         ]
+        },
+        {
+         "headers": [
+          "Вычислим корень со знаком плюс"
+         ],
+         "stages": [
+          {
+           "key": "lesson_root_sqrt",
+           "text": "Упростим квадратный корень из дискриминанта; иррациональное значение оставим точным.",
+           "detail": [],
+           "theory": true
+          },
+          {
+           "key": "lesson_root_numerator",
+           "text": "Вычислим числитель этой ветви формулы.",
+           "detail": [],
+           "theory": true
+          },
+          {
+           "key": "lesson_root_denominator",
+           "text": "Вычислим знаменатель 2a. Он не равен нулю.",
+           "detail": [],
+           "theory": true
+          },
+          {
+           "key": "lesson_root_reduce",
+           "text": "Упростим полученную дробь и запишем корень.",
+           "detail": [],
+           "theory": true
+          }
+         ]
+        }
        ],
-       "detail": [],
-       "theory": true
-      },
-      {
-       "key": "lesson_root_sqrt",
-       "text": "Упростим квадратный корень из дискриминанта; иррациональное значение оставим точным.",
-       "headers": [
-        "Вычислим корень со знаком минус"
-       ],
-       "detail": [],
-       "theory": true
-      },
-      {
-       "key": "lesson_root_numerator",
-       "text": "Вычислим числитель этой ветви формулы.",
-       "headers": [
-        "Вычислим корень со знаком минус"
-       ],
-       "detail": [],
-       "theory": true
-      },
-      {
-       "key": "lesson_root_denominator",
-       "text": "Вычислим знаменатель 2a. Он не равен нулю.",
-       "headers": [
-        "Вычислим корень со знаком минус"
-       ],
-       "detail": [],
-       "theory": true
-      },
-      {
-       "key": "lesson_root_reduce",
-       "text": "Упростим полученную дробь и запишем корень.",
-       "headers": [
-        "Вычислим корень со знаком минус"
-       ],
-       "detail": [],
-       "theory": true
-      },
-      {
-       "key": "lesson_root_sqrt",
-       "text": "Упростим квадратный корень из дискриминанта; иррациональное значение оставим точным.",
-       "headers": [
-        "Вычислим корень со знаком плюс"
-       ],
-       "detail": [],
-       "theory": true
-      },
-      {
-       "key": "lesson_root_numerator",
-       "text": "Вычислим числитель этой ветви формулы.",
-       "headers": [
-        "Вычислим корень со знаком плюс"
-       ],
-       "detail": [],
-       "theory": true
-      },
-      {
-       "key": "lesson_root_denominator",
-       "text": "Вычислим знаменатель 2a. Он не равен нулю.",
-       "headers": [
-        "Вычислим корень со знаком плюс"
-       ],
-       "detail": [],
-       "theory": true
-      },
-      {
-       "key": "lesson_root_reduce",
-       "text": "Упростим полученную дробь и запишем корень.",
-       "headers": [
-        "Вычислим корень со знаком плюс"
-       ],
-       "detail": [],
        "theory": true
       }
-     ],
-     "theory": true
+     ]
     }
    ]
   },
   {
    "steps": [
     {
-     "key": "eq_quad_coeff_identify",
-     "text": "В стандартном виде ax² + bx + c = 0 коэффициенты равны: a = 1, b = -5, c = 6.",
      "headers": [
       "Приведём уравнение к стандартному виду"
      ],
-     "detail": [],
-     "theory": true
-    },
-    {
-     "key": "eq_quad_disc",
-     "text": "Запишем D = b² − 4ac и подставим коэффициенты вместе с их знаками.",
-     "headers": [
-      "Найдём дискриминант"
-     ],
-     "detail": [],
-     "theory": true
-    },
-    {
-     "key": "eq_quad_disc_calculate",
-     "text": "Вычислим значение дискриминанта: D = 1. По его знаку определяем число действительных корней.",
-     "headers": [
-      "Найдём дискриминант"
-     ],
-     "detail": [
+     "stages": [
       {
-       "key": "lesson_disc_square",
-       "text": "Сначала возведём коэффициент b в квадрат. Скобки сохраняют знак отрицательного числа.",
-       "headers": [
-        "Найдём дискриминант"
-       ],
-       "detail": [],
-       "theory": true
-      },
-      {
-       "key": "lesson_disc_product",
-       "text": "Вычислим произведение 4ac, учитывая знаки коэффициентов.",
-       "headers": [
-        "Найдём дискриминант"
-       ],
-       "detail": [],
-       "theory": true
-      },
-      {
-       "key": "lesson_disc_subtract",
-       "text": "Вычтем 4ac из b². Полученное число — дискриминант D.",
-       "headers": [
-        "Найдём дискриминант"
-       ],
+       "key": "eq_quad_coeff_identify",
+       "text": "В стандартном виде ax² + bx + c = 0 коэффициенты равны: a = 1, b = -5, c = 6.",
        "detail": [],
        "theory": true
       }
-     ],
-     "theory": true
+     ]
     },
     {
-     "key": "solve_by_factoring",
-     "text": "Решите путем разложения на множители",
+     "headers": [
+      "Найдём дискриминант"
+     ],
+     "stages": [
+      {
+       "key": "eq_quad_disc",
+       "text": "Запишем D = b² − 4ac и подставим коэффициенты вместе с их знаками.",
+       "detail": [],
+       "theory": true
+      },
+      {
+       "key": "eq_quad_disc_calculate",
+       "text": "Вычислим значение дискриминанта: D = 1. По его знаку определяем число действительных корней.",
+       "detail": [
+        {
+         "headers": [
+          "Найдём дискриминант"
+         ],
+         "stages": [
+          {
+           "key": "lesson_disc_square",
+           "text": "Сначала возведём коэффициент b в квадрат. Скобки сохраняют знак отрицательного числа.",
+           "detail": [],
+           "theory": true
+          },
+          {
+           "key": "lesson_disc_product",
+           "text": "Вычислим произведение 4ac, учитывая знаки коэффициентов.",
+           "detail": [],
+           "theory": true
+          },
+          {
+           "key": "lesson_disc_subtract",
+           "text": "Вычтем 4ac из b². Полученное число — дискриминант D.",
+           "detail": [],
+           "theory": true
+          }
+         ]
+        }
+       ],
+       "theory": true
+      }
+     ]
+    },
+    {
      "headers": [
       "Найдём корни"
      ],
-     "detail": [
+     "stages": [
       {
-       "key": "lesson_factor_zero",
-       "text": "Произведение равно нулю, когда хотя бы один множитель равен нулю.",
-       "headers": [
-        "Найдём корни"
+       "key": "solve_by_factoring",
+       "text": "Решите путем разложения на множители",
+       "detail": [
+        {
+         "headers": [
+          "Найдём корни"
+         ],
+         "stages": [
+          {
+           "key": "lesson_factor_zero",
+           "text": "Произведение равно нулю, когда хотя бы один множитель равен нулю.",
+           "detail": [],
+           "theory": false
+          },
+          {
+           "key": "lesson_simplify",
+           "text": "Вычислим и приведём подобные члены, не меняя равенства.",
+           "detail": [],
+           "theory": false
+          }
+         ]
+        }
        ],
-       "detail": [],
-       "theory": false
-      },
-      {
-       "key": "lesson_simplify",
-       "text": "Вычислим и приведём подобные члены, не меняя равенства.",
-       "headers": [
-        "Найдём корни"
-       ],
-       "detail": [],
        "theory": false
       }
-     ],
-     "theory": false
+     ]
     }
    ]
   }

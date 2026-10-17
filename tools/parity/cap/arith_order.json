@@ -1,16 +1,16 @@
 {
- "id": "fact_5",
- "keys": "5<fact>",
+ "id": "arith_order",
+ "keys": "2+3*4",
  "cards": [
   "Вычислите значение",
   "Вычислить"
  ],
  "steps": [
   {
-   "text": "Вычислите факториал",
+   "text": "Вычислить",
    "keys": [
-    "factorial_calculate",
-    "series_calc_short"
+    "calculate_short",
+    "multiply"
    ]
   },
   {
@@ -24,6 +24,20 @@
    "text": "Решение",
    "keys": [
     "graph_rt_info_solution"
+   ]
+  }
+ ],
+ "walk": [
+  {
+   "stages": [
+    {
+     "text": "Умножьте числа",
+     "nested": []
+    },
+    {
+     "text": "Сложите числа",
+     "nested": []
+    }
    ]
   }
  ]

@@ -43,3 +43,4 @@ app/python/assets/
 # Съёмка конкурента: скриншоты и дампы экрана (JSON остаются)
 tools/parity/cap/*.png
 tools/parity/cap/*.xml
+tools/parity/batch.log

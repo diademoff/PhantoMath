@@ -11,17 +11,20 @@ OUT = HERE / "ours"
 
 
 def _steps(result: dict) -> list[dict]:
+    """Top-level steps = our groups; each carries its stages and nested detail."""
     out = []
     for st in result.get("steps", []):
+        stages = []
         for s in st["substeps"]:
             sub = s.get("subresult")
-            out.append({
+            stages.append({
                 "key": s["description"]["type"],
                 "text": (s.get("explanation") or {}).get("text", ""),
-                "headers": [(h.get("explanation") or {}).get("text", "") for h in st["headers"]],
                 "detail": _steps(sub) if isinstance(sub, dict) else [],
                 "theory": bool((s.get("explanation") or {}).get("theory")),
             })
+        out.append({"headers": [(h.get("explanation") or {}).get("text", "")
+                                for h in st["headers"]], "stages": stages})
     return out
 
 

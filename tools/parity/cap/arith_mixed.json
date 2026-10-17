@@ -1,16 +1,15 @@
 {
- "id": "arith_order",
- "keys": "2+3*4",
+ "id": "arith_mixed",
+ "keys": "100/4+6",
  "cards": [
   "Вычислите значение",
   "Вычислить"
  ],
  "steps": [
   {
-   "text": "Вычислить",
+   "text": "Выполнить деление",
    "keys": [
-    "calculate_short",
-    "multiply"
+    "divide"
    ]
   },
   {
@@ -24,6 +23,20 @@
    "text": "Решение",
    "keys": [
     "graph_rt_info_solution"
+   ]
+  }
+ ],
+ "walk": [
+  {
+   "stages": [
+    {
+     "text": "Разделить числа",
+     "nested": []
+    },
+    {
+     "text": "Сложите числа",
+     "nested": []
+    }
    ]
   }
  ]

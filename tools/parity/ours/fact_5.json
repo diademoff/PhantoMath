@@ -4,11 +4,15 @@
   {
    "steps": [
     {
-     "key": "factorial_calculate",
-     "text": "Вычислите факториал",
      "headers": [],
-     "detail": [],
-     "theory": false
+     "stages": [
+      {
+       "key": "factorial_calculate",
+       "text": "Вычислите факториал",
+       "detail": [],
+       "theory": false
+      }
+     ]
     }
    ]
   }

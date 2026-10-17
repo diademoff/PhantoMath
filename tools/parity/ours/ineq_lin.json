@@ -4,22 +4,23 @@
   {
    "steps": [
     {
-     "key": "move",
-     "text": "Перенести слагаемое в другую часть уравнения",
      "headers": [
       "Решите неравенство"
      ],
-     "detail": [],
-     "theory": true
-    },
-    {
-     "key": "ineq_linear_div",
-     "text": "Разделите обе части неравенства на 2",
-     "headers": [
-      "Решите неравенство"
-     ],
-     "detail": [],
-     "theory": false
+     "stages": [
+      {
+       "key": "move",
+       "text": "Перенести слагаемое в другую часть уравнения",
+       "detail": [],
+       "theory": true
+      },
+      {
+       "key": "ineq_linear_div",
+       "text": "Разделите обе части неравенства на 2",
+       "detail": [],
+       "theory": false
+      }
+     ]
     }
    ]
   }

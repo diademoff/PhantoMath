@@ -4,18 +4,21 @@
   {
    "steps": [
     {
-     "key": "trig_find_period",
-     "text": "Определите период",
      "headers": [],
-     "detail": [],
-     "theory": false
-    },
-    {
-     "key": "trig_general_sol",
-     "text": "Запишите общее решение, используя 2·π",
-     "headers": [],
-     "detail": [],
-     "theory": false
+     "stages": [
+      {
+       "key": "trig_find_period",
+       "text": "Определите период",
+       "detail": [],
+       "theory": false
+      },
+      {
+       "key": "trig_general_sol",
+       "text": "Запишите общее решение, используя 2·π",
+       "detail": [],
+       "theory": false
+      }
+     ]
     }
    ]
   }

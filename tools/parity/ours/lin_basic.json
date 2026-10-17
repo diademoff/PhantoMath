@@ -4,129 +4,153 @@
   {
    "steps": [
     {
-     "key": "move",
-     "text": "Перенести слагаемое в другую часть уравнения",
      "headers": [
       "Соберём члены с неизвестным"
      ],
-     "detail": [
+     "stages": [
       {
-       "key": "lesson_balance",
-       "text": "Выполним одинаковое действие с обеими частями: вычтем 3.",
-       "headers": [
-        "Соберём члены с неизвестным"
+       "key": "move",
+       "text": "Перенести слагаемое в другую часть уравнения",
+       "detail": [
+        {
+         "headers": [
+          "Соберём члены с неизвестным"
+         ],
+         "stages": [
+          {
+           "key": "lesson_balance",
+           "text": "Выполним одинаковое действие с обеими частями: вычтем 3.",
+           "detail": [],
+           "theory": true
+          },
+          {
+           "key": "lesson_simplify",
+           "text": "Вычислим и приведём подобные члены, не меняя равенства.",
+           "detail": [],
+           "theory": false
+          }
+         ]
+        }
        ],
-       "detail": [],
        "theory": true
-      },
-      {
-       "key": "lesson_simplify",
-       "text": "Вычислим и приведём подобные члены, не меняя равенства.",
-       "headers": [
-        "Соберём члены с неизвестным"
-       ],
-       "detail": [],
-       "theory": false
       }
-     ],
-     "theory": true
+     ]
     },
     {
-     "key": "eq_linar_divide_both_sides",
-     "text": "Разделить обе части уравнения на 2",
      "headers": [
       "Выразим неизвестное"
      ],
-     "detail": [
+     "stages": [
       {
-       "key": "lesson_divide_sides",
-       "text": "Разделим обе части на ненулевое число 2.",
-       "headers": [
-        "Выразим неизвестное"
+       "key": "eq_linar_divide_both_sides",
+       "text": "Разделить обе части уравнения на 2",
+       "detail": [
+        {
+         "headers": [
+          "Выразим неизвестное"
+         ],
+         "stages": [
+          {
+           "key": "lesson_divide_sides",
+           "text": "Разделим обе части на ненулевое число 2.",
+           "detail": [],
+           "theory": true
+          },
+          {
+           "key": "lesson_simplify",
+           "text": "Вычислим и приведём подобные члены, не меняя равенства.",
+           "detail": [],
+           "theory": false
+          }
+         ]
+        }
        ],
-       "detail": [],
        "theory": true
-      },
-      {
-       "key": "lesson_simplify",
-       "text": "Вычислим и приведём подобные члены, не меняя равенства.",
-       "headers": [
-        "Выразим неизвестное"
-       ],
-       "detail": [],
-       "theory": false
       }
-     ],
-     "theory": true
+     ]
     }
    ]
   },
   {
    "steps": [
     {
-     "key": "eq_linar_divide_both_sides",
-     "text": "Разделить обе части уравнения на 2",
      "headers": [
       "Выразим неизвестное"
      ],
-     "detail": [
+     "stages": [
       {
-       "key": "lesson_divide_sides",
-       "text": "Разделим обе части на ненулевое число 2.",
-       "headers": [
-        "Выразим неизвестное"
+       "key": "eq_linar_divide_both_sides",
+       "text": "Разделить обе части уравнения на 2",
+       "detail": [
+        {
+         "headers": [
+          "Выразим неизвестное"
+         ],
+         "stages": [
+          {
+           "key": "lesson_divide_sides",
+           "text": "Разделим обе части на ненулевое число 2.",
+           "detail": [],
+           "theory": true
+          },
+          {
+           "key": "lesson_simplify",
+           "text": "Вычислим и приведём подобные члены, не меняя равенства.",
+           "detail": [],
+           "theory": false
+          }
+         ]
+        }
        ],
-       "detail": [],
        "theory": true
-      },
-      {
-       "key": "lesson_simplify",
-       "text": "Вычислим и приведём подобные члены, не меняя равенства.",
-       "headers": [
-        "Выразим неизвестное"
-       ],
-       "detail": [],
-       "theory": false
       }
-     ],
-     "theory": true
+     ]
     },
     {
-     "key": "move",
-     "text": "Перенести слагаемое в другую часть уравнения",
      "headers": [
       "Соберём члены с неизвестным"
      ],
-     "detail": [
+     "stages": [
       {
-       "key": "lesson_collect",
-       "text": "Приведём подобные члены в каждой части уравнения.",
-       "headers": [
-        "Соберём члены с неизвестным"
+       "key": "move",
+       "text": "Перенести слагаемое в другую часть уравнения",
+       "detail": [
+        {
+         "headers": [
+          "Соберём члены с неизвестным"
+         ],
+         "stages": [
+          {
+           "key": "lesson_collect",
+           "text": "Приведём подобные члены в каждой части уравнения.",
+           "detail": [],
+           "theory": true
+          }
+         ]
+        },
+        {
+         "headers": [
+          "Соберём члены с неизвестным"
+         ],
+         "stages": [
+          {
+           "key": "lesson_balance",
+           "text": "Выполним одинаковое действие с обеими частями: вычтем 3/2.",
+           "detail": [],
+           "theory": true
+          },
+          {
+           "key": "lesson_simplify",
+           "text": "Вычислим и приведём подобные члены, не меняя равенства.",
+           "detail": [],
+           "theory": false
+          }
+         ]
+        }
        ],
-       "detail": [],
        "theory": true
-      },
-      {
-       "key": "lesson_balance",
-       "text": "Выполним одинаковое действие с обеими частями: вычтем 3/2.",
-       "headers": [
-        "Соберём члены с неизвестным"
-       ],
-       "detail": [],
-       "theory": true
-      },
-      {
-       "key": "lesson_simplify",
-       "text": "Вычислим и приведём подобные члены, не меняя равенства.",
-       "headers": [
-        "Соберём члены с неизвестным"
-       ],
-       "detail": [],
-       "theory": false
       }
-     ],
-     "theory": true
+     ]
     }
    ]
   }

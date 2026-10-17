@@ -4,22 +4,23 @@
   {
    "steps": [
     {
-     "key": "graph_solution",
-     "text": "Начертите",
      "headers": [
       "Решите уравнение"
      ],
-     "detail": [],
-     "theory": false
-    },
-    {
-     "key": "calculate",
-     "text": "Вычислите приближенное значение",
-     "headers": [
-      "Решите уравнение"
-     ],
-     "detail": [],
-     "theory": false
+     "stages": [
+      {
+       "key": "graph_solution",
+       "text": "Начертите",
+       "detail": [],
+       "theory": false
+      },
+      {
+       "key": "calculate",
+       "text": "Вычислите приближенное значение",
+       "detail": [],
+       "theory": false
+      }
+     ]
     }
    ]
   }

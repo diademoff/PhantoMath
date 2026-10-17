@@ -4,11 +4,15 @@
   {
    "steps": [
     {
-     "key": "root_simplify",
-     "text": "Упростить корень",
      "headers": [],
-     "detail": [],
-     "theory": false
+     "stages": [
+      {
+       "key": "root_simplify",
+       "text": "Упростить корень",
+       "detail": [],
+       "theory": false
+      }
+     ]
     }
    ]
   }
