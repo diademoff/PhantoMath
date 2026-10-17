@@ -100,12 +100,97 @@ def _power_rule_rows(node: CoreNode, symbol: sympy.Symbol, ctx: SolveContext) ->
     return answer
 
 
+def _is_monomial(part: CoreNode, name: str) -> bool:
+    """``c x^n`` with a positive integer ``c`` and ``n >= 1``."""
+
+    def digits(item: CoreNode) -> bool:
+        return item.type is T.CONSTANT and (item.value or "").isdigit() and item.value != "0"
+
+    def power(item: CoreNode) -> bool:
+        if item.type is T.VARIABLE:
+            return item.value == name
+        return (
+            item.type is T.POWER
+            and item.children[0].type is T.VARIABLE
+            and item.children[0].value == name
+            and digits(item.children[1])
+            and int(item.children[1].value or "0") >= 2
+        )
+
+    if power(part):
+        return True
+    return (
+        part.type in (T.MULTIPLY, T.MULTIPLY_IMPLICIT)
+        and len(part.children) == 2
+        and digits(part.children[0])
+        and power(part.children[1])
+    )
+
+
+def _monomial_sum_rows(node: CoreNode, symbol: sympy.Symbol, ctx: SolveContext) -> CoreNode | None:
+    """``integral (c1 x^n1 + c2 x^n2 + ...) dx`` in Photomath 7.10.0's rows.
+
+    The sum property, one page per term, then the constant of integration.
+    """
+    body = node.children[-1]
+    if not (
+        body.type is T.ADD
+        and len(body.children) >= 2
+        and all(_is_monomial(term, str(symbol)) for term in body.children)
+    ):
+        return None
+    eq = CoreNode.node
+    f, g = CoreNode.variable("f(x)"), CoreNode.variable("g(x)")
+
+    def integral(inner: CoreNode) -> CoreNode:
+        return eq(T.INTEGRAL, inner)
+
+    def chain(parts: list[CoreNode]) -> CoreNode:
+        out = parts[0]
+        for part in parts[1:]:
+            out = eq(T.ADD, out, part)
+        return out
+
+    rule = eq(
+        T.EQUALS,
+        integral(eq(T.ADD, f, g)),
+        eq(T.ADD, integral(f), integral(g)),
+    )
+    split = chain([integral(term) for term in body.children])
+    ctx.result.add_group("integrate_use_short", Step(node, split, "integrate_msg_sum", [rule]))
+    antiderivatives = [
+        from_sympy(sympy.integrate(to_sympy(term), symbol)) for term in body.children
+    ]
+    pages, current = [], split
+    for index, term in enumerate(body.children):
+        following = chain(
+            antiderivatives[: index + 1] + [integral(t) for t in body.children[index + 1 :]]
+        )
+        detail = SolveResult()
+        detail.add_group("integrate", Step(integral(term), antiderivatives[index], "integrate"))
+        detail.set_solution(antiderivatives[index])
+        pages.append(Step(current, following, "integrate", subresult=detail))
+        current = following
+    ctx.result.add_group("integrate_calc_plural", *pages)
+    total = chain(antiderivatives)
+    constant = CoreNode.variable("C")
+    member = eq(T.ELEMENT_OF, constant, CoreNode.variable("ℝ"))
+    answer = eq(T.LIST, eq(T.ADD, total, constant), member)
+    ctx.result.add_group(
+        CoreRichText(type="add_arg", args=[member]),
+        Step(total, answer, "integrate_msg_addc", [member]),
+    )
+    return answer
+
+
 def _indefinite_integral(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Неопределённый интеграл: первообразная."""
     symbol = _variable(ctx)
     ctx.require(len(node.children) >= 1, "интеграл без подынтегрального выражения")
     if (power := _power_rule_rows(node, symbol, ctx)) is not None:
         return power
+    if (total := _monomial_sum_rows(node, symbol, ctx)) is not None:
+        return total
     expression = to_sympy(node.children[-1])
     ctx.result.add(Step(left=node, right=None, key="integrate"))
     method_key = _integral_method(expression, symbol)

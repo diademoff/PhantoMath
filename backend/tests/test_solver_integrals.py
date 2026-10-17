@@ -70,6 +70,26 @@ class TestIndefinite:
         assert sympy.simplify(to_sympy(result.children[0]) - (x**3 / 3 + sympy.Symbol("C"))) == 0
         assert step_keys(problem) == ["integrate_msg", "integrate_msg_addc"]
 
+    def test_sum_of_monomials_uses_the_sum_property_then_constant(self) -> None:
+        # Photomath 7.10.0 on device: the integral of 3x^2 + 2x is x^3 + x^2 + C, C in R.
+        problem = node(
+            T.INTEGRAL,
+            node(
+                T.ADD,
+                node(T.MULTIPLY_IMPLICIT, c("3"), node(T.POWER, var(), c("2"))),
+                node(T.MULTIPLY_IMPLICIT, c("2"), var()),
+            ),
+        )
+        assert step_keys(problem) == [
+            "integrate_msg_sum",
+            "integrate",
+            "integrate",
+            "integrate_msg_addc",
+        ]
+        result = solution_of(problem)
+        assert result.type is T.LIST
+        assert sympy.simplify(to_sympy(result.children[0]) - (x**3 + x**2 + sympy.Symbol("C"))) == 0
+
     def test_step_key(self) -> None:
         problem = node(T.INTEGRAL, var())
         assert step_keys(problem) == ["integrate", "integrate_calc"]

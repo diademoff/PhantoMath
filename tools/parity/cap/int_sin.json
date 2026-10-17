@@ -1,0 +1,91 @@
+{
+ "id": "int_sin",
+ "keys": "<int><sin>x<R><R>x",
+ "cards": [
+  {
+   "methods": [],
+   "steps": [
+    {
+     "text": "Вычислите интеграл",
+     "keys": [
+      "find_integral",
+      "integrate_calc",
+      "series_calc_short"
+     ]
+    },
+    {
+     "text": "Прибавить ARG1",
+     "keys": [
+      "add_arg"
+     ]
+    },
+    {
+     "text": "Решение",
+     "keys": [
+      "graph_rt_info_solution"
+     ]
+    }
+   ],
+   "walk": [
+    {
+     "stages": [
+      {
+       "text": "Используя ARG1, найти интеграл",
+       "nested": []
+      }
+     ]
+    },
+    {
+     "stages": [
+      {
+       "text": "Прибавить константу интегрирования ARG1",
+       "nested": []
+      }
+     ]
+    }
+   ],
+   "title": "Вычислите интеграл",
+   "subtitle": "Найдите значение"
+  }
+ ],
+ "steps": [
+  {
+   "text": "Вычислите интеграл",
+   "keys": [
+    "find_integral",
+    "integrate_calc",
+    "series_calc_short"
+   ]
+  },
+  {
+   "text": "Прибавить ARG1",
+   "keys": [
+    "add_arg"
+   ]
+  },
+  {
+   "text": "Решение",
+   "keys": [
+    "graph_rt_info_solution"
+   ]
+  }
+ ],
+ "walk": [
+  {
+   "stages": [
+    {
+     "text": "Используя ARG1, найти интеграл",
+     "nested": []
+    }
+   ]
+  },
+  {
+   "stages": [
+    {
+     "text": "Прибавить константу интегрирования ARG1",
+     "nested": []
+    }
+   ]
+  }
+ ]
+}
