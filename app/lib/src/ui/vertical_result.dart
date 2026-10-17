@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 
 import '../api/solver_api.dart';
@@ -6,6 +7,7 @@ import '../model/core_node.dart';
 import '../render/latex.dart';
 import '../render/division_trace.dart';
 import '../settings/settings.dart';
+import '../theme/photomath_theme.dart';
 import 'division_lesson.dart';
 import 'transformation_lesson.dart';
 
@@ -80,30 +82,47 @@ class _VerticalResultState extends State<VerticalResult> {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       children: [
         if (result.solution case final solution?)
-          Container(
-            padding: const EdgeInsets.all(20),
-            margin: const EdgeInsets.only(bottom: 24),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer
-                  .withValues(alpha: .35),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Ответ', style: Theme.of(context).textTheme.bodySmall),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: StepEquation(
-                        latex: nodeToLatex(solution, widget.latexOptions),
-                        fontSize: 28,
+          _Reveal(
+            delay: Duration.zero,
+            enabled: !MediaQuery.disableAnimationsOf(context),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              margin: const EdgeInsets.only(bottom: 24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer
+                    .withValues(alpha: .35),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      const SizedBox(width: 6),
+                      Text(
+                        'Ответ',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: StepEquation(
+                          latex: nodeToLatex(solution, widget.latexOptions),
+                          fontSize: 28,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ?widget.methodSwitcher,
@@ -111,8 +130,9 @@ class _VerticalResultState extends State<VerticalResult> {
             DivisionTrace.fromNode(widget.problem!) != null)
           TextButton.icon(
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => DivisionLesson(
+              _riseRoute(
+                context,
+                (_) => DivisionLesson(
                   trace: DivisionTrace.fromNode(widget.problem!)!,
                   method: widget.divisionMethod,
                   separator: widget.latexOptions.decimalSeparator.symbol,
@@ -138,6 +158,19 @@ class _VerticalResultState extends State<VerticalResult> {
     );
   }
 
+  Duration _motion(int milliseconds) => MediaQuery.disableAnimationsOf(context)
+      ? Duration.zero
+      : Duration(milliseconds: milliseconds);
+
+  /// Moves one stage back or forth inside the open step; `direction` is the slide side.
+  void _go(int index, int stage, int direction) {
+    _direction = direction;
+    HapticFeedback.selectionClick();
+    select(index, stage: stage);
+  }
+
+  int _direction = 1;
+
   Widget _group(BuildContext context, int index) {
     final group = widget.result.steps[index];
     final id = identity(index);
@@ -147,135 +180,295 @@ class _VerticalResultState extends State<VerticalResult> {
     final substep = group.substeps[stage];
     final colors = Theme.of(context).colorScheme;
     final anchor = anchors.putIfAbsent(id, GlobalKey.new);
-    return Card(
+    final last = group.substeps.length - 1;
+    final expandable =
+        group.substeps.length > 1 ||
+        group.substeps.any(
+          (s) => s.subresult != null || s.detail.isNotEmpty || s.theory != null,
+        );
+    return _Reveal(
       key: anchor,
-      margin: const EdgeInsets.only(bottom: 12),
-      color: selected ? colors.surfaceContainerLow : colors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: selected ? colors.primary : colors.outlineVariant,
+      delay: Duration(milliseconds: 40 * index.clamp(0, 8)),
+      enabled: !MediaQuery.disableAnimationsOf(context),
+      child: AnimatedContainer(
+        duration: _motion(220),
+        curve: Curves.easeOutCubic,
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: selected ? PhColor.white : colors.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected ? colors.primary : colors.outlineVariant,
+            width: selected ? 1.5 : 1,
+          ),
+          boxShadow: [
+            if (selected)
+              BoxShadow(
+                color: colors.primary.withValues(alpha: .14),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
+              ),
+          ],
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Semantics(
-            selected: selected,
-            button: true,
-            child: InkWell(
-              key: ValueKey('solution-group:$index'),
-              onTap: () => select(index),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Шаг ${index + 1}',
-                      style: Theme.of(context).textTheme.labelMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      title.isEmpty ? 'Преобразование' : title,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    if (!selected) ...[
-                      const SizedBox(height: 8),
-                      if (group.substeps.last.right ?? group.substeps.first.left
-                          case final node?)
-                        StepEquation(
-                          latex: nodeToLatex(node, widget.latexOptions),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Semantics(
+                selected: selected,
+                button: true,
+                child: InkWell(
+                  key: ValueKey('solution-group:$index'),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    select(index);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            AnimatedContainer(
+                              duration: _motion(220),
+                              width: 26,
+                              height: 26,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: selected
+                                    ? colors.primary
+                                    : PhColor.separatorGray,
+                              ),
+                              child: Text(
+                                '${index + 1}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: selected
+                                      ? PhColor.white
+                                      : PhColor.grayMedium,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Шаг ${index + 1}',
+                                style: Theme.of(context).textTheme.labelMedium,
+                              ),
+                            ),
+                            if (expandable)
+                              AnimatedRotation(
+                                turns: selected ? .5 : 0,
+                                duration: _motion(220),
+                                child: const Icon(
+                                  Icons.keyboard_arrow_down,
+                                  color: PhColor.grayMedium,
+                                ),
+                              ),
+                          ],
                         ),
-                      Text('${group.substeps.length} этап(а) · Открыть'),
-                    ],
-                  ],
+                        const SizedBox(height: 8),
+                        Text(
+                          title.isEmpty ? 'Преобразование' : title,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        _SmoothSize(
+                          duration: _motion(220),
+                          alignment: Alignment.topCenter,
+                          child: selected
+                              ? const SizedBox(width: double.infinity)
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 8),
+                                    if (group.substeps.last.right ??
+                                            group.substeps.first.left
+                                        case final node?)
+                                      StepEquation(
+                                        latex: nodeToLatex(
+                                          node,
+                                          widget.latexOptions,
+                                        ),
+                                      ),
+                                    Text(
+                                      '${group.substeps.length} этап(а) · Открыть',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall,
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          if (selected)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (group.substeps.length > 1) ...[
-                    Text(
-                      'Этап ${stage + 1} из ${group.substeps.length}',
-                      key: ValueKey('stage-counter:$index'),
-                      style: Theme.of(context).textTheme.labelLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    LinearProgressIndicator(
-                      value: (stage + 1) / group.substeps.length,
-                      semanticsLabel:
-                          'Этап ${stage + 1} из ${group.substeps.length}',
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  if (substep.text != null &&
-                      !substep.text!.startsWith('step_'))
-                    _Instruction(
-                      substep: substep,
-                      options: widget.latexOptions,
-                      onLink: widget.onLink,
-                    ),
-                  const SizedBox(height: 12),
-                  if (substep.left case final left?)
-                    StepEquation(latex: nodeToLatex(left, widget.latexOptions)),
-                  if (substep.right case final right?) ...[
-                    if (substep.left != null)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Icon(
-                          Icons.south,
-                          size: 18,
-                          color: colors.primary,
+              _SmoothSize(
+                duration: _motion(260),
+                curve: Curves.easeOutCubic,
+                alignment: Alignment.topCenter,
+                child: !selected
+                    ? const SizedBox(width: double.infinity)
+                    : GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onHorizontalDragEnd: (details) {
+                          final speed = details.primaryVelocity ?? 0;
+                          if (speed < -250 && stage < last) {
+                            _go(index, stage + 1, 1);
+                          } else if (speed > 250 && stage > 0) {
+                            _go(index, stage - 1, -1);
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (group.substeps.length > 1) ...[
+                                Text(
+                                  'Этап ${stage + 1} из ${group.substeps.length}',
+                                  key: ValueKey('stage-counter:$index'),
+                                  style: Theme.of(context).textTheme.labelLarge,
+                                ),
+                                const SizedBox(height: 8),
+                                _StageDots(
+                                  count: group.substeps.length,
+                                  current: stage,
+                                  duration: _motion(220),
+                                ),
+                                const SizedBox(height: 16),
+                              ],
+                              AnimatedSwitcher(
+                                duration: _motion(260),
+                                switchInCurve: Curves.easeOutCubic,
+                                switchOutCurve: Curves.easeInCubic,
+                                layoutBuilder: (current, previous) => Stack(
+                                  alignment: Alignment.topLeft,
+                                  children: [...previous, ?current],
+                                ),
+                                transitionBuilder: (child, animation) {
+                                  final entering =
+                                      child.key == ValueKey('$id:$stage');
+                                  final offset = Tween<Offset>(
+                                    begin: Offset(
+                                      entering
+                                          ? .12 * _direction
+                                          : -.12 * _direction,
+                                      0,
+                                    ),
+                                    end: Offset.zero,
+                                  ).animate(animation);
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: SlideTransition(
+                                      position: offset,
+                                      child: child,
+                                    ),
+                                  );
+                                },
+                                child: Column(
+                                  key: ValueKey('$id:$stage'),
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (substep.text != null &&
+                                        !substep.text!.startsWith('step_'))
+                                      _Instruction(
+                                        substep: substep,
+                                        options: widget.latexOptions,
+                                        onLink: widget.onLink,
+                                      ),
+                                    const SizedBox(height: 12),
+                                    if (substep.left case final left?)
+                                      StepEquation(
+                                        latex: nodeToLatex(
+                                          left,
+                                          widget.latexOptions,
+                                        ),
+                                      ),
+                                    if (substep.right case final right?) ...[
+                                      if (substep.left != null)
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 8,
+                                          ),
+                                          child: _FlowArrow(
+                                            color: colors.primary,
+                                            duration: _motion(380),
+                                          ),
+                                        ),
+                                      StepEquation(
+                                        latex: nodeToLatex(
+                                          right,
+                                          widget.latexOptions,
+                                        ),
+                                      ),
+                                    ],
+                                    _actions(context, substep),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Divider(),
+                              Wrap(
+                                alignment: WrapAlignment.spaceBetween,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  if (stage > 0)
+                                    IconButton.outlined(
+                                      key: const ValueKey('previous-stage'),
+                                      tooltip: 'Предыдущий этап',
+                                      icon: const Icon(Icons.chevron_left),
+                                      onPressed: () =>
+                                          _go(index, stage - 1, -1),
+                                    )
+                                  else if (index > 0)
+                                    IconButton.outlined(
+                                      tooltip: 'Предыдущий шаг',
+                                      icon: const Icon(Icons.undo),
+                                      onPressed: () {
+                                        HapticFeedback.selectionClick();
+                                        _direction = -1;
+                                        select(index - 1);
+                                      },
+                                    ),
+                                  if (stage < last)
+                                    FilledButton.icon(
+                                      key: const ValueKey('next-stage'),
+                                      icon: const Icon(Icons.chevron_right),
+                                      label: const Text('Следующий этап'),
+                                      onPressed: () => _go(index, stage + 1, 1),
+                                    )
+                                  else if (index + 1 <
+                                      widget.result.steps.length)
+                                    FilledButton.icon(
+                                      key: const ValueKey('next-group'),
+                                      icon: const Icon(Icons.arrow_downward),
+                                      label: const Text('Следующий шаг'),
+                                      onPressed: () {
+                                        HapticFeedback.mediumImpact();
+                                        _direction = 1;
+                                        select(index + 1);
+                                      },
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    StepEquation(
-                      latex: nodeToLatex(right, widget.latexOptions),
-                    ),
-                  ],
-                  _actions(context, substep),
-                  const Divider(),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      if (stage > 0)
-                        TextButton.icon(
-                          key: const ValueKey('previous-stage'),
-                          icon: const Icon(Icons.chevron_left),
-                          label: const Text('Предыдущий этап'),
-                          onPressed: () => select(index, stage: stage - 1),
-                        ),
-                      if (stage < group.substeps.length - 1)
-                        FilledButton.tonalIcon(
-                          key: const ValueKey('next-stage'),
-                          icon: const Icon(Icons.chevron_right),
-                          label: const Text('Следующий этап'),
-                          onPressed: () => select(index, stage: stage + 1),
-                        )
-                      else if (index + 1 < widget.result.steps.length)
-                        FilledButton.tonalIcon(
-                          key: const ValueKey('next-group'),
-                          icon: const Icon(Icons.arrow_downward),
-                          label: const Text('Следующий шаг'),
-                          onPressed: () => select(index + 1),
-                        ),
-                      if (stage == 0 && index > 0)
-                        TextButton(
-                          onPressed: () => select(index - 1),
-                          child: const Text('Предыдущий шаг'),
-                        ),
-                    ],
-                  ),
-                ],
               ),
-            ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -295,8 +488,9 @@ class _VerticalResultState extends State<VerticalResult> {
             icon: const Icon(Icons.account_tree_outlined),
             label: const Text('Подробнее'),
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => Scaffold(
+              _riseRoute(
+                context,
+                (_) => Scaffold(
                   appBar: AppBar(title: const Text('Подробный разбор')),
                   body: VerticalResult(
                     result: nested,
@@ -313,20 +507,16 @@ class _VerticalResultState extends State<VerticalResult> {
             key: const ValueKey('step-theory'),
             icon: const Icon(Icons.lightbulb_outline),
             label: const Text('Почему?'),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => _TheoryPage(article: article),
-              ),
-            ),
+            onPressed: () => Navigator.of(
+              context,
+            ).push(_riseRoute(context, (_) => _TheoryPage(article: article))),
           ),
         if (frames.isNotEmpty)
           TextButton.icon(
             icon: const Icon(Icons.play_circle_outline),
             label: const Text('Показать преобразование'),
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => TransformationLesson(frames: frames),
-              ),
+              _riseRoute(context, (_) => TransformationLesson(frames: frames)),
             ),
           ),
       ],
@@ -501,4 +691,145 @@ class ExplanationText extends StatelessWidget {
       style: Theme.of(context).textTheme.bodyLarge,
     );
   }
+}
+
+/// Fades and lifts a child in once, with a small stagger between neighbours.
+class _Reveal extends StatelessWidget {
+  const _Reveal({
+    super.key,
+    required this.child,
+    required this.delay,
+    required this.enabled,
+  });
+  final Widget child;
+  final Duration delay;
+  final bool enabled;
+  @override
+  Widget build(BuildContext context) {
+    if (!enabled) return child;
+    final total = const Duration(milliseconds: 360) + delay;
+    final start = delay.inMilliseconds / total.inMilliseconds;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: total,
+      curve: Interval(start, 1, curve: Curves.easeOutCubic),
+      builder: (context, value, child) => Opacity(
+        opacity: value,
+        child: Transform.translate(
+          offset: Offset(0, 14 * (1 - value)),
+          child: child,
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
+/// Page dots whose active dot stretches into a pill.
+class _StageDots extends StatelessWidget {
+  const _StageDots({
+    required this.count,
+    required this.current,
+    required this.duration,
+  });
+  final int count;
+  final int current;
+  final Duration duration;
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: 'Этап ${current + 1} из $count',
+    child: Row(
+      children: [
+        for (var i = 0; i < count; i++)
+          AnimatedContainer(
+            duration: duration,
+            curve: Curves.easeOutCubic,
+            margin: const EdgeInsets.only(right: 6),
+            width: i == current ? 22 : 8,
+            height: 8,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(4),
+              color: i <= current
+                  ? Theme.of(context).colorScheme.primary
+                        .withValues(alpha: i == current ? 1 : .35)
+                  : PhColor.light,
+            ),
+          ),
+      ],
+    ),
+  );
+}
+
+/// The "before -> after" arrow draws itself downwards.
+class _FlowArrow extends StatelessWidget {
+  const _FlowArrow({required this.color, required this.duration});
+  final Color color;
+  final Duration duration;
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+    tween: Tween(begin: 0, end: 1),
+    duration: duration,
+    curve: Curves.easeOutCubic,
+    builder: (context, value, _) => Opacity(
+      opacity: value,
+      child: Transform.translate(
+        offset: Offset(0, -6 * (1 - value)),
+        child: Icon(Icons.south, size: 18, color: color),
+      ),
+    ),
+  );
+}
+
+/// Detail screens rise from below and fade in; reduced motion falls back to an instant swap.
+Route<void> _riseRoute(BuildContext context, WidgetBuilder builder) {
+  final still = MediaQuery.disableAnimationsOf(context);
+  return PageRouteBuilder<void>(
+    transitionDuration: still
+        ? Duration.zero
+        : const Duration(milliseconds: 320),
+    reverseTransitionDuration: still
+        ? Duration.zero
+        : const Duration(milliseconds: 240),
+    pageBuilder: (context, _, _) => builder(context),
+    transitionsBuilder: (context, animation, secondary, child) {
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      );
+      return FadeTransition(
+        opacity: curved,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, .06),
+            end: Offset.zero,
+          ).animate(curved),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
+/// `AnimatedSize` that steps aside when motion is reduced (a zero duration trips its layout assert).
+class _SmoothSize extends StatelessWidget {
+  const _SmoothSize({
+    required this.duration,
+    required this.alignment,
+    required this.child,
+    this.curve = Curves.easeOutCubic,
+  });
+  final Duration duration;
+  final AlignmentGeometry alignment;
+  final Curve curve;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => duration == Duration.zero
+      ? child
+      : AnimatedSize(
+          duration: duration,
+          curve: curve,
+          alignment: alignment,
+          child: child,
+        );
 }
