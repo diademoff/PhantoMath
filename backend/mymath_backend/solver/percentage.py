@@ -24,9 +24,28 @@ _KEY = "percent_to_frac"
 def solve_percentage(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Преобразовать процент в дробь."""
     ctx.require(len(node.children) == 1, "процент берётся от одного выражения")
-    value = sympy.nsimplify(to_sympy(node.children[0]) / 100)
+    inner = node.children[0]
+    value = sympy.nsimplify(to_sympy(inner) / 100)
     answer = from_sympy(value)
-    ctx.result.add(Step(left=node, right=answer, key=_KEY))
+    shown = to_sympy(inner)
+    if not (shown.is_Integer and shown > 0 and value.is_Rational):
+        ctx.result.add(Step(left=node, right=answer, key=_KEY))
+        return answer
+    # Photomath 7.10.0 on device: by definition p% = p/100, then the fraction is reduced
+    letter = CoreNode.variable("p")
+    rule = CoreNode.node(
+        T.EQUALS,
+        CoreNode.node(T.PERCENTAGE, letter),
+        CoreNode.node(T.FRACTION, letter, CoreNode.constant("100")),
+    )
+    fraction = CoreNode.node(T.FRACTION, inner, CoreNode.constant("100"))
+    ctx.result.add_group("calculate_short", Step(node, fraction, "by_definition", [rule]))
+    divisor = sympy.gcd(int(shown), 100)
+    if divisor > 1:
+        ctx.result.add_group(
+            "frac_reduce_frac",
+            Step(fraction, answer, "frac_reduce", [CoreNode.constant(str(divisor))]),
+        )
     return answer
 
 

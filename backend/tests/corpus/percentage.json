@@ -10,7 +10,7 @@
         "value": "1/2"
       },
       "steps": [
-        "percent_to_frac"
+        "by_definition", "frac_reduce"
       ]
     },
     {
@@ -34,7 +34,7 @@
         "value": "2"
       },
       "steps": [
-        "percent_to_frac"
+        "by_definition", "frac_reduce"
       ]
     },
     {
@@ -46,7 +46,7 @@
         "value": "100"
       },
       "steps": [
-        "percent_to_frac",
+        "by_definition", "frac_reduce",
         "frac_reduce_out"
       ]
     }

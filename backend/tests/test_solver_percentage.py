@@ -35,7 +35,7 @@ class TestPercentage:
     def test_half(self) -> None:
         source = "{percent({50})}"
         assert value_of(source) == "1/2"
-        assert step_keys(source) == ["percent_to_frac"]
+        assert step_keys(source) == ["by_definition", "frac_reduce"]
 
     def test_eighth(self) -> None:
         assert value_of("{percent({12.5})}") == "1/8"
@@ -49,4 +49,4 @@ class TestPercentage:
     def test_percent_of_number(self) -> None:
         source = "{percent({50})*200}"
         assert value_of(source) == "100"
-        assert step_keys(source) == ["percent_to_frac", "frac_reduce_out"]
+        assert step_keys(source) == ["by_definition", "frac_reduce", "frac_reduce_out"]
