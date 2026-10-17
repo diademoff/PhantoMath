@@ -122,7 +122,15 @@ class TestSolveErrors:
     def test_unimplemented_math_is_422_with_message(self, client: TestClient) -> None:
         response = client.post(
             "/api/v1/solve",
-            json={"node": {"type": "VARIABLE", "value": "x"}},
+            json={
+                "node": {
+                    "type": "ADD",
+                    "children": [
+                        {"type": "VARIABLE", "value": "x"},
+                        {"type": "VARIABLE", "value": "y"},
+                    ],
+                }
+            },
         )
         assert response.status_code == 422
         detail = response.json()["detail"]

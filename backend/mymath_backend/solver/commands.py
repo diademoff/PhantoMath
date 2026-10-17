@@ -95,6 +95,7 @@ from .series import (
 )
 from .sympy_bridge import from_sympy, to_sympy
 from .systems import system_check
+from .trigonometry import pythagorean_identity
 from .vectors import VECTOR_COMMANDS
 
 
@@ -131,7 +132,24 @@ def _apply_side(
 def factor(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Разложить выражение на множители."""
     del args
-    return _apply_side(node, ctx, "factorise_call", sympy.factor)
+
+    def real_quadratic(expression: sympy.Expr) -> sympy.Expr:
+        factored = sympy.factor(expression)
+        # An irreducible-over-Q quadratic can still have exact real factors.
+        # Do not offer a no-op for 2x²+9x+6 after showing its two real roots.
+        if factored == expression and len(expression.free_symbols) == 1:
+            try:
+                polynomial = sympy.Poly(expression, next(iter(expression.free_symbols)))
+                if polynomial.degree() == 2 and all(c.is_Rational for c in polynomial.all_coeffs()):
+                    a, b, c = polynomial.all_coeffs()
+                    discriminant = b * b - 4 * a * c
+                    if discriminant.is_positive is True:
+                        return sympy.factor(expression, extension=sympy.sqrt(discriminant))
+            except (sympy.PolynomialError, ValueError, TypeError):
+                pass
+        return factored
+
+    return _apply_side(node, ctx, "factorise_call", real_quadratic)
 
 
 def expand(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
@@ -148,6 +166,9 @@ def expand(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
 def simplify(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Упростить выражение."""
     del args
+    identity = pythagorean_identity(node, ctx)
+    if identity is not None:
+        return identity
     return _apply_side(node, ctx, "simplify", sympy.simplify)
 
 

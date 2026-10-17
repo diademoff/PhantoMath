@@ -324,7 +324,7 @@ class TestIdentities:
             node(T.POWER, node(T.COS, CoreNode.variable("x")), c("2")),
         )
         assert value_of(problem) == 1
-        assert step_keys(problem) == ["simplify"]
+        assert step_keys(problem) == ["substitute_pythagorean_identity"]
 
     def test_double_angle_collapse(self) -> None:
         problem = node(

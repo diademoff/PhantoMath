@@ -116,7 +116,7 @@
       "title": "основное тригонометрическое тождество",
       "input": "{sin({x})^2+cos({x})^2}",
       "solution": {"type": "CONSTANT", "value": "1"},
-      "steps": ["simplify"]
+      "steps": ["substitute_pythagorean_identity"]
     },
     {
       "id": "argument-is-folded",

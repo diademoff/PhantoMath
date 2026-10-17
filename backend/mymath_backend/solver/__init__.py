@@ -61,7 +61,7 @@ from .sets import solve_inclusion, solve_membership, solve_set_operation
 from .sympy_bridge import from_sympy, to_sympy
 from .systems import solve_system
 from .trig_equations import Interval, solve_trig_equation
-from .trigonometry import solve_angle_unit, solve_function
+from .trigonometry import pythagorean_identity, solve_angle_unit, solve_function
 from .vertical import solve_vertical
 
 # Ключ шага упрощения (общий с командой ``simplify``).
@@ -141,6 +141,11 @@ def _solve_inner(
     if command is not None and command != "solve":
         solution = commands.apply(command, node, ctx, args)
         result.set_solution(solution)
+        return build_solver_data(node, result)
+
+    identity = pythagorean_identity(node, ctx)
+    if identity is not None:
+        result.set_solution(identity)
         return build_solver_data(node, result)
 
     if not ctx.variables and node.type in COMPARABLE:
@@ -236,7 +241,26 @@ def _simplify_fallback(node: CoreNode) -> SolveResult | None:
     try:
         expression = to_sympy(node)
         simplified = sympy.simplify(expression)
-        if simplified == expression:
+        if simplified == expression and not (
+            node.type
+            in (
+                CoreNodeType.ADD,
+                CoreNodeType.SUBTRACT,
+                CoreNodeType.MULTIPLY,
+                CoreNodeType.MULTIPLY_IMPLICIT,
+                CoreNodeType.DIVIDE,
+                CoreNodeType.POWER,
+                CoreNodeType.NEGATIVE,
+                CoreNodeType.POSITIVE,
+                CoreNodeType.BRACKET,
+            )
+            and expression.is_number is True
+            and expression.is_real is True
+            and expression.is_finite is True
+            and any(
+                n.type is CoreNodeType.CONSTANT and n.value in ("π", "pi", "e") for n in node.walk()
+            )
+        ):
             return None
         simplified_node = from_sympy(simplified)
     except (SolveError, TypeError, ValueError, AttributeError):

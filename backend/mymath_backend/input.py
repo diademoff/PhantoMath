@@ -385,7 +385,10 @@ class _Parser:
                 items.append(tok.value)
                 continue
             if tok.value == "(":
-                items.append(self._parse_paren(items))
+                part = self._parse_paren(items)
+                if items and isinstance(items[-1], CoreNode):
+                    items.append(IMPLICIT_MUL)
+                items.append(part)
                 continue
             if tok.value in CONSTANT_NAMES:
                 self.take()
@@ -490,7 +493,7 @@ class _Parser:
 
         nxt = self.peek()
         has_args = nxt is not None and nxt.value == "("
-        if has_args:
+        if has_args and tok.value not in CONSTANT_NAMES and not NUMBER_RE.match(tok.value):
             self.take()
             args: list[CoreNode] = [self.parse_group()]
             while (a := self.peek()) and a.value == ",":

@@ -22,13 +22,16 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from .ast import CoreAction, CoreNode
+from .ast import CoreAction, CoreNode, CoreRichText
 from .concepts import definition as concept_definition
 from .explanations import DEFAULT_LOCALE, Explanations, load_explanations
 from .graph import DEFAULT_SAMPLES
 from .graph import sample as sample_graph
 from .input import parse_json, parse_protocol
-from .solver import solve
+from .node_types import CoreNodeType as T
+from .results import CoreSolverGroup, Entry, ResultGroupType
+from .solver import SolveError, solve
+from .solver.equations import poly_of
 
 # Продукт поддерживает только два языка (решение пользователя, см.
 # truth/09-decisions.md). В данных английский хранится как `default`.
@@ -164,6 +167,20 @@ def attach_text(node: dict[str, Any], locale: str) -> dict[str, Any]:
 # ── операции сервиса ───────────────────────────────────────────────────
 
 
+def _polynomial_equation(node: CoreNode) -> CoreNode | None:
+    """Для авто-действия искать нули многочлена с одной переменной."""
+    variables = {n.value for n in node.walk() if n.type is T.VARIABLE and n.value}
+    if len(variables) != 1:
+        return None
+    try:
+        polynomial = poly_of(node, next(iter(variables)))
+    except SolveError:
+        return None
+    if not polynomial or not 1 <= max(polynomial) <= 16:
+        return None
+    return CoreNode.node(T.EQUALS, node, CoreNode.constant("0"))
+
+
 def parse(source: str) -> dict[str, Any]:
     """Разобрать строку протокола Photomath в дерево."""
     return {"node": parse_protocol(source).to_contract()}
@@ -200,13 +217,49 @@ def solve_request(
         interval = (parse_json(interval_data["min"]), parse_json(interval_data["max"]))
     definitions = [parse_json(item) for item in (definitions_data or [])]
 
+    equation = _polynomial_equation(node) if action is None or action.command == "solve" else None
     data = solve(
-        node,
+        equation or node,
         command=action.command if action else None,
         args=action.args if action else None,
         interval=interval,
         definitions=definitions,
     )
+    if equation is not None:
+        # Исходное выражение сохраняется; трактовка «найти нули» видна
+        # отдельным первым шагом, а не скрытым добавлением равенства.
+        assert data.result is not None
+        data.result.problem = node
+        for entry in data.result.groups[0].entries:
+            if entry.result is not None:
+                entry.result.setdefault("steps", []).insert(
+                    0,
+                    {
+                        "headers": [],
+                        "substeps": [
+                            {
+                                "description": {"type": "find_x_intercept", "args": []},
+                                "left": node.to_contract(),
+                                "right": equation.to_contract(),
+                                "subanimations": [],
+                            }
+                        ],
+                    },
+                )
+        factored = solve(node, command="factor", definitions=definitions)
+        assert factored.result is not None
+        data.result.groups.append(
+            CoreSolverGroup(
+                type=ResultGroupType.VERTICAL,
+                description=CoreRichText(type="factorise_call"),
+                entries=[
+                    Entry(
+                        action=CoreAction(command="factor"),
+                        result=factored.result.groups[0].entries[0].result,
+                    )
+                ],
+            )
+        )
     out = data.to_contract()
     if render:
         result = out.get("result")

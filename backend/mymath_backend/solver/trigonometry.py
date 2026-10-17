@@ -144,6 +144,56 @@ _UNRESOLVED = tuple(getattr(sympy, name) for name in _ALL.values())
 _UNDEFINED = (sympy.zoo, sympy.nan, sympy.oo, -sympy.oo)
 
 
+def pythagorean_identity(node: CoreNode, ctx: SolveContext) -> CoreNode | None:
+    """Применить sin²(u) + cos²(u) = 1 только при одинаковом аргументе."""
+    if node.type is not T.ADD or len(node.children) != 2:
+        return None
+    functions: dict[T, CoreNode] = {}
+    for term in node.children:
+        while term.type is T.BRACKET and len(term.children) == 1:
+            term = term.children[0]
+        if term.type is not T.POWER or len(term.children) != 2:
+            return None
+        function, exponent = term.children
+        if function.type not in (T.SIN, T.COS) or len(function.children) != 1:
+            return None
+        if exponent.type is not T.CONSTANT or exponent.value != "2":
+            return None
+        functions[function.type] = function
+    if set(functions) != {T.SIN, T.COS}:
+        return None
+    sine, cosine = functions[T.SIN], functions[T.COS]
+    argument = to_sympy(sine.children[0])
+    if argument.has(sympy.zoo, sympy.nan, sympy.oo, -sympy.oo):
+        return None
+    if argument != to_sympy(cosine.children[0]):
+        return None
+    angle = CoreNode.variable("u")
+    generic_sine = CoreNode.node(T.SIN, angle)
+    generic_cosine = CoreNode.node(T.COS, angle)
+    generic = CoreNode.node(
+        T.EQUALS,
+        CoreNode.node(
+            T.ADD,
+            CoreNode.node(T.POWER, generic_sine, CoreNode.constant("2")),
+            CoreNode.node(T.POWER, generic_cosine, CoreNode.constant("2")),
+        ),
+        CoreNode.constant("1"),
+    )
+    result = CoreNode.constant("1")
+    ctx.step(
+        node,
+        result,
+        "substitute_pythagorean_identity",
+        sine,
+        generic_sine,
+        cosine,
+        generic_cosine,
+        generic,
+    )
+    return result
+
+
 @solver_for(T.DEGREE, T.RADIAN)
 def solve_angle_unit(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Единица угла -- обёртка над значением угла.

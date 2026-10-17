@@ -283,8 +283,7 @@ def _quadratic_solution(
     if factoring and exact is None:
         raise SolveError("разложение на множители с рациональными корнями невозможно")
     if exact is not None:
-        low = (-b - exact) / (2 * a)
-        high = (-b + exact) / (2 * a)
+        low, high = sorted(((-b - exact) / (2 * a), (-b + exact) / (2 * a)))
         if low == high:
             solution = _equation(var, _const(low))
         else:
@@ -295,8 +294,8 @@ def _quadratic_solution(
         root = _sqrt_node(discriminant)
         solution = CoreNode.node(
             T.LIST,
-            _equation(var, _quad_root(-b, root, 2 * a, plus=False)),
-            _equation(var, _quad_root(-b, root, 2 * a, plus=True)),
+            _equation(var, _quad_root(-b, root, 2 * a, plus=a < 0)),
+            _equation(var, _quad_root(-b, root, 2 * a, plus=a > 0)),
         )
 
     ctx.result.add(
@@ -308,30 +307,175 @@ def _quadratic_solution(
         ),
         [_HEADER],
     )
-    ctx.result.add(Step(left=node, right=None, key="eq_quad_disc"), [_HEADER])
+    disc_expression = CoreNode.node(
+        T.SUBTRACT,
+        CoreNode.node(T.POWER, CoreNode.node(T.BRACKET, _const(b)), CoreNode.constant("2")),
+        CoreNode.node(
+            T.MULTIPLY,
+            CoreNode.node(T.MULTIPLY, CoreNode.constant("4"), CoreNode.node(T.BRACKET, _const(a))),
+            CoreNode.node(T.BRACKET, _const(c)),
+        ),
+    )
+    disc_substitution = CoreNode.node(T.EQUALS, CoreNode.variable("D"), disc_expression)
+    disc_value = CoreNode.node(T.EQUALS, CoreNode.variable("D"), _const(discriminant))
+    ctx.result.add(
+        Step(left=_discriminant_formula(), right=disc_substitution, key="eq_quad_disc"), [_HEADER]
+    )
     ctx.result.add(
         Step(
-            left=node,
-            right=None,
+            left=disc_substitution,
+            right=disc_value,
             key="eq_quad_disc_calculate",
             args=[_const(discriminant)],
         ),
         [_HEADER],
     )
     key = "solve_by_factoring" if factoring else "eq_quad_solve_in_r"
+    substituted = _quadratic_substitution(a, b, discriminant, var)
+    if factoring:
+        substituted = CoreNode.node(
+            T.EQUALS, from_sympy(sympy.factor(_poly_expr(poly, var))), CoreNode.constant("0")
+        )
     ctx.result.add(
         Step(
-            left=node,
+            left=substituted,
             right=solution,
             key=key,
-            subresult=_quadratic_detail(discriminant, solution),
+            subresult=_quadratic_detail(discriminant, solution, substituted, factoring=factoring),
         ),
         [_HEADER],
     )
     return solution
 
 
-def _quadratic_detail(discriminant: Fraction, solution: CoreNode) -> SolveResult:
+def _discriminant_formula() -> CoreNode:
+    return CoreNode.node(
+        T.EQUALS,
+        CoreNode.variable("D"),
+        CoreNode.node(
+            T.SUBTRACT,
+            CoreNode.node(T.POWER, CoreNode.variable("b"), CoreNode.constant("2")),
+            CoreNode.node(
+                T.MULTIPLY,
+                CoreNode.constant("4"),
+                CoreNode.node(T.MULTIPLY, CoreNode.variable("a"), CoreNode.variable("c")),
+            ),
+        ),
+    )
+
+
+def _constant_quadratic(node: CoreNode, var: str, ctx: SolveContext) -> CoreNode | None:
+    """Exact quadratic formula for real constant coefficients such as pi/sqrt(2).
+
+    Rational coefficients continue through the established arithmetic solver.
+    Do not turn rational/transcendental equations into polynomials by cancelling
+    their domain restrictions.
+    """
+    symbol = sympy.Symbol(var)
+    for part in node.walk():
+        if (
+            part.type in (T.DIVIDE, T.FRACTION)
+            and len(part.children) == 2
+            and any(n.type is T.VARIABLE and n.value == var for n in part.children[1].walk())
+        ):
+            return None
+    try:
+        expression = to_sympy(node.children[0]) - to_sympy(node.children[1])
+        polynomial = sympy.Poly(expression, symbol)
+    except (SolveError, sympy.PolynomialError, ValueError, TypeError):
+        return None
+    if polynomial.degree() != 2:
+        return None
+    a, b, c = polynomial.all_coeffs()
+    if not all(
+        value.is_number and value.is_real is True and value.is_finite is True for value in (a, b, c)
+    ):
+        return None
+    d = sympy.simplify(b * b - 4 * a * c)
+    if d.is_negative is True:
+        raise SolveError(
+            "квадратное уравнение не имеет действительных корней", "eq_quad_solve_complex"
+        )
+    if d.is_nonnegative is not True:
+        return None
+    coeff = [from_sympy(value) for value in (a, b, c)]
+    disc = CoreNode.node(
+        T.EQUALS,
+        CoreNode.variable("D"),
+        CoreNode.node(
+            T.SUBTRACT,
+            CoreNode.node(T.POWER, CoreNode.node(T.BRACKET, coeff[1]), CoreNode.constant("2")),
+            CoreNode.node(
+                T.MULTIPLY,
+                CoreNode.constant("4"),
+                CoreNode.node(
+                    T.MULTIPLY,
+                    CoreNode.node(T.BRACKET, coeff[0]),
+                    CoreNode.node(T.BRACKET, coeff[2]),
+                ),
+            ),
+        ),
+    )
+    calculated = CoreNode.node(T.EQUALS, CoreNode.variable("D"), from_sympy(d))
+    roots = sorted(
+        set(
+            (
+                sympy.simplify((-b - sympy.sqrt(d)) / (2 * a)),
+                sympy.simplify((-b + sympy.sqrt(d)) / (2 * a)),
+            )
+        ),
+        key=lambda value: float(value.evalf()),
+    )
+    equations = [_equation(var, from_sympy(value)) for value in roots]
+    solution = equations[0] if len(equations) == 1 else CoreNode.node(T.LIST, *equations)
+    substitutions = CoreNode.node(
+        T.LIST,
+        *[
+            _equation(
+                var,
+                CoreNode.node(
+                    T.FRACTION,
+                    CoreNode.node(
+                        operation,
+                        CoreNode.node(T.NEGATIVE, CoreNode.node(T.BRACKET, coeff[1])),
+                        CoreNode.node(T.ROOT2, from_sympy(d)),
+                    ),
+                    CoreNode.node(
+                        T.MULTIPLY, CoreNode.constant("2"), CoreNode.node(T.BRACKET, coeff[0])
+                    ),
+                ),
+            )
+            for operation in (T.SUBTRACT, T.ADD)
+        ],
+    )
+    ctx.result.add(Step(left=_discriminant_formula(), right=disc, key="eq_quad_disc"), [_HEADER])
+    ctx.result.add(
+        Step(left=disc, right=calculated, key="eq_quad_disc_calculate", args=[from_sympy(d)]),
+        [_HEADER],
+    )
+    ctx.result.add(Step(left=substitutions, right=solution, key="eq_quad_solve_in_r"), [_HEADER])
+    return solution
+
+
+def _quadratic_substitution(a: Fraction, b: Fraction, d: Fraction, var: str) -> CoreNode:
+    """Две ветви формулы с подставленными коэффициентами и дискриминантом."""
+    roots = []
+    for operation in (T.SUBTRACT, T.ADD):
+        numerator = CoreNode.node(
+            operation,
+            CoreNode.node(T.NEGATIVE, CoreNode.node(T.BRACKET, _const(b))),
+            CoreNode.node(T.ROOT2, _const(d)),
+        )
+        denominator = CoreNode.node(
+            T.MULTIPLY, CoreNode.constant("2"), CoreNode.node(T.BRACKET, _const(a))
+        )
+        roots.append(_equation(var, CoreNode.node(T.FRACTION, numerator, denominator)))
+    return CoreNode.node(T.LIST, *roots)
+
+
+def _quadratic_detail(
+    discriminant: Fraction, solution: CoreNode, substituted: CoreNode, *, factoring: bool
+) -> SolveResult:
     """Раскрываемое пояснение корней: значение дискриминанта и итог.
 
     Показывает вычисленный дискриминант и финальную запись корней — то, что
@@ -340,6 +484,7 @@ def _quadratic_detail(discriminant: Fraction, solution: CoreNode) -> SolveResult
     detail = SolveResult()
     detail_ctx = SolveContext(result=detail, variables=[])
     detail_ctx.step(None, None, "eq_quad_disc_calculate", _const(discriminant))
+    detail_ctx.step(None, substituted, "solve_by_factoring" if factoring else "eq_quad_formula")
     single = solution.type is T.EQUALS
     detail_ctx.step(None, solution, "quad_final_single" if single else "quad_final_multi")
     detail.set_solution(solution)
@@ -840,6 +985,9 @@ def solve_equation(node: CoreNode, ctx: SolveContext) -> CoreNode:
     try:
         poly = _sub(poly_of(lhs, var), poly_of(rhs, var))
     except SolveError:
+        exact_quadratic = _constant_quadratic(node, var, ctx)
+        if exact_quadratic is not None:
+            return exact_quadratic
         for solver in (_solve_rational, _solve_radical, _solve_transcendental):
             answer = solver(node, ctx.variables, ctx)
             if answer is not None:
@@ -891,6 +1039,11 @@ def solve_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
     try:
         poly = _sub(poly_of(lhs, var), poly_of(rhs, var))
     except SolveError:
+        exact = _alternative_result(
+            node, variables, lambda n, v, ctx: _constant_quadratic(n, var, ctx)
+        )
+        if exact is not None:
+            return [exact]
         for solver in (_solve_rational, _solve_radical, _solve_transcendental):
             alternative = _alternative_result(node, variables, solver)
             if alternative is not None:
