@@ -242,15 +242,20 @@ def theory(key: str, locale: str) -> dict[str, str] | None:
     elif key in {
         "move",
         "eq_linar_divide_both_sides",
+        "eq_linear_div",
+        "remove_opposites",
         "lesson_balance",
         "lesson_divide_sides",
         "lesson_collect",
         "lesson_normalize",
-    }:
+    } or key.startswith(("rel_move_", "rel_swap_", "sum_suffix")):
         topic = "balance"
     elif key.startswith(
         (
             "frac_reduce",
+            "frac_sum",
+            "frac_mul_join",
+            "frac_div_",
             "lesson_fraction",
             "lesson_gcd",
             "lesson_common_denominator",

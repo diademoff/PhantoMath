@@ -19,8 +19,9 @@
         ]
       },
       "steps": [
-        "move",
-        "eq_linar_divide_both_sides"
+        "rel_move_right_const",
+        "sub",
+        "eq_linear_div"
       ]
     },
     {
@@ -41,7 +42,10 @@
         ]
       },
       "steps": [
-        "move"
+        "rel_move_left_var",
+        "rel_move_right_const",
+        "sum_suffix",
+        "add"
       ]
     },
     {
@@ -287,7 +291,7 @@
         ]
       },
       "steps": [
-        "eq_linar_divide_both_sides"
+        "eq_linear_div"
       ]
     },
     {
@@ -313,8 +317,9 @@
         "rel_restrictions_root_base_neg",
         "eq_irrational_simple_square",
         "eq_irrational_simple_square",
-        "move",
-        "eq_linar_divide_both_sides"
+        "rel_move_right_const",
+        "sub",
+        "eq_linear_div"
       ]
     },
     {

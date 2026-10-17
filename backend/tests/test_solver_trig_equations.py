@@ -111,7 +111,7 @@ class TestSpecialCases:
 
     def test_polynomial_equation_is_untouched(self) -> None:
         problem = eq(node(T.ADD, muli(c("2"), x()), c("3")), c("7"))
-        assert step_keys(problem) == ["move", "eq_linar_divide_both_sides"]
+        assert step_keys(problem) == ["rel_move_right_const", "sub", "eq_linear_div"]
 
 
 class TestInterval:

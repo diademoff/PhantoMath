@@ -236,6 +236,156 @@ def _sqrt_node(value: Fraction) -> CoreNode:
     return CoreNode(type=T.ROOT2, children=[_const(value)])
 
 
+def _simple_side(node: CoreNode, var: str) -> tuple[Fraction, Fraction] | None:
+    """``(a, b)`` for a side written as at most one ``a*x`` term and one constant, else ``None``."""
+    found: list[tuple[str, Fraction]] = []
+
+    def visit(part: CoreNode, sign: int) -> bool:
+        if part.type is T.ADD or part.type is T.SUBTRACT:
+            if len(part.children) != 2:
+                return False
+            second = -sign if part.type is T.SUBTRACT else sign
+            return visit(part.children[0], sign) and visit(part.children[1], second)
+        if part.type is T.NEGATIVE:
+            return visit(part.children[0], -sign)
+        if part.type is T.CONSTANT:
+            found.append(("c", sign * as_fraction(part)))
+            return True
+        if part.type is T.VARIABLE and part.value == var:
+            found.append(("x", Fraction(sign)))
+            return True
+        if part.type in (T.MULTIPLY, T.MULTIPLY_IMPLICIT) and len(part.children) == 2:
+            number, name = part.children
+            if number.type is T.CONSTANT and name.type is T.VARIABLE and name.value == var:
+                found.append(("x", sign * as_fraction(number)))
+                return True
+        return False
+
+    if (
+        not visit(node, 1)
+        or [k for k, _ in found].count("x") > 1
+        or [k for k, _ in found].count("c") > 1
+    ):
+        return None
+    return (
+        sum((v for k, v in found if k == "x"), Fraction(0)),
+        sum((v for k, v in found if k == "c"), Fraction(0)),
+    )
+
+
+def _plus(base: CoreNode, amount: Fraction, term: CoreNode) -> CoreNode:
+    """``base + term`` for a positive amount, ``base - term`` for a negative one (|amount| term)."""
+    return CoreNode.node(T.ADD if amount > 0 else T.SUBTRACT, base, term)
+
+
+def _linear_rows(
+    node: CoreNode, lhs: CoreNode, rhs: CoreNode, var: str, ctx: SolveContext
+) -> CoreNode | None:
+    """Photomath 7.10.0 rows for ``a1 x + b1 = a2 x + b2``: move, collect, calculate, divide.
+
+    Returns ``None`` when a side is not a plain ``a x + b`` so the general path is used.
+    """
+    left, right = _simple_side(lhs, var), _simple_side(rhs, var)
+    if left is None or right is None:
+        return None
+    (a1, b1), (a2, b2) = left, right
+    if a1 == 0 or a1 == a2:
+        return None
+    eq = CoreNode.node
+    current, stages = node, []
+    cur_l, cur_r = lhs, rhs
+    if a2 != 0:  # move the unknown to the left
+        term = _x_term(abs(a2), var)
+        after_l = eq(T.SUBTRACT if a2 > 0 else T.ADD, cur_l, term)
+        after_r = _const(b2)
+        balanced = eq(
+            T.EQUALS,
+            eq(T.SUBTRACT if a2 > 0 else T.ADD, cur_l, term),
+            eq(T.SUBTRACT if a2 > 0 else T.ADD, cur_r, term),
+        )
+        detail = SolveResult()
+        detail.add_group("rel_swap_left_var", Step(current, balanced, "rel_swap_left_var"))
+        after = eq(T.EQUALS, after_l, after_r)
+        detail.add_group("remove_opposites", Step(balanced, after, "remove_opposites"))
+        detail.set_solution(after)
+        stages.append(Step(current, after, "rel_move_left_var", subresult=detail))
+        current, cur_l, cur_r = after, after_l, after_r
+    if b1 != 0:  # move the constant to the right
+        k = _const(abs(b1))
+        sign = T.SUBTRACT if b1 > 0 else T.ADD
+        x_part = _x_term(a1, var)
+        if a2 != 0:
+            x_part = eq(T.SUBTRACT if a2 > 0 else T.ADD, x_part, _x_term(abs(a2), var))
+        after_r = _const(-b1) if b2 == 0 else _plus(_const(b2), -b1, k)
+        balanced = eq(T.EQUALS, eq(sign, cur_l, k), eq(sign, cur_r, k))
+        after = eq(T.EQUALS, x_part, after_r)
+        detail = SolveResult()
+        detail.add_group("rel_swap_right_const", Step(current, balanced, "rel_swap_right_const"))
+        detail.add_group("remove_opposites", Step(balanced, after, "remove_opposites"))
+        detail.set_solution(after)
+        stages.append(Step(current, after, "rel_move_right_const", subresult=detail))
+        current, cur_l, cur_r = after, x_part, after_r
+    coefficient, total = a1 - a2, b2 - b1
+    if a2 != 0 or b1 != 0:
+        header = "move" if len(stages) > 1 or a2 != 0 else "rel_move_right_const_msg"
+        ctx.result.add_group(header, *stages)
+    two_terms = b1 != 0 and b2 != 0
+    if a2 != 0:
+        collected = eq(T.EQUALS, _x_term(coefficient, var), cur_r)
+        detail_key = "sum_suffix_sub_detail" if a2 > 0 else "sum_suffix_add_detail"
+        x = CoreNode.variable(var)
+        grouped = eq(
+            T.EQUALS,
+            eq(
+                T.MULTIPLY_IMPLICIT,
+                eq(T.BRACKET, eq(T.SUBTRACT if a2 > 0 else T.ADD, _const(a1), _const(abs(a2)))),
+                x,
+            ),
+            cur_r,
+        )
+        explicit = eq(T.EQUALS, eq(T.MULTIPLY_IMPLICIT, _const(coefficient), x), cur_r)
+        detail = SolveResult()
+        detail.add_group(detail_key, Step(current, grouped, detail_key))
+        detail.add_group("calculate_short", Step(grouped, explicit, "calculate_short"))
+        if coefficient == 1:
+            detail.add_group(
+                "sum_suffix_del_one_short",
+                Step(explicit, collected, "sum_suffix_del_one_short", [_const(Fraction(1))]),
+            )
+        detail.set_solution(collected)
+        sums = [Step(current, collected, "sum_suffix", subresult=detail)]
+        current = collected
+        if two_terms:
+            done = eq(T.EQUALS, _x_term(coefficient, var), _const(total))
+            sums.append(Step(current, done, "add" if b1 < 0 else "sub"))
+            current = done
+        ctx.result.add_group(
+            ["sum_suffix", "calculate_short"] if two_terms else ["sum_suffix"], *sums
+        )
+    elif two_terms:
+        done = eq(T.EQUALS, _x_term(coefficient, var), _const(total))
+        ctx.result.add_group("calculate_short", Step(current, done, "add" if b1 < 0 else "sub"))
+        current = done
+    solution = _equation(var, _const(total / coefficient))
+    if coefficient != 1:
+        divided = eq(
+            T.EQUALS,
+            eq(T.FRACTION, current.children[0], _const(coefficient)),
+            eq(T.FRACTION, current.children[1], _const(coefficient)),
+        )
+        detail = SolveResult()
+        detail.add_group(
+            "eq_linear_div", Step(current, divided, "eq_linear_div", [_const(coefficient)])
+        )
+        detail.add_group("divide", Step(divided, solution, "divide"))
+        detail.set_solution(solution)
+        ctx.result.add_group(
+            "divide_both_sides",
+            Step(current, solution, "eq_linear_div", [_const(coefficient)], subresult=detail),
+        )
+    return solution
+
+
 def _linear_solution(
     node: CoreNode,
     lhs: CoreNode,
@@ -256,6 +406,8 @@ def _linear_solution(
     root = -b / a
     solution = _equation(var, _const(root))
 
+    if not divide_first and (rows := _linear_rows(node, lhs, rhs, var, ctx)) is not None:
+        return rows
     if divide_first:
         after_divide = CoreNode(
             type=T.EQUALS,

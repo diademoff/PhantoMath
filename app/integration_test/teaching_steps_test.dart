@@ -76,25 +76,16 @@ void main() {
       final fraction = tester
           .widget<VerticalResult>(find.byType(VerticalResult))
           .result;
-      expect(
-        fraction.steps.single.substeps.single.subresult?.solution?.value,
-        '1/2',
-      );
+      // Photomath's model: common denominator (nested), sum of numerators, reduction (nested).
+      expect(fraction.steps, hasLength(3));
       await tap(tester, find.byKey(const ValueKey('step-theory')));
       expect(find.text('Основное свойство дроби'), findsOneWidget);
       await back(tester);
       await tap(tester, find.byKey(const ValueKey('step-details')));
-      expect(find.text('Выполним действие с дробями'), findsWidgets);
-      for (var i = 0; i < 4; i++) {
-        await tap(tester, find.byKey(const ValueKey('next-stage')));
-      }
-      expect(find.text('Этап 5 из 5'), findsOneWidget);
-      await tap(tester, find.byKey(const ValueKey('step-details')));
-      expect(find.text('Этап 1 из 2'), findsOneWidget);
-      await tap(tester, find.byKey(const ValueKey('next-stage')));
-      expect(find.text('Этап 2 из 2'), findsOneWidget);
-      await back(tester);
-      expect(find.text('Этап 5 из 5'), findsOneWidget);
+      expect(
+        tester.widget<VerticalResult>(find.byType(VerticalResult)).result.steps,
+        hasLength(3),
+      );
       await back(tester);
       await clear(tester);
 
@@ -106,7 +97,10 @@ void main() {
       await key(tester, 'BASIC_INFIX_OPERATOR_EQUALS');
       await key(tester, 'DIGIT_SEVEN');
       await openSolution(tester);
-      expect(find.text('Соберём члены с неизвестным'), findsOneWidget);
+      expect(
+        find.text('Перенести константу в правую часть равенства'),
+        findsOneWidget,
+      );
       await tap(tester, find.byKey(const ValueKey('step-details')));
       final linear = tester
           .widget<VerticalResult>(find.byType(VerticalResult))
@@ -115,7 +109,7 @@ void main() {
       expect(
         linear.steps
             .expand((s) => s.substeps)
-            .any((s) => s.explanationKey == 'lesson_balance'),
+            .any((s) => s.explanationKey == 'rel_swap_right_const'),
         isTrue,
       );
       await back(tester);

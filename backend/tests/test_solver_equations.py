@@ -71,13 +71,13 @@ class TestLinear:
         assert vertical.solution.children[1].value == "2"
 
     def test_steps_move_then_divide(self) -> None:
-        assert step_keys("{=({2x+3},{7})}") == ["move", "eq_linar_divide_both_sides"]
+        assert step_keys("{=({2x+3},{7})}") == ["rel_move_right_const", "sub", "eq_linear_div"]
 
     def test_only_move_when_coefficient_is_one(self) -> None:
-        assert step_keys("{=({x+1},{3})}") == ["move"]
+        assert step_keys("{=({x+1},{3})}") == ["rel_move_right_const", "sub"]
 
     def test_only_divide_when_already_isolated(self) -> None:
-        assert step_keys("{=({3x},{12})}") == ["eq_linar_divide_both_sides"]
+        assert step_keys("{=({3x},{12})}") == ["eq_linear_div"]
 
     def test_no_steps_for_trivial_equation(self) -> None:
         assert step_keys("{=({x},{5})}") == []
@@ -85,8 +85,9 @@ class TestLinear:
     def test_header_on_every_step(self) -> None:
         vertical = vertical_of("{=({2x+3},{7})}")
         assert [[h.type for h in step.step_headers] for step in vertical.steps] == [
-            ["lesson_isolate"],
-            ["lesson_divide"],
+            ["rel_move_right_const_msg"],
+            ["calculate_short"],
+            ["divide_both_sides"],
         ]
 
 
@@ -220,7 +221,7 @@ class TestMethods:
     def test_linear_has_two_methods(self) -> None:
         group = _group("{=({2x+3},{7})}")
         assert len(group.entries) == 2
-        assert _method_keys(group.entries[0]) == ["move", "eq_linar_divide_both_sides"]
+        assert _method_keys(group.entries[0]) == ["rel_move_right_const", "sub", "eq_linear_div"]
         assert _method_keys(group.entries[1]) == ["eq_linar_divide_both_sides", "move"]
 
     def test_linear_without_constant_has_one_method(self) -> None:

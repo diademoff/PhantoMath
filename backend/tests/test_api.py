@@ -202,14 +202,14 @@ class TestSolveEquations:
         keys = [
             sub["description"]["type"] for step in vertical["steps"] for sub in step["substeps"]
         ]
-        assert keys == ["move", "eq_linar_divide_both_sides"]
+        assert keys == ["rel_move_right_const", "sub", "eq_linear_div"]
 
     def test_step_header_has_rendered_text(self, client: TestClient) -> None:
         node = equation(add(mul_implicit(num("2"), var("x")), num("3")), num("7"))
         body = solve(client, node, locale="ru")
         steps = body["result"]["groups"][0]["entries"][0]["result"]["steps"]
         header = steps[0]["headers"][0]
-        assert header["explanation"]["text"] == "Соберём члены с неизвестным"
+        assert header["explanation"]["text"] == "Перенести константу в правую часть равенства"
         assert header["explanation"]["locale"] == "ru"
 
 

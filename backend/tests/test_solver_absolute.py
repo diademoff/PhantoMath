@@ -180,7 +180,7 @@ class TestAbsEquations:
             node(T.ADD, node(T.MULTIPLY_IMPLICIT, c("2"), var()), c("3")),
             c("7"),
         )
-        assert step_keys(problem) == ["move", "eq_linar_divide_both_sides"]
+        assert step_keys(problem) == ["rel_move_right_const", "sub", "eq_linear_div"]
 
     def test_variable_right(self) -> None:
         # |x - 1| = x -> x = 1/2.

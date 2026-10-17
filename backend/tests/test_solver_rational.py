@@ -39,8 +39,8 @@ class TestRational:
             "rel_restrictions_den_zero",
             "eq_trans",
             "eq_linear_frac_zero",
-            "move",
-            "eq_linar_divide_both_sides",
+            "rel_move_right_const",
+            "eq_linear_div",
         ]
 
     def test_two_fractions(self) -> None:

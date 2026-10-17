@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -93,10 +93,11 @@ class SolveResult:
         """Итоговый ответ."""
         self.solution = node
 
-    def add_group(self, title: str, *steps: Step) -> None:
+    def add_group(self, title: str | Sequence[str], *steps: Step) -> None:
         """Explicit teaching boundary; identical titles never merge groups."""
         if steps:
-            self._steps.append(([CoreRichText(type=title)], list(steps)))
+            titles = [title] if isinstance(title, str) else list(title)
+            self._steps.append(([CoreRichText(type=t) for t in titles], list(steps)))
 
     def __len__(self) -> int:
         """Всего подшагов."""
