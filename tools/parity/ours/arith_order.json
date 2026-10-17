@@ -1,0 +1,27 @@
+{
+ "id": "arith_order",
+ "methods": [
+  {
+   "steps": [
+    {
+     "key": "mul",
+     "text": "Умножьте числа",
+     "headers": [
+      "Умножьте числа"
+     ],
+     "detail": [],
+     "theory": false
+    },
+    {
+     "key": "add",
+     "text": "Сложите числа",
+     "headers": [
+      "Сложите числа"
+     ],
+     "detail": [],
+     "theory": false
+    }
+   ]
+  }
+ ]
+}

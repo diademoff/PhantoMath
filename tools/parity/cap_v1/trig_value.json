@@ -1,0 +1,22 @@
+{
+ "id": "trig_value",
+ "keys": "<sin>30<deg>",
+ "cards": [
+  "Упростите выражение",
+  "Вычислите значение тригонометрической функции"
+ ],
+ "steps": [
+  {
+   "text": "Вычислить выражение",
+   "keys": [
+    "calculate_expressions"
+   ]
+  },
+  {
+   "text": "Решение",
+   "keys": [
+    "graph_rt_info_solution"
+   ]
+  }
+ ]
+}

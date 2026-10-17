@@ -1,0 +1,32 @@
+{
+ "id": "radical_eq",
+ "methods": [
+  {
+   "steps": [
+    {
+     "key": "rel_restrictions_find",
+     "text": "Найти недопустимые значения",
+     "headers": [],
+     "detail": [],
+     "theory": false
+    },
+    {
+     "key": "rel_restrictions_root_base_neg",
+     "text": "Найти все значения x, для которых выражение под квадратным корнем x отрицательно",
+     "headers": [],
+     "detail": [],
+     "theory": false
+    },
+    {
+     "key": "eq_irrational_simple_square",
+     "text": "Возвести в квадрат обе части уравнения",
+     "headers": [
+      "Решите уравнение"
+     ],
+     "detail": [],
+     "theory": false
+    }
+   ]
+  }
+ ]
+}

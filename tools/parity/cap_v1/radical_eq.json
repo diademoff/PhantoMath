@@ -1,0 +1,42 @@
+{
+ "id": "radical_eq",
+ "keys": "<sqrt>x<R>=2",
+ "cards": [
+  "Решите уравнение",
+  "Решите относительно ARG1",
+  "Уравнение"
+ ],
+ "steps": [
+  {
+   "text": "Упростите уравнение",
+   "keys": [
+    "simplify_eq"
+   ]
+  },
+  {
+   "text": "Верно ли равенство",
+   "keys": [
+    "solution_check_sol"
+   ]
+  },
+  {
+   "text": "Вычислить",
+   "keys": [
+    "calculate_short",
+    "multiply"
+   ]
+  },
+  {
+   "text": "ARG1 является решением",
+   "keys": [
+    "solution_is"
+   ]
+  },
+  {
+   "text": "Решение",
+   "keys": [
+    "graph_rt_info_solution"
+   ]
+  }
+ ]
+}

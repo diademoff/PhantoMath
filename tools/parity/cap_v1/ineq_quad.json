@@ -1,0 +1,64 @@
+{
+ "id": "ineq_quad",
+ "keys": "x<sq>-5x+6<lt>0",
+ "cards": [
+  "Решите неравенство",
+  "Решите относительно ARG1"
+ ],
+ "steps": [
+  {
+   "text": "Запишите выражение",
+   "keys": [
+    "rewrite_expression"
+   ]
+  },
+  {
+   "text": "Разложить выражения на множители",
+   "keys": [
+    "factorise_call_plural"
+   ]
+  },
+  {
+   "text": "Разложите выражение на множители",
+   "keys": [
+    "factorise_call"
+   ]
+  },
+  {
+   "text": "Рассмотреть все возможные случаи",
+   "keys": [
+    "eq_separate_short",
+    "ineq_quotient_gt",
+    "ineq_quotient_gte",
+    "ineq_quotient_lt",
+    "ineq_quotient_lte"
+   ]
+  },
+  {
+   "text": "Решить систему неравенств",
+   "keys": [
+    "ineq_solve_short_plural",
+    "intersection_plural"
+   ]
+  },
+  {
+   "text": "Решить систему неравенств",
+   "keys": [
+    "ineq_solve_short_plural",
+    "intersection_plural"
+   ]
+  },
+  {
+   "text": "Найти объединение",
+   "keys": [
+    "union"
+   ]
+  },
+  {
+   "text": "Решение",
+   "keys": [
+    "graph_rt_info_solution"
+   ]
+  }
+ ]
+}

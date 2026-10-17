@@ -1,0 +1,16 @@
+{
+ "id": "trig_value",
+ "methods": [
+  {
+   "steps": [
+    {
+     "key": "trig_table_calc",
+     "text": "Вычислить, используя таблицу значений тригонометрических функций",
+     "headers": [],
+     "detail": [],
+     "theory": false
+    }
+   ]
+  }
+ ]
+}

@@ -21,7 +21,7 @@ def adb(*args: str, binary: bool = False):
 
 
 def dump(name: str = "last") -> ET.Element:
-    adb("shell", "uiautomator", "dump", "--compressed", "/sdcard/ui.xml")
+    adb("shell", "uiautomator", "dump", "/sdcard/ui.xml")
     xml = adb("shell", "cat", "/sdcard/ui.xml")
     (OUT / f"{name}.xml").write_text(xml)
     return ET.fromstring(xml)

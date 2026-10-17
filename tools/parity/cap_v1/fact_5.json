@@ -1,0 +1,30 @@
+{
+ "id": "fact_5",
+ "keys": "5<fact>",
+ "cards": [
+  "Вычислите значение",
+  "Вычислить"
+ ],
+ "steps": [
+  {
+   "text": "Вычислите факториал",
+   "keys": [
+    "factorial_calculate",
+    "series_calc_short"
+   ]
+  },
+  {
+   "text": "Вычислить",
+   "keys": [
+    "calculate_short",
+    "multiply"
+   ]
+  },
+  {
+   "text": "Решение",
+   "keys": [
+    "graph_rt_info_solution"
+   ]
+  }
+ ]
+}

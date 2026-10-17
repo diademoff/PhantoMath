@@ -1,0 +1,16 @@
+{
+ "id": "fact_5",
+ "methods": [
+  {
+   "steps": [
+    {
+     "key": "factorial_calculate",
+     "text": "Вычислите факториал",
+     "headers": [],
+     "detail": [],
+     "theory": false
+    }
+   ]
+  }
+ ]
+}

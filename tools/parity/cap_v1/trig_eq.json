@@ -1,0 +1,67 @@
+{
+ "id": "trig_eq",
+ "keys": "<sin>x<R>=<frac>1<R>2<R>",
+ "cards": [
+  "Решите уравнение",
+  "Решите относительно ARG1",
+  "Уравнение"
+ ],
+ "steps": [
+  {
+   "text": "Рассмотреть все возможные случаи",
+   "keys": [
+    "eq_separate_short",
+    "ineq_quotient_gt",
+    "ineq_quotient_gte",
+    "ineq_quotient_lt",
+    "ineq_quotient_lte"
+   ]
+  },
+  {
+   "text": "Использовать обратную тригонометрическую функцию",
+   "keys": [
+    "trig_eq_isolate_short"
+   ]
+  },
+  {
+   "text": "Найдите значение",
+   "keys": [
+    "evaluate",
+    "find_value",
+    "find_arg"
+   ]
+  },
+  {
+   "text": "Прибавить период",
+   "keys": [
+    "add_period",
+    "add_period_plural",
+    "add_arg"
+   ]
+  },
+  {
+   "text": "Решите уравнение",
+   "keys": [
+    "eq_solve_short"
+   ]
+  },
+  {
+   "text": "Упростите выражение",
+   "keys": [
+    "simplify"
+   ]
+  },
+  {
+   "text": "Уравнение имеет ARG1 решения",
+   "keys": [
+    "solution_eq_num"
+   ]
+  },
+  {
+   "text": "Решение",
+   "keys": [
+    "graph_rt_info_solution"
+   ]
+  }
+ ]
+}

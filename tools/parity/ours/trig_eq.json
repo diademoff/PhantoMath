@@ -1,0 +1,23 @@
+{
+ "id": "trig_eq",
+ "methods": [
+  {
+   "steps": [
+    {
+     "key": "trig_find_period",
+     "text": "Определите период",
+     "headers": [],
+     "detail": [],
+     "theory": false
+    },
+    {
+     "key": "trig_general_sol",
+     "text": "Запишите общее решение, используя 2·π",
+     "headers": [],
+     "detail": [],
+     "theory": false
+    }
+   ]
+  }
+ ]
+}

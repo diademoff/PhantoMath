@@ -1,0 +1,30 @@
+{
+ "id": "frac_add",
+ "keys": "<frac>1<R>2<R>+<frac>1<R>3<R>",
+ "cards": [
+  "Сложите дроби",
+  "Сложите"
+ ],
+ "steps": [
+  {
+   "text": "Преобразовать выражение",
+   "keys": [
+    "convert_expression",
+    "trans_msg"
+   ]
+  },
+  {
+   "text": "Вычислить",
+   "keys": [
+    "calculate_short",
+    "multiply"
+   ]
+  },
+  {
+   "text": "Решение",
+   "keys": [
+    "graph_rt_info_solution"
+   ]
+  }
+ ]
+}

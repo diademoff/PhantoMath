@@ -1,0 +1,27 @@
+{
+ "id": "arith_paren",
+ "methods": [
+  {
+   "steps": [
+    {
+     "key": "add",
+     "text": "Сложите числа",
+     "headers": [
+      "Сложите числа"
+     ],
+     "detail": [],
+     "theory": false
+    },
+    {
+     "key": "mul",
+     "text": "Умножьте числа",
+     "headers": [
+      "Умножьте числа"
+     ],
+     "detail": [],
+     "theory": false
+    }
+   ]
+  }
+ ]
+}

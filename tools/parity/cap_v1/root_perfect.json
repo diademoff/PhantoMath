@@ -1,0 +1,31 @@
+{
+ "id": "root_perfect",
+ "keys": "<sqrt>16<R>",
+ "cards": [
+  "Вычислите значение",
+  "Вычислить",
+  "Запишите выражение",
+  "Представьте в виде степени"
+ ],
+ "steps": [
+  {
+   "text": "Представить в виде степени",
+   "keys": [
+    "write_as_exp_short"
+   ]
+  },
+  {
+   "text": "Упростить корень",
+   "keys": [
+    "root_partial",
+    "root_simplify"
+   ]
+  },
+  {
+   "text": "Решение",
+   "keys": [
+    "graph_rt_info_solution"
+   ]
+  }
+ ]
+}

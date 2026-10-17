@@ -1,0 +1,27 @@
+{
+ "id": "arith_mixed",
+ "methods": [
+  {
+   "steps": [
+    {
+     "key": "div",
+     "text": "Разделить числа",
+     "headers": [
+      "Разделить числа"
+     ],
+     "detail": [],
+     "theory": false
+    },
+    {
+     "key": "add",
+     "text": "Сложите числа",
+     "headers": [
+      "Сложите числа"
+     ],
+     "detail": [],
+     "theory": false
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,22 @@
+{
+ "id": "frac_mul",
+ "keys": "<frac>2<R>3<R>*<frac>3<R>4<R>",
+ "cards": [
+  "Вычислите произведение",
+  "Вычислить"
+ ],
+ "steps": [
+  {
+   "text": "Сократите числа",
+   "keys": [
+    "frac_reduce_num"
+   ]
+  },
+  {
+   "text": "Решение",
+   "keys": [
+    "graph_rt_info_solution"
+   ]
+  }
+ ]
+}

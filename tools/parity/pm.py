@@ -73,10 +73,13 @@ def type_task(keys: str) -> None:
             page = want
         if grid is not None:
             _key(grid, name)
+            if want != "main":
+                page = "main"  # the keyboard returns to the main page by itself
         elif want == "abc":
             letter = name[4:]
             idx = ord(letter) - ord("a")
             _tap(67 + 135 * (idx % 8), ROWS[idx // 8])
+            page = "main"
         else:
             ch = {"p": "p"}.get(name, name)
             ui.type_keys(ch)
@@ -148,14 +151,67 @@ def collect_scroll(name: str, rid_filter, max_swipes: int = 6) -> list[str]:
     return acc
 
 
+def _text(root, rid: str) -> str:
+    for n, _, _ in ui.nodes(root):
+        if n.get("resource-id", "").endswith("/" + rid) and n.get("text"):
+            return n.get("text")
+    return ""
+
+
+def walk(name: str) -> list[dict]:
+    """Per top-level step: its description and the rows of its 'detailed steps' screen."""
+    ids = ("/collapsed_description", "/description", "/title")
+    root = ui.dump(f"{name}_list")
+    n_rows = sum(1 for n, _, _ in ui.nodes(root)
+                 if n.get("resource-id", "").endswith("/collapsed_description"))
+    out = []
+    for i in range(n_rows):
+        root = ui.dump(f"{name}_r{i}")
+        rows = [c for n, c, _ in ui.nodes(root)
+                if n.get("resource-id", "").endswith("/collapsed_description")]
+        if i >= len(rows):
+            break
+        ui.adb("shell", "input", "tap", "540", str(rows[i][1] - 44))
+        time.sleep(1.5)
+        root = ui.dump(f"{name}_e{i}")
+        step = {"text": _text(root, "description"), "nested": []}
+        exp = ui.find(root, "id:substep_expand_button")
+        if exp:
+            ui.adb("shell", "input", "tap", str(exp[0]), str(exp[1]))
+            time.sleep(2)
+            nroot = ui.dump(f"{name}_d{i}")
+            step["nested"] = [n.get("text") for n, _, _ in ui.nodes(nroot)
+                              if n.get("resource-id", "").endswith(ids) and n.get("text")]
+            ui.adb("shell", "input", "keyevent", "KEYCODE_BACK")
+            time.sleep(1.2)
+        close = ui.find(ui.dump(), "id:substep_close_button")
+        if close:
+            ui.adb("shell", "input", "tap", str(close[0]), str(close[1]))
+            time.sleep(1)
+        out.append(step)
+    return out
+
+
+def reset() -> None:
+    """Fresh calculator screen regardless of where the previous run stopped."""
+    ui.adb("shell", "am", "force-stop", "com.microblink.photomath")
+    ui.adb("shell", "am", "start", "-n",
+           "com.microblink.photomath/.main.activity.MainActivity")
+    time.sleep(3)
+    ui.adb("shell", "input", "tap", "238", "2086")
+    for _ in range(10):  # first taps are lost while the keyboard animates in
+        time.sleep(1)
+        if ui.find(ui.dump(), "id:keyboard"):
+            break
+    time.sleep(1.5)
+
+
 def crawl(task_id: str, keys: str) -> dict:
     kmap = build_keymap()
-    ui.adb("shell", "input", "tap", "1005", "367")  # clear
-    time.sleep(0.5)
+    reset()
     type_task(keys)
     time.sleep(2.5)
     ui.OUT.mkdir(exist_ok=True)
-    ui.adb("shell", "input", "tap", "628", "1312")  # dismiss tip if any
     root = ui.dump(f"{task_id}_input")
     sol = ui.find(root, "Показать решение")
     (CAP / f"{task_id}_input.png").write_bytes(ui.adb("exec-out", "screencap", "-p", binary=True))
@@ -176,7 +232,8 @@ def crawl(task_id: str, keys: str) -> dict:
             ui.adb("exec-out", "screencap", "-p", binary=True))
         steps = collect_scroll(f"{task_id}_steps", {"collapsed_description", "title"}, 5)
         res["steps"] = [{"text": t, "keys": keys_for(t, kmap)} for t in steps]
-    for _ in range(3):
+        res["walk"] = walk(task_id)
+    for _ in range(2):
         ui.adb("shell", "input", "keyevent", "KEYCODE_BACK")
         time.sleep(0.7)
     (CAP / f"{task_id}.json").write_text(json.dumps(res, ensure_ascii=False, indent=1))

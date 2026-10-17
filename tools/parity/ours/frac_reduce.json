@@ -1,0 +1,55 @@
+{
+ "id": "frac_reduce",
+ "methods": [
+  {
+   "steps": [
+    {
+     "key": "frac_reduce_reduce",
+     "text": "Сократить числитель и знаменатель дроби",
+     "headers": [
+      "Сократим дробь"
+     ],
+     "detail": [],
+     "theory": true
+    },
+    {
+     "key": "frac_reduce_out",
+     "text": "Сократить числа на наибольший общий делитель 2",
+     "headers": [
+      "Сократим дробь"
+     ],
+     "detail": [
+      {
+       "key": "lesson_gcd",
+       "text": "Общий делитель числителя и знаменателя: 2. Разделим оба числа на него.",
+       "headers": [
+        "Сократим дробь"
+       ],
+       "detail": [],
+       "theory": true
+      },
+      {
+       "key": "lesson_fraction_divide",
+       "text": "Делим числитель и знаменатель на одно и то же ненулевое число.",
+       "headers": [
+        "Сократим дробь"
+       ],
+       "detail": [],
+       "theory": true
+      },
+      {
+       "key": "lesson_fraction_finish",
+       "text": "Вычислим числитель и сократим результат, если есть общий делитель.",
+       "headers": [
+        "Сократим дробь"
+       ],
+       "detail": [],
+       "theory": true
+      }
+     ],
+     "theory": true
+    }
+   ]
+  }
+ ]
+}
