@@ -117,7 +117,11 @@ def solve_arithmetic(node: CoreNode, ctx: SolveContext) -> CoreNode:
     node = _flatten_fraction_sum(node)
     # Дети сворачиваются через общий реестр: так арифметика складывается с
     # другими модулями (например, дробь сворачивается своим модулем).
-    folded = [route(child, ctx) for child in node.children]
+    ctx.depth += 1
+    try:
+        folded = [route(child, ctx) for child in node.children]
+    finally:
+        ctx.depth -= 1
 
     if node.type is T.BRACKET:
         ctx.require(len(folded) == 1, "в скобках должно быть одно выражение")

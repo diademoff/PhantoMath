@@ -143,6 +143,19 @@ def _square_root_rows(node: CoreNode, n: int, ctx: SolveContext) -> CoreNode | N
     k = max(c for c in range(1, isqrt(n) + 1) if n % (c * c) == 0)
     if k == 1:
         return None
+    if ctx.depth > 0:
+        # Inside a larger expression Photomath evaluates the root as one stage whose detail
+        # screen holds the rows; sibling roots become pages of the same row.
+        inner = SolveResult()
+        answer = _square_root_rows(node, n, SolveContext(result=inner))
+        if answer is None:
+            return None
+        inner.set_solution(answer)
+        ctx.result.add(
+            Step(node, answer, "root_square", subresult=inner),
+            [CoreRichText(type="calculate_short")],
+        )
+        return answer
 
     def number(value: int) -> CoreNode:
         return CoreNode.constant(str(value))

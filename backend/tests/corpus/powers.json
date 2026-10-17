@@ -98,8 +98,7 @@
         "value": "5"
       },
       "steps": [
-        "pow_to_same_base",
-        "root_reduce",
+        "root_square",
         "add"
       ]
     },

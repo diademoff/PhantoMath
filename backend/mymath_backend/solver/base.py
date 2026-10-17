@@ -159,6 +159,7 @@ class SolveContext:
 
     result: SolveResult
     variables: list[str] = field(default_factory=list)
+    depth: int = 0  # > 0 while the operands of a larger expression are being folded
 
     def step(
         self,

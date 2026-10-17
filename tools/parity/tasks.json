@@ -280,5 +280,53 @@
   "section": "powers_roots",
   "pm": "<sqrt>9<R>+<sqrt>16<R>",
   "proto": "{root2({9})+root2({16})}"
+ },
+ {
+  "id": "d_x2",
+  "section": "derivatives",
+  "pm": "<ddx>x<sq>",
+  "proto": "{derivation_diff({x},{x^2})}"
+ },
+ {
+  "id": "d_poly",
+  "section": "derivatives",
+  "pm": "<ddx>3x<sq>+2x",
+  "proto": "{derivation_diff({x},{3x^2+2x})}"
+ },
+ {
+  "id": "d_sin",
+  "section": "derivatives",
+  "pm": "<ddx><sin>x",
+  "proto": "{derivation_diff({x},{sin({x})})}"
+ },
+ {
+  "id": "int_x2",
+  "section": "integrals",
+  "pm": "<int>x<sq><R>x",
+  "proto": "{integral({x^2})}"
+ },
+ {
+  "id": "int_poly",
+  "section": "integrals",
+  "pm": "<int>3x<sq>+2x<R>x",
+  "proto": "{integral({3x^2+2x})}"
+ },
+ {
+  "id": "int_sin",
+  "section": "integrals",
+  "pm": "<int><sin>x<R><R>x",
+  "proto": "{integral({sin({x})})}"
+ },
+ {
+  "id": "lim_x2",
+  "section": "limits",
+  "pm": "<lim>x2<R>x<sq>",
+  "proto": "{lim({2},{x^2})}"
+ },
+ {
+  "id": "log_1000",
+  "section": "powers_roots",
+  "pm": "<log10>1000",
+  "proto": "{log10({1000})}"
  }
 ]

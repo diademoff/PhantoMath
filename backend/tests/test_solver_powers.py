@@ -107,7 +107,7 @@ class TestWithArithmetic:
     def test_root_combines_with_numbers(self) -> None:
         problem = node(T.ADD, node(T.ROOT2, c("16")), c("1"))
         assert value_of(problem) == "5"
-        assert step_keys(problem) == ["pow_to_same_base", "root_reduce", "add"]
+        assert step_keys(problem) == ["root_square", "add"]
 
     def test_log_combines_with_numbers(self) -> None:
         problem = node(T.ADD, node(T.LOG10, c("1000")), c("1"))
