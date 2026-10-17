@@ -274,6 +274,24 @@ class TestMethods:
             "solution_eq_num",
         ]
 
+    def test_pq_formula_divides_by_the_leading_coefficient_first(self) -> None:
+        # Photomath 7.10.0 on device: 2x^2 + 3x - 2 = 0 -> x^2 + (3/2)x - 1 = 0 -> PQ.
+        group = _group("{=({2x^2+3x-2},{0})}")
+        assert _method_keys(group.entries[2]) == [
+            "eq_linear_div",
+            "quad_formula_pq",
+            "frac_complex_resolve_call",
+            "frac_complex_resolve_call",
+            "neg_neg_arg",
+            "pow_frac",
+            "calc_sum",
+            "root_square",
+            "quad_separate_signs",
+            "calc_sum",
+            "calc_diff",
+            "solution_eq_num",
+        ]
+
     def test_other_quadratics_keep_formula_then_factoring(self) -> None:
         group = _group("{=({x^2+5x+6},{0})}")
         assert _method_keys(group.entries[0]) == [
