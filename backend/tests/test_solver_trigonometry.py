@@ -131,7 +131,7 @@ class TestWithArithmetic:
     def test_sin_plus_one(self) -> None:
         problem = node(T.ADD, node(T.SIN, degrees("30")), c("1"))
         assert value_of(problem) == sympy.Rational(3, 2)
-        assert step_keys(problem) == ["trig_table_calc", "add"]
+        assert step_keys(problem) == ["trig_table_calc", "frac_sum_join", "add"]
 
 
 class TestArgumentFolding:

@@ -10,8 +10,9 @@
         "value": "3/4"
       },
       "steps": [
-        "frac_reduce_reduce",
-        "frac_reduce_out"
+        "frac_div_num",
+        "div",
+        "div"
       ]
     },
     {
@@ -23,8 +24,9 @@
         "value": "3"
       },
       "steps": [
-        "frac_reduce_reduce",
-        "frac_reduce_out"
+        "frac_div_num",
+        "div",
+        "div"
       ]
     },
     {
@@ -61,8 +63,9 @@
       },
       "steps": [
         "add",
-        "frac_reduce_reduce",
-        "frac_reduce_out"
+        "frac_div_num",
+        "div",
+        "div"
       ]
     },
     {
@@ -74,7 +77,7 @@
         "value": "2"
       },
       "steps": [
-        "mul"
+        "frac_reduce_out"
       ]
     }
   ]

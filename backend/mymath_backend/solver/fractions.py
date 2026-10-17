@@ -18,7 +18,7 @@ from __future__ import annotations
 from fractions import Fraction
 from math import gcd, lcm
 
-from ..ast import CoreNode, colored
+from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
 from .arithmetic import as_fraction, format_number
 from .base import SolveContext, SolveResult, Step, route, solver_for
@@ -59,12 +59,7 @@ def _solve_fraction(node: CoreNode, ctx: SolveContext) -> CoreNode:
     result = CoreNode.constant(format_number(value))
     common = _integer_common_divisor(numerator, denominator)
     if common is not None:
-        # Микро-анимация: показываем, что числитель и знаменатель сокращаются.
-        crossed = CoreNode.node(
-            T.FRACTION,
-            colored(CoreNode.constant(format_number(numerator)), crossed=True),
-            colored(CoreNode.constant(format_number(denominator)), crossed=True),
-        )
+        # Photomath: row 1 divides numerator and denominator, row 2 performs both divisions.
         divided = CoreNode.node(
             T.FRACTION,
             CoreNode.node(
@@ -78,30 +73,17 @@ def _solve_fraction(node: CoreNode, ctx: SolveContext) -> CoreNode:
                 CoreNode.constant(str(common)),
             ),
         )
-        reduced = CoreNode.node(
+        ctx.result.add_group(
+            "frac_reduce_frac",
+            Step(node, divided, "frac_div_num", [CoreNode.constant(str(common))]),
+        )
+        # Photomath divides the numerator first, then the denominator (two stages).
+        half = CoreNode.node(
             T.FRACTION,
             CoreNode.constant(format_number(numerator / common)),
-            CoreNode.constant(format_number(denominator / common)),
+            divided.children[1],
         )
-        detail = SolveResult(header="lesson_fraction")
-        detail.add_group(
-            "lesson_fraction",
-            Step(node, divided, "lesson_gcd", [CoreNode.constant(str(common))]),
-            Step(divided, reduced, "lesson_fraction_divide"),
-            Step(reduced, result, "lesson_fraction_finish"),
-        )
-        detail.set_solution(result)
-        ctx.result.add_group(
-            "lesson_fraction",
-            Step(left=crossed, right=None, key="frac_reduce_reduce"),
-            Step(
-                left=crossed,
-                right=result,
-                key="frac_reduce_out",
-                args=[CoreNode.constant(str(common))],
-                subresult=detail,
-            ),
-        )
+        ctx.result.add_group("divide", Step(divided, half, "div"), Step(half, result, "div"))
     elif denominator == 1:
         # Дробь со знаменателем 1 — то же деление на единицу, что и `6 ÷ 1`
         # (`div_with_one` в арифметике). Без шага экран «Шаги по решению»
@@ -166,8 +148,16 @@ def product_detail(op: T, values: list[Fraction], result: CoreNode) -> SolveResu
     return detail
 
 
-def addition_detail(op: T, values: list[Fraction], result: CoreNode) -> SolveResult | None:
-    """A common-denominator derivation for a numeric sum/difference of fractions."""
+Rows = list[tuple[str, list[Step]]]
+
+
+def addition_rows(op: T, values: list[Fraction], result: CoreNode) -> Rows | None:
+    """Sum/difference of numeric fractions as main steps, as Photomath 7.10.0 shows it.
+
+    Rows (header key, step): numerators over the lowest common denominator (with a
+    three-row detail: convert, calculate, convert), the arithmetic on numerators,
+    and a reduction when the fraction is not in lowest terms.
+    """
     if op not in (T.ADD, T.SUBTRACT) or len(values) < 2 or all(v.denominator == 1 for v in values):
         return None
     common = lcm(*(value.denominator for value in values))
@@ -191,43 +181,156 @@ def addition_detail(op: T, values: list[Fraction], result: CoreNode) -> SolveRes
             for v in values
         ],
     )
-    numerators = [number(v.numerator * (common // v.denominator)) for v in values]
-    converted = CoreNode.node(op, *[fraction(n, number(common)) for n in numerators])
-    combined = fraction(CoreNode.node(op, *numerators), number(common))
-    total = values[0] + sum(values[1:]) if op is T.ADD else values[0] - sum(values[1:])
-    unreduced_n = (
-        sum(v.numerator * (common // v.denominator) for v in values)
-        if op is T.ADD
-        else values[0].numerator * (common // values[0].denominator)
-        - sum(v.numerator * (common // v.denominator) for v in values[1:])
-    )
-    unreduced = fraction(number(unreduced_n), number(common))
-    reduction = SolveResult()
-    divisor = gcd(abs(unreduced_n), common)
+    scaled = [v.numerator * (common // v.denominator) for v in values]
+    converted = CoreNode.node(op, *[fraction(number(n), number(common)) for n in scaled])
+    combined = fraction(CoreNode.node(op, *map(number, scaled)), number(common))
+    total_n = scaled[0] + sum(scaled[1:]) if op is T.ADD else scaled[0] - sum(scaled[1:])
+    unreduced = fraction(number(total_n), number(common))
+
+    expand = SolveResult()
+    expand.add_group("frac_sum_expand", Step(original, expanded, "frac_sum_expand"))
+    expand.add_group("calculate_short", Step(expanded, converted, "calculate_short"))
+    expand.add_group("convert_expression", Step(converted, combined, "convert_expression"))
+    expand.set_solution(combined)
+
+    # Integer operand: converted to a fraction first; Photomath words it without the denominator.
+    join = any(v.denominator == 1 for v in values)
+    rows: Rows = [
+        (
+            "convert_expression",
+            [
+                Step(
+                    original,
+                    combined,
+                    "frac_sum_join" if join else "frac_sum_common",
+                    [] if join else [number(common)],
+                    subresult=expand,
+                )
+            ],
+        ),
+        ("calculate_short", [Step(combined, unreduced, "add" if op is T.ADD else "sub")]),
+    ]
+    divisor = gcd(abs(total_n), common)
     if divisor > 1:
         divided = fraction(
-            CoreNode.node(T.DIVIDE, number(unreduced_n), number(divisor)),
+            CoreNode.node(T.DIVIDE, number(total_n), number(divisor)),
             CoreNode.node(T.DIVIDE, number(common), number(divisor)),
         )
+        reduction = SolveResult()
         reduction.add_group(
-            "lesson_fraction",
-            Step(unreduced, divided, "lesson_gcd", [number(divisor)]),
-            Step(divided, result, "lesson_fraction_divide"),
+            "frac_reduce_frac", Step(unreduced, divided, "frac_div_num", [number(divisor)])
         )
+        reduction.add_group("divide", Step(divided, result, "div"))
         reduction.set_solution(result)
-    detail = SolveResult(header="lesson_fraction_sum")
-    detail.add_group(
-        "lesson_fraction_sum",
-        Step(original, expanded, "lesson_common_denominator", [number(common)]),
-        Step(expanded, converted, "lesson_simplify"),
-        Step(converted, combined, "lesson_combine_numerators"),
-        Step(combined, unreduced, "lesson_fraction_finish"),
-        Step(
-            unreduced, result, "lesson_fraction_finish", subresult=reduction if reduction else None
+        rows.append(
+            (
+                "frac_reduce_frac",
+                [Step(unreduced, result, "frac_reduce", [number(divisor)], subresult=reduction)],
+            )
+        )
+    return rows
+
+
+def _item(n: int, d: int) -> CoreNode:
+    number = CoreNode.constant
+    return number(str(n)) if d == 1 else CoreNode.node(T.FRACTION, number(str(n)), number(str(d)))
+
+
+def _product(items: list[list[int]]) -> CoreNode:
+    """Product of the items; factors equal to 1 are dropped like in Photomath's pages."""
+    shown = [_item(n, d) for n, d in items if (n, d) != (1, 1)] or [_item(1, 1)]
+    return shown[0] if len(shown) == 1 else CoreNode.node(T.MULTIPLY, *shown)
+
+
+def product_rows(op: T, values: list[Fraction], result: CoreNode) -> Rows | None:
+    """Product or quotient of two positive numeric operands as Photomath 7.10.0 shows it.
+
+    Reciprocal (for division), then one page per cancellation by a common divisor of
+    a numerator and another factor's denominator; if factors are left, either one
+    "calculate the product" row (integer factor) or the join + calculate rows.
+    """
+    if op is T.DIVIDE and len(values) != 2:
+        return None
+    if (
+        op not in (T.MULTIPLY, T.MULTIPLY_IMPLICIT, T.DIVIDE)
+        or len(values) < 2
+        or all(v.denominator == 1 for v in values)
+        or any(v <= 0 for v in values)
+    ):
+        return None
+    number = CoreNode.constant
+    rows: Rows = []
+    operands = [[v.numerator, v.denominator] for v in values]
+    if op is T.DIVIDE:
+        items = [operands[0], [operands[1][1], operands[1][0]]]
+        rows.append(
+            (
+                "frac_div_rec_short",
+                [
+                    Step(
+                        CoreNode.node(T.DIVIDE, *[_item(*o) for o in operands]),
+                        _product(items),
+                        "frac_div_rec",
+                    )
+                ],
+            )
+        )
+    else:
+        items = operands
+    current = _product(items)
+    pages: list[Step] = []
+    while pair := next(
+        (
+            (i, j, gcd(items[i][0], items[j][1]))
+            for i in range(len(items))
+            for j in range(len(items))
+            if i != j and gcd(items[i][0], items[j][1]) > 1
         ),
-    )
-    detail.set_solution(CoreNode.constant(format_number(total)))
-    return detail
+        None,
+    ):
+        i, j, g = pair
+        items[i][0] //= g
+        items[j][1] //= g
+        following = _product(items)
+        pages.append(Step(current, following, "frac_reduce_out", [number(str(g))]))
+        current = following
+    if pages:
+        rows.append(("frac_reduce_num", pages))
+    left = [it for it in items if tuple(it) != (1, 1)]
+    if len(left) > 1:
+        numerators = CoreNode.node(T.MULTIPLY, *[number(str(n)) for n, _ in left])
+        denominators = CoreNode.node(T.MULTIPLY, *[number(str(d)) for _, d in left])
+        joined = CoreNode.node(T.FRACTION, numerators, denominators)
+        top = 1
+        for n, _ in left:
+            top *= n
+        bottom = 1
+        for _, d in left:
+            bottom *= d
+        half = CoreNode.node(T.FRACTION, number(str(top)), denominators)
+        done = _item(top, bottom)
+        calc = [
+            Step(
+                joined,
+                half,
+                "mul_with_one"
+                if sorted(n for n, _ in left)[:-1] == [1] * (len(left) - 1)
+                else "mul",
+                [number("1")] if sorted(n for n, _ in left)[:-1] == [1] * (len(left) - 1) else [],
+            )
+        ]
+        if bottom != 1:
+            calc.append(Step(half, done, "mul"))
+        if any(d == 1 for _, d in left):
+            detail = SolveResult()
+            detail.add_group("frac_mul", Step(current, joined, "frac_mul_join"))
+            detail.add_group("calculate_short", *calc)
+            detail.set_solution(result)
+            rows.append(("product", [Step(current, result, "product", subresult=detail)]))
+        else:
+            rows.append(("frac_mul", [Step(current, joined, "frac_mul_join")]))
+            rows.append(("calculate_short", calc))
+    return rows or None
 
 
 def _solve_mixed(node: CoreNode, ctx: SolveContext) -> CoreNode:

@@ -1,0 +1,32 @@
+{
+ "id": "frac_mul_whole",
+ "keys": "2*<frac>3<R>4<R>",
+ "cards": [
+  "Вычислите произведение",
+  "Вычислить"
+ ],
+ "steps": [
+  {
+   "text": "Сократите числа",
+   "keys": [
+    "frac_reduce_num"
+   ]
+  },
+  {
+   "text": "Решение",
+   "keys": [
+    "graph_rt_info_solution"
+   ]
+  }
+ ],
+ "walk": [
+  {
+   "stages": [
+    {
+     "text": "Сократить числа на наибольший общий делитель ARG1",
+     "nested": []
+    }
+   ]
+  }
+ ]
+}

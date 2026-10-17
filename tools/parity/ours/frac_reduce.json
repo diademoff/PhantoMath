@@ -5,46 +5,33 @@
    "steps": [
     {
      "headers": [
-      "Сократим дробь"
+      "Сократить дробь"
      ],
      "stages": [
       {
-       "key": "frac_reduce_reduce",
-       "text": "Сократить числитель и знаменатель дроби",
+       "key": "frac_div_num",
+       "text": "Разделите числитель и знаменатель на 2",
        "detail": [],
-       "theory": true
+       "theory": false
+      }
+     ]
+    },
+    {
+     "headers": [
+      "Выполнить деление"
+     ],
+     "stages": [
+      {
+       "key": "div",
+       "text": "Разделить числа",
+       "detail": [],
+       "theory": false
       },
       {
-       "key": "frac_reduce_out",
-       "text": "Сократить числа на наибольший общий делитель 2",
-       "detail": [
-        {
-         "headers": [
-          "Сократим дробь"
-         ],
-         "stages": [
-          {
-           "key": "lesson_gcd",
-           "text": "Общий делитель числителя и знаменателя: 2. Разделим оба числа на него.",
-           "detail": [],
-           "theory": true
-          },
-          {
-           "key": "lesson_fraction_divide",
-           "text": "Делим числитель и знаменатель на одно и то же ненулевое число.",
-           "detail": [],
-           "theory": true
-          },
-          {
-           "key": "lesson_fraction_finish",
-           "text": "Вычислим числитель и сократим результат, если есть общий делитель.",
-           "detail": [],
-           "theory": true
-          }
-         ]
-        }
-       ],
-       "theory": true
+       "key": "div",
+       "text": "Разделить числа",
+       "detail": [],
+       "theory": false
       }
      ]
     }

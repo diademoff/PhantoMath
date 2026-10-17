@@ -44,3 +44,5 @@ app/python/assets/
 tools/parity/cap/*.png
 tools/parity/cap/*.xml
 tools/parity/batch.log
+tools/parity/batch2.log
+tools/parity/ours/

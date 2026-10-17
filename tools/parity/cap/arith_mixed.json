@@ -1,0 +1,47 @@
+{
+ "id": "arith_mixed",
+ "keys": "100/4+6",
+ "cards": [
+  "Вычислите значение",
+  "Вычислить"
+ ],
+ "steps": [
+  {
+   "text": "Выполнить деление",
+   "keys": [
+    "divide"
+   ]
+  },
+  {
+   "text": "Вычислить",
+   "keys": [
+    "calculate_short",
+    "multiply"
+   ]
+  },
+  {
+   "text": "Решение",
+   "keys": [
+    "graph_rt_info_solution"
+   ]
+  }
+ ],
+ "walk": [
+  {
+   "stages": [
+    {
+     "text": "Разделить числа",
+     "nested": []
+    }
+   ]
+  },
+  {
+   "stages": [
+    {
+     "text": "Сложите числа",
+     "nested": []
+    }
+   ]
+  }
+ ]
+}

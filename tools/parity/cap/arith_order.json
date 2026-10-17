@@ -1,0 +1,48 @@
+{
+ "id": "arith_order",
+ "keys": "2+3*4",
+ "cards": [
+  "Вычислите значение",
+  "Вычислить"
+ ],
+ "steps": [
+  {
+   "text": "Вычислить",
+   "keys": [
+    "calculate_short",
+    "multiply"
+   ]
+  },
+  {
+   "text": "Вычислить",
+   "keys": [
+    "calculate_short",
+    "multiply"
+   ]
+  },
+  {
+   "text": "Решение",
+   "keys": [
+    "graph_rt_info_solution"
+   ]
+  }
+ ],
+ "walk": [
+  {
+   "stages": [
+    {
+     "text": "Умножьте числа",
+     "nested": []
+    }
+   ]
+  },
+  {
+   "stages": [
+    {
+     "text": "Сложите числа",
+     "nested": []
+    }
+   ]
+  }
+ ]
+}

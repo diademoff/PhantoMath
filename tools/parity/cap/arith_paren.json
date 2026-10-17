@@ -1,0 +1,50 @@
+{
+ "id": "arith_paren",
+ "keys": "2*(3+4)",
+ "cards": [
+  "Вычислите значение",
+  "Вычислить",
+  "Вычислить",
+  "Вычислите, используя распределительное свойство"
+ ],
+ "steps": [
+  {
+   "text": "Вычислить",
+   "keys": [
+    "calculate_short",
+    "multiply"
+   ]
+  },
+  {
+   "text": "Вычислить",
+   "keys": [
+    "calculate_short",
+    "multiply"
+   ]
+  },
+  {
+   "text": "Решение",
+   "keys": [
+    "graph_rt_info_solution"
+   ]
+  }
+ ],
+ "walk": [
+  {
+   "stages": [
+    {
+     "text": "Сложите числа",
+     "nested": []
+    }
+   ]
+  },
+  {
+   "stages": [
+    {
+     "text": "Умножьте числа",
+     "nested": []
+    }
+   ]
+  }
+ ]
+}

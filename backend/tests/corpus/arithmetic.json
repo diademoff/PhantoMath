@@ -27,7 +27,7 @@
       "title": "сложение дробей точно, без округления",
       "input": "{1/3+1/6}",
       "solution": {"type": "CONSTANT", "value": "1/2"},
-      "steps": ["div", "div", "add"]
+      "steps": ["div", "div", "frac_sum_common", "add", "frac_reduce"]
     },
     {
       "id": "divide-by-one",

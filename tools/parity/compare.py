@@ -16,10 +16,8 @@ def _fmt(shape: list[list[bool]]) -> str:
 
 
 def pm_shape(pm: dict) -> list[list[bool]]:
-    """Per group, per stage: does Photomath offer a detail screen (rows after «Решение»)."""
-    return [[bool(st["nested"][st["nested"].index("Решение") + 1:])
-             if "Решение" in st["nested"] else False for st in g["stages"]]
-            for g in pm.get("walk", [])]
+    """Per row, per stage: does Photomath offer a detail screen (expand button present)."""
+    return [[bool(st["nested"]) for st in g["stages"]] for g in pm.get("walk", [])]
 
 
 def our_shape(m: dict) -> list[list[bool]]:

@@ -148,5 +148,35 @@
   "section": "fractions",
   "pm": "<frac>3<R>4<R>-<frac>1<R>6<R>",
   "proto": "{frac({3},{4})-frac({1},{6})}"
+ },
+ {
+  "id": "frac_mul_nocancel",
+  "section": "fractions",
+  "pm": "<frac>1<R>2<R>*<frac>1<R>3<R>",
+  "proto": "{frac({1},{2})*frac({1},{3})}"
+ },
+ {
+  "id": "frac_mul_whole",
+  "section": "fractions",
+  "pm": "2*<frac>3<R>4<R>",
+  "proto": "{2*frac({3},{4})}"
+ },
+ {
+  "id": "frac_div_nocancel",
+  "section": "fractions",
+  "pm": "<frac>1<R>2<R>/<frac>1<R>3<R>",
+  "proto": "{frac({1},{2})/frac({1},{3})}"
+ },
+ {
+  "id": "frac_add3",
+  "section": "fractions",
+  "pm": "<frac>1<R>2<R>+<frac>1<R>3<R>+<frac>1<R>6<R>",
+  "proto": "{frac({1},{2})+frac({1},{3})+frac({1},{6})}"
+ },
+ {
+  "id": "frac_add_int",
+  "section": "fractions",
+  "pm": "<frac>1<R>2<R>+1",
+  "proto": "{frac({1},{2})+1}"
  }
 ]

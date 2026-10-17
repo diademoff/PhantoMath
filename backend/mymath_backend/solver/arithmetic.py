@@ -129,11 +129,20 @@ def solve_arithmetic(node: CoreNode, ctx: SolveContext) -> CoreNode:
     values = [_value_of(c) for c in folded]
     result, key = _apply(node.type, values)
     constant = CoreNode.constant(format_number(result))
-    from .fractions import addition_detail, product_detail
+    from .fractions import addition_rows, product_detail, product_rows
 
-    detail = addition_detail(node.type, values, constant) or product_detail(
-        node.type, values, constant
+    # Common-denominator rows only for fraction operands; decimals add as plain numbers.
+    is_fraction = all(
+        "/" in (c.value or "") or v.denominator == 1 for c, v in zip(folded, values, strict=True)
     )
+    if is_fraction and (
+        rows := addition_rows(node.type, values, constant)
+        or product_rows(node.type, values, constant)
+    ):
+        for header, steps in rows:
+            ctx.result.add_group(header, *steps)
+        return constant
+    detail = product_detail(node.type, values, constant)
     step = Step(
         left=CoreNode(node.type, children=folded),
         right=constant,

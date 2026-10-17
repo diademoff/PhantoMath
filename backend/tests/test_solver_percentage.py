@@ -49,4 +49,4 @@ class TestPercentage:
     def test_percent_of_number(self) -> None:
         source = "{percent({50})*200}"
         assert value_of(source) == "100"
-        assert step_keys(source) == ["percent_to_frac", "mul"]
+        assert step_keys(source) == ["percent_to_frac", "frac_reduce_out"]
