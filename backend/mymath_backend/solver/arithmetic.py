@@ -176,7 +176,9 @@ def solve_arithmetic(node: CoreNode, ctx: SolveContext) -> CoreNode:
         ctx.result.add_group("write_as_mul_short", Step(power, product, "pow_to_mul"))
         ctx.result.add_group("calculate_short", Step(product, constant, "mul"))
         return constant
-    detail = product_detail(node.type, values, constant)
+    # decimals multiply in one plain row (Photomath 7.10.0 on device: 1,5*4)
+    decimal = any("." in (c.value or "") for c in folded)
+    detail = None if decimal else product_detail(node.type, values, constant)
     step = Step(
         left=CoreNode(node.type, children=folded),
         right=constant,
@@ -189,6 +191,62 @@ def solve_arithmetic(node: CoreNode, ctx: SolveContext) -> CoreNode:
     return constant
 
 
+def _compensation_methods(node: CoreNode, variables: list[str]) -> list[SolveResult] | None:
+    """``m.5 * k`` for a positive integer ``k``: the plain row and multiplication by compensation.
+
+    Photomath 7.10.0 on device (1,5*4): write 1,5 as 2 - 0,5, distribute, multiply, subtract.
+    """
+    first, factor = node.children
+    if not (
+        first.type is T.CONSTANT
+        and factor.type is T.CONSTANT
+        and (first.value or "").endswith(".5")
+        and (factor.value or "").isdigit()
+        and int(factor.value or 0) >= 2
+    ):
+        return None
+    try:
+        base = Fraction(first.value or "")
+    except ValueError:
+        return None
+    if base <= 0 or base.denominator != 2:
+        return None
+    k = int(factor.value or 0)
+    up, half = int(base) + 1, Fraction(1, 2)
+
+    def number(value: Fraction | int) -> CoreNode:
+        return CoreNode.constant(format_number(Fraction(value)))
+
+    plain = SolveResult()
+    plain.set_solution(route(node, SolveContext(plain, list(variables))))
+    wrapped = CoreNode.node(T.BRACKET, CoreNode.node(T.SUBTRACT, number(up), number(half)))
+    written = CoreNode.node(T.MULTIPLY, wrapped, factor)
+    spread = CoreNode.node(
+        T.SUBTRACT,
+        CoreNode.node(T.MULTIPLY, number(up), factor),
+        CoreNode.node(T.MULTIPLY, number(half), factor),
+    )
+    first_done = CoreNode.node(
+        T.SUBTRACT, number(up * k), CoreNode.node(T.MULTIPLY, number(half), factor)
+    )
+    second_done = CoreNode.node(T.SUBTRACT, number(up * k), number(half * k))
+    total = number(base * k)
+    detail = SolveResult()
+    detail.add_group("calculate_short", Step(spread.children[1], number(half * k), "mul"))
+    detail.set_solution(number(half * k))
+    rows = SolveResult()
+    rows.add_group("write_as_diff_short", Step(node, written, "write_as_diff", [first]))
+    rows.add_group("remove_bracket_short", Step(written, spread, "mul_bracket", [factor]))
+    rows.add_group(
+        "calculate_short",
+        Step(spread, first_done, "mul"),
+        Step(first_done, second_done, "mul", subresult=detail),
+    )
+    rows.add_group("calculate_short", Step(second_done, total, "sub"))
+    rows.set_solution(total)
+    return [plain, rows]
+
+
 @method_provider(T.MULTIPLY)
 def distributive_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
     """``(a + b) * k`` for positive integers: the plain order and the distributive property.
@@ -197,6 +255,8 @@ def distributive_methods(node: CoreNode, variables: list[str]) -> list[SolveResu
     """
     if len(node.children) != 2:
         return []
+    if (compensation := _compensation_methods(node, variables)) is not None:
+        return compensation
     bracket, factor = node.children
     inner = bracket.children[0] if bracket.type is T.BRACKET else None
     if (

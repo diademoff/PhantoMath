@@ -219,3 +219,13 @@ def test_three_term_sum_with_a_product_is_one_row_after_the_product() -> None:
     ctx = SolveContext(SolveResult())
     route(parse_protocol("{2+3*4-5}"), ctx)
     assert [step.key for step in ctx.result] == ["mul", "sum"]
+
+
+def test_decimal_half_times_integer_offers_compensation() -> None:
+    # Photomath 7.10.0 on device: 1,5*4 has a plain row and a "write as 2 - 0,5" card.
+    group = solve(parse_protocol("{1.5*4}")).result.groups[0]
+    assert len(group.entries) == 2
+    keys = [
+        s["description"]["type"] for st in group.entries[1].result["steps"] for s in st["substeps"]
+    ]
+    assert keys == ["write_as_diff", "mul_bracket", "mul", "mul", "sub"]
