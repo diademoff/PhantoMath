@@ -43,6 +43,14 @@ def pm_cards(pm: dict) -> list[tuple[str, list[list[bool]]]]:
     return out
 
 
+def _covers(ours: list[list[bool]], pm: list[list[bool]]) -> bool:
+    """Same rows and stages; our detail screens may exceed Photomath's, never fall short."""
+    return len(ours) == len(pm) and all(
+        len(o) == len(p) and all(a or not b for a, b in zip(o, p, strict=True))
+        for o, p in zip(ours, pm, strict=True)
+    )
+
+
 def verdict(pm: dict, ours: dict) -> tuple[str, str]:
     cards = pm_cards(pm)
     if pm.get("error") or not cards:
@@ -53,7 +61,7 @@ def verdict(pm: dict, ours: dict) -> tuple[str, str]:
     unused = list(range(len(mine)))
     matched = 0
     for _label, shape in cards:
-        hit = next((i for i in unused if mine[i] == shape), None)
+        hit = next((i for i in unused if _covers(mine[i], shape)), None)
         if hit is not None:
             unused.remove(hit)
             matched += 1

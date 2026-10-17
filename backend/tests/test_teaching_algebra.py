@@ -250,7 +250,7 @@ def test_absolute_equation_cases_are_real_branches() -> None:
     left = node(T.EQUALS, node(T.ABS, n("x-1")), n(2))
     result = absolute.solve_abs_equation(left, ["x"])
     assert result is not None
-    step = next(item for item in result if item.key == "eq_abs_branch")
+    step = next(item for item in result if item.key == "abs_separate")
     work = details(step)
     assert work[0].key == "lesson_alg_abs_nonnegative"
     assert work[-1].key == "lesson_alg_abs_or"

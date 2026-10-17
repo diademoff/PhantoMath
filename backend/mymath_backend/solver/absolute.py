@@ -28,7 +28,7 @@ from typing import Any
 
 import sympy
 
-from ..ast import CoreNode
+from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
 from .base import SolveContext, SolveError, SolveResult, Step, solver_for
 from .sympy_bridge import from_sympy, to_sympy
@@ -154,6 +154,8 @@ def solve_abs_equation(node: CoreNode, variables: list[str]) -> SolveResult | No
     branch_node = _list_node(
         CoreNode.node(T.EQUALS, abs_argument, from_sympy(target)) for target in targets
     )
+    if len(targets) == 2 and len(roots) == 2 and _linear_branches(abs_argument, targets, symbol):
+        return _photomath_rows(node, abs_argument, targets, roots, var, branch_node)
     result.add(Step(left=node, right=None, key="abs_separate", args=[abs_argument]))
     result.add(Step(left=node, right=branch_node, key=_KEY_ABS_BRANCH))
     if not roots:
@@ -163,6 +165,54 @@ def solve_abs_equation(node: CoreNode, variables: list[str]) -> SolveResult | No
 
     solution = _solution_node(var, roots)
     result.add(Step(left=branch_node, right=solution, key=_KEY_FINAL))
+    result.set_solution(solution)
+    return result
+
+
+def _linear_branches(argument: CoreNode, targets: list[sympy.Expr], symbol: sympy.Symbol) -> bool:
+    """Both ``argument = ±g`` are linear in the unknown (the family captured on device)."""
+    try:
+        expression = to_sympy(argument)
+        return sympy.degree(expression, symbol) == 1 and all(t.is_number is True for t in targets)
+    except (SolveError, sympy.PolynomialError, TypeError):
+        return False
+
+
+def _photomath_rows(
+    node: CoreNode,
+    argument: CoreNode,
+    targets: list[sympy.Expr],
+    roots: list[sympy.Expr],
+    var: str,
+    branches: CoreNode,
+) -> SolveResult:
+    """Photomath 7.10.0: split by the definition, solve each linear case, count the roots."""
+    from .equations import solve_methods
+
+    result = SolveResult()
+    x = CoreNode.variable(var)
+    result.add_group("eq_separate_short", Step(node, branches, "abs_separate", [argument]))
+    solved = [CoreNode.node(T.EQUALS, x, from_sympy(root)) for root in roots]
+    symbol = sympy.Symbol(var)
+    pages = []
+    for target in targets:
+        root = sympy.solve(sympy.Eq(to_sympy(argument), target), symbol)[0]
+        root_eq = CoreNode.node(T.EQUALS, x, from_sympy(root))
+        case = CoreNode.node(T.EQUALS, argument, from_sympy(target))
+        pages.append(
+            Step(branches, root_eq, "eq_linear", [x], subresult=solve_methods(case, [var])[0])
+        )
+    result.add_group("eq_solve_short_plural", *pages)
+    solution = _list_node(solved)
+    result.add_group(
+        CoreRichText(type="solution_eq_num", args=[CoreNode.constant(str(len(solved)))]),
+        Step(
+            _list_node(solved),
+            solution,
+            "solution_eq_num",
+            [CoreNode.constant(str(len(solved)))],
+        ),
+    )
     result.set_solution(solution)
     return result
 

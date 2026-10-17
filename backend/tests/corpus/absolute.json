@@ -145,8 +145,9 @@
       },
       "steps": [
         "abs_separate",
-        "eq_abs_branch",
-        "quad_final_single"
+        "eq_linear",
+        "eq_linear",
+        "solution_eq_num"
       ]
     },
     {
@@ -186,8 +187,9 @@
       },
       "steps": [
         "abs_separate",
-        "eq_abs_branch",
-        "quad_final_single"
+        "eq_linear",
+        "eq_linear",
+        "solution_eq_num"
       ]
     },
     {
