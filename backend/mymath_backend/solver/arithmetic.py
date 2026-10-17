@@ -150,11 +150,8 @@ def solve_arithmetic(node: CoreNode, ctx: SolveContext) -> CoreNode:
         args=_step_args(key, node, constant),
         subresult=detail,
     )
-    if detail and detail.header:
-        ctx.result.add_group(detail.header, step)
-    else:
-        # Эталон: операции одного выражения идут этапами одного основного шага.
-        ctx.result.add(step)
+    # Photomath 7.10.0 on device: every operation is its own row (main step).
+    ctx.result.add_group(detail.header if detail and detail.header else key, step)
     return constant
 
 
