@@ -38,6 +38,15 @@ def test_explicit_boundaries_are_not_inferred_from_title() -> None:
     assert len(result.to_vertical().steps) == 2
 
 
+def test_square_of_an_integer_is_a_product_then_calculated() -> None:
+    # Photomath 7.10.0 on device: 5^2 -> 5 x 5 -> 25 as two rows.
+    steps = solve(parse_protocol("{5^2}")).result.groups[0].entries[0].result["steps"]
+    assert [[sub["description"]["type"] for sub in step["substeps"]] for step in steps] == [
+        ["pow_to_mul"],
+        ["mul"],
+    ]
+
+
 @pytest.mark.parametrize("source", ["{2+3*4}", "{2*(3+4)}", "{100/4+6}"])
 def test_arithmetic_operations_are_separate_main_steps(source: str) -> None:
     # Photomath 7.10.0 on device: one row (main step) per operation.

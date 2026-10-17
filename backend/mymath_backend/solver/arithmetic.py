@@ -143,6 +143,21 @@ def solve_arithmetic(node: CoreNode, ctx: SolveContext) -> CoreNode:
         for header, steps in rows:
             ctx.result.add_group(header, *steps)
         return constant
+    if (
+        node.type is T.POWER
+        and values[1] == 2
+        and values[0].denominator == 1
+        and values[0] >= 2
+        and folded[0].type is T.CONSTANT
+    ):
+        # Photomath 7.10.0 on device: n^2 is written as n x n, then multiplied.
+        base = folded[0]
+        product = CoreNode.node(T.MULTIPLY, base, base)
+        ctx.result.add_group(
+            "write_as_mul_short", Step(CoreNode(node.type, children=folded), product, "pow_to_mul")
+        )
+        ctx.result.add_group("calculate_short", Step(product, constant, "mul"))
+        return constant
     detail = product_detail(node.type, values, constant)
     step = Step(
         left=CoreNode(node.type, children=folded),

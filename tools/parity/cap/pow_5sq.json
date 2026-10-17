@@ -1,0 +1,91 @@
+{
+ "id": "pow_5sq",
+ "keys": "5<sq>",
+ "cards": [
+  {
+   "methods": [],
+   "steps": [
+    {
+     "text": "Представить в виде произведения",
+     "keys": [
+      "write_as_mul_short",
+      "write_as_product"
+     ]
+    },
+    {
+     "text": "Вычислить",
+     "keys": [
+      "calculate_short",
+      "multiply"
+     ]
+    },
+    {
+     "text": "Решение",
+     "keys": [
+      "graph_rt_info_solution"
+     ]
+    }
+   ],
+   "walk": [
+    {
+     "stages": [
+      {
+       "text": "Записать возведение в степень как произведение",
+       "nested": []
+      }
+     ]
+    },
+    {
+     "stages": [
+      {
+       "text": "Умножьте числа",
+       "nested": []
+      }
+     ]
+    }
+   ],
+   "title": "Вычислите значение",
+   "subtitle": "Найдите значение"
+  }
+ ],
+ "steps": [
+  {
+   "text": "Представить в виде произведения",
+   "keys": [
+    "write_as_mul_short",
+    "write_as_product"
+   ]
+  },
+  {
+   "text": "Вычислить",
+   "keys": [
+    "calculate_short",
+    "multiply"
+   ]
+  },
+  {
+   "text": "Решение",
+   "keys": [
+    "graph_rt_info_solution"
+   ]
+  }
+ ],
+ "walk": [
+  {
+   "stages": [
+    {
+     "text": "Записать возведение в степень как произведение",
+     "nested": []
+    }
+   ]
+  },
+  {
+   "stages": [
+    {
+     "text": "Умножьте числа",
+     "nested": []
+    }
+   ]
+  }
+ ]
+}

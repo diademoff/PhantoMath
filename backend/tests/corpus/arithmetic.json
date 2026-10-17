@@ -5,57 +5,106 @@
       "id": "order-of-operations",
       "title": "порядок действий: умножение раньше сложения",
       "input": "{2+3*4}",
-      "solution": {"type": "CONSTANT", "value": "14"},
-      "steps": ["mul", "add"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "14"
+      },
+      "steps": [
+        "mul",
+        "add"
+      ]
     },
     {
       "id": "brackets",
       "title": "скобки раньше умножения",
       "input": "{2*(3+4)}",
-      "solution": {"type": "CONSTANT", "value": "14"},
-      "steps": ["add", "mul"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "14"
+      },
+      "steps": [
+        "add",
+        "mul"
+      ]
     },
     {
       "id": "power-chain",
       "title": "правоассоциативная степень 2^3^2",
       "input": "{2^3^2}",
-      "solution": {"type": "CONSTANT", "value": "512"},
-      "steps": ["calculate_short", "calculate_short"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "512"
+      },
+      "steps": [
+        "pow_to_mul",
+        "mul",
+        "calculate_short"
+      ]
     },
     {
       "id": "fraction-addition",
       "title": "сложение дробей точно, без округления",
       "input": "{1/3+1/6}",
-      "solution": {"type": "CONSTANT", "value": "1/2"},
-      "steps": ["div", "div", "frac_sum_common", "add", "frac_reduce"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "1/2"
+      },
+      "steps": [
+        "div",
+        "div",
+        "frac_sum_common",
+        "add",
+        "frac_reduce"
+      ]
     },
     {
       "id": "divide-by-one",
       "title": "деление на единицу",
       "input": "{7/1}",
-      "solution": {"type": "CONSTANT", "value": "7"},
-      "steps": ["div_with_one"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "7"
+      },
+      "steps": [
+        "div_with_one"
+      ]
     },
     {
       "id": "subtract-self",
       "title": "вычитание самого себя",
       "input": "{3-3}",
-      "solution": {"type": "CONSTANT", "value": "0"},
-      "steps": ["sub_with_self"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "0"
+      },
+      "steps": [
+        "sub_with_self"
+      ]
     },
     {
       "id": "unary-minus",
       "title": "унарный минус в сумме",
       "input": "{-2+5}",
-      "solution": {"type": "CONSTANT", "value": "3"},
-      "steps": ["calculate_short", "add"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "3"
+      },
+      "steps": [
+        "calculate_short",
+        "add"
+      ]
     },
     {
       "id": "decimals",
       "title": "десятичные складываются точно",
       "input": "{2.5+0.5}",
-      "solution": {"type": "CONSTANT", "value": "3"},
-      "steps": ["add"]
+      "solution": {
+        "type": "CONSTANT",
+        "value": "3"
+      },
+      "steps": [
+        "add"
+      ]
     }
   ]
 }
