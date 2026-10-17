@@ -1601,6 +1601,52 @@ def _after_moving_left(
     return moved
 
 
+def _scaled_square(node: CoreNode, var: str, k: int, n: int) -> list[SolveResult] | None:
+    """``k x^2 = k n`` with ``n`` a perfect square: divide by ``k``, then the ``x^2 = n`` cards.
+
+    Photomath 7.10.0 (3x^2 = 12): the root card starts with the division, the other three move
+    the constant left and divide before they continue on ``x^2 - n = 0``.
+    """
+    if isqrt(n) ** 2 != n:
+        return None
+    x, kk = CoreNode.variable(var), _num(k)
+    square = _node(T.POWER, x, _num(2))
+    base = _eq(square, _num(n))
+
+    def division(before: CoreNode, after: CoreNode) -> tuple[str | CoreRichText, Step]:
+        detail = SolveResult()
+        detail.add_group(
+            CoreRichText(type="eq_linear_div", args=[kk]),
+            Step(before, after, "eq_linear_div", [kk]),
+        )
+        detail.set_solution(after)
+        return "divide_both_sides", Step(before, after, "eq_linear_div", [kk], subresult=detail)
+
+    root_card = SolveResult()
+    title, step = division(node, base)
+    root_card.add_group(title, step)
+    extracted = _extraction(base, var, -n, moved_already=True)
+    root_card.extend(extracted)
+    root_card.solution = extracted.solution
+    family = _Family(var, 1, 0, -n)
+    scaled = _eq(_poly([(k, 2), (-k * n, 0)], var), _num(0))
+    prefix = _after_moving_left(node, scaled, SolveResult())
+    if prefix is None:
+        return None
+    title, step = division(scaled, family.node)
+    prefix.add_group(title, step)
+    cards = [root_card]
+    for built in [_difference_of_squares(family), *_pure_square_formulas(family.node, var, -n)]:
+        if built is None:
+            continue
+        card = SolveResult()
+        card.extend(prefix)
+        card.extend(built)
+        card.solution = built.solution
+        cards.append(card)
+    return cards
+
+
 def _square_split(n: int) -> tuple[int, int]:
     """``n = big^2 * small`` with the largest ``big``."""
     big = max(d for d in range(1, isqrt(n) + 1) if n % (d * d) == 0)
@@ -1874,6 +1920,8 @@ def methods(
         return None
     ia, ib, ic = int(a), int(b), int(c)
     d = ib * ib - 4 * ia * ic
+    if ia > 1 and ib == 0 and ic < 0 and ic % ia == 0 and node.children[1].type is T.CONSTANT:
+        return _scaled_square(node, var, ia, -ic // ia)
     if d == 0 and ia == 1 and (double := _double_root(node, var, ib, ic)) is not None:
         return double
     if d < 0 and ia == 1 and (negative := _negative_discriminant(node, var, ib, ic)) is not None:

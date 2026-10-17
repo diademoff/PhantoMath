@@ -422,3 +422,11 @@ def test_square_equal_to_a_number_moves_the_constant_only_on_the_other_cards() -
     assert len(group.entries) == 4
     assert _method_keys(group.entries[0])[0] == "quad_sqrt_sides"
     assert all(_method_keys(entry)[0] == "rel_move_left_const" for entry in group.entries[1:])
+
+
+def test_scaled_square_divides_first_on_every_card() -> None:
+    # Photomath 7.10.0 on device: 3x^2=12 has four cards that all divide by 3 early.
+    group = _group("{=({3x^2},{12})}")
+    assert len(group.entries) == 4
+    assert _method_keys(group.entries[0])[0] == "eq_linear_div"
+    assert _method_keys(group.entries[1])[:2] == ["rel_move_left_const", "eq_linear_div"]
