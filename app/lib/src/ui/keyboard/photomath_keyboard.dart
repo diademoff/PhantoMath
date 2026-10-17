@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'dart:math' as math;
 
@@ -393,40 +394,48 @@ class _PhotomathKeyboardState extends State<PhotomathKeyboard> {
                         label: key.description,
                         child: Opacity(
                           opacity: enabled ? 1 : .35,
-                          child: Material(
-                            key: ValueKey(
-                              '${key.code}:${_interactionEpoch[key.code] ?? 0}',
-                            ),
-                            color: key.type == PhKeyType.digit
-                                ? colors.surface
-                                : colors.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(10),
-                            clipBehavior: Clip.antiAlias,
-                            child: InkWell(
-                              key: ValueKey('key:${key.code}'),
-                              onTap: enabled ? () => _apply(key) : null,
-                              onLongPress: extensionsOf(key.code).isEmpty
-                                  ? null
-                                  : () => _variants(key),
-                              child: Stack(
-                                children: [
-                                  Center(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8),
-                                      child: _glyph(key),
-                                    ),
-                                  ),
-                                  if (extensionsOf(key.code).isNotEmpty)
-                                    Positioned(
-                                      right: 5,
-                                      bottom: 3,
-                                      child: Icon(
-                                        Icons.more_horiz,
-                                        size: 12,
-                                        color: colors.onSurfaceVariant,
+                          child: _PressScale(
+                            enabled: enabled,
+                            child: Material(
+                              key: ValueKey(
+                                '${key.code}:${_interactionEpoch[key.code] ?? 0}',
+                              ),
+                              color: key.type == PhKeyType.digit
+                                  ? colors.surface
+                                  : colors.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(10),
+                              clipBehavior: Clip.antiAlias,
+                              child: InkWell(
+                                key: ValueKey('key:${key.code}'),
+                                onTap: enabled
+                                    ? () {
+                                        HapticFeedback.selectionClick();
+                                        _apply(key);
+                                      }
+                                    : null,
+                                onLongPress: extensionsOf(key.code).isEmpty
+                                    ? null
+                                    : () => _variants(key),
+                                child: Stack(
+                                  children: [
+                                    Center(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8),
+                                        child: _glyph(key),
                                       ),
                                     ),
-                                ],
+                                    if (extensionsOf(key.code).isNotEmpty)
+                                      Positioned(
+                                        right: 5,
+                                        bottom: 3,
+                                        child: Icon(
+                                          Icons.more_horiz,
+                                          size: 12,
+                                          color: colors.onSurfaceVariant,
+                                        ),
+                                      ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -447,4 +456,35 @@ class _PhotomathKeyboardState extends State<PhotomathKeyboard> {
       ),
     );
   }
+}
+
+/// Keys sink slightly while pressed, which reads as a physical button.
+class _PressScale extends StatefulWidget {
+  const _PressScale({required this.enabled, required this.child});
+  final bool enabled;
+  final Widget child;
+  @override
+  State<_PressScale> createState() => _PressScaleState();
+}
+
+class _PressScaleState extends State<_PressScale> {
+  bool _down = false;
+  void _set(bool value) {
+    if (_down != value && widget.enabled) setState(() => _down = value);
+  }
+
+  @override
+  Widget build(BuildContext context) => Listener(
+    onPointerDown: (_) => _set(true),
+    onPointerUp: (_) => _set(false),
+    onPointerCancel: (_) => _set(false),
+    child: AnimatedScale(
+      scale: _down ? .93 : 1,
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 90),
+      curve: Curves.easeOut,
+      child: widget.child,
+    ),
+  );
 }

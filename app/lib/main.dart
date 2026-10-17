@@ -657,7 +657,23 @@ class _SolvePageState extends State<SolvePage> {
         },
         child: SafeArea(
           top: _showResult,
-          child: _showResult ? _buildResult() : _buildEditor(),
+          child: _showResult
+              ? TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: 1),
+                  duration: MediaQuery.disableAnimationsOf(context)
+                      ? Duration.zero
+                      : const Duration(milliseconds: 280),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) => Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, 18 * (1 - value)),
+                      child: child,
+                    ),
+                  ),
+                  child: _buildResult(),
+                )
+              : _buildEditor(),
         ),
       ),
     );
