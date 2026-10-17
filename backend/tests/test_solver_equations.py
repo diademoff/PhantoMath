@@ -256,6 +256,24 @@ class TestMethods:
             "solution_eq_num",
         ]
 
+    def test_formula_with_a_negative_c_adds_under_the_root(self) -> None:
+        # Photomath 7.10.0 on device: x^2 - x - 6 = 0 -> sqrt(1 + 24) -> 5.
+        group = _group("{=({x^2-x-6},{0})}")
+        assert _method_keys(group.entries[1]) == [
+            "quad_formula_abc",
+            "mul_with_one",
+            "mul_with_one",
+            "neg_neg_arg",
+            "pow",
+            "mul",
+            "add",
+            "root_square",
+            "quad_separate_signs",
+            "calculate_direct",
+            "calculate_direct",
+            "solution_eq_num",
+        ]
+
     def test_other_quadratics_keep_formula_then_factoring(self) -> None:
         group = _group("{=({x^2+5x+6},{0})}")
         assert _method_keys(group.entries[0]) == [

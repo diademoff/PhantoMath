@@ -7,3 +7,4 @@ ok quad_irr
 ok quad_pos
 ok quad_negc
 ok ineq_gt
+ok ineq_neg

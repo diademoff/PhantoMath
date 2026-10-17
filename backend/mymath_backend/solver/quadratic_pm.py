@@ -178,7 +178,7 @@ def _factoring(f: _Family) -> SolveResult | None:
 
 def _formula(f: _Family) -> SolveResult | None:
     a, b, c, x = f.a, f.b, f.c, f.x
-    if not ((a == 1 and b < 0 < c) or (a > 1 and b > 0 > c)):
+    if not ((a == 1 and b < 0 and c != 0) or (a > 1 and b > 0 > c)):
         return None
     result = SolveResult()
     letters = [CoreNode.variable(v) for v in "abc"]
@@ -243,9 +243,15 @@ def _formula(f: _Family) -> SolveResult | None:
         no_one = state(minus_b, short, _num(2))
         flipped = state(_num(-b), short, _num(2))
         powered = state(
-            _num(-b), _node(T.SUBTRACT, _num(b * b), _node(T.MULTIPLY, _num(4), _num(c))), _num(2)
+            _num(-b), _node(T.SUBTRACT, _num(b * b), _node(T.MULTIPLY, _num(4), _paren(c))), _num(2)
         )
-        multiplied = state(_num(-b), _node(T.SUBTRACT, _num(b * b), _num(four_ac)), _num(2))
+        # a negative 4c turns "b^2 - (-24)" into "b^2 + 24" in the same page
+        merged = (
+            _node(T.SUBTRACT, _num(b * b), _num(four_ac))
+            if c > 0
+            else _node(T.ADD, _num(b * b), _num(-four_ac))
+        )
+        multiplied = state(_num(-b), merged, _num(2))
         pages = [
             Step(start, no_denominator_one, "mul_with_one", [_num(1)]),
             Step(no_denominator_one, no_one, "mul_with_one", [_num(1)]),
@@ -256,12 +262,12 @@ def _formula(f: _Family) -> SolveResult | None:
                 multiplied,
                 "mul",
                 [],
-                subresult=_evaluate(_node(T.MULTIPLY, _num(4), _num(c))),
+                subresult=_evaluate(_node(T.MULTIPLY, _num(4), _paren(c))),
             ),
         ]
         header = ["calculate_short", "remove_bracket_short", "find_value"]
         before_root, shown_b = multiplied, _num(-b)
-        combine = ("sub", _num(b * b - four_ac))
+        combine = ("sub" if c > 0 else "add", _num(f.d))
     else:
         powered = state(
             minus_b,
@@ -288,7 +294,7 @@ def _formula(f: _Family) -> SolveResult | None:
     r = f.root
     rooted = _eq(x, _node(T.FRACTION, _node(T.ADD_SUBTRACT, shown_b, _num(r)), _num(2 * a)))
     result.add_group(
-        "root" if a == 1 else "calculate_short",
+        "root" if f.d == 1 else "calculate_short",
         Step(
             summed,
             rooted,
