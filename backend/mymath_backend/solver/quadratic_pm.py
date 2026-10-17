@@ -195,6 +195,9 @@ def _factoring(f: _Family) -> SolveResult | None:
 
 def _formula(f: _Family) -> SolveResult | None:
     a, b, c, x = f.a, f.b, f.c, f.x
+    if a == 1 and b > 0 and c > 0:  # the two-product rows share the complex-root builder
+        shown = _negative_discriminant(f.node, f.var, b, c)
+        return shown[0] if shown else None
     if not ((a == 1 and b < 0 and c != 0) or (a > 1 and b > 0 > c)):
         return None
     result = SolveResult()
@@ -364,6 +367,8 @@ def _fraction_node(value: Fraction) -> CoreNode:
 
 def _pq_formula(f: _Family) -> SolveResult | None:
     """``x^2 + p x + q = 0`` by the PQ formula, as captured for a = 1 and b < 0."""
+    if f.a == 1 and f.b > 0 and f.b % 2 == 0 and f.c > 0:
+        return _pq_positive(f)
     if f.a != 1 or f.b >= 0:
         return None
     b, c, x = f.b, f.c, f.x
@@ -479,6 +484,76 @@ def _pq_formula(f: _Family) -> SolveResult | None:
         ),
     )
     f.finish(result, [f.solved(half + r), f.solved(half - r)])
+    return result
+
+
+def _pq_positive(f: _Family) -> SolveResult:
+    """``x^2 + p x + q = 0`` with an even ``p > 0`` and ``q > 0``, as captured for x^2 + 4x + 3."""
+    b, c, x = f.b, f.c, f.x
+    p, q, two = CoreNode.variable("p"), CoreNode.variable("q"), _num(2)
+    standard = _eq(
+        _node(T.ADD, _node(T.ADD, _node(T.POWER, x, two), _node(T.MULTIPLY_IMPLICIT, p, x)), q),
+        _num(0),
+    )
+    p_half = _node(T.FRACTION, p, two)
+    template = _eq(
+        x,
+        _node(
+            T.ADD_SUBTRACT,
+            _node(T.NEGATIVE, p_half),
+            _node(T.ROOT2, _node(T.SUBTRACT, _node(T.POWER, _node(T.BRACKET, p_half), two), q)),
+        ),
+    )
+
+    def state(first: CoreNode, inner: CoreNode | None) -> CoreNode:
+        tail = _node(T.ROOT2, inner) if inner is not None else None
+        return _eq(x, _node(T.ADD_SUBTRACT, first, tail) if tail else first)
+
+    half = b // 2
+    b_half = _node(T.FRACTION, _num(b), two)
+    radicand = _node(T.SUBTRACT, _node(T.POWER, _node(T.BRACKET, b_half), two), _num(c))
+    start = state(_node(T.NEGATIVE, b_half), radicand)
+    result = SolveResult()
+    result.add_group(
+        "quad_formula_abc_simple", Step(f.node, start, "quad_formula_pq", [standard, template])
+    )
+    root = f.root // 2
+    reduced = state(_num(-half), radicand)
+    rooted = _eq(x, _node(T.ADD_SUBTRACT, _num(-half), _num(root)))
+    result.add_group(
+        ["frac_reduce_frac", "calculate_short"],
+        Step(
+            start,
+            reduced,
+            "frac_reduce",
+            [two],
+            subresult=_detail(_node(T.NEGATIVE, b_half), _num(-half)),
+        ),
+        Step(reduced, rooted, "calculate_direct"),
+    )
+    plus = _eq(x, _node(T.ADD, _num(-half), _num(root)))
+    minus = _eq(x, _node(T.SUBTRACT, _num(-half), _num(root)))
+    listed = _node(T.LIST, plus, minus)
+    result.add_group("quad_separate", Step(rooted, listed, "quad_separate_signs", list(_SIGNS)))
+    low, high = -half - root, -half + root
+    result.add_group(
+        ["calc_sum", "calc_diff"],
+        Step(
+            listed,
+            f.solved(Fraction(high)),
+            "calc_sum",
+            [],
+            subresult=_detail(plus.children[1], _num(high)),
+        ),
+        Step(
+            listed,
+            f.solved(Fraction(low)),
+            "calc_diff",
+            [],
+            subresult=_detail(minus.children[1], _num(low)),
+        ),
+    )
+    f.finish(result, [f.solved(Fraction(high)), f.solved(Fraction(low))])
     return result
 
 
@@ -1076,8 +1151,8 @@ def _negative_discriminant(node: CoreNode, var: str, b: int, c: int) -> list[Sol
     negative number is not defined", and the two discriminant cards.
     """
     d = b * b - 4 * c
-    m = isqrt(-d) if d < 0 else 0
-    if b <= 0 or c <= 0 or d >= 0 or m * m != -d:
+    m = isqrt(abs(d))
+    if b <= 0 or c <= 0 or d == 0 or m * m != abs(d):
         return None
     x, two, num = CoreNode.variable(var), _num(2), _num
     unit = CoreNode.node(T.IMAGINARY)
@@ -1148,24 +1223,21 @@ def _negative_discriminant(node: CoreNode, var: str, b: int, c: int) -> list[Sol
                 subresult=_evaluate(_node(T.MULTIPLY, num(4), num(c))),
             ),
         )
-        negative = _node(T.NEGATIVE, num(-d))
+        negative = _node(T.NEGATIVE, num(-d)) if d < 0 else num(d)
         subtracted = state(minus_b, negative, two)
+        # a negative difference has a detail screen of its own; a positive one does not
+        detail = _detail(_node(T.SUBTRACT, num(b * b), num(4 * c)), negative) if d < 0 else None
         result.add_group(
             "calculate_short",
-            Step(
-                multiplied,
-                subtracted,
-                "calc_diff",
-                [],
-                subresult=_detail(_node(T.SUBTRACT, num(b * b), num(4 * c)), negative),
-            ),
+            Step(multiplied, subtracted, "calc_diff", [], subresult=detail),
         )
         return subtracted
 
     # -- complex roots
     complex_result = SolveResult()
     subtracted = common_rows(complex_result)
-    root_value = imaginary(Fraction(m))
+    negative_radicand = _node(T.NEGATIVE, num(-d)) if d < 0 else num(d)
+    root_value = imaginary(Fraction(m)) if d < 0 else num(m)
     rooted = _eq(
         x, _node(T.FRACTION, _node(T.ADD_SUBTRACT, _node(T.NEGATIVE, num(b)), root_value), two)
     )
@@ -1176,7 +1248,7 @@ def _negative_discriminant(node: CoreNode, var: str, b: int, c: int) -> list[Sol
             rooted,
             "root_square",
             [],
-            subresult=_detail(_node(T.ROOT2, _node(T.NEGATIVE, num(-d))), root_value),
+            subresult=_detail(_node(T.ROOT2, negative_radicand), root_value),
         ),
     )
     parts = [
@@ -1190,6 +1262,10 @@ def _negative_discriminant(node: CoreNode, var: str, b: int, c: int) -> list[Sol
     real_part, imaginary_part = Fraction(-b, 2), Fraction(m, 2)
 
     def value(sign: T) -> CoreNode:
+        if d > 0:
+            return _fraction_node(
+                real_part + (imaginary_part if sign is T.ADD else -imaginary_part)
+            )
         return _node(sign, _fraction_node(real_part), imaginary(imaginary_part))
 
     roots = [_eq(x, value(T.ADD)), _eq(x, value(T.SUBTRACT))]
@@ -1208,6 +1284,8 @@ def _negative_discriminant(node: CoreNode, var: str, b: int, c: int) -> list[Sol
         Step(listed, answer, "solution_eq_num", [two]),
     )
     complex_result.set_solution(answer)
+    if d > 0:  # real roots: Photomath's formula card only
+        return [complex_result]
 
     # -- the same formula, stopping where the real numbers end
     real_result = SolveResult()

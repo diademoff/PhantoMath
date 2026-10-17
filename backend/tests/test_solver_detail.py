@@ -41,15 +41,15 @@ class TestDetail:
         assert all(key == "find_derivative" for key in keys)
 
     def test_quadratic_discriminant_and_roots(self) -> None:
-        # x^2 + 5x + 6 = 0 keeps the discriminant/roots-formula flow (outside the captured family).
+        # 2x^2 + 5x + 2 = 0 keeps the discriminant/roots-formula flow (outside the captured family).
         polynomial = CoreNode.node(
             T.ADD,
             CoreNode.node(
                 T.ADD,
-                CoreNode.node(T.POWER, x(), c("2")),
+                CoreNode.node(T.MULTIPLY_IMPLICIT, c("2"), CoreNode.node(T.POWER, x(), c("2"))),
                 CoreNode.node(T.MULTIPLY_IMPLICIT, c("5"), x()),
             ),
-            c("6"),
+            c("2"),
         )
         equation = CoreNode.node(T.EQUALS, polynomial, c("0"))
         with_detail = [sub for sub in substeps(equation) if sub.subresult is not None]

@@ -317,7 +317,7 @@ class TestMethods:
         assert all(r.children[0].value == "-1" for r in roots)
 
     def test_other_quadratics_keep_formula_then_factoring(self) -> None:
-        group = _group("{=({x^2+5x+6},{0})}")
+        group = _group("{=({2x^2+5x+2},{0})}")
         assert _method_keys(group.entries[0]) == [
             "eq_quad_coeff_identify",
             "eq_quad_disc",
@@ -391,3 +391,11 @@ def test_negative_leading_coefficient_adds_standard_and_implicit_form_cards() ->
     assert len(group.entries) == 3
     assert _method_keys(group.entries[1])[-1] == "eq_linear_neg"
     assert _method_keys(group.entries[2])[0] == "rel_move_left_const"
+
+
+def test_positive_sum_quadratic_has_four_photomath_methods() -> None:
+    # Photomath 7.10.0 on device: x^2+4x+3=0 is factoring, roots formula, PQ formula, completing square.
+    group = _group("{=({x^2+4x+3},{0})}")
+    assert len(group.entries) == 4
+    assert _method_keys(group.entries[1])[:2] == ["quad_formula_abc", "mul_with_one"]
+    assert _method_keys(group.entries[2])[0] == "quad_formula_pq"
