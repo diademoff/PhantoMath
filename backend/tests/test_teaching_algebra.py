@@ -137,7 +137,7 @@ def test_roots_and_positive_rational_powers(left: CoreNode, right: CoreNode) -> 
 
 def test_actual_root_solver_step() -> None:
     result = SolveResult()
-    powers.solve_root(node(T.ROOT2, n(16)), SolveContext(result))
+    powers.solve_root(node(T.ROOT2, n("4/9")), SolveContext(result))
     assert_expression_chain(details(next(iter(result))))
 
 

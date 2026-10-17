@@ -44,9 +44,21 @@ def value_of(problem: CoreNode) -> str | None:
 
 
 class TestRoots:
+    def test_square_root_with_a_square_factor_is_pulled_out(self) -> None:
+        # Photomath 7.10.0 on device: three rows, the answer is 2*sqrt(3).
+        problem = node(T.ROOT2, c("12"))
+        assert step_keys(problem) == ["root_partial_split_arg", "root_mul_each", "root_reduce"]
+        answer = solution_of(problem)
+        assert answer.type is T.MULTIPLY_IMPLICIT
+        assert [child.value for child in answer.children[:1]] == ["2"]
+        assert answer.children[1].type is T.ROOT2 and answer.children[1].children[0].value == "3"
+
+    def test_square_free_root_has_no_steps(self) -> None:
+        assert step_keys(node(T.ROOT2, c("2"))) == []
+
     def test_square_root_exact(self) -> None:
         assert value_of(node(T.ROOT2, c("25"))) == "5"
-        assert step_keys(node(T.ROOT2, c("25"))) == ["root_simplify"]
+        assert step_keys(node(T.ROOT2, c("25"))) == ["pow_to_same_base", "root_reduce"]
 
     def test_cube_root_exact(self) -> None:
         assert value_of(node(T.ROOT, c("3"), c("27"))) == "3"
@@ -95,7 +107,7 @@ class TestWithArithmetic:
     def test_root_combines_with_numbers(self) -> None:
         problem = node(T.ADD, node(T.ROOT2, c("16")), c("1"))
         assert value_of(problem) == "5"
-        assert step_keys(problem) == ["root_simplify", "add"]
+        assert step_keys(problem) == ["pow_to_same_base", "root_reduce", "add"]
 
     def test_log_combines_with_numbers(self) -> None:
         problem = node(T.ADD, node(T.LOG10, c("1000")), c("1"))

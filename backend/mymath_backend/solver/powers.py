@@ -25,7 +25,7 @@ from math import isqrt
 from ..ast import CoreNode
 from ..node_types import CoreNodeType as T
 from .arithmetic import format_number
-from .base import SolveContext, SolveError, Step, fold_semantically, solver_for
+from .base import SolveContext, SolveError, SolveResult, Step, fold_semantically, solver_for
 
 _KEY_ROOT = "root_simplify"
 _KEY_CALCULATE = "calculate_short"
@@ -119,11 +119,59 @@ def solve_root(node: CoreNode, ctx: SolveContext) -> CoreNode:
         degree = degree_value
 
     root = _exact_root(radicand, degree)
+    integer = _integer(radicand)
+    if (
+        degree == 2
+        and integer is not None
+        and integer > 1
+        and (root is None or root.denominator == 1)
+    ):
+        return _square_root_rows(node, integer, ctx) or kept
     if root is None:
         return kept
 
     result = CoreNode.constant(format_number(root))
     ctx.result.add(Step(left=node, right=result, key=_KEY_ROOT))
+    return result
+
+
+def _square_root_rows(node: CoreNode, n: int, ctx: SolveContext) -> CoreNode | None:
+    """Photomath 7.10.0 rows for a square root of an integer: via a power, or pulling a factor out.
+
+    ``None`` when ``n`` is square-free (nothing to simplify).
+    """
+    k = max(c for c in range(1, isqrt(n) + 1) if n % (c * c) == 0)
+    if k == 1:
+        return None
+
+    def number(value: int) -> CoreNode:
+        return CoreNode.constant(str(value))
+
+    def square(value: int) -> CoreNode:
+        return CoreNode.node(T.POWER, number(value), number(2))
+
+    root_of = lambda inner: CoreNode.node(T.ROOT2, inner)  # noqa: E731
+    two = number(2)
+    rest = n // (k * k)
+    if rest == 1:
+        result = number(k)
+        powered = root_of(square(k))
+        ctx.result.add_group(
+            "write_as_exp_short", Step(node, powered, "pow_to_same_base", [number(k)])
+        )
+        ctx.result.add_group("root_partial", Step(powered, result, "root_reduce", [two]))
+        return result
+    result = CoreNode.node(T.MULTIPLY_IMPLICIT, number(k), root_of(number(rest)))
+    factored = root_of(CoreNode.node(T.MULTIPLY, square(k), number(rest)))
+    split = CoreNode.node(T.MULTIPLY, root_of(square(k)), root_of(number(rest)))
+    detail = SolveResult()
+    detail.add_group("root_reduce", Step(split, result, "root_reduce", [two]))
+    detail.set_solution(result)
+    ctx.result.add_group("factorise_call", Step(node, factored, "root_partial_split_arg", [two]))
+    ctx.result.add_group("root_radical_msg", Step(factored, split, "root_mul_each"))
+    ctx.result.add_group(
+        "root_partial", Step(split, result, "root_reduce", [two], subresult=detail)
+    )
     return result
 
 

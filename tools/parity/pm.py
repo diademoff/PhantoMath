@@ -289,6 +289,17 @@ def crawl(task_id: str, keys: str) -> dict:
     time.sleep(3)
     done: set[tuple[str, str]] = set()
     last_seen = None
+
+    def open_card(x: int, y: int, title: str, sub: str) -> None:
+        done.add((title, sub))
+        ui.adb("shell", "input", "tap", str(x), str(y))
+        time.sleep(3)
+        card = _card_steps(task_id, len(res["cards"]), kmap)
+        card.update(title=title, subtitle=sub)
+        res["cards"].append(card)
+        ui.adb("shell", "input", "keyevent", "KEYCODE_BACK")
+        time.sleep(1.5)
+
     for _ in range(14):
         root = ui.dump(f"{task_id}_res")
         todo = [b for b in _buttons(root) if (b[2], b[3]) not in done]
@@ -300,14 +311,20 @@ def crawl(task_id: str, keys: str) -> dict:
             swipe_up()
             continue
         x, y, title, sub = todo[0]
-        done.add((title, sub))
-        ui.adb("shell", "input", "tap", str(x), str(y))
-        time.sleep(3)
-        card = _card_steps(task_id, len(res["cards"]), kmap)
-        card.update(title=title, subtitle=sub)
-        res["cards"].append(card)
-        ui.adb("shell", "input", "keyevent", "KEYCODE_BACK")
-        time.sleep(1.5)
+        open_card(x, y, title, sub)
+        # A card may be a pager of solution methods: swipe it left and open each page.
+        pages = 0
+        for _page in range(5):
+            ui.adb("shell", "input", "swipe", "900", str(y - 250), "180", str(y - 250), "300")
+            time.sleep(1.2)
+            nxt = [b for b in _buttons(ui.dump(f"{task_id}_pg")) if abs(b[1] - y) < 160]
+            if not nxt or (nxt[0][2], nxt[0][3]) in done:
+                break
+            pages += 1
+            open_card(nxt[0][0], nxt[0][1], nxt[0][2], nxt[0][3])
+        for _ in range(pages + 1):  # back to the first method
+            ui.adb("shell", "input", "swipe", "180", str(y - 250), "900", str(y - 250), "300")
+            time.sleep(0.6)
     if res["cards"]:  # compatibility with compare.py: first card is the primary solution
         res["steps"], res["walk"] = res["cards"][0]["steps"], res["cards"][0]["walk"]
     (CAP / f"{task_id}.json").write_text(json.dumps(res, ensure_ascii=False, indent=1))
