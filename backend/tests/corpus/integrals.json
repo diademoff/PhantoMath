@@ -6,30 +6,57 @@
       "title": "первообразная x^2",
       "input": "{integral({x^2})}",
       "solution": {
-        "type": "FRACTION",
+        "type": "LIST",
         "children": [
           {
-            "type": "POWER",
+            "type": "ADD",
             "children": [
               {
-                "type": "VARIABLE",
-                "value": "x"
+                "type": "FRACTION",
+                "children": [
+                  {
+                    "type": "POWER",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "x"
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "3"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "3"
+                  }
+                ]
               },
               {
-                "type": "CONSTANT",
-                "value": "3"
+                "type": "VARIABLE",
+                "value": "C"
               }
             ]
           },
           {
-            "type": "CONSTANT",
-            "value": "3"
+            "type": "ELEMENT_OF",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "C"
+              },
+              {
+                "type": "VARIABLE",
+                "value": "ℝ"
+              }
+            ]
           }
         ]
       },
       "steps": [
-        "integrate",
-        "integrate_calc"
+        "integrate_msg",
+        "integrate_msg_addc"
       ]
     },
     {
@@ -235,30 +262,57 @@
       "title": "первообразная x^3",
       "input": "{integral({x^3})}",
       "solution": {
-        "type": "FRACTION",
+        "type": "LIST",
         "children": [
           {
-            "type": "POWER",
+            "type": "ADD",
             "children": [
               {
-                "type": "VARIABLE",
-                "value": "x"
+                "type": "FRACTION",
+                "children": [
+                  {
+                    "type": "POWER",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "x"
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "4"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "4"
+                  }
+                ]
               },
               {
-                "type": "CONSTANT",
-                "value": "4"
+                "type": "VARIABLE",
+                "value": "C"
               }
             ]
           },
           {
-            "type": "CONSTANT",
-            "value": "4"
+            "type": "ELEMENT_OF",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "C"
+              },
+              {
+                "type": "VARIABLE",
+                "value": "ℝ"
+              }
+            ]
           }
         ]
       },
       "steps": [
-        "integrate",
-        "integrate_calc"
+        "integrate_msg",
+        "integrate_msg_addc"
       ]
     },
     {

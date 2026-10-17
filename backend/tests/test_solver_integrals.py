@@ -51,7 +51,6 @@ class TestIndefinite:
     @pytest.mark.parametrize(
         ("expression", "expected"),
         [
-            (node(T.POWER, var(), c("2")), x**3 / 3),
             (node(T.ADD, node(T.MULTIPLY, c("2"), var()), c("3")), x**2 + 3 * x),
             (node(T.SIN, var()), -sympy.cos(x)),
             (node(T.DIVIDE, c("1"), var()), sympy.log(x)),
@@ -62,6 +61,14 @@ class TestIndefinite:
     def test_antiderivative(self, expression: CoreNode, expected: sympy.Expr) -> None:
         result = solution_of(node(T.INTEGRAL, expression))
         assert sympy.simplify(to_sympy(result) - expected) == 0
+
+    def test_power_rule_adds_the_constant_of_integration(self) -> None:
+        # Photomath 7.10.0 on device: the answer is x^3/3 + C, C in R, in two rows.
+        problem = node(T.INTEGRAL, node(T.POWER, var(), c("2")))
+        result = solution_of(problem)
+        assert result.type is T.LIST and result.children[1].type is T.ELEMENT_OF
+        assert sympy.simplify(to_sympy(result.children[0]) - (x**3 / 3 + sympy.Symbol("C"))) == 0
+        assert step_keys(problem) == ["integrate_msg", "integrate_msg_addc"]
 
     def test_step_key(self) -> None:
         problem = node(T.INTEGRAL, var())
@@ -172,7 +179,7 @@ class TestMethod:
         return [sub.description.type for step in vertical.steps for sub in step.substeps]
 
     def test_table_has_no_method_step(self) -> None:
-        assert self.keys_of(node(T.INTEGRAL, node(T.POWER, var(), c("2")))) == [
+        assert self.keys_of(node(T.INTEGRAL, node(T.SIN, var()))) == [
             "integrate",
             "integrate_calc",
         ]

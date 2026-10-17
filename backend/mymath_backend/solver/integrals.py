@@ -24,9 +24,9 @@ import itertools
 
 import sympy
 
-from ..ast import CoreNode
+from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
-from .base import SolveContext, SolveError, Step, solver_for
+from .base import SolveContext, SolveError, SolveResult, Step, solver_for
 from .sympy_bridge import from_sympy, to_sympy
 
 
@@ -48,10 +48,64 @@ def solve_integral(node: CoreNode, ctx: SolveContext) -> CoreNode:
     return _definite_integral(node, ctx)
 
 
+def _power_rule_rows(node: CoreNode, symbol: sympy.Symbol, ctx: SolveContext) -> CoreNode | None:
+    """``integral x^n dx`` (integer n >= 2) in Photomath 7.10.0's rows.
+
+    The power rule on a detail screen of its own, then the constant of integration.
+    """
+    body = node.children[-1]
+    if not (
+        body.type is T.POWER
+        and body.children[0].type is T.VARIABLE
+        and body.children[0].value == str(symbol)
+        and body.children[1].type is T.CONSTANT
+        and (body.children[1].value or "").isdigit()
+        and int(body.children[1].value or "0") >= 2
+    ):
+        return None
+    n = int(body.children[1].value or "0")
+    num, eq = CoreNode.constant, CoreNode.node
+    x = body.children[0]
+    antiderivative = eq(T.FRACTION, eq(T.POWER, x, num(str(n + 1))), num(str(n + 1)))
+    unsimplified = eq(
+        T.FRACTION,
+        eq(T.POWER, x, eq(T.ADD, num(str(n)), num("1"))),
+        eq(T.ADD, num(str(n)), num("1")),
+    )
+    letter = CoreNode.variable("n")
+    rule = eq(
+        T.EQUALS,
+        eq(T.INTEGRAL, eq(T.POWER, x, letter)),
+        eq(
+            T.FRACTION,
+            eq(T.POWER, x, eq(T.ADD, letter, num("1"))),
+            eq(T.ADD, letter, num("1")),
+        ),
+    )
+    detail = SolveResult()
+    detail.add_group("integrate_msg", Step(node, unsimplified, "integrate_msg", [rule]))
+    detail.add_group("calculate_short", Step(unsimplified, antiderivative, "add"))
+    detail.set_solution(antiderivative)
+    ctx.result.add_group(
+        "find_integral",
+        Step(node, antiderivative, "integrate_msg", [rule], subresult=detail),
+    )
+    constant = CoreNode.variable("C")
+    member = eq(T.ELEMENT_OF, constant, CoreNode.variable("ℝ"))
+    answer = eq(T.LIST, eq(T.ADD, antiderivative, constant), member)
+    ctx.result.add_group(
+        CoreRichText(type="add_arg", args=[member]),
+        Step(antiderivative, answer, "integrate_msg_addc", [member]),
+    )
+    return answer
+
+
 def _indefinite_integral(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Неопределённый интеграл: первообразная."""
     symbol = _variable(ctx)
     ctx.require(len(node.children) >= 1, "интеграл без подынтегрального выражения")
+    if (power := _power_rule_rows(node, symbol, ctx)) is not None:
+        return power
     expression = to_sympy(node.children[-1])
     ctx.result.add(Step(left=node, right=None, key="integrate"))
     method_key = _integral_method(expression, symbol)
