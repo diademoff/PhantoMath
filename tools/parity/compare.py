@@ -33,7 +33,7 @@ def pm_cards(pm: dict) -> list[tuple[str, list[list[bool]]]]:
             continue
         label = (card.get("title", ""), card.get("subtitle", ""))
         shape = [[bool(st["nested"]) for st in g["stages"]] for g in card["walk"]]
-        key = (label, str(shape))
+        key = (label[1], str(shape))  # a card repeats once its group title is scrolled off
         if key in seen:
             continue
         seen.add(key)

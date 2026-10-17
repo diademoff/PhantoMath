@@ -562,6 +562,118 @@ def _bracket_times_number(node: CoreNode, var: str) -> SolveResult | None:
     return result
 
 
+def _negative_linear_methods(node: CoreNode, var: str) -> list[SolveResult] | None:
+    """``-a x + b = c`` (integers, ``a >= 2``, ``b > 0``, ``c > b``): the two extra cards.
+
+    Photomath 7.10.0 shows, beside the ordinary rows, a "standard form" card that divides by
+    ``a`` and then changes both signs, and an "implicit form" card that moves ``c`` left first.
+    """
+    left, right = _simple_side(node.children[0], var), _simple_side(node.children[1], var)
+    if left is None or right is None or right[0] != 0:
+        return None
+    (a, b), c = left, right[1]
+    if any(v.denominator != 1 for v in (a, b, c)) or not (a <= -2 and b > 0 and c > b):
+        return None
+    rest = c - b
+    if rest % -a:
+        return None
+    eq = CoreNode.node
+    x = CoreNode.variable(var)
+    k, half = -a, rest / -a
+
+    def system(left_side: CoreNode, right_side: CoreNode) -> CoreNode:
+        return eq(T.EQUALS, left_side, right_side)
+
+    def swap_detail(before: CoreNode, balanced: CoreNode, after: CoreNode, key: str) -> SolveResult:
+        detail = SolveResult()
+        detail.add_group(key, Step(before, balanced, key))
+        detail.add_group("remove_opposites", Step(balanced, after, "remove_opposites"))
+        detail.set_solution(after)
+        return detail
+
+    def divide_detail(before: CoreNode, after: CoreNode, divisor: Fraction) -> SolveResult:
+        detail = SolveResult()
+        detail.add_group(
+            CoreRichText(type="eq_linear_div", args=[_const(divisor)]),
+            Step(before, after, "eq_linear_div", [_const(divisor)]),
+        )
+        detail.set_solution(after)
+        return detail
+
+    term, three, seven, four = _x_term(a, var), _const(b), _const(c), _const(rest)
+
+    # -- standard form: move 3, subtract, divide by 2, change the signs
+    standard = SolveResult()
+    moved = system(term, eq(T.SUBTRACT, seven, three))
+    balanced = system(eq(T.SUBTRACT, node.children[0], three), eq(T.SUBTRACT, seven, three))
+    standard.add_group(
+        "rel_move_right_const_msg",
+        Step(
+            node,
+            moved,
+            "rel_move_right_const",
+            subresult=swap_detail(node, balanced, moved, "rel_swap_right_const"),
+        ),
+    )
+    calculated = system(term, four)
+    standard.add_group("calculate_short", Step(moved, calculated, "sub"))
+    negated = system(_x_term(Fraction(-1), var), _const(half))
+    standard.add_group(
+        "divide_both_sides",
+        Step(
+            calculated,
+            negated,
+            "eq_linear_div",
+            [_const(Fraction(k))],
+            subresult=divide_detail(calculated, negated, Fraction(k)),
+        ),
+    )
+    answer = _equation(var, _const(-half))
+    flip = SolveResult()
+    flip.add_group("eq_linear_neg", Step(negated, answer, "eq_linear_neg"))
+    flip.set_solution(answer)
+    standard.add_group("rel_linear_neg_msg", Step(negated, answer, "eq_linear_neg", subresult=flip))
+    standard.set_solution(answer)
+
+    # -- implicit form: move 7 to the left, subtract, divide by -2
+    implicit = SolveResult()
+    zero_form = system(eq(T.SUBTRACT, node.children[0], seven), _const(Fraction(0)))
+    balanced = system(eq(T.SUBTRACT, node.children[0], seven), eq(T.SUBTRACT, seven, seven))
+    implicit.add_group(
+        "rel_move_left_const_msg",
+        Step(
+            node,
+            zero_form,
+            "rel_move_left_const",
+            subresult=swap_detail(node, balanced, zero_form, "rel_swap_left_const"),
+        ),
+    )
+    reduced = system(eq(T.SUBTRACT, term, four), _const(Fraction(0)))
+    inner = eq(T.SUBTRACT, three, seven)
+    implicit.add_group(
+        "calculate_short",
+        Step(
+            zero_form,
+            reduced,
+            "calc_diff",
+            subresult=quadratic_pm._detail(inner, _const(Fraction(-rest))),
+        ),
+    )
+    final = system(eq(T.ADD, x, _const(half)), _const(Fraction(0)))
+    implicit.add_group(
+        "divide_both_sides",
+        Step(
+            reduced,
+            final,
+            "eq_linear_div",
+            [_const(a)],
+            subresult=divide_detail(reduced, final, a),
+        ),
+    )
+    implicit.set_solution(final)
+    return [standard, implicit]
+
+
 def _reciprocal_equation(node: CoreNode, var: str) -> SolveResult | None:
     """``1 / x = d`` for an integer ``d >= 2``: restriction, multiply, swap, divide, check.
 
@@ -1774,6 +1886,8 @@ def solve_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
         already = poly_of(lhs, var) == {1: a} and poly_of(rhs, var) == {0: -b}
         # Второй способ — сначала разделить обе части на коэффициент; он
         # отличается от первого, только если есть что переносить и делить.
+        if (extra := _negative_linear_methods(node, var)) is not None:
+            return methods[:1] + extra
         if a != 1 and b != 0 and not already:
             methods.append(
                 _run(

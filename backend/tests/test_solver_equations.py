@@ -383,3 +383,11 @@ def test_reciprocal_equation_has_the_five_photomath_rows() -> None:
         "eq_linear_div",
         "rel_restrictions_check",
     ]
+
+
+def test_negative_leading_coefficient_adds_standard_and_implicit_form_cards() -> None:
+    # Photomath 7.10.0 on device: -2x+3=7 has the ordinary card plus two more.
+    group = _group("{=({-2x+3},{7})}")
+    assert len(group.entries) == 3
+    assert _method_keys(group.entries[1])[-1] == "eq_linear_neg"
+    assert _method_keys(group.entries[2])[0] == "rel_move_left_const"
