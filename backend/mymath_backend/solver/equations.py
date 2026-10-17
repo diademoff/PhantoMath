@@ -391,6 +391,28 @@ def _linear_rows(
             eq(T.FRACTION, current.children[0], _const(coefficient)),
             eq(T.FRACTION, current.children[1], _const(coefficient)),
         )
+        if relation is not T.EQUALS and coefficient < 0 < total:
+            # Photomath: the flip is its own row, then the quotient is explained page by page
+            by_self = eq(
+                final,
+                CoreNode.variable(var),
+                eq(T.FRACTION, current.children[1], _const(coefficient)),
+            )
+            by_sign = eq(
+                final,
+                CoreNode.variable(var),
+                eq(T.NEGATIVE, eq(T.FRACTION, _const(total), _const(-coefficient))),
+            )
+            ctx.result.add_group(
+                "divide_both_sides", Step(current, divided, divide_key, [_const(coefficient)])
+            )
+            ctx.result.add_group(
+                "divide",
+                Step(divided, by_self, "div_with_self", [_const(Fraction(1))]),
+                Step(by_self, by_sign, "div_pos_neg", [CoreNode.variable("−")]),
+                Step(by_sign, solution, "quotient"),
+            )
+            return solution
         detail = SolveResult()
         detail.add_group(
             CoreRichText(type=divide_key, args=[_const(coefficient)]),

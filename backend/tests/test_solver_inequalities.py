@@ -63,7 +63,12 @@ class TestSolve:
         solution = solution_of(problem)
         assert solution.type is T.GREATER_THAN
         assert solution.children[1].value == "-2"
-        assert step_keys(problem) == ["ineq_linear_div_neg"]
+        assert step_keys(problem) == [
+            "ineq_linear_div_neg",
+            "div_with_self",
+            "div_pos_neg",
+            "quotient",
+        ]
 
     def test_already_isolated(self) -> None:
         problem = ineq(T.GREATER_THAN_EQUAL, var("x"), c("3"))

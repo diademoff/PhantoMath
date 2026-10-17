@@ -231,6 +231,10 @@ def test_actual_inequality_steps_reverse_only_negative_divisor(
     left = node(kind, n(f"{coefficient}*x"), n(rhs))
     result = SolveResult()
     inequalities.solve_inequality(left, SolveContext(result, ["x"]))
+    if coefficient < 0:  # Photomath shows the flip as its own row, without a nested screen
+        flip = next(item for item in result if item.key == "ineq_linear_div_neg")
+        assert flip.right is not None and flip.right.type is not kind
+        return
     step = list(result)[-1]
     assert step.subresult is not None
     work = list(step.subresult)

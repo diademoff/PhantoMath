@@ -42,7 +42,10 @@
         ]
       },
       "steps": [
-        "ineq_linear_div_neg"
+        "ineq_linear_div_neg",
+        "div_with_self",
+        "div_pos_neg",
+        "quotient"
       ]
     },
     {
