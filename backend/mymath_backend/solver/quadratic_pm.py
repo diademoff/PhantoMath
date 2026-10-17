@@ -39,15 +39,14 @@ def _eq(left: CoreNode, right: CoreNode) -> CoreNode:
     return _node(T.EQUALS, left, right)
 
 
-def _mono(coefficient: int, degree: int, var: str) -> CoreNode:
+def _mono(coefficient: int | Fraction, degree: int, var: str) -> CoreNode:
     """``|c| x^degree``; a coefficient of 1 is left out."""
     x = CoreNode.variable(var)
     base = {2: _node(T.POWER, x, _num(2)), 1: x}.get(degree)
+    size = abs(Fraction(coefficient))
     if base is None:
-        return _num(abs(coefficient))
-    return (
-        base if abs(coefficient) == 1 else _node(T.MULTIPLY_IMPLICIT, _num(abs(coefficient)), base)
-    )
+        return _num(size)
+    return base if size == 1 else _node(T.MULTIPLY_IMPLICIT, _num(size), base)
 
 
 def _chain(items: list[tuple[int, CoreNode]]) -> CoreNode:
@@ -59,7 +58,7 @@ def _chain(items: list[tuple[int, CoreNode]]) -> CoreNode:
     return out
 
 
-def _poly(terms: list[tuple[int, int]], var: str) -> CoreNode:
+def _poly(terms: list[tuple[int | Fraction, int]], var: str) -> CoreNode:
     """Sum of ``(coefficient, degree)`` terms in the given order, zero terms dropped."""
     return _chain([(1 if c > 0 else -1, _mono(c, d, var)) for c, d in terms if c != 0])
 
@@ -558,20 +557,23 @@ def _pq_positive(f: _Family) -> SolveResult:
 
 
 def _completing_square(f: _Family) -> SolveResult | None:
-    """Completing the square for ``x^2 + b x + c = 0`` (a = 1), captured for three sign families."""
-    if f.a != 1:
+    """Completing the square: ``a = 1`` for three sign families, ``a > 1`` for ``b > 0 > c``."""
+    if f.a != 1 and not (f.a > 1 and f.b > 0 > f.c):
         return None
-    b, c, x, var = f.b, f.c, f.x, f.var
-    half = Fraction(b, 2)
+    a, x, var = f.a, f.x, f.var
+    c: int | Fraction = f.c
+    b = Fraction(f.b, a)  # the middle coefficient once the equation is divided by a
+    half = b / 2
     left = _poly([(1, 2), (b, 1)], var)
+    head = _poly([(a, 2), (f.b, 1)], var)
     hole = CoreNode.variable("?")
     new = _fraction_node(half * half)
     result = SolveResult()
 
-    moved = _eq(left, _num(-c))
+    moved = _eq(head, _num(-f.c))
     balanced = _eq(
-        _node(T.ADD if c < 0 else T.SUBTRACT, f.node.children[0], _num(abs(c))),
-        _node(T.ADD if c < 0 else T.SUBTRACT, _num(0), _num(abs(c))),
+        _node(T.ADD if c < 0 else T.SUBTRACT, f.node.children[0], _num(abs(f.c))),
+        _node(T.ADD if c < 0 else T.SUBTRACT, _num(0), _num(abs(f.c))),
     )
     swap = SolveResult()
     swap.add_group("rel_swap_right_const", Step(f.node, balanced, "rel_swap_right_const"))
@@ -580,6 +582,20 @@ def _completing_square(f: _Family) -> SolveResult | None:
     result.add_group(
         "rel_move_right_const_msg", Step(f.node, moved, "rel_move_right_const", subresult=swap)
     )
+    divided = _eq(left, _num(Fraction(-c, a)))
+    if a > 1:
+        divide = SolveResult()
+        divide.add_group(
+            CoreRichText(type="eq_linear_div", args=[_num(a)]),
+            Step(moved, divided, "eq_linear_div", [_num(a)]),
+        )
+        divide.set_solution(divided)
+        result.add_group(
+            "divide_both_sides",
+            Step(moved, divided, "eq_linear_div", [_num(a)], subresult=divide),
+        )
+        moved = divided
+        c = Fraction(c, a)
     both = _eq(_node(T.ADD, left, hole), _node(T.ADD, _num(-c), hole))
     result.add_group("conics_add_both", Step(moved, both, "conics_add_both"))
     root = _node(T.BRACKET, _node(T.SUBTRACT if b < 0 else T.ADD, x, _fraction_node(abs(half))))
@@ -630,7 +646,7 @@ def _completing_square(f: _Family) -> SolveResult | None:
         Step(equal, factored, "using_factor", [formula], subresult=factor_detail),
         Step(factored, reduced, "calc_sum", [], subresult=_detail(right, _fraction_node(total))),
     )
-    r = Fraction(f.root, 2)
+    r = Fraction(f.root, 2 * a)
     sides = _eq(
         _node(T.ROOT2, _node(T.POWER, root, _num(2))),
         _node(T.ADD_SUBTRACT, _node(T.ROOT2, _fraction_node(total))),

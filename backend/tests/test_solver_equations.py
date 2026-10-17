@@ -407,3 +407,10 @@ def test_difference_of_squares_equation_has_four_photomath_methods() -> None:
     assert len(group.entries) == 4
     assert _method_keys(group.entries[2])[0] == "quad_formula_abc"
     assert _method_keys(group.entries[3])[0] == "quad_formula_pq"
+
+
+def test_completing_the_square_divides_by_a_first_when_a_is_above_one() -> None:
+    # Photomath 7.10.0 on device: 2x^2+3x-2=0 divides both sides by 2 after moving the constant.
+    group = _group("{=({2x^2+3x-2},{0})}")
+    square = _method_keys(group.entries[3])
+    assert square[:3] == ["rel_move_right_const", "eq_linear_div", "conics_add_both"]
