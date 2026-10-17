@@ -39,3 +39,7 @@ app/.flutter-plugins-dependencies
 # mymath_backend и словарь копируются сюда для упаковки serious_python.
 app/python/mymath_backend/
 app/python/assets/
+
+# Съёмка конкурента: скриншоты и дампы экрана (JSON остаются)
+tools/parity/cap/*.png
+tools/parity/cap/*.xml
