@@ -83,7 +83,7 @@ def type_task(keys: str) -> None:
         else:
             ch = {"p": "p"}.get(name, name)
             ui.type_keys(ch)
-        time.sleep(0.12)
+        time.sleep(0.18)
     if page != "main":
         _page(page)
 
@@ -238,38 +238,78 @@ def reset() -> None:
     time.sleep(1.5)
 
 
+def _buttons(root) -> list[tuple[int, int, str, str]]:
+    """Visible «Показать шаги по решению» buttons with the title/subtitle of their card."""
+    texts_ = [(c[1], n.get("resource-id", "").split("/")[-1], n.get("text"))
+              for n, c, _ in ui.nodes(root) if n.get("text")]
+    out = []
+    for n, c, _ in ui.nodes(root):
+        if n.get("text") == "Показать шаги по решению":
+            above = [(y, r, t) for y, r, t in texts_ if y < c[1]]
+            title = next((t for y, r, t in reversed(above) if r == "card_title"), "")
+            sub = next((t for y, r, t in reversed(above) if r == "card_subtitle"), "")
+            out.append((c[0], c[1], title, sub))
+    return out
+
+
+def _card_steps(task_id: str, idx: int, kmap) -> dict:
+    """The steps screen of the card that was just opened."""
+    name = f"{task_id}_c{idx}"
+    (CAP / f"{name}_steps.png").write_bytes(ui.adb("exec-out", "screencap", "-p", binary=True))
+    root = ui.dump(f"{name}_top")
+    methods = [n.get("text") for n, _, _ in ui.nodes(root)
+               if n.get("resource-id", "").endswith("/method_name") and n.get("text")]
+    steps = collect_scroll(f"{name}_steps", {"collapsed_description", "title"}, 5)
+    return {
+        "methods": methods,
+        "steps": [{"text": t, "keys": keys_for(t, kmap)} for t in steps],
+        "walk": walk(name),
+    }
+
+
 def crawl(task_id: str, keys: str) -> dict:
     kmap = build_keymap()
     reset()
+    # Warm-up: the first taps after a fresh start are sometimes swallowed.
+    ui.type_keys("1")
+    time.sleep(1)
+    ui.adb("shell", "input", "tap", "1005", "367")  # clear button
+    time.sleep(1)
     type_task(keys)
     time.sleep(2.5)
-    ui.OUT.mkdir(exist_ok=True)
     root = ui.dump(f"{task_id}_input")
     sol = ui.find(root, "Показать решение")
     (CAP / f"{task_id}_input.png").write_bytes(ui.adb("exec-out", "screencap", "-p", binary=True))
-    res: dict = {"id": task_id, "keys": keys, "cards": [], "steps": []}
+    res: dict = {"id": task_id, "keys": keys, "cards": []}
     if sol is None:
         res["error"] = "no solution button"
+        (CAP / f"{task_id}.json").write_text(json.dumps(res, ensure_ascii=False, indent=1))
         return res
     ui.adb("shell", "input", "tap", str(sol[0]), str(sol[1]))
     time.sleep(3)
-    cards = collect_scroll(f"{task_id}_cards", {"card_title", "card_subtitle", "method_name"}, 3)
-    res["cards"] = cards
-    root = ui.dump(f"{task_id}_cardsroot")
-    btn = ui.find(root, "Показать шаги по решению")
-    if btn:
-        ui.adb("shell", "input", "tap", str(btn[0]), str(btn[1]))
+    done: set[tuple[str, str]] = set()
+    last_seen = None
+    for _ in range(14):
+        root = ui.dump(f"{task_id}_res")
+        todo = [b for b in _buttons(root) if (b[2], b[3]) not in done]
+        if not todo:
+            seen = [(n.get("text")) for n, _, _ in ui.nodes(root) if n.get("text")]
+            if seen == last_seen:
+                break
+            last_seen = seen
+            swipe_up()
+            continue
+        x, y, title, sub = todo[0]
+        done.add((title, sub))
+        ui.adb("shell", "input", "tap", str(x), str(y))
         time.sleep(3)
-        (CAP / f"{task_id}_steps.png").write_bytes(
-            ui.adb("exec-out", "screencap", "-p", binary=True))
-        n_rows = sum(1 for n, _, _ in ui.nodes(ui.dump(f"{task_id}_rows"))
-                     if n.get("resource-id", "").endswith("/collapsed_description"))
-        steps = collect_scroll(f"{task_id}_steps", {"collapsed_description", "title"}, 5)
-        res["steps"] = [{"text": t, "keys": keys_for(t, kmap)} for t in steps]
-        res["walk"] = walk(task_id)
-    for _ in range(2):
+        card = _card_steps(task_id, len(res["cards"]), kmap)
+        card.update(title=title, subtitle=sub)
+        res["cards"].append(card)
         ui.adb("shell", "input", "keyevent", "KEYCODE_BACK")
-        time.sleep(0.7)
+        time.sleep(1.5)
+    if res["cards"]:  # compatibility with compare.py: first card is the primary solution
+        res["steps"], res["walk"] = res["cards"][0]["steps"], res["cards"][0]["walk"]
     (CAP / f"{task_id}.json").write_text(json.dumps(res, ensure_ascii=False, indent=1))
     return res
 

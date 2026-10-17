@@ -46,3 +46,4 @@ tools/parity/cap/*.xml
 tools/parity/batch.log
 tools/parity/batch2.log
 tools/parity/ours/
+tools/parity/sheet_*.png
