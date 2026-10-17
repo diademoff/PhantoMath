@@ -12,6 +12,7 @@ import re
 from pathlib import Path
 
 import pytest
+import sympy
 
 from mymath_backend import CoreNodeType as T
 from mymath_backend import load_explanations
@@ -19,6 +20,7 @@ from mymath_backend.explanations import DEFAULT_LOCALE
 from mymath_backend.input import parse_protocol
 from mymath_backend.results import CoreSolverGroup, CoreSolverVerticalResult
 from mymath_backend.solver import SolveError, registered_types, solve
+from mymath_backend.solver.sympy_bridge import to_sympy
 
 EXPLANATIONS = Path(__file__).resolve().parents[2] / "truth" / "data" / "explanations.json"
 
@@ -44,6 +46,25 @@ def roots_of(source: str) -> list[str]:
     if solution.type is T.EQUALS:
         return [solution.children[1].value or ""]
     raise AssertionError(f"неожиданный узел ответа: {solution.type}")
+
+
+class TestUnknownOverNumber:
+    def test_rows_keep_the_root_through_every_equation(self) -> None:
+        # Photomath 7.10.0 on device: move the constant to the left, multiply both sides.
+        source = "{=({frac({x},{2})},{5})}"
+        assert step_keys(source) == ["rel_move_left_const", "eq_mul_direct"]
+        vertical = vertical_of(source)
+        assert vertical.solution is not None and vertical.solution.children[1].value == "10"
+        symbol = sympy.Symbol("x")
+        for step in vertical.steps:
+            for sub in step.substeps:
+                for side in (sub.left, sub.right):
+                    if side is not None and side.type is T.EQUALS:
+                        residual = to_sympy(side.children[0]) - to_sympy(side.children[1])
+                        assert sympy.solve(residual, symbol) == [10]
+
+    def test_negative_constant_is_added(self) -> None:
+        assert step_keys("{=({frac({x},{3})},{-2})}") == ["rel_move_left_const", "eq_mul_direct"]
 
 
 class TestLinear:

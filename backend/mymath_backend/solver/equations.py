@@ -408,6 +408,74 @@ def _linear_rows(
     return solution
 
 
+def _unknown_over_number(node: CoreNode, var: str, variables: list[str]) -> SolveResult | None:
+    """``x / d = c`` for integers ``d > 1`` and ``c != 0``: move the constant, multiply both sides.
+
+    The rows Photomath 7.10.0 shows on a device; every other linear equation takes the general path.
+    """
+    fraction, number = node.children
+    if not (
+        fraction.type is T.FRACTION
+        and fraction.children[0].type is T.VARIABLE
+        and fraction.children[0].value == var
+        and fraction.children[1].type is T.CONSTANT
+        and fraction.children[1].value is not None
+        and fraction.children[1].value.isdigit()
+        and int(fraction.children[1].value) > 1
+    ):
+        return None
+    try:
+        known = to_sympy(number)
+    except SolveError:
+        return None
+    if not (known.is_Rational and known != 0):
+        return None
+    d = fraction.children[1]
+    c = Fraction(int(known.p), int(known.q))
+    eq = CoreNode.node
+    x = CoreNode.variable(var)
+    zero = CoreNode.constant("0")
+    shifted = eq(T.SUBTRACT if c > 0 else T.ADD, fraction, _const(abs(c)))
+    moved = eq(T.EQUALS, shifted, zero)
+    balanced = eq(
+        T.EQUALS,
+        eq(T.SUBTRACT if c > 0 else T.ADD, fraction, _const(abs(c))),
+        eq(T.SUBTRACT if c > 0 else T.ADD, number, _const(abs(c))),
+    )
+    solution = _equation(var, _const(c * int(d.value or 1)))
+
+    result = SolveResult()
+    swap = SolveResult()
+    swap.add_group("rel_swap_left_const", Step(node, balanced, "rel_swap_left_const"))
+    swap.add_group("remove_opposites", Step(balanced, moved, "remove_opposites"))
+    swap.set_solution(moved)
+    result.add_group(
+        "rel_move_left_const_msg", Step(node, moved, "rel_move_left_const", subresult=swap)
+    )
+    scaled = eq(
+        T.EQUALS,
+        eq(T.MULTIPLY, eq(T.BRACKET, shifted), d),
+        eq(T.MULTIPLY, zero, d),
+    )
+    cleared = eq(
+        T.EQUALS,
+        eq(T.SUBTRACT if c > 0 else T.ADD, x, _const(abs(c) * int(d.value or 1))),
+        zero,
+    )
+    multiply = SolveResult()
+    multiply.add_group(
+        CoreRichText(type="eq_mul_direct", args=[d]), Step(moved, scaled, "eq_mul_direct", [d])
+    )
+    multiply.add_group("calculate_short", Step(scaled, cleared, "calculate_short"))
+    multiply.add_group("rel_move_right_const_msg", Step(cleared, solution, "rel_move_right_const"))
+    multiply.set_solution(solution)
+    result.add_group(
+        "multiply_both_sides", Step(moved, solution, "eq_mul_direct", [d], subresult=multiply)
+    )
+    result.set_solution(solution)
+    return result
+
+
 def _linear_solution(
     node: CoreNode,
     lhs: CoreNode,
@@ -1518,6 +1586,8 @@ def solve_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
         raise SolveError("поддерживается одно неизвестное")
     var = variables[0]
     lhs, rhs = node.children
+    if (over := _unknown_over_number(node, var, variables)) is not None:
+        return [over]
     try:
         poly = _sub(poly_of(lhs, var), poly_of(rhs, var))
     except SolveError:
