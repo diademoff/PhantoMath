@@ -505,7 +505,8 @@ def _factoring(step: Step, result: SolveResult) -> bool:
     if expression.is_polynomial() is not True or not _same(step.left, step.right):
         return False
     expanded = sympy.expand(expression)
-    if to_sympy(step.right) != sympy.factor(expanded):
+    # sympy distributes a numeric coefficient over a bracket, so compare after factor()
+    if sympy.factor(to_sympy(step.right)) != sympy.factor(expanded):
         return False
     terms = sympy.Add.make_args(expanded)
     common = sympy.gcd_list(terms)
