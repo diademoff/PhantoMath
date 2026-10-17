@@ -95,7 +95,9 @@ def solve_trig_equation(
 
     symbol = sympy.Symbol(var)
     lhs, rhs = node.children
-    if interval is None and (rows := _sin_cos_rows(node, var)) is not None:
+    if interval is None and (
+        (rows := _sin_cos_rows(node, var)) is not None or (rows := _tan_rows(node, var)) is not None
+    ):
         return rows
     try:
         expression = to_sympy(lhs) - to_sympy(rhs)
@@ -293,6 +295,58 @@ def _sin_cos_rows(node: CoreNode, var: str) -> SolveResult | None:
         Step(final, answer, "solution_eq_num", [count]),
     )
     result.set_solution(answer)
+    return result
+
+
+def _tan_rows(node: CoreNode, var: str) -> SolveResult | None:
+    """``tan x = c`` with a tabular ``arctan c`` in Photomath 7.10.0's rows.
+
+    The domain restriction first, then the inverse function, its value, the period, and the
+    intersection of the series with the domain.
+    """
+    lhs, rhs = node.children
+    if (
+        lhs.type is not T.TAN
+        or lhs.children[0].type is not T.VARIABLE
+        or lhs.children[0].value != var
+    ):
+        return None
+    try:
+        value = to_sympy(rhs)
+    except SolveError:
+        return None
+    if not (value.is_number and value.is_real):
+        return None
+    base = sympy.atan(value)
+    if not (base / sympy.pi).is_Rational:
+        return None
+
+    x, k, pi = CoreNode.variable(var), sympy.Symbol(_PARAMETER), sympy.pi
+    eq, sym = CoreNode.node, from_sympy
+    member = eq(T.ELEMENT_OF, CoreNode.variable("k"), CoreNode.variable("ℤ"))
+    domain = eq(T.NOT_EQUALS, x, sym(pi / 2 + k * pi))
+    restricted = eq(T.LIST, node, domain, member)
+    result = SolveResult()
+    cos_zero = eq(T.NOT_EQUALS, eq(T.COS, x), CoreNode.constant("0"))
+    why = SolveResult()
+    why.add_group("rel_restrictions_find", Step(node, cos_zero, "rel_restrictions_find"))
+    why.add_group("rel_restrictions_range", Step(cos_zero, domain, "rel_restrictions_range"))
+    why.set_solution(domain)
+    result.add_group(
+        "rel_restrictions_range", Step(node, restricted, "rel_restrictions_range", subresult=why)
+    )
+    arctan = eq(T.EQUALS, x, eq(T.ATAN, rhs))
+    result.add_group("trig_eq_isolate_short", Step(restricted, arctan, "trig_eq_isolate", [x]))
+    valued = eq(T.EQUALS, x, sym(base))
+    result.add_group("find_value", Step(arctan, valued, "trig_arcus", [eq(T.ATAN, rhs)]))
+    series = eq(T.EQUALS, x, sym(base + k * pi))
+    result.add_group(
+        "add_period",
+        Step(valued, series, "trig_eq_fun_period", [eq(T.TAN, x), sym(k * pi), member]),
+    )
+    answer = eq(T.LIST, series, member, domain)
+    result.add_group("intersection", Step(series, answer, "rel_restrictions_intersect"))
+    result.set_solution(series)
     return result
 
 

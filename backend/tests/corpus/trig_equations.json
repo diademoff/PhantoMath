@@ -304,8 +304,11 @@
         ]
       },
       "steps": [
-        "trig_find_period",
-        "trig_general_sol"
+        "rel_restrictions_range",
+        "trig_eq_isolate",
+        "trig_arcus",
+        "trig_eq_fun_period",
+        "rel_restrictions_intersect"
       ]
     },
     {
