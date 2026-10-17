@@ -65,7 +65,9 @@ def solve_limit(node: CoreNode, ctx: SolveContext) -> CoreNode:
     if not isinstance(value, sympy.Expr) or value is sympy.nan or value.has(sympy.Limit):
         raise SolveError("предел не существует или не вычисляется")
 
-    if _power_at_point(node, expression, point, var, ctx):
+    if _power_at_point(node, expression, point, var, ctx) or _linear_at_point(
+        node, expression, point, var, ctx
+    ):
         return from_sympy(sympy.simplify(value))
 
     classification = _classification(expression_value, symbol, point_value, value, node.type, var)
@@ -80,6 +82,47 @@ def solve_limit(node: CoreNode, ctx: SolveContext) -> CoreNode:
         raise SolveError("предел не существует или не вычисляется") from err
     ctx.result.add(Step(left=node, right=result, key="limit_solve"))
     return result
+
+
+def _linear_at_point(
+    node: CoreNode,
+    expression: CoreNode,
+    point: CoreNode,
+    var: str,
+    ctx: SolveContext,
+) -> bool:
+    """``lim x->a (k x + m)`` (integers, k >= 2, a >= 0): substitute, then one row to evaluate."""
+    from .equations import _simple_side
+
+    sides = _simple_side(expression, var)
+    if not (
+        node.type is T.LIMIT
+        and sides is not None
+        and point.type is T.CONSTANT
+        and (point.value or "").isdigit()
+        and sides[0].denominator == sides[1].denominator == 1
+        and sides[0] >= 2
+        and sides[1] != 0
+    ):
+        return False
+    k, m = int(sides[0]), int(sides[1])
+    product = CoreNode.node(T.MULTIPLY, CoreNode.constant(str(k)), point)
+    constant = CoreNode.constant(str(abs(m)))
+    substituted = CoreNode.node(T.ADD if m > 0 else T.SUBTRACT, product, constant)
+    detail = SolveResult()
+    detail.add_group(
+        "limit_solve_insert_value",
+        Step(node, substituted, "limit_solve_insert_value", [point]),
+    )
+    detail.set_solution(substituted)
+    ctx.result.add_group("find_value", Step(node, substituted, "limit_solve", subresult=detail))
+    evaluation = SolveResult()
+    total = route(substituted, SolveContext(result=evaluation))
+    evaluation.set_solution(total)
+    ctx.result.add_group(
+        "calculate_short", Step(substituted, total, "calculate_direct", subresult=evaluation)
+    )
+    return True
 
 
 def _power_at_point(

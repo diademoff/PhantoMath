@@ -137,3 +137,15 @@ class TestExplanationKeys:
 class TestRegistration:
     def test_registered(self) -> None:
         assert {T.LIMIT, T.LIMIT_LEFT, T.LIMIT_RIGHT} <= registered_types()
+
+
+def test_linear_limit_substitutes_then_evaluates_on_its_own_row() -> None:
+    # Photomath 7.10.0 on device: lim x->3 (2x+1) is a substitution row and an evaluation row.
+    from mymath_backend.input import parse_protocol
+    from mymath_backend.solver import solve
+
+    group = solve(parse_protocol("{lim({3},{2x+1})}")).result.groups[0]
+    keys = [
+        s["description"]["type"] for st in group.entries[0].result["steps"] for s in st["substeps"]
+    ]
+    assert keys == ["limit_solve", "calculate_direct"]

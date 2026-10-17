@@ -1,0 +1,59 @@
+{
+ "id": "d_cos",
+ "keys": "<ddx><cos>x",
+ "cards": [
+  {
+   "methods": [],
+   "steps": [
+    {
+     "text": "Найти производную",
+     "keys": [
+      "derive"
+     ]
+    },
+    {
+     "text": "Решение",
+     "keys": [
+      "graph_rt_info_solution"
+     ]
+    }
+   ],
+   "walk": [
+    {
+     "stages": [
+      {
+       "text": "Используя правило ARG1, вычислить производную",
+       "nested": []
+      }
+     ]
+    }
+   ],
+   "title": "Найдите значение производной",
+   "subtitle": "Найдите значение"
+  }
+ ],
+ "steps": [
+  {
+   "text": "Найти производную",
+   "keys": [
+    "derive"
+   ]
+  },
+  {
+   "text": "Решение",
+   "keys": [
+    "graph_rt_info_solution"
+   ]
+  }
+ ],
+ "walk": [
+  {
+   "stages": [
+    {
+     "text": "Используя правило ARG1, вычислить производную",
+     "nested": []
+    }
+   ]
+  }
+ ]
+}
