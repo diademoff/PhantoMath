@@ -212,3 +212,10 @@ def test_bracket_times_number_offers_the_distributive_property() -> None:
     group = solve(parse_protocol("{(2+3)*4}")).result.groups[0]
     assert len(group.entries) == 2
     assert solve(parse_protocol("{(2+3)*4*5}")).result.groups[0].select_method_text is None
+
+
+def test_three_term_sum_with_a_product_is_one_row_after_the_product() -> None:
+    # Photomath 7.10.0 on device: 2+3*4-5 is the product, then one row for the whole sum.
+    ctx = SolveContext(SolveResult())
+    route(parse_protocol("{2+3*4-5}"), ctx)
+    assert [step.key for step in ctx.result] == ["mul", "sum"]

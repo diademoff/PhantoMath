@@ -1,0 +1,121 @@
+{
+ "id": "pct",
+ "keys": "20%*50",
+ "cards": [
+  {
+   "methods": [],
+   "steps": [
+    {
+     "text": "Вычислить",
+     "keys": [
+      "calculate_short",
+      "multiply"
+     ]
+    },
+    {
+     "text": "Сократить дробь",
+     "keys": [
+      "frac_reduce_frac",
+      "reduce",
+      "rewrite"
+     ]
+    },
+    {
+     "text": "Сократите числа",
+     "keys": [
+      "frac_reduce_num"
+     ]
+    },
+    {
+     "text": "Решение",
+     "keys": [
+      "graph_rt_info_solution"
+     ]
+    }
+   ],
+   "walk": [
+    {
+     "stages": [
+      {
+       "text": "По определению ARG1",
+       "nested": []
+      }
+     ]
+    },
+    {
+     "stages": [
+      {
+       "text": "Сократить дробь на ARG1",
+       "nested": []
+      }
+     ]
+    },
+    {
+     "stages": [
+      {
+       "text": "Сократить числа на наибольший общий делитель ARG1",
+       "nested": []
+      }
+     ]
+    }
+   ],
+   "title": "Упростите выражение",
+   "subtitle": "Упростить"
+  }
+ ],
+ "steps": [
+  {
+   "text": "Вычислить",
+   "keys": [
+    "calculate_short",
+    "multiply"
+   ]
+  },
+  {
+   "text": "Сократить дробь",
+   "keys": [
+    "frac_reduce_frac",
+    "reduce",
+    "rewrite"
+   ]
+  },
+  {
+   "text": "Сократите числа",
+   "keys": [
+    "frac_reduce_num"
+   ]
+  },
+  {
+   "text": "Решение",
+   "keys": [
+    "graph_rt_info_solution"
+   ]
+  }
+ ],
+ "walk": [
+  {
+   "stages": [
+    {
+     "text": "По определению ARG1",
+     "nested": []
+    }
+   ]
+  },
+  {
+   "stages": [
+    {
+     "text": "Сократить дробь на ARG1",
+     "nested": []
+    }
+   ]
+  },
+  {
+   "stages": [
+    {
+     "text": "Сократить числа на наибольший общий делитель ARG1",
+     "nested": []
+    }
+   ]
+  }
+ ]
+}

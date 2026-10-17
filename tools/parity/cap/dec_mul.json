@@ -1,0 +1,150 @@
+{
+ "id": "dec_mul",
+ "keys": "1,5*4",
+ "cards": [
+  {
+   "methods": [],
+   "steps": [
+    {
+     "text": "Вычислить",
+     "keys": [
+      "calculate_short",
+      "multiply"
+     ]
+    },
+    {
+     "text": "Решение",
+     "keys": [
+      "graph_rt_info_solution"
+     ]
+    }
+   ],
+   "walk": [
+    {
+     "stages": [
+      {
+       "text": "Умножьте числа",
+       "nested": []
+      }
+     ]
+    }
+   ],
+   "title": "Умножьте числа",
+   "subtitle": "Вычислить"
+  },
+  {
+   "methods": [],
+   "steps": [
+    {
+     "text": "Запишите в виде разности",
+     "keys": [
+      "write_as_diff_short",
+      "write_as_diff",
+      "write_as_diff_expo",
+      "write_as_diff_fact",
+      "write_as_diff_trig"
+     ]
+    },
+    {
+     "text": "Раскрыть скобки",
+     "keys": [
+      "remove_bracket_short"
+     ]
+    },
+    {
+     "text": "Вычислить",
+     "keys": [
+      "calculate_short",
+      "multiply"
+     ]
+    },
+    {
+     "text": "Вычислить",
+     "keys": [
+      "calculate_short",
+      "multiply"
+     ]
+    },
+    {
+     "text": "Решение",
+     "keys": [
+      "graph_rt_info_solution"
+     ]
+    }
+   ],
+   "walk": [
+    {
+     "stages": [
+      {
+       "text": "Запишите ARG1 в виде разности",
+       "nested": []
+      }
+     ]
+    },
+    {
+     "stages": [
+      {
+       "text": "Распределить ARG1 через скобки",
+       "nested": []
+      }
+     ]
+    },
+    {
+     "stages": [
+      {
+       "text": "Умножьте числа",
+       "nested": []
+      },
+      {
+       "text": "Умножьте числа",
+       "nested": [
+        "Запишите в виде разности",
+        "Раскрыть скобки",
+        "Умножьте числа",
+        "Вычислить",
+        "Решение",
+        "Произведение отрицательного и положительного значений отрицательно: ARG1",
+        "Вычислить"
+       ]
+      }
+     ]
+    },
+    {
+     "stages": [
+      {
+       "text": "Вычитать числа",
+       "nested": []
+      }
+     ]
+    }
+   ],
+   "title": "Умножьте числа",
+   "subtitle": "Умножьте методом компенсации"
+  }
+ ],
+ "steps": [
+  {
+   "text": "Вычислить",
+   "keys": [
+    "calculate_short",
+    "multiply"
+   ]
+  },
+  {
+   "text": "Решение",
+   "keys": [
+    "graph_rt_info_solution"
+   ]
+  }
+ ],
+ "walk": [
+  {
+   "stages": [
+    {
+     "text": "Умножьте числа",
+     "nested": []
+    }
+   ]
+  }
+ ]
+}

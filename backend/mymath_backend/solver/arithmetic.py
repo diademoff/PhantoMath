@@ -118,6 +118,8 @@ def solve_arithmetic(node: CoreNode, ctx: SolveContext) -> CoreNode:
     node = _flatten_fraction_sum(node)
     if ctx.depth == 0 and (shown := _minus_negative_rows(node, ctx)) is not None:
         return shown
+    if ctx.depth == 0 and (shown := _sum_chain_rows(node, ctx)) is not None:
+        return shown
     # Дети сворачиваются через общий реестр: так арифметика складывается с
     # другими модулями (например, дробь сворачивается своим модулем).
     ctx.depth += 1
@@ -227,6 +229,45 @@ def distributive_methods(node: CoreNode, variables: list[str]) -> list[SolveResu
     spread.add_group("calculate_short", Step(summed, total, "add"))
     spread.set_solution(total)
     return [plain, spread]
+
+
+def _sum_chain_rows(node: CoreNode, ctx: SolveContext) -> CoreNode | None:
+    """``a + b*c - d`` for integers: the products first, then one row for the whole sum.
+
+    Photomath 7.10.0 on a device keeps three or more terms on a single row whose detail screen
+    adds them one by one; a chain of bare numbers was not captured and stays as it is.
+    """
+    terms: list[tuple[CoreNodeType, CoreNode]] = []
+    current = node
+    while current.type in (T.ADD, T.SUBTRACT) and len(current.children) == 2:
+        terms.append((current.type, current.children[1]))
+        current = current.children[0]
+    terms.append((T.ADD, current))
+    terms.reverse()
+    operands = [term for _, term in terms]
+    if len(terms) < 3 or all(term.type is T.CONSTANT for term in operands):
+        return None
+    try:
+        if any(
+            _value_of(route(term, SolveContext(SolveResult()))).denominator != 1
+            for term in operands
+        ):
+            return None
+    except SolveError:
+        return None
+    ctx.depth += 1
+    try:
+        folded = [route(term, ctx) for term in operands]
+    finally:
+        ctx.depth -= 1
+    chain = folded[0]
+    for (op, _), value in zip(terms[1:], folded[1:], strict=True):
+        chain = CoreNode.node(op, chain, value)
+    detail = SolveResult()
+    total = route(chain, SolveContext(detail))
+    detail.set_solution(total)
+    ctx.result.add_group("calculate_short", Step(chain, total, "sum", subresult=detail))
+    return total
 
 
 def _minus_negative_rows(node: CoreNode, ctx: SolveContext) -> CoreNode | None:
