@@ -36,7 +36,7 @@ from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
 from . import quadratic_pm
 from .arithmetic import as_fraction, format_number
-from .base import SolveContext, SolveError, SolveResult, Step, solver_for
+from .base import SolveContext, SolveError, SolveResult, Step, route, solver_for
 from .domain import add_restriction_steps
 from .methods import method_provider
 from .sympy_bridge import from_sympy, to_sympy
@@ -1148,6 +1148,56 @@ def _isolate_and_square(lhs: sympy.Expr, rhs: sympy.Expr) -> tuple[sympy.Expr, s
     return None
 
 
+def _simple_root_equation(node: CoreNode, var: str, ctx: SolveContext) -> CoreNode | None:
+    """``sqrt(x) = c`` for a positive integer ``c``, in Photomath 7.10.0's rows.
+
+    Square both sides, check the value by substitution, evaluate the root, conclude.
+    """
+    root, number = node.children
+    if number.type is T.ROOT2:
+        root, number = number, root
+    if not (
+        root.type is T.ROOT2
+        and root.children[0].type is T.VARIABLE
+        and root.children[0].value == var
+        and number.type is T.CONSTANT
+        and number.value is not None
+        and number.value.isdigit()
+        and int(number.value) > 0
+    ):
+        return None
+    c = int(number.value)
+    x, num = CoreNode.variable(var), CoreNode.constant
+    squared_value = num(str(c * c))
+    solution = CoreNode.node(T.EQUALS, x, squared_value)
+    both = CoreNode.node(
+        T.EQUALS,
+        CoreNode.node(T.POWER, CoreNode.node(T.BRACKET, root), num("2")),
+        CoreNode.node(T.POWER, num(str(c)), num("2")),
+    )
+    detail = SolveResult()
+    detail.add_group("eq_irrational_simple_square", Step(node, both, "eq_irrational_simple_square"))
+    detail.add_group("simplify_eq", Step(both, solution, "simplify_eq"))
+    detail.set_solution(solution)
+    ctx.result.add_group(
+        "simplify_eq",
+        Step(node, solution, "eq_irrational_simple_square", subresult=detail),
+    )
+    checked = CoreNode.node(T.EQUALS, CoreNode.node(T.ROOT2, squared_value), num(str(c)))
+    ctx.result.add_group("solution_check_sol", Step(solution, checked, "solution_check_sub"))
+    evaluation = SolveResult()
+    evaluation.set_solution(route(checked.children[0], SolveContext(result=evaluation)))
+    equal = CoreNode.node(T.EQUALS, num(str(c)), num(str(c)))
+    ctx.result.add_group(
+        "calculate_short", Step(checked, equal, "root_square", subresult=evaluation)
+    )
+    ctx.result.add_group(
+        CoreRichText(type="solution_check_t", args=[squared_value]),
+        Step(equal, solution, "solution_check_t", [squared_value]),
+    )
+    return solution
+
+
 def _solve_radical(node: CoreNode, variables: list[str], ctx: SolveContext) -> CoreNode | None:
     """Решить иррациональное уравнение возведением в квадрат.
 
@@ -1160,6 +1210,8 @@ def _solve_radical(node: CoreNode, variables: list[str], ctx: SolveContext) -> C
     """
     var = variables[0]
     lhs, rhs = node.children
+    if (simple := _simple_root_equation(node, var, ctx)) is not None:
+        return simple
     try:
         left, right = to_sympy(lhs), to_sympy(rhs)
     except SolveError:

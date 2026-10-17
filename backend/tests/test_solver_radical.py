@@ -35,9 +35,10 @@ class TestRadical:
         source = "{=({root2({x})},{2})}"
         assert root_values(source) == ["4"]
         assert step_keys(source) == [
-            "rel_restrictions_find",
-            "rel_restrictions_root_base_neg",
             "eq_irrational_simple_square",
+            "solution_check_sub",
+            "root_square",
+            "solution_check_t",
         ]
 
     def test_extraneous_root_excluded(self) -> None:

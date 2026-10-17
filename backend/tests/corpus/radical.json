@@ -19,9 +19,10 @@
         ]
       },
       "steps": [
-        "rel_restrictions_find",
-        "rel_restrictions_root_base_neg",
-        "eq_irrational_simple_square"
+        "eq_irrational_simple_square",
+        "solution_check_sub",
+        "root_square",
+        "solution_check_t"
       ]
     },
     {
