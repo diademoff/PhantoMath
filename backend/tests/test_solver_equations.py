@@ -394,7 +394,7 @@ def test_negative_leading_coefficient_adds_standard_and_implicit_form_cards() ->
 
 
 def test_positive_sum_quadratic_has_four_photomath_methods() -> None:
-    # Photomath 7.10.0 on device: x^2+4x+3=0 is factoring, roots formula, PQ formula, completing square.
+    # Photomath 7.10.0 on device: x^2+4x+3=0 has factoring, formula, PQ formula and square cards.
     group = _group("{=({x^2+4x+3},{0})}")
     assert len(group.entries) == 4
     assert _method_keys(group.entries[1])[:2] == ["quad_formula_abc", "mul_with_one"]
