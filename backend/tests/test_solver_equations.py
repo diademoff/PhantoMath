@@ -213,16 +213,16 @@ def _method_keys(entry: object) -> list[str]:
 class TestMethods:
     """Выбор способа решения: несколько записей вертикальной ветки."""
 
-    def test_factorable_quadratic_has_two_methods(self) -> None:
+    def test_factorable_quadratic_has_four_methods(self) -> None:
         group = _group("{=({x^2-5x+6},{0})}")
-        assert len(group.entries) == 2
+        assert len(group.entries) == 4
         assert group.select_method_text is not None
         assert group.select_method_text.type == "select_method"
 
     def test_captured_family_is_factoring_then_formula(self) -> None:
         # Photomath 7.10.0 on device: x^2 - 5x + 6 = 0 opens with factoring.
         group = _group("{=({x^2-5x+6},{0})}")
-        assert [len(_method_keys(e)) for e in group.entries] == [8, 12]
+        assert [len(_method_keys(e)) for e in group.entries] == [8, 12, 9, 8]
         assert _method_keys(group.entries[0])[0] == "write_as_diff"
         assert _method_keys(group.entries[1])[0] == "quad_formula_abc"
 

@@ -15,7 +15,7 @@ from math import gcd, isqrt
 from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
 from .arithmetic import format_number
-from .base import SolveContext, SolveResult, Step, route
+from .base import SolveContext, SolveError, SolveResult, Step, route
 
 _SIGNS = (
     CoreNode.variable("+"),
@@ -67,7 +67,10 @@ def _poly(terms: list[tuple[int, int]], var: str) -> CoreNode:
 def _evaluate(node: CoreNode) -> SolveResult:
     """The steps our arithmetic takes to evaluate ``node``: a real nested screen."""
     detail = SolveResult()
-    detail.set_solution(route(node, SolveContext(result=detail)))
+    try:
+        detail.set_solution(route(node, SolveContext(result=detail)))
+    except SolveError:  # not an expression our arithmetic evaluates (e.g. a bracketed numerator)
+        return SolveResult()
     return detail
 
 
@@ -329,6 +332,232 @@ def _formula(f: _Family) -> SolveResult | None:
     return result
 
 
+def _detail(expression: CoreNode, value: CoreNode) -> SolveResult:
+    """A detail screen: our arithmetic steps for ``expression``, or one step when it has none."""
+    detail = _evaluate(expression)
+    if not detail:
+        detail = SolveResult()
+        detail.add_group("calculate_short", Step(expression, value, "calculate_short"))
+        detail.set_solution(value)
+    return detail
+
+
+def _fraction_node(value: Fraction) -> CoreNode:
+    if value.denominator == 1:
+        return _num(value.numerator)
+    return _node(T.FRACTION, _num(value.numerator), _num(value.denominator))
+
+
+def _pq_formula(f: _Family) -> SolveResult | None:
+    """``x^2 + p x + q = 0`` by the PQ formula, as captured for a = 1 and b < 0."""
+    if f.a != 1 or f.b >= 0:
+        return None
+    b, c, x = f.b, f.c, f.x
+    half = Fraction(-b, 2)  # -p/2
+    result = SolveResult()
+    p, q = CoreNode.variable("p"), CoreNode.variable("q")
+    two = _num(2)
+    standard = _eq(
+        _node(
+            T.ADD,
+            _node(T.ADD, _node(T.POWER, x, two), _node(T.MULTIPLY_IMPLICIT, p, x)),
+            q,
+        ),
+        _num(0),
+    )
+    p_half = _node(T.FRACTION, p, two)
+    template = _eq(
+        x,
+        _node(
+            T.ADD_SUBTRACT,
+            _node(T.NEGATIVE, p_half),
+            _node(
+                T.ROOT2,
+                _node(T.SUBTRACT, _node(T.POWER, _node(T.BRACKET, p_half), two), q),
+            ),
+        ),
+    )
+
+    def state(first: CoreNode, inner: CoreNode) -> CoreNode:
+        return _eq(x, _node(T.ADD_SUBTRACT, first, _node(T.ROOT2, inner)))
+
+    b_half = _node(T.FRACTION, _paren(b), two)
+    squared = _node(T.POWER, _node(T.BRACKET, b_half), two)
+    start = state(_node(T.NEGATIVE, b_half), _node(T.SUBTRACT, squared, _paren(c)))
+    result.add_group(
+        "quad_formula_abc_simple", Step(f.node, start, "quad_formula_pq", [standard, template])
+    )
+    lead = _fraction_node(half)
+    signed = state(lead, _node(T.SUBTRACT, squared, _paren(c)))
+    powered = state(lead, _node(T.SUBTRACT, _fraction_node(Fraction(b * b, 4)), _paren(c)))
+    pages = [
+        Step(
+            start,
+            signed,
+            "frac_resolve_neg",
+            [],
+            subresult=_detail(_node(T.NEGATIVE, b_half), lead),
+        ),
+        Step(
+            signed,
+            powered,
+            "pow_frac",
+            [],
+            subresult=_detail(squared, _fraction_node(Fraction(b * b, 4))),
+        ),
+    ]
+    header = ["sign_find_short", "frac_reduce_frac"]
+    current = powered
+    if c < 0:  # -(-6) -> +6 in the same breath
+        flipped = state(lead, _node(T.ADD, _fraction_node(Fraction(b * b, 4)), _num(-c)))
+        pages.append(Step(powered, flipped, "neg_neg_arg", [_num(-1)]))
+        header.append("remove_bracket_short")
+        current = flipped
+    result.add_group(header, *pages)
+    radicand = Fraction(b * b, 4) - c
+    summed = state(lead, _fraction_node(radicand))
+    combine_expr = (
+        _node(T.SUBTRACT, _fraction_node(Fraction(b * b, 4)), _num(c))
+        if c > 0
+        else _node(T.ADD, _fraction_node(Fraction(b * b, 4)), _num(-c))
+    )
+    result.add_group(
+        "calculate_short",
+        Step(
+            current,
+            summed,
+            "calc_diff" if c > 0 else "calc_sum",
+            [],
+            subresult=_detail(combine_expr, _fraction_node(radicand)),
+        ),
+    )
+    r = Fraction(f.root, 2)
+    rooted = _eq(x, _node(T.ADD_SUBTRACT, lead, _fraction_node(r)))
+    result.add_group(
+        "calculate_short",
+        Step(
+            summed,
+            rooted,
+            "root_square",
+            [],
+            subresult=_detail(_node(T.ROOT2, _fraction_node(radicand)), _fraction_node(r)),
+        ),
+    )
+    plus = _eq(x, _node(T.ADD, lead, _fraction_node(r)))
+    minus = _eq(x, _node(T.SUBTRACT, lead, _fraction_node(r)))
+    listed = _node(T.LIST, plus, minus)
+    result.add_group("quad_separate", Step(rooted, listed, "quad_separate_signs", list(_SIGNS)))
+    result.add_group(
+        ["calc_sum", "calc_diff"],
+        Step(
+            listed,
+            f.solved(half + r),
+            "frac_add",
+            [],
+            subresult=_detail(plus.children[1], _fraction_node(half + r)),
+        ),
+        Step(
+            listed,
+            f.solved(half - r),
+            "frac_sub",
+            [],
+            subresult=_detail(minus.children[1], _fraction_node(half - r)),
+        ),
+    )
+    f.finish(result, [f.solved(half + r), f.solved(half - r)])
+    return result
+
+
+def _completing_square(f: _Family) -> SolveResult | None:
+    """Completing the square for ``x^2 + b x + c = 0`` (a = 1), captured for three sign families."""
+    if f.a != 1:
+        return None
+    b, c, x, var = f.b, f.c, f.x, f.var
+    half = Fraction(b, 2)
+    left = _poly([(1, 2), (b, 1)], var)
+    hole = CoreNode.variable("?")
+    new = _fraction_node(half * half)
+    result = SolveResult()
+
+    moved = _eq(left, _num(-c))
+    balanced = _eq(
+        _node(T.ADD if c < 0 else T.SUBTRACT, f.node.children[0], _num(abs(c))),
+        _node(T.ADD if c < 0 else T.SUBTRACT, _num(0), _num(abs(c))),
+    )
+    swap = SolveResult()
+    swap.add_group("rel_swap_right_const", Step(f.node, balanced, "rel_swap_right_const"))
+    swap.add_group("remove_opposites", Step(balanced, moved, "remove_opposites"))
+    swap.set_solution(moved)
+    result.add_group(
+        "rel_move_right_const_msg", Step(f.node, moved, "rel_move_right_const", subresult=swap)
+    )
+    both = _eq(_node(T.ADD, left, hole), _node(T.ADD, _num(-c), hole))
+    result.add_group("conics_add_both", Step(moved, both, "conics_add_both"))
+    root = _node(T.BRACKET, _node(T.SUBTRACT if b < 0 else T.ADD, x, _fraction_node(abs(half))))
+    identity = _eq(_node(T.ADD, left, new), _node(T.POWER, root, _num(2)))
+    added = _eq(_node(T.ADD, left, new), _node(T.ADD, _num(-c), hole))
+    explain = SolveResult()
+    explain.add_group(
+        CoreRichText(type="eq_add_exp", args=[new]), Step(both, added, "eq_add_exp", [identity])
+    )
+    explain.set_solution(added)
+    result.add_group(
+        CoreRichText(type="eq_add_exp", args=[new]),
+        Step(both, added, "eq_add_exp", [identity], subresult=explain),
+    )
+    right = _node(T.ADD, _num(-c), new)
+    equal = _eq(_node(T.ADD, left, new), right)
+    result.add_group(
+        CoreRichText(type="conics_add_right", args=[new]),
+        Step(added, equal, "conics_add_right", [new]),
+    )
+    factored = _eq(_node(T.POWER, root, _num(2)), right)
+    total = Fraction(-c) + half * half
+    reduced = _eq(_node(T.POWER, root, _num(2)), _fraction_node(total))
+    formula = _eq(
+        _node(
+            T.ADD,
+            _node(
+                T.SUBTRACT,
+                _node(T.POWER, CoreNode.variable("a"), _num(2)),
+                _node(T.MULTIPLY, _num(2), CoreNode.variable("a"), CoreNode.variable("b")),
+            ),
+            _node(T.POWER, CoreNode.variable("b"), _num(2)),
+        ),
+        _node(
+            T.POWER,
+            _node(T.BRACKET, _node(T.SUBTRACT, CoreNode.variable("a"), CoreNode.variable("b"))),
+            _num(2),
+        ),
+    )
+    factor_detail = SolveResult()
+    factor_detail.add_group(
+        CoreRichText(type="using_factor", args=[formula]),
+        Step(equal, factored, "using_factor", [formula]),
+    )
+    factor_detail.set_solution(factored)
+    result.add_group(
+        ["frac_reduce_frac", "calculate_short"],
+        Step(equal, factored, "using_factor", [formula], subresult=factor_detail),
+        Step(factored, reduced, "calc_sum", [], subresult=_detail(right, _fraction_node(total))),
+    )
+    r = Fraction(f.root, 2)
+    sides = _eq(
+        _node(T.ROOT2, _node(T.POWER, root, _num(2))),
+        _node(T.ADD_SUBTRACT, _node(T.ROOT2, _fraction_node(total))),
+    )
+    pm_row = _eq(root, _node(T.ADD_SUBTRACT, _fraction_node(r)))
+    solved = _node(T.LIST, f.solved(f.low), f.solved(f.high))
+    solve = SolveResult()
+    solve.add_group("quad_sqrt_sides", Step(reduced, sides, "quad_sqrt_sides"))
+    solve.add_group("calculate_short", Step(sides, pm_row, "root_square"))
+    solve.add_group("quad_separate", Step(pm_row, solved, "quad_separate_signs", list(_SIGNS)))
+    solve.set_solution(solved)
+    result.add_group("eq_solve_short", Step(reduced, solved, "eq_linear", [x], subresult=solve))
+    f.finish(result, [f.solved(f.low), f.solved(f.high)])
+    return result
+
+
 def _is_difference_of_squares(f: _Family) -> bool:
     return f.a == 1 and f.b == 0 and f.c < 0 and isqrt(-f.c) ** 2 == -f.c
 
@@ -392,7 +621,10 @@ def _difference_of_squares(f: _Family) -> SolveResult | None:
         ),
     )
     detail = SolveResult()
-    detail.add_group("using_factor", Step(f.node, product, "using_factor", [formula]))
+    detail.add_group(
+        CoreRichText(type="using_factor", args=[formula]),
+        Step(f.node, product, "using_factor", [formula]),
+    )
     detail.set_solution(product)
     result.add_group(
         "factorise_call", Step(f.node, product, "using_factor", [formula], subresult=detail)
@@ -435,5 +667,8 @@ def methods(
     if ia == 0 or ib == 0 or ic == 0 or d <= 0 or isqrt(d) ** 2 != d:
         return None
     family = _Family(var, ia, ib, ic)
-    built = [m for m in (_factoring(family), _formula(family)) if m]
+    primary = [m for m in (_factoring(family), _formula(family)) if m]
+    if not primary:  # outside the captured sign families the general solver explains it
+        return None
+    built = primary + [m for m in (_pq_formula(family), _completing_square(family)) if m]
     return built or None
