@@ -24,6 +24,7 @@ from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType
 from ..node_types import CoreNodeType as T
 from .base import SolveContext, SolveError, SolveResult, Step, route, solver_for
+from .methods import method_provider
 
 KEY_CALCULATE = "calculate_short"
 
@@ -184,6 +185,48 @@ def solve_arithmetic(node: CoreNode, ctx: SolveContext) -> CoreNode:
     # Photomath 7.10.0 on device: every operation is its own row (main step).
     ctx.result.add_group(detail.header if detail and detail.header else key, step)
     return constant
+
+
+@method_provider(T.MULTIPLY)
+def distributive_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
+    """``(a + b) * k`` for positive integers: the plain order and the distributive property.
+
+    Photomath 7.10.0 offers both on a device; any other product is left to the plain path.
+    """
+    if len(node.children) != 2:
+        return []
+    bracket, factor = node.children
+    inner = bracket.children[0] if bracket.type is T.BRACKET else None
+    if (
+        inner is None
+        or inner.type is not T.ADD
+        or len(inner.children) != 2
+        or factor.type is not T.CONSTANT
+        or any(c.type is not T.CONSTANT or not (c.value or "").isdigit() for c in inner.children)
+        or not (factor.value or "").isdigit()
+    ):
+        return []
+    plain = SolveResult()
+    plain.set_solution(route(node, SolveContext(plain, list(variables))))
+    a, b = (int(c.value or 0) for c in inner.children)
+    k = int(factor.value or 0)
+
+    def number(value: int) -> CoreNode:
+        return CoreNode.constant(str(value))
+
+    def product(value: int) -> CoreNode:
+        return CoreNode.node(T.MULTIPLY, number(value), factor)
+
+    expanded = CoreNode.node(T.ADD, product(a), product(b))
+    half = CoreNode.node(T.ADD, number(a * k), product(b))
+    summed = CoreNode.node(T.ADD, number(a * k), number(b * k))
+    total = number((a + b) * k)
+    spread = SolveResult()
+    spread.add_group("remove_bracket_short", Step(node, expanded, "mul_bracket", [factor]))
+    spread.add_group("calculate_short", Step(expanded, half, "mul"), Step(half, summed, "mul"))
+    spread.add_group("calculate_short", Step(summed, total, "add"))
+    spread.set_solution(total)
+    return [plain, spread]
 
 
 def _minus_negative_rows(node: CoreNode, ctx: SolveContext) -> CoreNode | None:

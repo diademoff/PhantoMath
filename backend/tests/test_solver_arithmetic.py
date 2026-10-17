@@ -205,3 +205,10 @@ def test_minus_a_negative_bracket_opens_it_then_sums_on_one_row() -> None:
     ctx = SolveContext(SolveResult())
     route(parse_protocol("{-3-(-5)}"), ctx)
     assert [step.key for step in ctx.result] == ["neg_neg_arg", "calc_sum"]
+
+
+def test_bracket_times_number_offers_the_distributive_property() -> None:
+    # Photomath 7.10.0 on device: (2+3)*4 has a second card that distributes the 4.
+    group = solve(parse_protocol("{(2+3)*4}")).result.groups[0]
+    assert len(group.entries) == 2
+    assert solve(parse_protocol("{(2+3)*4*5}")).result.groups[0].select_method_text is None
