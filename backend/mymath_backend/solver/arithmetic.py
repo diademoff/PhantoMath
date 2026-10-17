@@ -134,16 +134,18 @@ def solve_arithmetic(node: CoreNode, ctx: SolveContext) -> CoreNode:
     detail = addition_detail(node.type, values, constant) or product_detail(
         node.type, values, constant
     )
-    ctx.result.add_group(
-        detail.header if detail and detail.header else key,
-        Step(
-            left=CoreNode(node.type, children=folded),
-            right=constant,
-            key=key,
-            args=_step_args(key, node, constant),
-            subresult=detail,
-        ),
+    step = Step(
+        left=CoreNode(node.type, children=folded),
+        right=constant,
+        key=key,
+        args=_step_args(key, node, constant),
+        subresult=detail,
     )
+    if detail and detail.header:
+        ctx.result.add_group(detail.header, step)
+    else:
+        # Эталон: операции одного выражения идут этапами одного основного шага.
+        ctx.result.add(step)
     return constant
 
 

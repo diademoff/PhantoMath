@@ -4,23 +4,14 @@
   {
    "steps": [
     {
-     "headers": [
-      "Разделить числа"
-     ],
+     "headers": [],
      "stages": [
       {
        "key": "div",
        "text": "Разделить числа",
        "detail": [],
        "theory": false
-      }
-     ]
-    },
-    {
-     "headers": [
-      "Сложите числа"
-     ],
-     "stages": [
+      },
       {
        "key": "add",
        "text": "Сложите числа",

@@ -4,23 +4,14 @@
   {
    "steps": [
     {
-     "headers": [
-      "Сложите числа"
-     ],
+     "headers": [],
      "stages": [
       {
        "key": "add",
        "text": "Сложите числа",
        "detail": [],
        "theory": false
-      }
-     ]
-    },
-    {
-     "headers": [
-      "Умножьте числа"
-     ],
-     "stages": [
+      },
       {
        "key": "mul",
        "text": "Умножьте числа",

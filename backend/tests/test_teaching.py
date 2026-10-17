@@ -38,6 +38,13 @@ def test_explicit_boundaries_are_not_inferred_from_title() -> None:
     assert len(result.to_vertical().steps) == 2
 
 
+@pytest.mark.parametrize("source", ["{2+3*4}", "{2*(3+4)}", "{100/4+6}"])
+def test_arithmetic_operations_are_stages_of_one_step(source: str) -> None:
+    # Photomath 7.10.0 on device: one main step, one stage per operation.
+    steps = solve(parse_protocol(source)).result.groups[0].entries[0].result["steps"]
+    assert [len(step["substeps"]) for step in steps] == [2]
+
+
 @pytest.mark.parametrize(
     "source", ["{2x+3=7}", "{3x+2=x-4}", "{2*(x+1)=8}", "{x/2=3}", "{-2x+3=7}", "{2x=3x}", "{2x=x}"]
 )
