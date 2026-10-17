@@ -8,3 +8,10 @@ ok quad_pos
 ok quad_negc
 ok ineq_gt
 ok ineq_neg
+ok ineq_quad_gt
+ok lin_neg
+ok lin_paren
+ok dec_add
+ok cos_eq
+ok tan_eq
+ok sqrt_sum

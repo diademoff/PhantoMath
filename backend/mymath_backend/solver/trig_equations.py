@@ -95,7 +95,7 @@ def solve_trig_equation(
 
     symbol = sympy.Symbol(var)
     lhs, rhs = node.children
-    if interval is None and (rows := _sine_rows(node, var)) is not None:
+    if interval is None and (rows := _sin_cos_rows(node, var)) is not None:
         return rows
     try:
         expression = to_sympy(lhs) - to_sympy(rhs)
@@ -177,15 +177,16 @@ def _terminal(node: CoreNode, key: str) -> SolveResult:
     return result
 
 
-def _sine_rows(node: CoreNode, var: str) -> SolveResult | None:
-    """``sin x = c`` with a tabular ``arcsin c`` in Photomath 7.10.0's rows.
+def _sin_cos_rows(node: CoreNode, var: str) -> SolveResult | None:
+    """``sin x = c`` or ``cos x = c`` with a tabular arc value in Photomath 7.10.0's rows.
 
-    Two cases (``x`` and ``pi - x``), the inverse function, its value, the period, the linear
-    equation for ``pi - x``, the sign of the period and the count of solution series.
+    Two cases (``x`` and ``pi - x`` for sine, ``2 pi - x`` for cosine), the inverse function,
+    its value, the period, the linear equation for the mirror case, the sign of the period and
+    the count of solution series.
     """
     lhs, rhs = node.children
     if (
-        lhs.type is not T.SIN
+        lhs.type not in (T.SIN, T.COS)
         or lhs.children[0].type is not T.VARIABLE
         or lhs.children[0].value != var
     ):
@@ -196,30 +197,40 @@ def _sine_rows(node: CoreNode, var: str) -> SolveResult | None:
         return None
     if not (value.is_Rational and 0 < abs(value) < 1):
         return None
-    base = sympy.asin(value)
+    sine = lhs.type is T.SIN
+    base = sympy.asin(value) if sine else sympy.acos(value)
     if not (base / sympy.pi).is_Rational:
         return None
 
     x, k, pi = CoreNode.variable(var), sympy.Symbol(_PARAMETER), sympy.pi
+    shift = pi if sine else 2 * pi  # the mirror case: f(shift - x) = f(x)
+    shift_node = (
+        CoreNode.variable("π")
+        if sine
+        else CoreNode.node(T.MULTIPLY_IMPLICIT, CoreNode.constant("2"), CoreNode.variable("π"))
+    )
     eq = CoreNode.node
     sym = from_sympy
 
     def left(expression: CoreNode) -> CoreNode:
-        return eq(T.SUBTRACT, CoreNode.variable("π"), expression)
+        return eq(T.SUBTRACT, shift_node, expression)
 
-    sin_x = eq(T.SIN, x)
-    sin_pi_x = eq(T.SIN, left(x))
+    sin_x = eq(lhs.type, x)
+    sin_pi_x = eq(lhs.type, left(x))
     cases = eq(T.LIST, node, eq(T.EQUALS, sin_pi_x, rhs))
     t = CoreNode.variable("t")
     result = SolveResult()
     result.add_group(
         "eq_separate_short",
         Step(
-            node, cases, "trig_eq_two_sollutions", [eq(T.EQUALS, eq(T.SIN, t), eq(T.SIN, left(t)))]
+            node,
+            cases,
+            "trig_eq_two_sollutions",
+            [eq(T.EQUALS, eq(lhs.type, t), eq(lhs.type, left(t)))],
         ),
     )
 
-    arcsin = eq(T.ASIN, rhs)
+    arcsin = eq(T.ASIN if sine else T.ACOS, rhs)
     first = eq(T.LIST, eq(T.EQUALS, x, arcsin), eq(T.EQUALS, sin_pi_x, rhs))
     both = eq(T.LIST, eq(T.EQUALS, x, arcsin), eq(T.EQUALS, left(x), arcsin))
     result.add_group(
@@ -248,9 +259,9 @@ def _sine_rows(node: CoreNode, var: str) -> SolveResult | None:
         Step(valued, shifted, "trig_eq_fun_period", args),
         Step(shifted, both_shifted, "trig_eq_fun_period", args),
     )
-    solved_second = eq(T.EQUALS, x, sym(pi - base - 2 * k * pi))
+    solved_second = eq(T.EQUALS, x, sym(shift - base - 2 * k * pi))
     solved = eq(T.LIST, eq(T.EQUALS, x, sym(base + 2 * k * pi)), solved_second)
-    moved = eq(T.EQUALS, eq(T.NEGATIVE, x), sym(base + 2 * k * pi - pi))
+    moved = eq(T.EQUALS, eq(T.NEGATIVE, x), sym(base + 2 * k * pi - shift))
     detail = SolveResult()
     detail.add_group(
         "rel_move_right_const_msg",
@@ -264,7 +275,7 @@ def _sine_rows(node: CoreNode, var: str) -> SolveResult | None:
     result.add_group(
         "eq_solve_short", Step(both_shifted, solved, "eq_linear", [x], subresult=detail)
     )
-    final_second = eq(T.EQUALS, x, sym(pi - base + 2 * k * pi))
+    final_second = eq(T.EQUALS, x, sym(shift - base + 2 * k * pi))
     final = eq(T.LIST, eq(T.EQUALS, x, sym(base + 2 * k * pi)), final_second)
     positive = [
         eq(T.ELEMENT_OF, eq(T.NEGATIVE, CoreNode.variable("k")), CoreNode.variable("ℤ")),
