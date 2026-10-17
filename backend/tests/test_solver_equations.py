@@ -399,3 +399,11 @@ def test_positive_sum_quadratic_has_four_photomath_methods() -> None:
     assert len(group.entries) == 4
     assert _method_keys(group.entries[1])[:2] == ["quad_formula_abc", "mul_with_one"]
     assert _method_keys(group.entries[2])[0] == "quad_formula_pq"
+
+
+def test_difference_of_squares_equation_has_four_photomath_methods() -> None:
+    # Photomath 7.10.0 on device: x^2-4=0 is extraction, factoring, roots formula, PQ formula.
+    group = _group("{=({x^2-4},{0})}")
+    assert len(group.entries) == 4
+    assert _method_keys(group.entries[2])[0] == "quad_formula_abc"
+    assert _method_keys(group.entries[3])[0] == "quad_formula_pq"

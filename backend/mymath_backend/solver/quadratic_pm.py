@@ -1395,6 +1395,174 @@ def inequality_rows(
     return True
 
 
+def _pure_square_formulas(node: CoreNode, var: str, c: int) -> list[SolveResult]:
+    """``x^2 - k^2 = 0`` by the roots formula and the PQ formula, as captured for x^2 - 4 = 0."""
+    k = isqrt(-c)
+    x, two, num = CoreNode.variable(var), _num(2), _num
+    la, lb, lc = (CoreNode.variable(v) for v in "abc")
+    p, q = CoreNode.variable("p"), CoreNode.variable("q")
+    zero = num(0)
+    standard = _eq(
+        _node(
+            T.ADD,
+            _node(
+                T.ADD,
+                _node(T.MULTIPLY_IMPLICIT, la, _node(T.POWER, x, two)),
+                _node(T.MULTIPLY_IMPLICIT, lb, x),
+            ),
+            lc,
+        ),
+        zero,
+    )
+    template = _eq(
+        x,
+        _node(
+            T.FRACTION,
+            _node(
+                T.ADD_SUBTRACT,
+                _node(T.NEGATIVE, lb),
+                _node(
+                    T.ROOT2,
+                    _node(T.SUBTRACT, _node(T.POWER, lb, two), _node(T.MULTIPLY, num(4), la, lc)),
+                ),
+            ),
+            _node(T.MULTIPLY, two, la),
+        ),
+    )
+    four_ac = _node(T.MULTIPLY, num(4), num(1), _paren(c))
+
+    def fraction(top: CoreNode, denominator: CoreNode) -> CoreNode:
+        return _eq(x, _node(T.FRACTION, top, denominator))
+
+    def pm(inner: CoreNode, with_zero: bool = False) -> CoreNode:
+        root = _node(T.ROOT2, inner)
+        return _node(T.ADD_SUBTRACT, zero, root) if with_zero else _node(T.ADD_SUBTRACT, root)
+
+    # -- the roots formula
+    formula = SolveResult()
+    squared = _node(T.SUBTRACT, _node(T.POWER, zero, two), four_ac)
+    start = fraction(
+        _node(T.ADD_SUBTRACT, _node(T.NEGATIVE, zero), _node(T.ROOT2, squared)),
+        _node(T.MULTIPLY, two, num(1)),
+    )
+    formula.add_group(
+        "quad_formula_abc_simple", Step(node, start, "quad_formula_abc", [standard, template])
+    )
+    no_zero = fraction(pm(squared), _node(T.MULTIPLY, two, num(1)))
+    no_den = fraction(pm(squared), two)
+    short = _node(T.SUBTRACT, _node(T.POWER, zero, two), _node(T.MULTIPLY, num(4), _paren(c)))
+    no_one = fraction(pm(short), two)
+    zeroed = fraction(pm(_node(T.SUBTRACT, zero, _node(T.MULTIPLY, num(4), _paren(c)))), two)
+    summed = fraction(pm(_node(T.ADD, zero, num(-4 * c))), two)
+    formula.add_group(
+        "calculate_short",
+        Step(start, no_zero, "add_with_zero", [zero]),
+        Step(no_zero, no_den, "mul_with_one", [num(1)]),
+        Step(no_den, no_one, "mul_with_one", [num(1)]),
+        Step(no_one, zeroed, "pow_zero", [zero]),
+        Step(
+            zeroed,
+            summed,
+            "mul",
+            [],
+            subresult=_evaluate(_node(T.MULTIPLY, num(4), _paren(c))),
+        ),
+    )
+    plain = fraction(pm(num(-4 * c)), two)
+    formula.add_group(
+        CoreRichText(type="remove_zero", args=[zero]), Step(summed, plain, "add_with_zero", [zero])
+    )
+    rooted = fraction(_node(T.ADD_SUBTRACT, num(2 * k)), two)
+    formula.add_group(
+        "calculate_short",
+        Step(
+            plain,
+            rooted,
+            "root_square",
+            [],
+            subresult=_detail(_node(T.ROOT2, num(-4 * c)), num(2 * k)),
+        ),
+    )
+    plus = fraction(num(2 * k), two)
+    minus = fraction(_node(T.NEGATIVE, num(2 * k)), two)
+    listed = _node(T.LIST, plus, minus)
+    formula.add_group("quad_separate", Step(rooted, listed, "quad_separate_signs", list(_SIGNS)))
+    low, high = _eq(x, num(-k)), _eq(x, num(k))
+    answer = _node(T.LIST, high, low)
+    formula.add_group(
+        "frac_reduce_frac",
+        Step(
+            listed,
+            _node(T.LIST, high, minus),
+            "frac_reduce",
+            [two],
+            subresult=_detail(plus.children[1], num(k)),
+        ),
+        Step(
+            _node(T.LIST, high, minus),
+            answer,
+            "frac_reduce",
+            [two],
+            subresult=_detail(minus.children[1], num(-k)),
+        ),
+    )
+    formula.add_group(
+        CoreRichText(type="solution_eq_num", args=[two]),
+        Step(answer, answer, "solution_eq_num", [two]),
+    )
+    formula.set_solution(answer)
+
+    # -- the PQ formula
+    pq = SolveResult()
+    p_half = _node(T.FRACTION, p, two)
+    p_standard = _eq(
+        _node(T.ADD, _node(T.ADD, _node(T.POWER, x, two), _node(T.MULTIPLY_IMPLICIT, p, x)), q),
+        zero,
+    )
+    p_template = _eq(
+        x,
+        _node(
+            T.ADD_SUBTRACT,
+            _node(T.NEGATIVE, p_half),
+            _node(T.ROOT2, _node(T.SUBTRACT, _node(T.POWER, _node(T.BRACKET, p_half), two), q)),
+        ),
+    )
+    zero_half = _node(T.FRACTION, zero, two)
+    inner = _node(T.SUBTRACT, _node(T.POWER, _node(T.BRACKET, zero_half), two), _paren(c))
+    first = _eq(x, _node(T.ADD_SUBTRACT, _node(T.NEGATIVE, zero_half), _node(T.ROOT2, inner)))
+    pq.add_group(
+        "quad_formula_abc_simple", Step(node, first, "quad_formula_pq", [p_standard, p_template])
+    )
+    divided = _eq(
+        x,
+        _node(
+            T.ADD_SUBTRACT,
+            _node(T.NEGATIVE, zero),
+            _node(
+                T.ROOT2, _node(T.SUBTRACT, _node(T.POWER, _node(T.BRACKET, zero), two), _paren(c))
+            ),
+        ),
+    )
+    valued = _eq(x, _node(T.ADD_SUBTRACT, _node(T.NEGATIVE, zero), num(k)))
+    pq.add_group(
+        ["divide", "calculate_short"],
+        Step(first, divided, "div_zero", [zero]),
+        Step(divided, valued, "calculate_direct"),
+    )
+    cleaned = _eq(x, _node(T.ADD_SUBTRACT, num(k)))
+    pq.add_group(
+        CoreRichText(type="remove_zero", args=[zero]),
+        Step(valued, cleaned, "add_with_zero", [zero]),
+    )
+    pair = _node(T.LIST, _eq(x, num(k)), _eq(x, num(-k)))
+    pq.add_group("quad_separate", Step(cleaned, pair, "quad_separate_signs", list(_SIGNS)))
+    pq.add_group(
+        CoreRichText(type="solution_eq_num", args=[two]), Step(pair, pair, "solution_eq_num", [two])
+    )
+    pq.set_solution(pair)
+    return [formula, pq]
+
+
 def methods(
     node: CoreNode, var: str, a: Fraction, b: Fraction, c: Fraction
 ) -> list[SolveResult] | None:
@@ -1411,6 +1579,7 @@ def methods(
         shown: list[SolveResult | None] = [_extraction(node, var, ic)]
         if isqrt(-ic) ** 2 == -ic:
             shown.append(_difference_of_squares(_Family(var, ia, ib, ic)))
+            shown += _pure_square_formulas(node, var, ic)
         if isqrt(-ic) ** 2 != -ic:
             shown += _two_real_cards(node, ia, ib, ic)
         return [m for m in shown if m]
