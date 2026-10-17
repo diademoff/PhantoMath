@@ -269,14 +269,22 @@ def _card_steps(task_id: str, idx: int, kmap) -> dict:
 
 def crawl(task_id: str, keys: str) -> dict:
     kmap = build_keymap()
-    reset()
-    # Warm-up: the first taps after a fresh start are sometimes swallowed.
-    ui.type_keys("1")
-    time.sleep(1)
-    ui.adb("shell", "input", "tap", "1005", "367")  # clear button
-    time.sleep(1)
-    type_task(keys)
-    time.sleep(2.5)
+    previous = None
+    for _attempt in range(5):
+        # Taps are sometimes swallowed after a fresh start; the width of the editor
+        # view depends on what was typed, so two identical passes mean a correct input.
+        reset()
+        ui.type_keys("1")
+        time.sleep(1)
+        ui.adb("shell", "input", "tap", "1005", "367")  # clear button
+        time.sleep(1)
+        type_task(keys)
+        time.sleep(2.5)
+        signature = next((b for n, _, b in ui.nodes(ui.dump("sig"))
+                          if n.get("resource-id", "").endswith("/editor_view")), None)
+        if signature is not None and signature == previous:
+            break
+        previous = signature
     root = ui.dump(f"{task_id}_input")
     sol = ui.find(root, "Показать решение")
     (CAP / f"{task_id}_input.png").write_bytes(ui.adb("exec-out", "screencap", "-p", binary=True))
