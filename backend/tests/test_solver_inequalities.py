@@ -342,3 +342,18 @@ def test_quadratic_inequality_follows_photomath_cases_and_intersections() -> Non
         "intersection",
         "union",
     ]
+
+
+def test_square_above_a_number_moves_takes_the_root_then_splits_into_cases() -> None:
+    # Photomath 7.10.0 on device: x^2 - 4 > 0 is |x| > 2 after two nested rows.
+    problem = parse_protocol("{>({x^2-4},{0})}")
+    assert step_keys(problem) == [
+        "rel_move_right_const",
+        "ineq_pow_sqrt_root",
+        "ineq_separate_abs",
+        "intersection",
+        "ineq_linear",
+        "intersection",
+        "union",
+    ]
+    assert solution_of(problem).type is T.UNION

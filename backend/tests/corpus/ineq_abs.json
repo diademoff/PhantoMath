@@ -37,7 +37,7 @@
           }
         ]
       },
-      "steps": ["ineq_separate_abs"]
+      "steps": ["ineq_separate_abs", "intersection", "ineq_linear", "intersection", "union"]
     },
     {
       "id": "shifted",

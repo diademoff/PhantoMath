@@ -226,14 +226,14 @@ def _irrational_inequality(node: CoreNode, var: str, ctx: SolveContext) -> CoreN
     return _inequality_set(node, expression, "ineq_irr_solve", ctx)
 
 
-def _abs_less_than_number(node: CoreNode, var: str, ctx: SolveContext) -> CoreNode | None:
-    """``|x| < k`` for an integer ``k > 0``: the rows Photomath 7.10.0 shows on a device.
+def _abs_against_number(node: CoreNode, var: str, ctx: SolveContext) -> CoreNode | None:
+    """``|x| < k`` or ``|x| > k`` for an integer ``k > 0``: the rows Photomath 7.10.0 shows.
 
     Two cases (``x >= 0`` and ``x < 0``), each reduced to an interval, then united.
     """
     left, right = node.children
     if not (
-        node.type is T.LESS_THAN
+        node.type in (T.LESS_THAN, T.GREATER_THAN)
         and left.type is T.ABS
         and left.children[0].type is T.VARIABLE
         and left.children[0].value == var
@@ -243,21 +243,30 @@ def _abs_less_than_number(node: CoreNode, var: str, ctx: SolveContext) -> CoreNo
         and int(right.value) > 0
     ):
         return None
+    below = node.type is T.LESS_THAN
+    flipped = T.GREATER_THAN if below else T.LESS_THAN
     k = Fraction(int(right.value))
     x, zero, upper, lower = CoreNode.variable(var), _const(Fraction(0)), _const(k), _const(-k)
     eq = CoreNode.node
-    minus_x = eq(T.NEGATIVE, x)
     cases = eq(
         T.LIST,
-        eq(T.SYSTEM, eq(T.LESS_THAN, x, upper), eq(T.GREATER_THAN_EQUAL, x, zero)),
-        eq(T.SYSTEM, eq(T.LESS_THAN, minus_x, upper), eq(T.LESS_THAN, x, zero)),
+        eq(T.SYSTEM, eq(node.type, x, upper), eq(T.GREATER_THAN_EQUAL, x, zero)),
+        eq(T.SYSTEM, eq(node.type, eq(T.NEGATIVE, x), upper), eq(T.LESS_THAN, x, zero)),
     )
     ctx.result.add_group(
         "eq_separate_short",
         Step(node, cases, "ineq_separate_abs", [CoreNode.constant("2")]),
     )
-    positive = eq(T.ELEMENT_OF, x, eq(T.CLOSED_OPEN_INTERVAL, zero, upper))
-    negative_solved = eq(T.SYSTEM, eq(T.GREATER_THAN, x, lower), eq(T.LESS_THAN, x, zero))
+    if below:
+        positive_set = eq(T.CLOSED_OPEN_INTERVAL, zero, upper)
+        negative_set = eq(T.OPEN_OPEN_INTERVAL, lower, zero)
+        answer = eq(T.OPEN_OPEN_INTERVAL, lower, upper)
+    else:
+        positive_set = eq(T.OPEN_OPEN_INTERVAL, upper, _pos_inf())
+        negative_set = eq(T.OPEN_OPEN_INTERVAL, _neg_inf(), lower)
+        answer = eq(T.UNION, negative_set, positive_set)
+    positive = eq(T.ELEMENT_OF, x, positive_set)
+    negative_solved = eq(T.SYSTEM, eq(flipped, x, lower), eq(T.LESS_THAN, x, zero))
     first = eq(T.LIST, positive, cases.children[1])
     second = eq(T.LIST, positive, negative_solved)
     detail = SolveResult()
@@ -271,17 +280,47 @@ def _abs_less_than_number(node: CoreNode, var: str, ctx: SolveContext) -> CoreNo
         Step(cases, first, "intersection"),
         Step(first, second, "ineq_linear", [x], subresult=detail),
     )
-    negative = eq(T.ELEMENT_OF, x, eq(T.OPEN_OPEN_INTERVAL, lower, zero))
-    third = eq(T.LIST, positive, negative)
+    third = eq(T.LIST, positive, eq(T.ELEMENT_OF, x, negative_set))
     ctx.result.add_group("intersection", Step(second, third, "intersection"))
-    answer = eq(T.OPEN_OPEN_INTERVAL, lower, upper)
     ctx.result.add_group("union", Step(third, answer, "union"))
     return answer
 
 
+def _square_above_number(
+    node: CoreNode, var: str, poly: dict[int, Fraction], ctx: SolveContext
+) -> CoreNode | None:
+    """``x^2 - k^2 > 0``: move the constant, take the root (``|x| > k``), then the cases."""
+    c = poly.get(0, Fraction(0))
+    if node.type is not T.GREATER_THAN or set(poly) != {2, 0} or poly[2] != 1 or c >= 0:
+        return None
+    k = sympy.sqrt(-sympy.Rational(c.numerator, c.denominator))
+    if not (k.is_Integer and k > 0):
+        return None
+    x, eq = CoreNode.variable(var), CoreNode.node
+    zero, number = _const(Fraction(0)), _const(-c)
+    squared = eq(T.POWER, x, CoreNode.constant("2"))
+    moved = eq(T.GREATER_THAN, squared, number)
+    balanced = eq(T.GREATER_THAN, eq(T.ADD, node.children[0], number), eq(T.ADD, zero, number))
+    swap = SolveResult()
+    swap.add_group("rel_swap_right_const", Step(node, balanced, "rel_swap_right_const"))
+    swap.add_group("remove_opposites", Step(balanced, moved, "remove_opposites"))
+    swap.set_solution(moved)
+    ctx.result.add_group(
+        "rel_move_right_const_msg", Step(node, moved, "rel_move_right_const", subresult=swap)
+    )
+    absolute = eq(T.GREATER_THAN, eq(T.ABS, x), _const(Fraction(int(k))))
+    root = SolveResult()
+    root.add_group("ineq_pow_sqrt_root", Step(moved, absolute, "ineq_pow_sqrt_root"))
+    root.set_solution(absolute)
+    ctx.result.add_group(
+        "compare_solve_ineq", Step(moved, absolute, "ineq_pow_sqrt_root", subresult=root)
+    )
+    return _abs_against_number(absolute, var, ctx)
+
+
 def _abs_inequality(node: CoreNode, var: str, ctx: SolveContext) -> CoreNode | None:
     """Неравенство с модулем: два случая, множество решений — ``solveset``."""
-    if (shown := _abs_less_than_number(node, var, ctx)) is not None:
+    if (shown := _abs_against_number(node, var, ctx)) is not None:
         return shown
     expression = _difference(node)
     if expression is None or not expression.has(sympy.Abs):
@@ -589,6 +628,8 @@ def _quadratic_inequality(
     expression = _poly_expr(poly, var)
     symbol = sympy.Symbol(var)
     roots = sorted(sympy.solve(sympy.Eq(expression, 0), symbol), key=_sort_key)
+    if (shown := _square_above_number(node, var, poly, ctx)) is not None:
+        return shown
     inside = (a > 0) == below
     answer = _interval_answer(roots[0], roots[-1], inside=inside, closed=closed)
     if (

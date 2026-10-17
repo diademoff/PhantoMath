@@ -382,5 +382,41 @@
   "section": "arithmetic",
   "pm": "1,5*4",
   "proto": "{1.5*4}"
+ },
+ {
+  "id": "eq_sq9",
+  "section": "quadratic_equations",
+  "pm": "x<sq>=9",
+  "proto": "{=({x^2},{9})}"
+ },
+ {
+  "id": "eq_3x2",
+  "section": "quadratic_equations",
+  "pm": "3x<sq>=12",
+  "proto": "{=({3x^2},{12})}"
+ },
+ {
+  "id": "ineq_sq1",
+  "section": "inequalities",
+  "pm": "x<sq>+1<gt>0",
+  "proto": "{>({x^2+1},{0})}"
+ },
+ {
+  "id": "d_cos",
+  "section": "derivatives",
+  "pm": "<ddx><cos>x",
+  "proto": "{derivation_diff({x},{cos({x})})}"
+ },
+ {
+  "id": "d_5x",
+  "section": "derivatives",
+  "pm": "<ddx>5x",
+  "proto": "{derivation_diff({x},{5x})}"
+ },
+ {
+  "id": "lim_lin",
+  "section": "limits",
+  "pm": "<lim>x3<R>2x+1",
+  "proto": "{lim({3},{2x+1})}"
  }
 ]
