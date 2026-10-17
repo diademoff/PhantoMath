@@ -190,7 +190,7 @@ class TestAbsInequality:
         vertical = solve(problem).result.vertical()
         assert vertical is not None
         keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
-        assert keys == ["ineq_separate_abs"]
+        assert keys == ["ineq_separate_abs", "intersection", "ineq_linear", "intersection", "union"]
 
 
 class TestInequalitySystem:

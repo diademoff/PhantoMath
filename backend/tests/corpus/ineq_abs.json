@@ -12,7 +12,7 @@
           {"type": "CONSTANT", "value": "2"}
         ]
       },
-      "steps": ["ineq_separate_abs"]
+      "steps": ["ineq_separate_abs", "intersection", "ineq_linear", "intersection", "union"]
     },
     {
       "id": "greater-union",

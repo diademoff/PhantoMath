@@ -29,7 +29,7 @@ from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
 from . import quadratic_pm
 from .arithmetic import format_number
-from .base import SolveContext, SolveError, Step, solver_for
+from .base import SolveContext, SolveError, SolveResult, Step, solver_for
 from .domain import add_restriction_steps
 from .equations import _linear_rows, _poly_expr, poly_of
 from .sympy_bridge import from_sympy, to_sympy
@@ -226,8 +226,63 @@ def _irrational_inequality(node: CoreNode, var: str, ctx: SolveContext) -> CoreN
     return _inequality_set(node, expression, "ineq_irr_solve", ctx)
 
 
+def _abs_less_than_number(node: CoreNode, var: str, ctx: SolveContext) -> CoreNode | None:
+    """``|x| < k`` for an integer ``k > 0``: the rows Photomath 7.10.0 shows on a device.
+
+    Two cases (``x >= 0`` and ``x < 0``), each reduced to an interval, then united.
+    """
+    left, right = node.children
+    if not (
+        node.type is T.LESS_THAN
+        and left.type is T.ABS
+        and left.children[0].type is T.VARIABLE
+        and left.children[0].value == var
+        and right.type is T.CONSTANT
+        and right.value is not None
+        and right.value.isdigit()
+        and int(right.value) > 0
+    ):
+        return None
+    k = int(right.value)
+    x, zero, upper, lower = CoreNode.variable(var), _const(Fraction(0)), _const(k), _const(-k)
+    eq = CoreNode.node
+    minus_x = eq(T.NEGATIVE, x)
+    cases = eq(
+        T.LIST,
+        eq(T.SYSTEM, eq(T.LESS_THAN, x, upper), eq(T.GREATER_THAN_EQUAL, x, zero)),
+        eq(T.SYSTEM, eq(T.LESS_THAN, minus_x, upper), eq(T.LESS_THAN, x, zero)),
+    )
+    ctx.result.add_group(
+        "eq_separate_short",
+        Step(node, cases, "ineq_separate_abs", [CoreNode.constant("2")]),
+    )
+    positive = eq(T.ELEMENT_OF, x, eq(T.CLOSED_OPEN_INTERVAL, zero, upper))
+    negative_solved = eq(T.SYSTEM, eq(T.GREATER_THAN, x, lower), eq(T.LESS_THAN, x, zero))
+    first = eq(T.LIST, positive, cases.children[1])
+    second = eq(T.LIST, positive, negative_solved)
+    detail = SolveResult()
+    detail.add_group(
+        CoreRichText(type="ineq_linear", args=[x]),
+        Step(cases.children[1].children[0], negative_solved.children[0], "ineq_linear", [x]),
+    )
+    detail.set_solution(negative_solved.children[0])
+    ctx.result.add_group(
+        ["intersection", "ineq_solve_short"],
+        Step(cases, first, "intersection"),
+        Step(first, second, "ineq_linear", [x], subresult=detail),
+    )
+    negative = eq(T.ELEMENT_OF, x, eq(T.OPEN_OPEN_INTERVAL, lower, zero))
+    third = eq(T.LIST, positive, negative)
+    ctx.result.add_group("intersection", Step(second, third, "intersection"))
+    answer = eq(T.OPEN_OPEN_INTERVAL, lower, upper)
+    ctx.result.add_group("union", Step(third, answer, "union"))
+    return answer
+
+
 def _abs_inequality(node: CoreNode, var: str, ctx: SolveContext) -> CoreNode | None:
     """Неравенство с модулем: два случая, множество решений — ``solveset``."""
+    if (shown := _abs_less_than_number(node, var, ctx)) is not None:
+        return shown
     expression = _difference(node)
     if expression is None or not expression.has(sympy.Abs):
         return None
