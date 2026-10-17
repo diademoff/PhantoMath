@@ -115,6 +115,8 @@ def solve_arithmetic(node: CoreNode, ctx: SolveContext) -> CoreNode:
         return node
 
     node = _flatten_fraction_sum(node)
+    if ctx.depth == 0 and (shown := _minus_negative_rows(node, ctx)) is not None:
+        return shown
     # Дети сворачиваются через общий реестр: так арифметика складывается с
     # другими модулями (например, дробь сворачивается своим модулем).
     ctx.depth += 1
@@ -182,6 +184,40 @@ def solve_arithmetic(node: CoreNode, ctx: SolveContext) -> CoreNode:
     # Photomath 7.10.0 on device: every operation is its own row (main step).
     ctx.result.add_group(detail.header if detail and detail.header else key, step)
     return constant
+
+
+def _minus_negative_rows(node: CoreNode, ctx: SolveContext) -> CoreNode | None:
+    """``a - (-b)`` for integers: open the bracket, then one summing row with a detail screen.
+
+    The two rows Photomath 7.10.0 shows on a device for ``-3-(-5)``.
+    """
+    if node.type is not T.SUBTRACT or len(node.children) != 2:
+        return None
+    left, right = node.children
+    inner = right.children[0] if right.type is T.BRACKET else None
+    if inner is None or inner.type is not T.NEGATIVE or inner.children[0].type is not T.CONSTANT:
+        return None
+    try:
+        a, b = _value_of(route(left, SolveContext(SolveResult()))), _value_of(inner.children[0])
+    except SolveError:
+        return None
+    if a.denominator != 1 or b.denominator != 1 or not a < 0 < b or b <= -a:
+        return None  # captured only for a negative first term smaller than b in size
+    opened = CoreNode.node(T.ADD, left, inner.children[0])
+    ctx.result.add_group(
+        "remove_bracket_short",
+        Step(node, opened, "neg_neg_arg", [CoreNode.variable("-")]),
+    )
+    total = CoreNode.constant(format_number(a + b))
+    reordered = CoreNode.node(
+        T.SUBTRACT, CoreNode.constant(format_number(b)), CoreNode.constant(format_number(-a))
+    )
+    inner_rows = SolveResult()
+    inner_rows.add_group("add_sign_sub", Step(opened, reordered, "add_sign_sub"))
+    inner_rows.add_group("calculate_short", Step(reordered, total, "calculate_short"))
+    inner_rows.set_solution(total)
+    ctx.result.add_group("calculate_short", Step(opened, total, "calc_sum", subresult=inner_rows))
+    return total
 
 
 def _flatten_fraction_sum(node: CoreNode) -> CoreNode:

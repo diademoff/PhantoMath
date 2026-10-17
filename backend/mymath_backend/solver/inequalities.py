@@ -243,7 +243,7 @@ def _abs_less_than_number(node: CoreNode, var: str, ctx: SolveContext) -> CoreNo
         and int(right.value) > 0
     ):
         return None
-    k = int(right.value)
+    k = Fraction(int(right.value))
     x, zero, upper, lower = CoreNode.variable(var), _const(Fraction(0)), _const(k), _const(-k)
     eq = CoreNode.node
     minus_x = eq(T.NEGATIVE, x)

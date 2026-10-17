@@ -18,6 +18,7 @@ from mymath_backend import CoreNodeType as T
 from mymath_backend.explanations import DEFAULT_LOCALE
 from mymath_backend.input import parse_protocol
 from mymath_backend.solver import SolveError, registered_types, solve
+from mymath_backend.solver.base import SolveContext, SolveResult, route
 
 EXPLANATIONS = Path(__file__).resolve().parents[2] / "truth" / "data" / "explanations.json"
 
@@ -197,3 +198,10 @@ class TestRegistration:
     def test_all_node_types_registered(self) -> None:
         """Все 143 типа узлов контракта имеют модуль решателя."""
         assert registered_types() == set(T)
+
+
+def test_minus_a_negative_bracket_opens_it_then_sums_on_one_row() -> None:
+    # Photomath 7.10.0 on device: -3-(-5) is "open the bracket", then one summing row.
+    ctx = SolveContext(SolveResult())
+    route(parse_protocol("{-3-(-5)}"), ctx)
+    assert [step.key for step in ctx.result] == ["neg_neg_arg", "calc_sum"]
