@@ -108,7 +108,8 @@ def _factoring(f: _Family) -> SolveResult | None:
     g = gcd(a, abs(p))
     lead, rest = a // g, p // g
     second = q // lead
-    if q >= 0 or q % lead or c != second * rest:
+    # a positive second term was captured for a = 1 with a tail equal to the bracket (x^2 + 4x + 3)
+    if q == 0 or q % lead or c != second * rest or (q > 0 and (a != 1 or second != 1)):
         return None
     result = SolveResult()
 
@@ -117,7 +118,12 @@ def _factoring(f: _Family) -> SolveResult | None:
     split = _eq(_poly([(a, 2), (p, 1), (q, 1), (c, 0)], var), _num(0))
     result.add_group(
         "rewrite_expression",
-        Step(f.node, split, "write_as_diff", [_chain([(1 if b > 0 else -1, _mono(b, 1, var))])]),
+        Step(
+            f.node,
+            split,
+            "write_as_sum" if q > 0 else "write_as_diff",
+            [_chain([(1 if b > 0 else -1, _mono(b, 1, var))])],
+        ),
     )
 
     head = _node(T.MULTIPLY, _mono(g, 1, var), wrapped)
@@ -135,14 +141,21 @@ def _factoring(f: _Family) -> SolveResult | None:
         )
     else:
         headed = _eq(
-            _chain([(1, head), (-1, _mono(q, 1, var)), (1 if c > 0 else -1, _mono(c, 0, var))]),
+            _chain(
+                [
+                    (1, head),
+                    (1 if q > 0 else -1, _mono(q, 1, var)),
+                    (1 if c > 0 else -1, _mono(c, 0, var)),
+                ]
+            ),
             _num(0),
         )
-        result.add_group(
-            "factorise_call_plural",
-            Step(split, headed, "extract_arg", [_mono(g, 1, var)]),
-            Step(headed, grouped, "extract_arg", [_num(second)]),
-        )
+        pages = [Step(split, headed, "extract_arg", [_mono(g, 1, var)])]
+        if second != 1:  # a tail that is already the bracket needs no second extraction
+            pages.append(Step(headed, grouped, "extract_arg", [_num(second)]))
+        else:
+            grouped = headed
+        result.add_group("factorise_call_plural", *pages)
 
     other = _poly([(g, 1), (second, 0)], var)
     product = _eq(_node(T.MULTIPLY, wrapped, _node(T.BRACKET, other)), _num(0))

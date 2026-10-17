@@ -243,6 +243,19 @@ class TestMethods:
             "solution_eq_num",
         ]
 
+    def test_positive_terms_are_written_as_a_sum(self) -> None:
+        # Photomath 7.10.0 on device: x^2 + 4x + 3 = 0 splits 4x into 3x + x.
+        group = _group("{=({x^2+4x+3},{0})}")
+        assert _method_keys(group.entries[0]) == [
+            "write_as_sum",
+            "extract_arg",
+            "extract_arg",
+            "quad_separate_zero_product",
+            "eq_linear",
+            "eq_linear",
+            "solution_eq_num",
+        ]
+
     def test_other_quadratics_keep_formula_then_factoring(self) -> None:
         group = _group("{=({x^2+5x+6},{0})}")
         assert _method_keys(group.entries[0]) == [

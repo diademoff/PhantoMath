@@ -4,3 +4,6 @@ ok abs_neg
 ok pow_5sq
 ok quad_double
 ok quad_irr
+ok quad_pos
+ok quad_negc
+ok ineq_gt
