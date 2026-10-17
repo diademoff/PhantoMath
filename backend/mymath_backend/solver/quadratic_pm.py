@@ -995,6 +995,66 @@ def _double_root(node: CoreNode, var: str, b: int, c: int) -> list[SolveResult] 
     return [factoring, formula_m, pq]
 
 
+def _discriminant_cards(
+    node: CoreNode,
+    a: int,
+    b: int,
+    c: int,
+    verdict: tuple[str | CoreRichText, str, list[CoreNode]],
+    count: CoreNode,
+) -> tuple[SolveResult, SolveResult]:
+    """Photomath's "number of solutions" and "discriminant" cards; ``verdict`` is the last row."""
+    two = _num(2)
+    la, lb, lc = (CoreNode.variable(v) for v in "abc")
+    letters = CoreNode.variable("D")
+    template = _eq(
+        letters, _node(T.SUBTRACT, _node(T.POWER, lb, two), _node(T.MULTIPLY, _num(4), la, lc))
+    )
+    substituted = _eq(
+        letters,
+        _node(
+            T.SUBTRACT,
+            _node(T.POWER, _paren(b) if b < 0 else _num(b), two),
+            _node(T.MULTIPLY, _num(4), _num(a), _paren(c) if c < 0 else _num(c)),
+        ),
+    )
+    value = b * b - 4 * a * c
+    computed = _eq(letters, _num(value))
+    coefficients = [_num(a), _num(b), _num(c)]
+
+    def rows(result: SolveResult) -> None:
+        detail = SolveResult()
+        detail.add_group(
+            "extrema_coeff_smpl", Step(node, template, "eq_quad_coeff_identify", coefficients)
+        )
+        detail.set_solution(template)
+        result.add_group(
+            "extrema_coeff_smpl",
+            Step(node, template, "eq_quad_coeff_identify", coefficients, subresult=detail),
+        )
+        result.add_group("coeff_sub", Step(template, substituted, "eq_quad_eval_disc_sub_smpl"))
+        result.add_group(
+            "calculate_short",
+            Step(
+                substituted,
+                computed,
+                "calculate_direct",
+                [],
+                subresult=_detail(substituted.children[1], _num(value)),
+            ),
+        )
+
+    discriminant = SolveResult()
+    rows(discriminant)
+    discriminant.set_solution(computed)
+    counting = SolveResult()
+    rows(counting)
+    title, key, args = verdict
+    counting.add_group(title, Step(computed, count, key, args))
+    counting.set_solution(count)
+    return counting, discriminant
+
+
 def _negative_discriminant(node: CoreNode, var: str, b: int, c: int) -> list[SolveResult] | None:
     """``x^2 + b x + c = 0`` with D = -m^2 < 0 (captured for b > 0, c > 0).
 
@@ -1141,52 +1201,25 @@ def _negative_discriminant(node: CoreNode, var: str, b: int, c: int) -> list[Sol
     real_result.add_group("expr_not_def_in_r", Step(subtracted, subtracted, "root_sqr_neg"))
     real_result.set_solution(CoreNode.empty())
 
-    # -- the discriminant cards
-    a_, b_, c_ = num(1), num(b), num(c)
-    letters = CoreNode.variable("D")
-    template_d = _eq(
-        letters,
-        _node(T.SUBTRACT, _node(T.POWER, lb, two), _node(T.MULTIPLY, num(4), la, lc)),
+    counting, discriminant = _discriminant_cards(
+        node,
+        1,
+        b,
+        c,
+        ("eq_quad_disc_no_solution_simple", "eq_quad_disc_no_solution_var_lt", [num(0)]),
+        CoreNode.empty(),
     )
-    substituted = _eq(
-        letters,
-        _node(T.SUBTRACT, _node(T.POWER, b_, two), _node(T.MULTIPLY, num(4), a_, c_)),
-    )
-    computed = _eq(letters, num(d))
-
-    def discriminant_rows(result: SolveResult) -> None:
-        coefficients = SolveResult()
-        coefficients.add_group(
-            "extrema_coeff_smpl", Step(node, template_d, "eq_quad_coeff_identify", [a_, b_, c_])
-        )
-        coefficients.set_solution(template_d)
-        result.add_group(
-            "extrema_coeff_smpl",
-            Step(node, template_d, "eq_quad_coeff_identify", [a_, b_, c_], subresult=coefficients),
-        )
-        result.add_group("coeff_sub", Step(template_d, substituted, "eq_quad_eval_disc_sub_smpl"))
-        result.add_group(
-            "calculate_short",
-            Step(
-                substituted,
-                computed,
-                "calculate_direct",
-                [],
-                subresult=_detail(substituted.children[1], num(d)),
-            ),
-        )
-
-    discriminant = SolveResult()
-    discriminant_rows(discriminant)
-    discriminant.set_solution(computed)
-    counting = SolveResult()
-    discriminant_rows(counting)
-    counting.add_group(
-        "eq_quad_disc_no_solution_simple",
-        Step(computed, CoreNode.empty(), "eq_quad_disc_no_solution_var_lt", [num(0)]),
-    )
-    counting.set_solution(CoreNode.empty())
     return [complex_result, real_result, counting, discriminant]
+
+
+def _two_real_cards(node: CoreNode, a: int, b: int, c: int) -> list[SolveResult]:
+    two = _num(2)
+    verdict = (
+        CoreRichText(type="eq_quad_disc_solution_plural_simple", args=[two]),
+        "eq_quad_disc_solution_all_gt",
+        [_num(0), two],
+    )
+    return list(_discriminant_cards(node, a, b, c, verdict, two))
 
 
 def methods(
@@ -1205,6 +1238,8 @@ def methods(
         shown: list[SolveResult | None] = [_extraction(node, var, ic)]
         if isqrt(-ic) ** 2 == -ic:
             shown.append(_difference_of_squares(_Family(var, ia, ib, ic)))
+        if isqrt(-ic) ** 2 != -ic:
+            shown += _two_real_cards(node, ia, ib, ic)
         return [m for m in shown if m]
     if ia == 0 or ib == 0 or ic == 0 or d <= 0 or isqrt(d) ** 2 != d:
         return None
@@ -1215,4 +1250,6 @@ def methods(
     built = primary + [
         m for m in (_pq_formula(family), _pq_scaled(family), _completing_square(family)) if m
     ]
+    if ia > 1:  # Photomath adds the two discriminant cards when the leading coefficient is not 1
+        built += _two_real_cards(node, ia, ib, ic)
     return built or None

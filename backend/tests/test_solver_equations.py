@@ -331,10 +331,10 @@ class TestMethods:
             "solve_by_factoring",
         ]
 
-    def test_irrational_quadratic_has_one_method(self) -> None:
+    def test_irrational_quadratic_has_the_extraction_and_the_discriminant_cards(self) -> None:
         group = _group("{=({x^2-2},{0})}")
-        assert len(group.entries) == 1
-        assert group.select_method_text is None
+        assert len(group.entries) == 3
+        assert _method_keys(group.entries[1])[-1] == "eq_quad_disc_solution_all_gt"
 
     def test_linear_has_two_methods(self) -> None:
         group = _group("{=({2x+3},{7})}")
