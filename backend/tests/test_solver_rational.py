@@ -73,4 +73,4 @@ class TestStillPolynomial:
         assert root_value("{=({2x+3},{7})}") == "2"
 
     def test_quadratic_unchanged(self) -> None:
-        assert step_keys("{=({x^2-5x+6},{0})}")[0] == "eq_quad_coeff_identify"
+        assert step_keys("{=({x^2-5x+6},{0})}")[0] == "write_as_diff"

@@ -198,8 +198,15 @@ class TestMethods:
         assert group.select_method_text is not None
         assert group.select_method_text.type == "select_method"
 
-    def test_first_method_is_formula_second_factoring(self) -> None:
+    def test_captured_family_is_factoring_then_formula(self) -> None:
+        # Photomath 7.10.0 on device: x^2 - 5x + 6 = 0 opens with factoring.
         group = _group("{=({x^2-5x+6},{0})}")
+        assert [len(_method_keys(e)) for e in group.entries] == [8, 12]
+        assert _method_keys(group.entries[0])[0] == "write_as_diff"
+        assert _method_keys(group.entries[1])[0] == "quad_formula_abc"
+
+    def test_other_quadratics_keep_formula_then_factoring(self) -> None:
+        group = _group("{=({x^2+5x+6},{0})}")
         assert _method_keys(group.entries[0]) == [
             "eq_quad_coeff_identify",
             "eq_quad_disc",

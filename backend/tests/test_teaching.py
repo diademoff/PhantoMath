@@ -87,9 +87,7 @@ def test_fraction_details_are_exact_equivalent_expressions(source: str) -> None:
         assert sympy.simplify(left - right) == 0
 
 
-@pytest.mark.parametrize(
-    "source", ["{x^2-5x+6=0}", "{x^2-4x+4=0}", "{-2x^2+3x+1=0}", "{2x^2+9x+6=8pi}"]
-)
+@pytest.mark.parametrize("source", ["{x^2-4x+4=0}", "{-2x^2+3x+1=0}", "{2x^2+9x+6=8pi}"])
 def test_quadratic_has_three_groups_and_real_arithmetic_details(source: str) -> None:
     result = response(source)
     vertical = result["result"]["groups"][0]["entries"][0]["result"]
@@ -121,6 +119,32 @@ def test_quadratic_has_three_groups_and_real_arithmetic_details(source: str) -> 
         for side in ("left", "right"):
             eq = CoreNode.from_contract(step[side])
             assert sympy.simplify(residual.subs(symbol, to_sympy(eq.children[1]))) == 0
+
+
+@pytest.mark.parametrize("source", ["{x^2-5x+6=0}", "{2x^2+3x-2=0}"])
+def test_captured_quadratics_keep_the_polynomial_through_factoring(source: str) -> None:
+    result = response(source)
+    factoring = result["result"]["groups"][0]["entries"][0]["result"]
+    original = parse_protocol(source)
+    expected = sympy.expand(to_sympy(original.children[0]) - to_sympy(original.children[1]))
+    equations = [
+        CoreNode.from_contract(sub[side])
+        for step in factoring["steps"][:3]
+        for sub in step["substeps"]
+        for side in ("left", "right")
+    ]
+    for equation in equations:
+        assert (
+            sympy.expand(to_sympy(equation.children[0]) - to_sympy(equation.children[1]))
+            == expected
+        )
+    # The two linear branches really are the roots of the original polynomial.
+    symbol = sympy.Symbol("x")
+    roots = [
+        to_sympy(CoreNode.from_contract(item["right"]).children[1])
+        for item in factoring["steps"][4]["substeps"]
+    ]
+    assert all(expected.subs(symbol, r) == 0 for r in roots) and len(set(roots)) == 2
 
 
 @pytest.mark.parametrize("locale", ["ru", "en"])

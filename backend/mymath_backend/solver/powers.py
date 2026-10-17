@@ -22,7 +22,7 @@ from __future__ import annotations
 from fractions import Fraction
 from math import isqrt
 
-from ..ast import CoreNode
+from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
 from .arithmetic import format_number
 from .base import SolveContext, SolveError, SolveResult, Step, fold_semantically, solver_for
@@ -150,7 +150,9 @@ def _square_root_rows(node: CoreNode, n: int, ctx: SolveContext) -> CoreNode | N
     def square(value: int) -> CoreNode:
         return CoreNode.node(T.POWER, number(value), number(2))
 
-    root_of = lambda inner: CoreNode.node(T.ROOT2, inner)  # noqa: E731
+    def root_of(inner: CoreNode) -> CoreNode:
+        return CoreNode.node(T.ROOT2, inner)
+
     two = number(2)
     rest = n // (k * k)
     if rest == 1:
@@ -165,7 +167,9 @@ def _square_root_rows(node: CoreNode, n: int, ctx: SolveContext) -> CoreNode | N
     factored = root_of(CoreNode.node(T.MULTIPLY, square(k), number(rest)))
     split = CoreNode.node(T.MULTIPLY, root_of(square(k)), root_of(number(rest)))
     detail = SolveResult()
-    detail.add_group("root_reduce", Step(split, result, "root_reduce", [two]))
+    detail.add_group(
+        CoreRichText(type="root_reduce", args=[two]), Step(split, result, "root_reduce", [two])
+    )
     detail.set_solution(result)
     ctx.result.add_group("factorise_call", Step(node, factored, "root_partial_split_arg", [two]))
     ctx.result.add_group("root_radical_msg", Step(factored, split, "root_mul_each"))

@@ -73,7 +73,7 @@
     },
     {
       "id": "quadratic-two-roots",
-      "title": "квадратное: x^2 - 5x + 6 = 0, два корня",
+      "title": "квадратное: x^2 - 5x + 6 = 0, два корня, разложением на множители (как в Photomath)",
       "input": "{=({x^2-5x+6},{0})}",
       "solution": {
         "type": "LIST",
@@ -107,10 +107,14 @@
         ]
       },
       "steps": [
-        "eq_quad_coeff_identify",
-        "eq_quad_disc",
-        "eq_quad_disc_calculate",
-        "eq_quad_solve_in_r"
+        "write_as_diff",
+        "extract_arg",
+        "extract_arg",
+        "extract_arg",
+        "quad_separate_zero_product",
+        "eq_linear",
+        "eq_linear",
+        "solution_eq_num"
       ]
     },
     {
@@ -139,7 +143,7 @@
     },
     {
       "id": "quadratic-factoring",
-      "title": "способ 2: квадратное разложением на множители",
+      "title": "способ 2: квадратное по формуле корней",
       "input": "{=({x^2-5x+6},{0})}",
       "method": 1,
       "solution": {
@@ -174,10 +178,18 @@
         ]
       },
       "steps": [
-        "eq_quad_coeff_identify",
-        "eq_quad_disc",
-        "eq_quad_disc_calculate",
-        "solve_by_factoring"
+        "quad_formula_abc",
+        "mul_with_one",
+        "mul_with_one",
+        "neg_neg_arg",
+        "pow",
+        "mul",
+        "sub",
+        "root_one",
+        "quad_separate_signs",
+        "calculate_direct",
+        "calculate_direct",
+        "solution_eq_num"
       ]
     },
     {

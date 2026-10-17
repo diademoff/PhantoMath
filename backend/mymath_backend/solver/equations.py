@@ -34,6 +34,7 @@ import sympy
 
 from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
+from . import quadratic_pm
 from .arithmetic import as_fraction, format_number
 from .base import SolveContext, SolveError, SolveResult, Step, solver_for
 from .domain import add_restriction_steps
@@ -375,7 +376,8 @@ def _linear_rows(
         )
         detail = SolveResult()
         detail.add_group(
-            "eq_linear_div", Step(current, divided, "eq_linear_div", [_const(coefficient)])
+            CoreRichText(type="eq_linear_div", args=[_const(coefficient)]),
+            Step(current, divided, "eq_linear_div", [_const(coefficient)]),
         )
         detail.add_group("divide", Step(divided, solution, "divide"))
         detail.set_solution(solution)
@@ -1482,8 +1484,10 @@ def solve_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
             )
         return methods
     if degree == 2:
-        methods = [_run(node, variables, lambda n, c: _quadratic_solution(n, var, poly, c))]
         a, b, c = _coeff(poly, 2), _coeff(poly, 1), _coeff(poly, 0)
+        if (shown := quadratic_pm.methods(node, var, a, b, c)) is not None:
+            return shown
+        methods = [_run(node, variables, lambda n, c: _quadratic_solution(n, var, poly, c))]
         if _perfect_sqrt(b * b - 4 * a * c) is not None:
             methods.append(
                 _run(

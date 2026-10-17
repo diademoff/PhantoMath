@@ -93,11 +93,17 @@ class SolveResult:
         """Итоговый ответ."""
         self.solution = node
 
-    def add_group(self, title: str | Sequence[str], *steps: Step) -> None:
-        """Explicit teaching boundary; identical titles never merge groups."""
+    def add_group(
+        self, title: str | CoreRichText | Sequence[str | CoreRichText], *steps: Step
+    ) -> None:
+        """Explicit teaching boundary; identical titles never merge groups.
+
+        A title is a dictionary key, or a ``CoreRichText`` when the label has arguments.
+        """
         if steps:
-            titles = [title] if isinstance(title, str) else list(title)
-            self._steps.append(([CoreRichText(type=t) for t in titles], list(steps)))
+            titles = [title] if isinstance(title, (str, CoreRichText)) else list(title)
+            heads = [CoreRichText(type=t) if isinstance(t, str) else t for t in titles]
+            self._steps.append((heads, list(steps)))
 
     def __len__(self) -> int:
         """Всего подшагов."""
