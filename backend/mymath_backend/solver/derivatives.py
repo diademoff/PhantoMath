@@ -17,6 +17,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from fractions import Fraction
 
 import sympy
@@ -371,6 +372,8 @@ def solve_derivative_with_respect(node: CoreNode, ctx: SolveContext) -> CoreNode
         result = _diff(expression_node, local)
     except SolveError:
         result = _sympy_derivative(expression_node, local)
+    if _leibniz_rows(node, variable_node, expression_node, result, ctx):
+        return result
     ctx.result.add(
         Step(
             left=node,
@@ -381,6 +384,154 @@ def solve_derivative_with_respect(node: CoreNode, ctx: SolveContext) -> CoreNode
         [_HEADER],
     )
     return result
+
+
+def _monomial(node: CoreNode, var: str) -> tuple[int, int] | None:
+    """``(c, n)`` for ``c x^n`` with a positive integer ``c`` and ``n >= 1``, else ``None``."""
+
+    def integer(part: CoreNode) -> int | None:
+        value = _as_number(part)
+        return int(value) if value is not None and value.denominator == 1 and value > 0 else None
+
+    def power(part: CoreNode) -> int | None:
+        if part.type is T.VARIABLE and part.value == var:
+            return 1
+        if (
+            part.type is T.POWER
+            and part.children[0].type is T.VARIABLE
+            and part.children[0].value == var
+        ):
+            n = integer(part.children[1])
+            return n if n is not None and n >= 2 else None
+        return None
+
+    if (n := power(node)) is not None:
+        return 1, n
+    if node.type in (T.MULTIPLY, T.MULTIPLY_IMPLICIT) and len(node.children) == 2:
+        c, n = integer(node.children[0]), power(node.children[1])
+        if c is not None and n is not None:
+            return c, n
+    return None
+
+
+def _leibniz_rows(
+    node: CoreNode,
+    variable_node: CoreNode,
+    expression: CoreNode,
+    result: CoreNode,
+    ctx: SolveContext,
+) -> bool:
+    """Photomath 7.10.0 rows for ``d/dx`` of x^n, of sin x / cos x, and of a sum of monomials."""
+    var = variable_node.value or "x"
+    x = variable_node
+    num = CoreNode.node
+
+    def diff(part: CoreNode) -> CoreNode:
+        return num(T.DERIVATION1_DIFF, x, part)
+
+    def power(n: int) -> CoreNode:
+        return num(T.POWER, x, _const(Fraction(n)))
+
+    def times(c: int, n: int) -> CoreNode:
+        """``c * n x^(n-1)`` as Photomath writes it: the table value of ``x^n`` scaled by ``c``."""
+        core = (
+            x
+            if n == 1
+            else num(T.MULTIPLY_IMPLICIT, _const(Fraction(n)), x)
+            if n == 2
+            else (num(T.MULTIPLY_IMPLICIT, _const(Fraction(n)), power(n - 1)))
+        )
+        if n == 1:
+            return _const(Fraction(c))
+        return core if c == 1 else num(T.MULTIPLY, _const(Fraction(c)), core)
+
+    single = _monomial(expression, var)
+    if expression.type in (T.SIN, T.COS) and expression.children[0].structural_eq(x):
+        rule = num(T.EQUALS, diff(expression), result)
+        ctx.result.add_group("derive", Step(node, result, "derive_table_desc", [rule]))
+        return True
+    if single is not None and single[0] == 1 and single[1] >= 2:
+        n = single[1]
+        rule = num(
+            T.EQUALS,
+            diff(num(T.POWER, x, CoreNode.variable("n"))),
+            num(
+                T.MULTIPLY,
+                CoreNode.variable("n"),
+                num(T.POWER, x, num(T.SUBTRACT, CoreNode.variable("n"), _const(Fraction(1)))),
+            ),
+        )
+        unevaluated = num(
+            T.MULTIPLY_IMPLICIT,
+            _const(Fraction(n)),
+            num(T.POWER, x, num(T.SUBTRACT, _const(Fraction(n)), _const(Fraction(1)))),
+        )
+        ctx.result.add_group("derive", Step(node, unevaluated, "derive_table_desc", [rule]))
+        simplified = (
+            num(T.MULTIPLY_IMPLICIT, _const(Fraction(n)), num(T.POWER, x, _const(Fraction(1))))
+            if n == 2
+            else result
+        )
+        ctx.result.add_group("calculate_short", Step(unevaluated, simplified, "sub"))
+        if n == 2:
+            ctx.result.add_group(
+                "pow", Step(simplified, result, "pow_with_one", [_const(Fraction(1))])
+            )
+        return True
+    if expression.type is T.ADD and len(expression.children) >= 2:
+        terms = [_monomial(t, var) for t in expression.children]
+        if all(t is not None for t in terms):
+            return _sum_rows(node, expression, result, [t for t in terms if t], diff, times, ctx)
+    return False
+
+
+def _sum_rows(
+    node: CoreNode,
+    expression: CoreNode,
+    result: CoreNode,
+    terms: list[tuple[int, int]],
+    diff: Callable[[CoreNode], CoreNode],
+    times: Callable[[int, int], CoreNode],
+    ctx: SolveContext,
+) -> bool:
+    """Sum rule, one page per term, then the products (only when a coefficient multiplies)."""
+    num = CoreNode.node
+
+    def chain(parts: list[CoreNode]) -> CoreNode:
+        out = parts[0]
+        for part in parts[1:]:
+            out = num(T.ADD, out, part)
+        return out
+
+    f, g = CoreNode.variable("f"), CoreNode.variable("g")
+    rule = num(T.EQUALS, diff(num(T.ADD, f, g)), num(T.ADD, diff(f), diff(g)))
+    split = chain([diff(t) for t in expression.children])
+    ctx.result.add_group("derive_short", Step(node, split, "derive_use_rule", [rule]))
+    current, pages = split, []
+    for index, (c, n) in enumerate(terms):
+        parts = [times(*t) for t in terms[: index + 1]] + [
+            diff(t) for t in expression.children[index + 1 :]
+        ]
+        following = chain(parts)
+        detail = SolveResult()
+        term = expression.children[index]
+        detail.add_group("derive", Step(diff(term), times(c, n), "derive_table_desc", [rule]))
+        detail.set_solution(times(c, n))
+        pages.append(Step(current, following, "derive", subresult=detail))
+        current = following
+    ctx.result.add_group("differentiate", *pages)
+    scaled = [i for i, (c, n) in enumerate(terms) if c > 1 and n >= 2]
+    if scaled:
+        i = scaled[0]
+        detail = SolveResult()
+        c, n = terms[i]
+        detail.add_group(
+            "product",
+            Step(times(c, n), result if len(terms) == 1 else _const(Fraction(c * n)), "product"),
+        )
+        detail.set_solution(result)
+        ctx.result.add_group("calculate_short", Step(current, result, "product", subresult=detail))
+    return True
 
 
 @solver_for(T.PRIME, T.DERIVATION1_PRIME, T.DERIVATION2_PRIME)

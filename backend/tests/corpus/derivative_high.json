@@ -72,7 +72,9 @@
         ]
       },
       "steps": [
-        "find_derivative_with_respect"
+        "derive_table_desc",
+        "sub",
+        "pow_with_one"
       ]
     }
   ]

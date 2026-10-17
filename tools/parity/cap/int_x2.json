@@ -1,0 +1,103 @@
+{
+ "id": "int_x2",
+ "keys": "<int>x<sq><R>x",
+ "cards": [
+  {
+   "methods": [],
+   "steps": [
+    {
+     "text": "Вычислите интеграл",
+     "keys": [
+      "find_integral",
+      "integrate_calc",
+      "series_calc_short"
+     ]
+    },
+    {
+     "text": "Прибавить ARG1",
+     "keys": [
+      "add_arg"
+     ]
+    },
+    {
+     "text": "Решение",
+     "keys": [
+      "graph_rt_info_solution"
+     ]
+    }
+   ],
+   "walk": [
+    {
+     "stages": [
+      {
+       "text": "Используя ARG1, найти интеграл",
+       "nested": [
+        "Используя ARG1, найти интеграл",
+        "Прибавить ARG1",
+        "Решение",
+        "Используя ARG1, найти интеграл",
+        "Вычислить"
+       ]
+      }
+     ]
+    },
+    {
+     "stages": [
+      {
+       "text": "Прибавить константу интегрирования ARG1",
+       "nested": []
+      }
+     ]
+    }
+   ],
+   "title": "Вычислите интеграл",
+   "subtitle": "Найдите значение"
+  }
+ ],
+ "steps": [
+  {
+   "text": "Вычислите интеграл",
+   "keys": [
+    "find_integral",
+    "integrate_calc",
+    "series_calc_short"
+   ]
+  },
+  {
+   "text": "Прибавить ARG1",
+   "keys": [
+    "add_arg"
+   ]
+  },
+  {
+   "text": "Решение",
+   "keys": [
+    "graph_rt_info_solution"
+   ]
+  }
+ ],
+ "walk": [
+  {
+   "stages": [
+    {
+     "text": "Используя ARG1, найти интеграл",
+     "nested": [
+      "Используя ARG1, найти интеграл",
+      "Прибавить ARG1",
+      "Решение",
+      "Используя ARG1, найти интеграл",
+      "Вычислить"
+     ]
+    }
+   ]
+  },
+  {
+   "stages": [
+    {
+     "text": "Прибавить константу интегрирования ARG1",
+     "nested": []
+    }
+   ]
+  }
+ ]
+}

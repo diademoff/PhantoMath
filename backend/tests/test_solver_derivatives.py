@@ -188,6 +188,32 @@ class TestHigherOrder:
         assert self._keys("{x^2}", "{1}") == ["find_derivative"]
 
 
+class TestLeibnizRows:
+    def test_sum_of_monomials_uses_the_sum_rule_then_products(self) -> None:
+        # d/dx (3x^2 + 2x) = 6x + 2: rule, one page per term, then the products.
+        problem = node(
+            T.DERIVATION1_DIFF,
+            x(),
+            node(T.ADD, muli(c("3"), node(T.POWER, x(), c("2"))), muli(c("2"), x())),
+        )
+        vertical = solve(problem).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        assert [[s.description.type for s in step.substeps] for step in vertical.steps] == [
+            ["derive_use_rule"],
+            ["derive", "derive"],
+            ["product"],
+        ]
+        assert vertical.solution.structural_eq(node(T.ADD, muli(c("6"), x()), c("2")))
+
+    def test_sine_is_one_table_step(self) -> None:
+        problem = node(T.DERIVATION1_DIFF, x(), node(T.SIN, x()))
+        vertical = solve(problem).result.vertical()
+        assert vertical is not None
+        assert [s.description.type for st in vertical.steps for s in st.substeps] == [
+            "derive_table_desc"
+        ]
+
+
 class TestLeibniz:
     def test_with_respect(self) -> None:
         # d/dx (x²) = 2x.
@@ -196,7 +222,7 @@ class TestLeibniz:
         assert vertical is not None and vertical.solution is not None
         assert vertical.solution.structural_eq(muli(c("2"), x()))
         keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
-        assert keys == ["find_derivative_with_respect"]
+        assert keys == ["derive_table_desc", "sub", "pow_with_one"]  # Photomath 7.10.0 rows
 
     def test_other_variable(self) -> None:
         # d/dx (x·y) = y.
