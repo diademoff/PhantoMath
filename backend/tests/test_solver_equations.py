@@ -371,3 +371,15 @@ class TestDegenerate:
         group = _group("{=({x+1},{x+1})}")
         assert _method_keys(group.entries[0]) == ["solutions_inf_many"]
         assert "solutionNode" not in group.entries[0].result
+
+
+def test_reciprocal_equation_has_the_five_photomath_rows() -> None:
+    group = _group("{=({frac({1},{x})},{2})}")
+    assert len(group.entries) == 1
+    assert _method_keys(group.entries[0]) == [
+        "rel_restrictions_range",
+        "eq_mul_direct",
+        "rel_swap_eq",
+        "eq_linear_div",
+        "rel_restrictions_check",
+    ]

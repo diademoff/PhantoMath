@@ -562,6 +562,74 @@ def _bracket_times_number(node: CoreNode, var: str) -> SolveResult | None:
     return result
 
 
+def _reciprocal_equation(node: CoreNode, var: str) -> SolveResult | None:
+    """``1 / x = d`` for an integer ``d >= 2``: restriction, multiply, swap, divide, check.
+
+    The five rows Photomath 7.10.0 shows on a device; other rational equations stay general.
+    """
+    left, right = node.children
+    if not (
+        left.type is T.FRACTION
+        and left.children[0].type is T.CONSTANT
+        and left.children[0].value == "1"
+        and left.children[1].type is T.VARIABLE
+        and left.children[1].value == var
+        and right.type is T.CONSTANT
+        and (right.value or "").isdigit()
+        and int(right.value or 0) >= 2
+    ):
+        return None
+    d = Fraction(int(right.value or 0))
+    eq, x, zero = CoreNode.node, CoreNode.variable(var), _const(Fraction(0))
+
+    def restricted(equation: CoreNode) -> CoreNode:
+        return eq(T.LIST, equation, eq(T.NOT_EQUALS, x, zero))
+
+    start = restricted(node)
+    multiplied = restricted(eq(T.EQUALS, _const(Fraction(1)), _x_term(d, var)))
+    swapped = restricted(eq(T.EQUALS, _x_term(d, var), _const(Fraction(1))))
+    root = _const(1 / d)
+    divided = restricted(eq(T.EQUALS, x, root))
+    solution = _equation(var, root)
+
+    result = SolveResult()
+    domain = SolveResult()
+    forbidden = eq(T.NOT_EQUALS, x, zero)
+    domain.add_group(
+        CoreRichText(type="rel_restrictions_den_zero", args=[x, zero, x]),
+        Step(node, forbidden, "rel_restrictions_den_zero", [x, zero, x]),
+    )
+    domain.add_group("exclude_values", Step(forbidden, start, "exclude_values"))
+    domain.set_solution(start)
+    result.add_group(
+        "rel_restrictions_range",
+        Step(node, start, "rel_restrictions_range", subresult=domain),
+    )
+    multiply = SolveResult()
+    multiply.add_group(
+        CoreRichText(type="eq_mul_direct", args=[x]), Step(start, multiplied, "eq_mul_direct", [x])
+    )
+    multiply.set_solution(multiplied)
+    result.add_group(
+        "multiply_both_sides",
+        Step(start, multiplied, "eq_mul_direct", [x], subresult=multiply),
+    )
+    result.add_group("rel_switch", Step(multiplied, swapped, "rel_swap_eq"))
+    divide = SolveResult()
+    divide.add_group(
+        CoreRichText(type="eq_linear_div", args=[_const(d)]),
+        Step(swapped, divided, "eq_linear_div", [_const(d)]),
+    )
+    divide.set_solution(divided)
+    result.add_group(
+        "divide_both_sides",
+        Step(swapped, divided, "eq_linear_div", [_const(d)], subresult=divide),
+    )
+    result.add_group("solution_check_sol", Step(divided, solution, "rel_restrictions_check"))
+    result.set_solution(solution)
+    return result
+
+
 def _linear_solution(
     node: CoreNode,
     lhs: CoreNode,
@@ -1676,6 +1744,8 @@ def solve_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
         return [over]
     if (bracket := _bracket_times_number(node, var)) is not None:
         return [bracket]
+    if (reciprocal := _reciprocal_equation(node, var)) is not None:
+        return [reciprocal]
     try:
         poly = _sub(poly_of(lhs, var), poly_of(rhs, var))
     except SolveError:
