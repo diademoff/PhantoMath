@@ -336,6 +336,17 @@ class TestMethods:
         assert len(group.entries) == 3
         assert _method_keys(group.entries[1])[-1] == "eq_quad_disc_solution_all_gt"
 
+    def test_bracket_times_number_is_divide_move_calculate(self) -> None:
+        # Photomath 7.10.0 on device: 2(x+1)=8 is three rows and a single method.
+        group = _group("{=({2*(x+1)},{8})}")
+        assert len(group.entries) == 1
+        assert _method_keys(group.entries[0]) == [
+            "eq_linear_div",
+            "rel_move_right_const",
+            "sub",
+        ]
+        assert vertical_of("{=({2*(x-3)},{8})}").solution is not None
+
     def test_linear_has_two_methods(self) -> None:
         group = _group("{=({2x+3},{7})}")
         assert len(group.entries) == 2

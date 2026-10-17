@@ -501,6 +501,67 @@ def _unknown_over_number(node: CoreNode, var: str, variables: list[str]) -> Solv
     return result
 
 
+def _bracket_times_number(node: CoreNode, var: str) -> SolveResult | None:
+    """``k (x + m) = c`` with integers, ``k > 1`` dividing ``c``: divide, move ``m``, calculate.
+
+    The three rows Photomath 7.10.0 shows on a device; other bracket forms take the general path.
+    """
+    left, right = node.children
+    if not (
+        left.type in (T.MULTIPLY, T.MULTIPLY_IMPLICIT)
+        and right.type is T.CONSTANT
+        and left.children[0].type is T.CONSTANT
+        and left.children[1].type is T.BRACKET
+    ):
+        return None
+    inner = left.children[1].children[0]
+    if not (
+        inner.type in (T.ADD, T.SUBTRACT)
+        and inner.children[0].type is T.VARIABLE
+        and inner.children[0].value == var
+        and inner.children[1].type is T.CONSTANT
+    ):
+        return None
+    try:
+        k, c, m = (int(n.value or "x") for n in (left.children[0], right, inner.children[1]))
+    except ValueError:
+        return None
+    if k < 2 or m == 0 or c % k:
+        return None
+    eq = CoreNode.node
+    sign = T.SUBTRACT if inner.type is T.ADD else T.ADD
+    divided = eq(T.EQUALS, inner, _const(Fraction(c // k)))
+    shift = _const(Fraction(m))
+    balanced = eq(T.EQUALS, eq(sign, inner, shift), eq(sign, divided.children[1], shift))
+    moved = eq(T.EQUALS, CoreNode.variable(var), eq(sign, divided.children[1], shift))
+    value = c // k - m if inner.type is T.ADD else c // k + m
+    solution = _equation(var, _const(Fraction(value)))
+
+    result = SolveResult()
+    divide = SolveResult()
+    divide.add_group(
+        CoreRichText(type="eq_linear_div", args=[_const(Fraction(k))]),
+        Step(node, divided, "eq_linear_div", [_const(Fraction(k))]),
+    )
+    divide.set_solution(divided)
+    result.add_group(
+        "divide_both_sides",
+        Step(node, divided, "eq_linear_div", [_const(Fraction(k))], subresult=divide),
+    )
+    swap = SolveResult()
+    swap.add_group("rel_swap_right_const", Step(divided, balanced, "rel_swap_right_const"))
+    swap.add_group("remove_opposites", Step(balanced, moved, "remove_opposites"))
+    swap.set_solution(moved)
+    result.add_group(
+        "rel_move_right_const_msg", Step(divided, moved, "rel_move_right_const", subresult=swap)
+    )
+    result.add_group(
+        "calculate_short", Step(moved, solution, "sub" if inner.type is T.ADD else "add")
+    )
+    result.set_solution(solution)
+    return result
+
+
 def _linear_solution(
     node: CoreNode,
     lhs: CoreNode,
@@ -1613,6 +1674,8 @@ def solve_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
     lhs, rhs = node.children
     if (over := _unknown_over_number(node, var, variables)) is not None:
         return [over]
+    if (bracket := _bracket_times_number(node, var)) is not None:
+        return [bracket]
     try:
         poly = _sub(poly_of(lhs, var), poly_of(rhs, var))
     except SolveError:
