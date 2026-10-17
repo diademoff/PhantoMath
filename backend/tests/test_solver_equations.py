@@ -128,10 +128,10 @@ class TestQuadratic:
         assert vertical.solution is not None
         assert vertical.solution.type is T.LIST
         assert step_keys("{=({x^2-2},{0})}") == [
-            "eq_quad_coeff_identify",
-            "eq_quad_disc",
-            "eq_quad_disc_calculate",
-            "eq_quad_solve_in_r",
+            "rel_move_right_const",
+            "quad_sqrt_sides",
+            "quad_separate_signs",
+            "solution_eq_num",
         ]
 
     def test_zero_b_keeps_both_signs(self) -> None:
@@ -139,8 +139,8 @@ class TestQuadratic:
         vertical = vertical_of("{=({x^2-2},{0})}")
         assert vertical.solution is not None and vertical.solution.type is T.LIST
         minus, plus = (eq.children[1] for eq in vertical.solution.children)
-        assert minus.children[0].type is T.NEGATIVE
-        assert plus.children[0].type is T.ROOT2
+        assert minus.type is T.NEGATIVE and minus.children[0].type is T.ROOT2
+        assert plus.type is T.ROOT2
 
     def test_negative_discriminant_is_reported(self) -> None:
         with pytest.raises(SolveError, match="действительных корней"):

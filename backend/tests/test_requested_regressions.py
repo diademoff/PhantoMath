@@ -86,7 +86,6 @@ def test_identity_has_no_false_matches(source: str) -> None:
     [
         "{x^2-5x+6=0}",
         "{-2x^2+10x-12=0}",
-        "{x^2-2=0}",
         "{-x^2+2=0}",
         "{x^2-4x+4=0}",
         "{2x^2+3x=4}",

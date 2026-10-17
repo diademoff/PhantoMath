@@ -225,25 +225,16 @@
                 "value": "x"
               },
               {
-                "type": "FRACTION",
+                "type": "NEGATIVE",
                 "children": [
                   {
-                    "type": "NEGATIVE",
+                    "type": "ROOT2",
                     "children": [
                       {
-                        "type": "ROOT2",
-                        "children": [
-                          {
-                            "type": "CONSTANT",
-                            "value": "8"
-                          }
-                        ]
+                        "type": "CONSTANT",
+                        "value": "2"
                       }
                     ]
-                  },
-                  {
-                    "type": "CONSTANT",
-                    "value": "2"
                   }
                 ]
               }
@@ -257,17 +248,8 @@
                 "value": "x"
               },
               {
-                "type": "FRACTION",
+                "type": "ROOT2",
                 "children": [
-                  {
-                    "type": "ROOT2",
-                    "children": [
-                      {
-                        "type": "CONSTANT",
-                        "value": "8"
-                      }
-                    ]
-                  },
                   {
                     "type": "CONSTANT",
                     "value": "2"
@@ -279,10 +261,10 @@
         ]
       },
       "steps": [
-        "eq_quad_coeff_identify",
-        "eq_quad_disc",
-        "eq_quad_disc_calculate",
-        "eq_quad_solve_in_r"
+        "rel_move_right_const",
+        "quad_sqrt_sides",
+        "quad_separate_signs",
+        "solution_eq_num"
       ]
     },
     {

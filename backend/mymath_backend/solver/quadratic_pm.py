@@ -314,36 +314,44 @@ def _is_difference_of_squares(f: _Family) -> bool:
     return f.a == 1 and f.b == 0 and f.c < 0 and isqrt(-f.c) ** 2 == -f.c
 
 
-def _extraction(f: _Family) -> SolveResult | None:
-    """``x^2 - m^2 = 0``: move the constant, take the root of both sides, split the signs."""
-    if not _is_difference_of_squares(f):
-        return None
-    m, x = isqrt(-f.c), f.x
+def _extraction(node: CoreNode, var: str, c: int) -> SolveResult:
+    """``x^2 + c = 0`` with ``c < 0``: move the constant, take the root, split the signs."""
+    x, size = CoreNode.variable(var), -c
+    exact = isqrt(size) ** 2 == size
+    root = _num(isqrt(size)) if exact else _node(T.ROOT2, _num(size))
     result = SolveResult()
     square = _node(T.POWER, x, _num(2))
-    moved = _eq(square, _num(-f.c))
+    moved = _eq(square, _num(size))
     balanced = _eq(
-        _node(T.ADD, _node(T.SUBTRACT, square, _num(-f.c)), _num(-f.c)),
-        _node(T.ADD, _num(0), _num(-f.c)),
+        _node(T.ADD, _node(T.SUBTRACT, square, _num(size)), _num(size)),
+        _node(T.ADD, _num(0), _num(size)),
     )
     swap = SolveResult()
-    swap.add_group("rel_swap_right_const", Step(f.node, balanced, "rel_swap_right_const"))
+    swap.add_group("rel_swap_right_const", Step(node, balanced, "rel_swap_right_const"))
     swap.add_group("remove_opposites", Step(balanced, moved, "remove_opposites"))
     swap.set_solution(moved)
     result.add_group(
-        "rel_move_right_const_msg", Step(f.node, moved, "rel_move_right_const", subresult=swap)
+        "rel_move_right_const_msg", Step(node, moved, "rel_move_right_const", subresult=swap)
     )
-    plus_minus = _eq(x, _node(T.ADD_SUBTRACT, _num(m)))
-    rooted = _eq(_node(T.ROOT2, square), _node(T.ADD_SUBTRACT, _node(T.ROOT2, _num(-f.c))))
-    take = SolveResult()
-    take.add_group("quad_sqrt_sides", Step(moved, rooted, "quad_sqrt_sides"))
-    take.add_group("calculate_short", Step(rooted, plus_minus, "root_square"))
-    take.set_solution(plus_minus)
+    plus_minus = _eq(x, _node(T.ADD_SUBTRACT, root))
+    rooted = _eq(_node(T.ROOT2, square), _node(T.ADD_SUBTRACT, _node(T.ROOT2, _num(size))))
+    take = None
+    if exact:  # the root of a perfect square is evaluated on a detail screen of its own
+        take = SolveResult()
+        take.add_group("quad_sqrt_sides", Step(moved, rooted, "quad_sqrt_sides"))
+        take.add_group("calculate_short", Step(rooted, plus_minus, "root_square"))
+        take.set_solution(plus_minus)
     result.add_group("simplify_eq", Step(moved, plus_minus, "quad_sqrt_sides", subresult=take))
-    solved = [f.solved(Fraction(-m)), f.solved(Fraction(m))]
+    negative = _num(-isqrt(size)) if exact else _node(T.NEGATIVE, root)
+    solved = [_eq(x, negative), _eq(x, root)]
     listed = _node(T.LIST, *solved)
     result.add_group("quad_separate", Step(plus_minus, listed, "quad_separate_signs", list(_SIGNS)))
-    f.finish(result, solved)
+    count = _num(2)
+    result.add_group(
+        CoreRichText(type="solution_eq_num", args=[count]),
+        Step(listed, listed, "solution_eq_num", [count]),
+    )
+    result.set_solution(listed)
     return result
 
 
@@ -400,11 +408,13 @@ def methods(
         return None
     ia, ib, ic = int(a), int(b), int(c)
     d = ib * ib - 4 * ia * ic
-    if ia == 0 or ic == 0 or d <= 0 or isqrt(d) ** 2 != d:
+    if ia == 1 and ib == 0 and ic < 0:
+        shown: list[SolveResult | None] = [_extraction(node, var, ic)]
+        if isqrt(-ic) ** 2 == -ic:
+            shown.append(_difference_of_squares(_Family(var, ia, ib, ic)))
+        return [m for m in shown if m]
+    if ia == 0 or ib == 0 or ic == 0 or d <= 0 or isqrt(d) ** 2 != d:
         return None
     family = _Family(var, ia, ib, ic)
-    if ib == 0:
-        built = [m for m in (_extraction(family), _difference_of_squares(family)) if m]
-        return built or None
     built = [m for m in (_factoring(family), _formula(family)) if m]
     return built or None
