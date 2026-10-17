@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mymath_app/main.dart';
 import 'package:mymath_app/src/api/solver_api.dart';
+import 'package:mymath_app/src/editor/kind.dart';
 import 'package:mymath_app/src/theme/phanto_theme.dart';
 import 'package:mymath_app/src/ui/keyboard/photomath_keyboard.dart';
 
@@ -45,6 +46,18 @@ void main() {
         final rect = tester.getRect(key);
         expect(rect.width, greaterThanOrEqualTo(48));
         expect(rect.height, greaterThanOrEqualTo(48 - .001));
+        final editor = tester
+            .widget<PhotomathKeyboard>(find.byType(PhotomathKeyboard))
+            .controller;
+        editor.insertTemplate(ENodeKind.fraction);
+        await tester.pump();
+        expect(find.text('Числитель'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        editor.clear();
+        editor.insertMatrix(4, 5);
+        await tester.pump();
+        expect(find.text('Строка 1, столбец 1'), findsOneWidget);
+        expect(tester.takeException(), isNull);
         await tester.tap(find.byTooltip('Скрыть клавиатуру'));
         await tester.pump();
         expect(find.byKey(const ValueKey('key:DIGIT_TWO')), findsNothing);

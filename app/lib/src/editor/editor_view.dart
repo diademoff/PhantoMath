@@ -211,7 +211,7 @@ class _EditorViewState extends State<EditorView> {
               : null,
           borderRadius: BorderRadius.circular(4),
         ),
-        child: _compose(node.kind, slots),
+        child: _compose(node, slots),
       ),
     );
   }
@@ -223,7 +223,8 @@ class _EditorViewState extends State<EditorView> {
 
   // ── сборка конструкций ────────────────────────────────────────────
 
-  Widget _compose(ENodeKind kind, List<Widget> slots) {
+  Widget _compose(ed.ENode node, List<Widget> slots) {
+    final kind = node.kind;
     switch (kind) {
       case ENodeKind.fraction:
         return _fraction(slots[0], slots[1]);
@@ -259,9 +260,14 @@ class _EditorViewState extends State<EditorView> {
       case ENodeKind.determinant3:
         return _matrixView(3, slots);
       case ENodeKind.matrix2:
-        return _matrixView(2, slots, left: '[', right: ']');
       case ENodeKind.matrix3:
-        return _matrixView(3, slots, left: '[', right: ']');
+        return _matrixView(
+          node.matrixRows,
+          slots,
+          columns: node.matrixColumns,
+          left: '[',
+          right: ']',
+        );
       case ENodeKind.sin:
         return _function('sin', slots[0]);
       case ENodeKind.cos:
@@ -348,10 +354,24 @@ class _EditorViewState extends State<EditorView> {
           slots[1],
         ]);
       case ENodeKind.sigma:
+        final shift = slots.length == 4 ? 1 : 0;
         return _rowOf([
-          const Text('Σ'),
-          _scripts(slots[0], slots[1]),
-          slots[2],
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _small(slots[shift + 1]),
+              Text('∑', style: TextStyle(fontSize: _fs * 1.5)),
+              _small(
+                _rowOf([
+                  if (shift == 1) slots[0] else const Text('n'),
+                  const Text(' = '),
+                  slots[shift],
+                ]),
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
+          slots[shift + 2],
         ]);
       case ENodeKind.choose:
         return _binomial(slots[0], slots[1]);
@@ -447,15 +467,16 @@ class _EditorViewState extends State<EditorView> {
   Widget _matrixView(
     int size,
     List<Widget> slots, {
+    int? columns,
     String left = '|',
     String right = '|',
   }) {
     final rows = <Widget>[];
     for (var row = 0; row < size; row++) {
       final cells = <Widget>[];
-      for (var column = 0; column < size; column++) {
+      for (var column = 0; column < (columns ?? size); column++) {
         if (column > 0) cells.add(const Text('  '));
-        cells.add(slots[row * size + column]);
+        cells.add(slots[row * (columns ?? size) + column]);
       }
       rows.add(Row(mainAxisSize: MainAxisSize.min, children: cells));
     }

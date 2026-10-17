@@ -40,7 +40,7 @@ void main() {
   test('backspace selects a populated template before deleting it, without looping', () {
     final c = EditorController()
       ..typeDigit('2')
-      ..insertTemplate(ENodeKind.power)
+      ..insertTemplate(ENodeKind.fraction)
       ..typeDigit('3');
     addTearDown(c.dispose);
     c.backspace();

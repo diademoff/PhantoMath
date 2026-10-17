@@ -72,8 +72,14 @@ Future<void> _openSheet(WidgetTester tester, PhSheet sheet) async {
 
 /// Нажать чип: при необходимости прокрутить ленту команд до него.
 Future<void> _chip(WidgetTester tester, String label) async {
+  if (find.text('Действия с решением').evaluate().isEmpty) {
+    await tester.tap(find.byKey(const ValueKey('solve')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+  }
   if (find.text(label).evaluate().isEmpty) {
-    await tester.tap(find.text('Другие действия'));
+    await tester.ensureVisible(find.text('Действия с решением'));
+    await tester.tap(find.text('Действия с решением'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
   }
@@ -181,7 +187,6 @@ void main() {
 
     await _key(tester, 'DIGIT_TWO');
     await _chip(tester, 'Разложить');
-    await tester.tap(find.byKey(const ValueKey('solve')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -229,10 +234,6 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump(const Duration(milliseconds: 300));
-
-    await tester.tap(find.byKey(const ValueKey('solve')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
 
     expect(sent?['interval'], {
       'min': {'type': 'CONSTANT', 'value': '0'},
@@ -388,9 +389,21 @@ void main() {
     // в оригинале она там же, в `SECONDARY_SHEET`.
     await _openSheet(tester, PhSheet.secondary);
     await _key(tester, 'OPERATOR_MATRIX');
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.text('Вставить'));
+    await tester.pump(const Duration(milliseconds: 400));
     await _key(tester, 'DIGIT_ONE');
-    await _key(tester, 'BASIC_INFIX_OPERATOR_PLUS');
+    await tester.tap(find.text('Далее'));
+    await tester.pump();
     await _key(tester, 'DIGIT_TWO');
+    await tester.tap(find.text('Далее'));
+    await tester.pump();
+    await _key(tester, 'DIGIT_THREE');
+    await tester.tap(find.text('Далее'));
+    await tester.pump();
+    await _key(tester, 'DIGIT_FOUR');
+    await tester.tap(find.text('Далее'));
+    await tester.pump();
 
     await _chip(tester, 'Матрица…');
     await tester.pump(const Duration(milliseconds: 400));
@@ -418,8 +431,10 @@ void main() {
       baseUrl: 'http://test',
       client: MockClient(
         (request) async => http.Response(
-          '{"variable":"x","xMin":-1,"xMax":1,"yMin":0,"yMax":1,'
-          '"points":[[-1,1],[0,0],[1,1]]}',
+          request.url.path.endsWith('/graph')
+              ? '{"variable":"x","xMin":-1,"xMax":1,"yMin":0,"yMax":1,'
+                    '"points":[[-1,1],[0,0],[1,1]]}'
+              : _solveBody,
           200,
           headers: const {'content-type': 'application/json; charset=utf-8'},
         ),
@@ -427,7 +442,7 @@ void main() {
     );
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: api)));
     await tester.pump();
-    await _key(tester, 'DIGIT_ONE');
+    await _key(tester, 'VARIABLE_X_LOW');
     await _chip(tester, 'График');
     await tester.pump(const Duration(milliseconds: 400));
 
@@ -436,7 +451,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('у шага нарисована стрелка разворота', (tester) async {
+  testWidgets('у шага без дополнительных деталей нет бесполезного разворота', (
+    tester,
+  ) async {
     await tester.pumpWidget(MaterialApp(home: SolvePage(api: _api())));
     await tester.pump();
     await _key(tester, 'DIGIT_TWO');
@@ -446,7 +463,7 @@ void main() {
 
     // `@id/expand_button` — своя стрелка `steps_down`; без неё шаг
     // разворачивается тапом по строке, но обнаружить это нельзя.
-    expect(find.byIcon(Icons.keyboard_arrow_down), findsOneWidget);
+    expect(find.byIcon(Icons.keyboard_arrow_down), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -496,7 +513,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     // Пояснение с ссылкой — в раскрытом шаге вертикального результата.
-    await tester.tap(find.text('Factor'));
+    await tester.tap(find.text('Factor').last);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('Разложение на множители.'), findsOneWidget);

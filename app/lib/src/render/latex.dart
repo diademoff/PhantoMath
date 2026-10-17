@@ -301,7 +301,12 @@ String _nodeBody(CoreNode node) {
       return _wrap(node, r'\lim_{x \to $0} $1');
 
     case CoreNodeType.sigmaDefinite:
-      return _wrap(node, r'\sum_{n=$0}^{$1} $2');
+      return _wrap(
+        node,
+        node.children.length == 4
+            ? r'\sum_{$0=$1}^{$2} $3'
+            : r'\sum_{n=$0}^{$1} $2',
+      );
 
     // ── комбинаторика ───────────────────────────────────────────────
     case CoreNodeType.choose:

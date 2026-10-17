@@ -80,6 +80,12 @@ class NotebookPage extends StatelessWidget {
                       ],
                       const SizedBox(height: 8),
                       _Metadata(entry: entry),
+                      const SizedBox(height: 8),
+                      TextButton.icon(
+                        onPressed: () => Navigator.pop(context, entry.problem),
+                        icon: const Icon(Icons.edit_outlined),
+                        label: const Text('Редактировать'),
+                      ),
                     ],
                   ),
                 ),

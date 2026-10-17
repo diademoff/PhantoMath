@@ -60,19 +60,22 @@ void main() {
   });
 
   group('шаблоны', () {
-    test('дробь поглощает предыдущий операнд и ставит курсор в знаменатель', () {
-      final c = EditorController();
-      _digits(c, '12');
-      c.insertTemplate(ENodeKind.fraction);
-      // Курсор в знаменателе.
-      expect(c.cursor.steps, hasLength(1));
-      expect(c.cursor.steps.single.slot, 1);
-      _digits(c, '3');
-      final node = c.toCoreNode();
-      expect(node.type, CoreNodeType.fraction);
-      expect(node.children[0].value, '12');
-      expect(node.children[1].value, '3');
-    });
+    test(
+      'дробь поглощает предыдущий операнд и ставит курсор в знаменатель',
+      () {
+        final c = EditorController();
+        _digits(c, '12');
+        c.insertTemplate(ENodeKind.fraction);
+        // Курсор в знаменателе.
+        expect(c.cursor.steps, hasLength(1));
+        expect(c.cursor.steps.single.slot, 1);
+        _digits(c, '3');
+        final node = c.toCoreNode();
+        expect(node.type, CoreNodeType.fraction);
+        expect(node.children[0].value, '12');
+        expect(node.children[1].value, '3');
+      },
+    );
 
     test('степень поглощает основание', () {
       final c = EditorController();
@@ -85,10 +88,10 @@ void main() {
       expect(node.children[1].value, '3');
     });
 
-    test('корень поглощает подкоренное и оставляет курсор внутри', () {
+    test('корень вводится перед подкоренным выражением', () {
       final c = EditorController();
-      _digits(c, '9');
       c.insertTemplate(ENodeKind.root2);
+      _digits(c, '9');
       final node = c.toCoreNode();
       expect(node.type, CoreNodeType.root2);
       expect(node.children.single.value, '9');
@@ -297,16 +300,27 @@ void main() {
       final node = c.toCoreNode();
       expect(node.type, CoreNodeType.matrix);
       expect(node.children, hasLength(2));
-      expect(node.children.every((r) => r.type == CoreNodeType.matrixRow), isTrue);
-      expect(node.children[0].children.map((e) => e.value).toList(), ['1', '2']);
-      expect(node.children[1].children.map((e) => e.value).toList(), ['3', '4']);
+      expect(
+        node.children.every((r) => r.type == CoreNodeType.matrixRow),
+        isTrue,
+      );
+      expect(node.children[0].children.map((e) => e.value).toList(), [
+        '1',
+        '2',
+      ]);
+      expect(node.children[1].children.map((e) => e.value).toList(), [
+        '3',
+        '4',
+      ]);
     });
   });
 
   group('вид редактора и тап по формуле', () {
     Future<void> pump(WidgetTester tester, EditorController c) async {
       await tester.pumpWidget(
-        MaterialApp(home: Scaffold(body: EditorView(controller: c))),
+        MaterialApp(
+          home: Scaffold(body: EditorView(controller: c)),
+        ),
       );
       await tester.pump();
     }
@@ -338,8 +352,9 @@ void main() {
       expect(c.cursor.offset, 1);
     });
 
-    testWidgets('тап по знаменателю дроби заводит курсор в него',
-        (tester) async {
+    testWidgets('тап по знаменателю дроби заводит курсор в него', (
+      tester,
+    ) async {
       final c = EditorController();
       _digits(c, '1');
       c.insertTemplate(ENodeKind.fraction);
@@ -456,9 +471,7 @@ void main() {
   group('многострочный ввод', () {
     void equation(EditorController c, String sign) {
       c.typeVariable('x');
-      c.insertOperator(
-        sign == '+' ? ENodeKind.add : ENodeKind.subtract,
-      );
+      c.insertOperator(sign == '+' ? ENodeKind.add : ENodeKind.subtract);
       _digits(c, '1');
       c.insertOperator(ENodeKind.equals);
       _digits(c, '3');
@@ -528,7 +541,9 @@ void main() {
       c.newLine();
       _digits(c, '3');
       await tester.pumpWidget(
-        MaterialApp(home: Scaffold(body: EditorView(controller: c))),
+        MaterialApp(
+          home: Scaffold(body: EditorView(controller: c)),
+        ),
       );
       await tester.pump();
       final broken = find.byWidgetPredicate(

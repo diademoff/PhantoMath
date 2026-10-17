@@ -46,6 +46,6 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     expect(editor.toCoreNode().value, '2');
-    expect(find.text('Готов к решению'), findsOneWidget);
+    expect(find.text('Готов к решению'), findsNothing);
   });
 }

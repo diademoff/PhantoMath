@@ -60,12 +60,6 @@ class VerticalResult extends StatelessWidget {
                         fontSize: 28,
                       ),
                     ),
-                    IconButton(
-                      tooltip: 'Копировать ответ',
-                      onPressed: () =>
-                          onCopy(nodeToLatex(solution, latexOptions)),
-                      icon: const Icon(Icons.copy_outlined),
-                    ),
                   ],
                 ),
               ],
@@ -140,6 +134,10 @@ class _Step extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final frames = transformationFrames(substep, latexOptions);
+    final hasDetails =
+        frames.isNotEmpty ||
+        substep.detail.isNotEmpty ||
+        substep.links.any((link) => link.definition.isNotEmpty);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -147,16 +145,16 @@ class _Step extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: ExpansionTile(
+        enabled: hasDetails,
         initiallyExpanded: expanded,
         maintainState: true,
         shape: const Border(),
         collapsedShape: const Border(),
         tilePadding: const EdgeInsets.all(16),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        trailing: Icon(
-          Icons.keyboard_arrow_down,
-          color: colors.onSurfaceVariant,
-        ),
+        trailing: hasDetails
+            ? Icon(Icons.keyboard_arrow_down, color: colors.onSurfaceVariant)
+            : const SizedBox.shrink(),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -217,18 +215,6 @@ class _Step extends StatelessWidget {
               trailing: const Icon(Icons.info_outline),
               onTap: () => onLink(link),
             ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: substep.right == null && substep.left == null
-                  ? null
-                  : () => onCopy(
-                      nodeToLatex(substep.right ?? substep.left!, latexOptions),
-                    ),
-              icon: const Icon(Icons.copy_outlined, size: 20),
-              label: const Text('Копировать шаг'),
-            ),
-          ),
         ],
       ),
     );

@@ -5,6 +5,8 @@ import 'dart:math' as math;
 import 'package:flutter_math_fork/flutter_math.dart';
 
 import '../../editor/controller.dart';
+import '../../editor/kind.dart';
+import '../../editor/model.dart' as ed;
 import '../../editor/keyboard.dart';
 import 'ph_keyboard_spec.dart';
 
@@ -40,7 +42,12 @@ class _PhotomathKeyboardState extends State<PhotomathKeyboard> {
       case MathKeyType.operator:
         _editor.insertOperator(action.kind!);
       case MathKeyType.template:
-        _editor.insertTemplate(action.kind!);
+        if (action.kind == ENodeKind.matrix2 ||
+            action.kind == ENodeKind.matrix3) {
+          _matrixSize();
+        } else {
+          _editor.insertTemplate(action.kind!);
+        }
       case MathKeyType.newline:
         _editor.newLine();
       case MathKeyType.backspace:
@@ -142,45 +149,96 @@ class _PhotomathKeyboardState extends State<PhotomathKeyboard> {
     if (selected != null) _apply(selected);
   }
 
-  Future<void> _catalog() async {
-    final keys = <String, PhKey>{};
-    for (final spec in sheets) {
-      for (final k in spec.keys) {
-        if (k.code.isNotEmpty &&
-            k.type != PhKeyType.control &&
-            k.action != null) {
-          keys[k.code] = k;
-        }
-        for (final v in extensionsOf(k.code)) {
-          if (v.action != null) keys[v.code] = v;
-        }
-      }
-    }
-    final selected = await showModalBottomSheet<PhKey>(
+  Future<void> _matrixSize() async {
+    var rows = 2;
+    var columns = 2;
+    final size = await showDialog<(int, int)>(
       context: context,
-      isScrollControlled: true,
-      builder: (context) => SafeArea(
-        child: SizedBox(
-          height: MediaQuery.sizeOf(context).height * .75,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
+      builder: (context) => StatefulBuilder(
+        builder: (context, update) {
+          Widget dimension(
+            String label,
+            int value,
+            void Function(int) change,
+          ) => Row(
             children: [
-              Text(
-                'Все символы',
-                style: Theme.of(context).textTheme.titleLarge,
+              Expanded(child: Text(label)),
+              IconButton(
+                tooltip: 'Уменьшить $label',
+                onPressed: value > 1
+                    ? () => update(() => change(value - 1))
+                    : null,
+                icon: const Icon(Icons.remove),
               ),
-              for (final k in keys.values)
-                ListTile(
-                  minTileHeight: 56,
-                  title: Text(k.description),
-                  onTap: () => Navigator.pop(context, k),
-                ),
+              Text('$value'),
+              IconButton(
+                tooltip: 'Увеличить $label',
+                onPressed: value < 8
+                    ? () => update(() => change(value + 1))
+                    : null,
+                icon: const Icon(Icons.add),
+              ),
             ],
-          ),
-        ),
+          );
+          return AlertDialog(
+            title: const Text('Размер матрицы'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                dimension('Строки', rows, (v) => rows = v),
+                dimension('Столбцы', columns, (v) => columns = v),
+                const Text('От 1 до 8. «Далее» переходит к следующей ячейке.'),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Отмена'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, (rows, columns)),
+                child: const Text('Вставить'),
+              ),
+            ],
+          );
+        },
       ),
     );
-    if (selected != null && mounted) _apply(selected);
+    if (mounted && size != null) _editor.insertMatrix(size.$1, size.$2);
+  }
+
+  String? get _slotHint {
+    final steps = _editor.cursor.steps;
+    if (steps.isEmpty) return null;
+    final step = steps.last;
+    final parent = ed.rowAt(
+      _editor.document,
+      steps.sublist(0, steps.length - 1),
+    );
+    final node = parent.children[step.child];
+    return switch (node.kind) {
+      ENodeKind.fraction => step.slot == 0 ? 'Числитель' : 'Знаменатель',
+      ENodeKind.power =>
+        step.slot == 0 ? 'Основание степени' : 'Показатель степени',
+      ENodeKind.log =>
+        step.slot == 1 ? 'Основание логарифма' : 'Аргумент логарифма',
+      ENodeKind.sigma =>
+        (node.children.length == 4
+            ? [
+                'Переменная суммирования',
+                'Нижняя граница',
+                'Верхняя граница',
+                'Слагаемое',
+              ]
+            : [
+                'Нижняя граница (индекс n)',
+                'Верхняя граница',
+                'Слагаемое',
+              ])[step.slot],
+      ENodeKind.matrix2 || ENodeKind.matrix3 =>
+        'Строка ${step.slot ~/ node.matrixColumns + 1}, столбец ${step.slot % node.matrixColumns + 1}',
+      _ => null,
+    };
   }
 
   Widget _control(
@@ -271,11 +329,6 @@ class _PhotomathKeyboardState extends State<PhotomathKeyboard> {
                       Icons.backspace_outlined,
                       _editor.backspace,
                     ),
-                  IconButton(
-                    tooltip: 'Все символы',
-                    onPressed: _catalog,
-                    icon: const Icon(Icons.more_horiz),
-                  ),
                   if (_editor.cursor.steps.isNotEmpty)
                     TextButton(
                       onPressed: _editor.nextSlot,
@@ -284,6 +337,16 @@ class _PhotomathKeyboardState extends State<PhotomathKeyboard> {
                 ],
               ),
             ),
+            if (_slotHint case final hint?)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  hint,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+              ),
             LayoutBuilder(
               builder: (context, constraints) {
                 final keys = switch (_sheet) {
@@ -305,6 +368,7 @@ class _PhotomathKeyboardState extends State<PhotomathKeyboard> {
                     height * 5 + 32,
                     (widget.maxHeight ?? (height * 5 + 128)) -
                         48 -
+                        (_slotHint == null ? 0 : 24 * textScale) -
                         (_sheet == PhSheet.primary ? 0 : 48),
                   ),
                 );

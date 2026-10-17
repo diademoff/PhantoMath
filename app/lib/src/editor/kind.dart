@@ -154,8 +154,9 @@ extension ENodeKindSpec on ENodeKind {
       case ENodeKind.matrix3:
         return 9;
       case ENodeKind.integralDefinite:
-      case ENodeKind.sigma:
         return 3;
+      case ENodeKind.sigma:
+        return 4;
       case ENodeKind.mixedFraction:
         return 3;
       case ENodeKind.powerTwo:
@@ -254,21 +255,17 @@ extension ENodeKindSpec on ENodeKind {
       this == ENodeKind.degree ||
       this == ENodeKind.radian;
 
-  /// Шаблон: узел с фиксированным числом слотов.
+  /// Шаблон со слотами. У матриц число ячеек задаётся при вставке.
   bool get isTemplate => arity > 0;
 
   /// Поглощает ли шаблон предыдущий операнд при вставке.
   ///
-  /// Так ведут себя дробь, степень, корень, модуль и скобки: набранное `2`,
-  /// затем клавиша дроби — и `2` становится числителем. Функции и исчисление
-  /// вставляются пустыми: их аргумент набирается после.
+  /// Дробь и степень могут использовать операнд слева. Корни, функции,
+  /// модуль и скобки вставляются пустыми: коэффициент слева остаётся снаружи.
   bool get absorbsPrevious {
     switch (this) {
       case ENodeKind.fraction:
       case ENodeKind.power:
-      case ENodeKind.root2:
-      case ENodeKind.abs:
-      case ENodeKind.bracket:
       case ENodeKind.mixedFraction:
       case ENodeKind.powerTwo:
       case ENodeKind.powerThree:
@@ -291,9 +288,12 @@ extension ENodeKindSpec on ENodeKind {
         return 1;
       case ENodeKind.limit:
         return 1;
+      case ENodeKind.log:
+        return 1;
       case ENodeKind.integralDefinite:
-      case ENodeKind.sigma:
         return 2;
+      case ENodeKind.sigma:
+        return 1;
       case ENodeKind.mixedFraction:
         return 1;
       default:

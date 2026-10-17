@@ -40,12 +40,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'dart:io';
+import 'dart:async';
 
 import 'src/api/embedded_backend.dart';
 import 'src/api/solver_api.dart';
 import 'src/api/solver_startup.dart';
 import 'src/editor/controller.dart';
 import 'src/editor/editor_view.dart';
+import 'src/editor/restore.dart';
 import 'src/functions/function_store.dart';
 import 'src/model/core_node.dart';
 import 'src/notebook/notebook.dart';
@@ -154,11 +156,7 @@ class SolverReadyIndicator extends StatelessWidget {
               key: const ValueKey('starting'),
               style: Theme.of(context).textTheme.bodySmall,
             ),
-            SolverStatus.ready => Text(
-              'Готов к решению',
-              key: const ValueKey('ready'),
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            SolverStatus.ready => const SizedBox.shrink(key: ValueKey('ready')),
             SolverStatus.failed => TextButton.icon(
               key: const ValueKey('retry-startup'),
               onPressed: () => startup.ensureReady().catchError((Object _) {}),
@@ -236,7 +234,11 @@ class _SolvePageState extends State<SolvePage> {
   int _methodIndex = 0;
   String? _error;
   bool _busy = false;
-  bool _expandSteps = false;
+  final bool _expandSteps = true;
+  Timer? _previewTimer;
+  SolveResponse? _previewAnswer;
+  Future<SolveResponse>? _previewRequest;
+  bool _previewBusy = false;
   bool _keyboardVisible = true;
   int _requestGeneration = 0;
   Object? _lastDocument;
@@ -309,6 +311,16 @@ class _SolvePageState extends State<SolvePage> {
       _busy = false;
       _error = null;
       _command = null;
+      _previewAnswer = null;
+      _previewRequest = null;
+      _previewBusy = false;
+      _previewTimer?.cancel();
+      final node = _editor.toCoreNode();
+      if (!_editor.isEmpty && _complete(node)) {
+        _previewTimer = Timer(const Duration(milliseconds: 450), () {
+          if (mounted && !_showResult) _solveWith(automatic: true);
+        });
+      }
     }
     if (mounted) setState(() {});
   }
@@ -319,6 +331,7 @@ class _SolvePageState extends State<SolvePage> {
 
   @override
   void dispose() {
+    _previewTimer?.cancel();
     _settings.removeListener(_onSettingsChanged);
     _functions.removeListener(_onSettingsChanged);
     _editor.removeListener(_onEditorChanged);
@@ -335,18 +348,27 @@ class _SolvePageState extends State<SolvePage> {
   Future<void> _solveWith({
     String? command,
     List<CoreNode> args = const [],
+    bool automatic = false,
   }) async {
     if (_busy) return;
+    _previewTimer?.cancel();
     if (_editor.isEmpty) {
       setState(() => _error = 'Введите выражение');
       return;
     }
     final node = _editor.toCoreNode();
-    final generation = _requestGeneration;
+    final generation = automatic ? _requestGeneration : ++_requestGeneration;
+    final cached = !automatic && command == null && args.isEmpty
+        ? _previewAnswer
+        : null;
+    final inFlight = !automatic && command == null && args.isEmpty
+        ? _previewRequest
+        : null;
     // `f(x) = …` — это определение функции, а не задача: запоминаем его и
     // подставляем в последующие запросы (см. `FunctionStore`).
     final definition = FunctionStore.parse(node);
     if (definition != null) {
+      if (automatic) return;
       _functions.define(definition);
       setState(() {
         _result = null;
@@ -359,32 +381,51 @@ class _SolvePageState extends State<SolvePage> {
       return;
     }
     setState(() {
-      _busy = true;
+      if (automatic) {
+        _previewBusy = true;
+      } else {
+        _busy = true;
+      }
       _error = null;
     });
     try {
       await widget.startup?.ensureReady();
       if (!mounted || generation != _requestGeneration) return;
-      final answer = await widget.api.solve(
-        node,
-        locale: _locale,
-        command: command,
-        args: args,
-        intervalMin: _intervalMin,
-        intervalMax: _intervalMax,
-        definitions: _functions.contract(),
-      );
+      SolveResponse answer;
+      if (cached != null) {
+        answer = cached;
+      } else {
+        final request =
+            inFlight ??
+            widget.api.solve(
+              node,
+              locale: _locale,
+              command: command,
+              args: args,
+              intervalMin: _intervalMin,
+              intervalMax: _intervalMax,
+              definitions: _functions.contract(),
+            );
+        if (automatic) _previewRequest = request;
+        answer = await request;
+      }
       if (!mounted || generation != _requestGeneration) return;
+      if (automatic) {
+        setState(() => _previewAnswer = answer);
+        return;
+      }
       setState(() {
         _result = answer;
         _methods = answer.methods.isEmpty ? [answer] : answer.methods;
         _methodIndex = 0;
       });
-      await _notebook.add(
-        NotebookEntry(
-          problem: node,
-          solution: answer.solution,
-          savedAt: DateTime.now(),
+      unawaited(
+        _notebook.add(
+          NotebookEntry(
+            problem: node,
+            solution: answer.solution,
+            savedAt: DateTime.now(),
+          ),
         ),
       );
     } on SolveFailure catch (err) {
@@ -402,10 +443,20 @@ class _SolvePageState extends State<SolvePage> {
       }
     } finally {
       if (mounted && generation == _requestGeneration) {
-        setState(() => _busy = false);
+        setState(() {
+          _busy = false;
+          _previewBusy = false;
+          _previewRequest = null;
+        });
       }
     }
   }
+
+  bool _complete(CoreNode node) =>
+      node.type != CoreNodeType.empty &&
+      node.children.every(_complete) &&
+      !(node.type == CoreNodeType.constant &&
+          (node.value == '.' || node.value?.endsWith('.') == true));
 
   /// Второй вектор из строки «3, 4» или скаляр из «2».
   List<CoreNode>? _parseNumbers(String text) {
@@ -649,7 +700,15 @@ class _SolvePageState extends State<SolvePage> {
           decimalSeparator: _settings.decimalSeparator.symbol,
           maxHeight: wide ? constraints.maxHeight : constraints.maxHeight * .58,
         );
-        final content = [_commandBar(), _showSolutionButton()];
+        final content = [
+          if (_hasVariable(_editor.toCoreNode()))
+            TextButton.icon(
+              onPressed: _busy ? null : _openGraph,
+              icon: const Icon(Icons.show_chart),
+              label: const Text('График'),
+            ),
+          _showSolutionButton(),
+        ];
         final Widget workspace =
             MediaQuery.textScalerOf(context).scale(1) > 1.3 &&
                 constraints.maxHeight < 580
@@ -737,6 +796,20 @@ class _SolvePageState extends State<SolvePage> {
         if (_error != null) _errorRow(),
         // `@id/solution_container` + `@id/solution_line`: предпросмотр ответа.
         if (_previewLatex case final preview?) SolutionPreview(latex: preview),
+        if (_previewFindsRoots) ...[
+          Text(
+            'Нули выражения: приравниваем его к 0',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: () => _solveWith(command: 'factor'),
+              child: const Text('Разложить на множители'),
+            ),
+          ),
+        ],
+        if (_previewBusy) const LinearProgressIndicator(minHeight: 2),
         _definedFunctions(),
       ],
     );
@@ -744,11 +817,26 @@ class _SolvePageState extends State<SolvePage> {
 
   /// LaTeX текущего ответа для предпросмотра над клавиатурой.
   String? get _previewLatex {
-    final result = _current;
+    final result = _current ?? _previewAnswer;
     final solution = result?.solution;
     if (solution == null) return null;
     final latex = nodeToLatex(solution, _latexOptions);
     return latex.isEmpty ? null : latex;
+  }
+
+  bool get _previewFindsRoots {
+    final source = _editor.toCoreNode();
+    final solution = _previewAnswer?.solution;
+    if (solution == null ||
+        source.type == CoreNodeType.equals ||
+        source.type == CoreNodeType.system) {
+      return false;
+    }
+    bool equation(CoreNode node) => node.type == CoreNodeType.equals;
+    return equation(solution) ||
+        (solution.type == CoreNodeType.list &&
+            solution.children.isNotEmpty &&
+            solution.children.every(equation));
   }
 
   /// Строка ошибки — `@id/error`, 14sp `textColorTertiary` с иконкой.
@@ -826,10 +914,14 @@ class _SolvePageState extends State<SolvePage> {
               icon: const Icon(Icons.show_chart, size: 20),
               label: const Text('График'),
             ),
-          TextButton.icon(
+          if (!_editor.isEmpty && variable(node))
+            TextButton(
+              onPressed: () => _solveWith(command: 'factor'),
+              child: const Text('Разложить на множители'),
+            ),
+          TextButton(
             onPressed: _openActions,
-            icon: const Icon(Icons.tune_outlined, size: 20),
-            label: const Text('Другие действия'),
+            child: const Text('Действия с решением'),
           ),
           if (_command != null)
             InputChip(
@@ -895,10 +987,12 @@ class _SolvePageState extends State<SolvePage> {
         await _openMatrixSheet();
       case 'interval':
         await _openIntervalDialog();
+        if (mounted) await _solve();
       case 'graph':
         await _openGraph();
       default:
         setState(() => _command = action == 'auto' ? null : action);
+        await _solve();
     }
   }
 
@@ -958,7 +1052,11 @@ class _SolvePageState extends State<SolvePage> {
               SolverReadyIndicator(startup: startup),
             PhButton(
               key: const ValueKey('solve'),
-              label: _busy ? 'Решаем…' : _solveLabel,
+              label: _busy
+                  ? 'Решаем…'
+                  : _previewAnswer != null
+                  ? 'Шаги решения'
+                  : _solveLabel,
               onPressed: enabled ? _solve : null,
               busy: _busy,
             ),
@@ -1030,7 +1128,12 @@ class _SolvePageState extends State<SolvePage> {
               latexOptions: _latexOptions,
               onLink: _onLink,
               onCopy: _copyFormula,
-              methodSwitcher: _methods.length > 1 ? _methodSwitcher() : null,
+              methodSwitcher: Column(
+                children: [
+                  _commandBar(),
+                  if (_methods.length > 1) _methodSwitcher(),
+                ],
+              ),
             ),
           ),
         ),
@@ -1065,9 +1168,10 @@ class _SolvePageState extends State<SolvePage> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: PhButton(
-              label: _expandSteps ? 'Свернуть этапы' : PhString.explainSteps,
-              onPressed: () => setState(() => _expandSteps = !_expandSteps),
+            child: TextButton.icon(
+              label: const Text('Изменить задачу'),
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: _backToInput,
             ),
           ),
         ],
@@ -1293,12 +1397,26 @@ class _SolvePageState extends State<SolvePage> {
   }
 
   Future<void> _openNotebook() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
+    final problem = await Navigator.of(context).push<CoreNode>(
+      MaterialPageRoute<CoreNode>(
         builder: (_) =>
             NotebookPage(notebook: _notebook, latexOptions: _latexOptions),
       ),
     );
+    if (!mounted || problem == null) return;
+    try {
+      final document = coreToEditor(problem);
+      _backToInput();
+      _editor.replaceDocument(document);
+    } on UnsupportedError {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Эта запись пока не поддерживает редактирование. Исходная задача сохранена.',
+          ),
+        ),
+      );
+    }
   }
 
   /// Справка: возможности приложения и настройки ввода.
@@ -1353,6 +1471,7 @@ class _SolvePageState extends State<SolvePage> {
     final maxText = bounds.max.trim();
     if (minText.isEmpty || maxText.isEmpty) {
       setState(() {
+        _previewAnswer = null;
         _intervalMin = null;
         _intervalMax = null;
         _intervalMinText = '';
@@ -1367,6 +1486,7 @@ class _SolvePageState extends State<SolvePage> {
       final maxNode = await widget.api.parse('{$maxText}');
       if (!mounted) return;
       setState(() {
+        _previewAnswer = null;
         _intervalMin = minNode;
         _intervalMax = maxNode;
         _intervalMinText = minText;

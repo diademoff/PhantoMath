@@ -39,12 +39,17 @@ List<List<ENode>> _splitLines(ENode document) {
       lines.last.add(token);
     }
   }
-  return [for (final line in lines) if (line.isNotEmpty) line];
+  return [
+    for (final line in lines)
+      if (line.isNotEmpty) line,
+  ];
 }
 
 /// Несколько строк — система, одна — её узел, ни одной — `EMPTY`.
 CoreNode _linesToCore(ENode document) {
-  final bodies = [for (final line in _splitLines(document)) _parseSequence(line)];
+  final bodies = [
+    for (final line in _splitLines(document)) _parseSequence(line),
+  ];
   if (bodies.isEmpty) return const CoreNode(type: CoreNodeType.empty);
   if (bodies.length == 1) return bodies.single;
   return CoreNode(type: CoreNodeType.system, children: bodies);
@@ -222,17 +227,17 @@ CoreNode _slotToCore(ENode slot) =>
 /// В редакторе матрица — шаблон из `n²` ячеек; в контракте — узел `MATRIX`,
 /// у которого дети — строки `MATRIX_ROW`, а у строки — ячейки.
 CoreNode _matrixToCore(ENode template) {
-  final size = template.kind == ENodeKind.matrix2 ? 2 : 3;
+  final columns = template.matrixColumns;
   final cells = [
     for (final slot in template.children)
       slot.kind == ENodeKind.row ? _rowToCore(slot) : _atom(slot),
   ];
   final rows = <CoreNode>[
-    for (var row = 0; row < size; row++)
+    for (var row = 0; row < template.matrixRows; row++)
       CoreNode(
         type: CoreNodeType.matrixRow,
         children: [
-          for (var col = 0; col < size; col++) cells[row * size + col],
+          for (var col = 0; col < columns; col++) cells[row * columns + col],
         ],
       ),
   ];

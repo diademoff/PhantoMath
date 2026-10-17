@@ -294,8 +294,18 @@ PhSheetSpec secondarySheet() => PhSheetSpec(
       _k('BASIC_INFIX_OPERATOR_LESS_THAN', PhKeyType.infix, '<', 'Меньше'),
       _k('BASIC_INFIX_OPERATOR_GREATER_THAN', PhKeyType.infix, '>', 'Больше'),
       _k('OPERATOR_FUNCTION_F', PhKeyType.function, 'f(x)', 'Функция f(x)'),
-      _k('OPERATOR_SIGMA_DEFINITE', PhKeyType.function, r'\sum', 'Сумма'),
-      _k('OPERATOR_MATRIX', PhKeyType.intermediate, 'matrix', 'Матрица'),
+      _k(
+        'OPERATOR_SIGMA_DEFINITE',
+        PhKeyType.function,
+        r'\sum_{x=\square}^{\square}\square',
+        'Сумма: начало, конец, слагаемое',
+      ),
+      _k(
+        'OPERATOR_MATRIX',
+        PhKeyType.intermediate,
+        r'\begin{bmatrix}\square&\square\\\square&\square\end{bmatrix}',
+        'Матрица',
+      ),
       _k('OPERATOR_LOG10', PhKeyType.function, r'\log_{10}', 'Логарифм'),
     ]),
     PhRow([

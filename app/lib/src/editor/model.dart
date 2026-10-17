@@ -99,11 +99,30 @@ class ENode {
       ENode(kind, value: value);
 
   /// Шаблон с пустыми слотами-рядами.
-  factory ENode.template(ENodeKind kind) =>
-      ENode(kind, children: [for (var i = 0; i < kind.arity; i++) ENode.row()]);
+  factory ENode.template(ENodeKind kind) => ENode(
+    kind,
+    children: [
+      for (var i = 0; i < kind.arity; i++)
+        ENode.row(
+          kind == ENodeKind.sigma && i == 0
+              ? [ENode.terminal(ENodeKind.variable, 'x')]
+              : [],
+        ),
+    ],
+  );
 
   /// Пуст ли ряд (нет токенов).
   bool get isEmptyRow => kind == ENodeKind.row && children.isEmpty;
+
+  /// Matrix dimensions are editor-only metadata; the public AST uses rows.
+  int get matrixColumns =>
+      int.tryParse(value?.split(',').last ?? '') ??
+      (kind == ENodeKind.matrix3 ? 3 : 2);
+  int get matrixRows => children.length ~/ matrixColumns;
+
+  List<int> get slotOrder => kind == ENodeKind.log
+      ? [1, 0]
+      : [for (var i = 0; i < children.length; i++) i];
 
   ENode copyWith({String? value, List<ENode>? children}) => ENode(
     kind,
@@ -167,7 +186,7 @@ ENode _updateLeafRow(
     steps.sublist(1),
     transform,
   );
-  children[step.child] = ENode(target.kind, children: slots);
+  children[step.child] = target.copyWith(children: slots);
   return ENode(node.kind, value: node.value, children: children);
 }
 
@@ -175,7 +194,7 @@ ENode _updateLeafRow(
 ENode _withSlot(ENode template, int slot, ENode row) {
   final slots = List<ENode>.of(template.children);
   slots[slot] = row;
-  return ENode(template.kind, children: slots);
+  return template.copyWith(children: slots);
 }
 
 /// Число ли текст терминала: только цифры и точка.
@@ -215,6 +234,7 @@ EditorState insertTerminal(EditorState state, ENodeKind kind, String value) {
     final prev = at > 0 ? children[at - 1] : null;
     final canMerge =
         kind == ENodeKind.constant &&
+        _numeric.hasMatch(value) &&
         prev != null &&
         prev.kind == ENodeKind.constant &&
         _numeric.hasMatch(prev.value ?? '') &&
@@ -259,12 +279,53 @@ EditorState insertNewline(EditorState state) {
 /// Если [ENodeKind.absorbsPrevious] и слева есть операнд, он переезжает в
 /// первый слот шаблона; курсор встаёт в [ENodeKind.cursorSlot].
 EditorState insertTemplate(EditorState state, ENodeKind kind) {
+  // Shortcuts create the same editable structure as their general form.
+  if (kind == ENodeKind.powerTwo || kind == ENodeKind.powerThree) {
+    var next = insertTemplate(state, ENodeKind.power);
+    final emptyBase = next.cursor.steps.last.slot == 0;
+    final baseCursor = next.cursor;
+    if (emptyBase) next = nextSlot(next);
+    next = insertTerminal(
+      next,
+      ENodeKind.constant,
+      kind == ENodeKind.powerTwo ? '2' : '3',
+    );
+    return emptyBase ? next.copyWith(cursor: baseCursor) : nextSlot(next);
+  }
+  if (kind == ENodeKind.rootThree) {
+    var next = insertTemplate(state, ENodeKind.rootN);
+    final radicandCursor = next.cursor;
+    final steps = List<CursorStep>.of(next.cursor.steps);
+    steps[steps.length - 1] = CursorStep(steps.last.child, 0);
+    next = next.copyWith(cursor: EdCursor(steps: steps));
+    next = insertTerminal(next, ENodeKind.constant, '3');
+    return next.copyWith(cursor: radicandCursor);
+  }
+  if (kind == ENodeKind.log2 || kind == ENodeKind.log10) {
+    var next = insertTemplate(state, ENodeKind.log);
+    next = insertTerminal(
+      next,
+      ENodeKind.constant,
+      kind == ENodeKind.log2 ? '2' : '10',
+    );
+    return nextSlot(next);
+  }
   state = _splitNumber(state);
   final steps = state.cursor.steps;
   final at = state.cursor.offset;
   final leaf = rowAt(state.document, steps);
-  final absorbs = kind.absorbsPrevious && at > 0;
-  final childIndex = absorbs ? at - 1 : at;
+  final previous = at > 0 ? leaf.children[at - 1] : null;
+  final absorbs =
+      kind.absorbsPrevious &&
+      previous != null &&
+      !previous.kind.isInfix &&
+      previous.kind != ENodeKind.newline;
+  var childIndex = absorbs ? at - 1 : at;
+  if (absorbs) {
+    while (childIndex > 0 && leaf.children[childIndex].kind.isPostfix) {
+      childIndex--;
+    }
+  }
 
   final document = _updateLeafRow(state.document, steps, (row) {
     final children = List<ENode>.of(row.children);
@@ -273,15 +334,19 @@ EditorState insertTemplate(EditorState state, ENodeKind kind) {
       template = _withSlot(
         template,
         kind.absorbFillSlot,
-        ENode.row([leaf.children[at - 1]]),
+        ENode.row(leaf.children.sublist(childIndex, at)),
       );
-      children.removeAt(at - 1);
+      children.removeRange(childIndex, at);
     }
     children.insert(childIndex, template);
     return ENode.row(children);
   });
 
-  final newSteps = [...steps, CursorStep(childIndex, kind.cursorSlot)];
+  final slot =
+      (kind == ENodeKind.fraction || kind == ENodeKind.power) && !absorbs
+      ? 0
+      : kind.cursorSlot;
+  final newSteps = [...steps, CursorStep(childIndex, slot)];
   final offset = absorbs && kind.cursorAtEnd ? 1 : 0;
   return EditorState(document, EdCursor(steps: newSteps, offset: offset));
 }
@@ -291,6 +356,8 @@ EditorState insertTemplate(EditorState state, ENodeKind kind) {
 /// В начале слота курсор выходит наружу (к родительскому ряду), не удаляя
 /// шаблон: повторное нажатие уже удалит его как единый токен.
 EditorState backspace(EditorState state) {
+  final unwrapped = _unwrapEmptyPower(state);
+  if (unwrapped.document != state.document) return unwrapped;
   final cursor = state.cursor;
   final inside = cursor.textOffset;
   if (inside != null) {
@@ -315,9 +382,12 @@ EditorState backspace(EditorState state) {
     if (!cursor.templateSelected &&
         prev.kind.isTemplate &&
         prev.children.any((slot) => !slot.isEmptyRow)) {
-      return state.copyWith(
+      final entered = state.copyWith(
         cursor: _edgeCursor(prev, cursor.steps, cursor.offset - 1, end: true),
       );
+      // A superscript is text, not an indivisible decoration. Backspace from
+      // 5² deletes the 2 immediately while retaining the base.
+      return prev.kind == ENodeKind.power ? backspace(entered) : entered;
     }
     final at = cursor.offset;
     // При обрезке последнего символа числа узел остаётся на месте, поэтому
@@ -338,7 +408,9 @@ EditorState backspace(EditorState state) {
       }
       return ENode.row(children);
     });
-    return EditorState(document, cursor.copyWith(offset: keptOffset));
+    return _unwrapEmptyPower(
+      EditorState(document, cursor.copyWith(offset: keptOffset)),
+    );
   }
   if (cursor.steps.isNotEmpty) {
     final step = cursor.steps.last;
@@ -389,7 +461,7 @@ EditorState deleteForward(EditorState state) {
       }
       return ENode.row(children);
     });
-    return EditorState(document, cursor);
+    return _unwrapEmptyPower(EditorState(document, cursor));
   }
   if (cursor.steps.isNotEmpty) {
     final step = cursor.steps.last;
@@ -436,13 +508,16 @@ EditorState moveLeft(EditorState state) {
   }
   if (cursor.steps.isNotEmpty) {
     final step = cursor.steps.last;
-    if (step.slot > 0) {
-      final parent = cursor.steps.sublist(0, cursor.steps.length - 1);
-      final template = rowAt(state.document, parent).children[step.child];
+    final parent = cursor.steps.sublist(0, cursor.steps.length - 1);
+    final template = rowAt(state.document, parent).children[step.child];
+    final order = template.slotOrder;
+    final position = order.indexOf(step.slot);
+    if (position > 0) {
+      final target = order[position - 1];
       return state.copyWith(
         cursor: EdCursor(
-          steps: [...parent, CursorStep(step.child, step.slot - 1)],
-          offset: template.children[step.slot - 1].children.length,
+          steps: [...parent, CursorStep(step.child, target)],
+          offset: template.children[target].children.length,
         ),
       );
     }
@@ -487,10 +562,12 @@ EditorState moveRight(EditorState state) {
     final step = cursor.steps.last;
     final parent = cursor.steps.sublist(0, cursor.steps.length - 1);
     final template = rowAt(state.document, parent).children[step.child];
-    if (step.slot + 1 < template.children.length) {
+    final order = template.slotOrder;
+    final position = order.indexOf(step.slot);
+    if (position + 1 < order.length) {
       return state.copyWith(
         cursor: EdCursor(
-          steps: [...parent, CursorStep(step.child, step.slot + 1)],
+          steps: [...parent, CursorStep(step.child, order[position + 1])],
         ),
       );
     }
@@ -535,9 +612,13 @@ EditorState nextSlot(EditorState state) {
   final step = cursor.steps.last;
   final parent = cursor.steps.sublist(0, cursor.steps.length - 1);
   final template = rowAt(state.document, parent).children[step.child];
+  final order = template.slotOrder;
+  final position = order.indexOf(step.slot);
   return state.copyWith(
-    cursor: step.slot + 1 < template.children.length
-        ? EdCursor(steps: [...parent, CursorStep(step.child, step.slot + 1)])
+    cursor: position + 1 < order.length
+        ? EdCursor(
+            steps: [...parent, CursorStep(step.child, order[position + 1])],
+          )
         : EdCursor(steps: parent, offset: step.child + 1),
   );
 }
@@ -548,11 +629,58 @@ EdCursor _edgeCursor(
   int index, {
   required bool end,
 }) {
-  final slot = end ? template.children.length - 1 : 0;
+  final slot = end ? template.slotOrder.last : template.slotOrder.first;
   final row = template.children[slot];
   return EdCursor(
     steps: [...steps, CursorStep(index, slot)],
     offset: end ? row.children.length : 0,
+  );
+}
+
+EditorState _unwrapEmptyPower(EditorState state) {
+  final cursor = state.cursor;
+  if (cursor.steps.isEmpty) return state;
+  final step = cursor.steps.last;
+  final parent = cursor.steps.sublist(0, cursor.steps.length - 1);
+  final template = rowAt(state.document, parent).children[step.child];
+  if (template.kind != ENodeKind.power ||
+      step.slot != 1 ||
+      !template.children[1].isEmptyRow) {
+    return state;
+  }
+  final base = template.children[0].children;
+  final document = _updateLeafRow(state.document, parent, (row) {
+    final children = List<ENode>.of(row.children)
+      ..replaceRange(step.child, step.child + 1, base);
+    return ENode.row(children);
+  });
+  return EditorState(
+    document,
+    EdCursor(steps: parent, offset: step.child + base.length),
+  );
+}
+
+EditorState insertMatrix(EditorState state, int rows, int columns) {
+  if (rows < 1 || rows > 8 || columns < 1 || columns > 8) {
+    throw ArgumentError('Matrix dimensions must be between 1 and 8');
+  }
+  state = _splitNumber(state);
+  final cursor = state.cursor;
+  final document = _updateLeafRow(state.document, cursor.steps, (row) {
+    final children = List<ENode>.of(row.children)
+      ..insert(
+        cursor.offset,
+        ENode(
+          ENodeKind.matrix2,
+          value: '$rows,$columns',
+          children: List.generate(rows * columns, (_) => ENode.row()),
+        ),
+      );
+    return ENode.row(children);
+  });
+  return EditorState(
+    document,
+    EdCursor(steps: [...cursor.steps, CursorStep(cursor.offset, 0)]),
   );
 }
 

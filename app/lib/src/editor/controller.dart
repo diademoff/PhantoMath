@@ -83,6 +83,13 @@ class EditorController extends ChangeNotifier {
 
   void nextSlot() => _apply(ed.nextSlot(_state));
 
+  void insertMatrix(int rows, int columns) =>
+      _apply(ed.insertMatrix(_state, rows, columns));
+
+  void replaceDocument(ed.ENode document) => _apply(
+    ed.EditorState(document, ed.EdCursor(offset: document.children.length)),
+  );
+
   /// Очистить документ.
   void clear() => _apply(ed.clearEditor());
 
