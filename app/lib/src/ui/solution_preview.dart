@@ -53,16 +53,33 @@ class _Formula extends StatelessWidget {
   final double fontSize;
 
   @override
-  Widget build(BuildContext context) => SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    child: Math.tex(
-      latex,
-      mathStyle: MathStyle.display,
-      textStyle: TextStyle(
-        fontSize: fontSize,
-        color: Theme.of(context).colorScheme.onSurface,
+  Widget build(BuildContext context) => KeyedSubtree(
+    key: ValueKey(latex),
+    child: TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) => Opacity(
+        opacity: value,
+        child: Transform.translate(
+          offset: Offset(0, 8 * (1 - value)),
+          child: child,
+        ),
       ),
-      onErrorFallback: (_) => Text(latex),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Math.tex(
+          latex,
+          mathStyle: MathStyle.display,
+          textStyle: TextStyle(
+            fontSize: fontSize,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          onErrorFallback: (_) => Text(latex),
+        ),
+      ),
     ),
   );
 }
