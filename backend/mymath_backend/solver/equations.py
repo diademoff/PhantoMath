@@ -257,8 +257,11 @@ def _simple_side(node: CoreNode, var: str) -> tuple[Fraction, Fraction] | None:
             return True
         if part.type in (T.MULTIPLY, T.MULTIPLY_IMPLICIT) and len(part.children) == 2:
             number, name = part.children
+            negative = number.type is T.NEGATIVE and len(number.children) == 1
+            if negative:
+                number = number.children[0]
             if number.type is T.CONSTANT and name.type is T.VARIABLE and name.value == var:
-                found.append(("x", sign * as_fraction(number)))
+                found.append(("x", (-sign if negative else sign) * as_fraction(number)))
                 return True
         return False
 
