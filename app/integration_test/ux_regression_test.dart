@@ -38,7 +38,7 @@ void main() {
     gate.complete();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
-    expect(find.text('Готов к решению'), findsOneWidget);
+    expect(find.text('Готов к решению'), findsNothing);
     expect(editor.toCoreNode().value, '12');
   });
 
@@ -48,12 +48,14 @@ void main() {
       final gate = Completer<void>();
       final startup = SolverStartup(() => gate.future);
       var requests = 0;
+      final submittedValues = <Object?>[];
       Map<String, dynamic>? sent;
       final api = SolverApi(
         baseUrl: 'http://test',
         client: MockClient((request) async {
           requests++;
           sent = jsonDecode(request.body) as Map<String, dynamic>;
+          submittedValues.add((sent!['node'] as Map)['value']);
           return http.Response(
             jsonEncode({
               'result': {
@@ -105,13 +107,20 @@ void main() {
       gate.complete();
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
-      expect(requests, 0, reason: 'stale input was submitted after startup');
+      // Real device frames may cross the live-answer debounce. A request for
+      // the current 23 is expected; the cancelled 2 must never be submitted.
+      expect(
+        submittedValues,
+        isNot(contains('2')),
+        reason: 'stale input was submitted after startup',
+      );
       await tester.tap(find.byKey(const ValueKey('solve')));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       expect((sent!['node'] as Map)['value'], '23');
       expect(requests, 1);
-      await tester.tap(find.text('Пояснить этапы'));
+      expect(find.text('Пояснить этапы'), findsNothing);
+      await tester.tap(find.text('Число уже вычислено'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       expect(
