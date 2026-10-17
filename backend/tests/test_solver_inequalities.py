@@ -12,6 +12,7 @@ import pytest
 
 from mymath_backend import CoreNode, load_explanations
 from mymath_backend import CoreNodeType as T
+from mymath_backend.input import parse_protocol
 from mymath_backend.solver import SolveError, registered_types, solve
 
 EXPLANATIONS = Path(__file__).resolve().parents[2] / "truth" / "data" / "explanations.json"
@@ -330,3 +331,14 @@ class TestPeriodicInequality:
         problem = ineq(T.GREATER_THAN, node(T.SIN, var("x")), c("2"))
         assert solution_of(problem).type is T.EMPTY
         assert step_keys(problem) == ["rel_el_of_zero"]
+
+
+def test_quadratic_inequality_follows_photomath_cases_and_intersections() -> None:
+    # Photomath 7.10.0 on device: x^2 - 5x + 6 < 0 is factored, split into two sign cases,
+    # each inequality solved, the systems intersected and the results united.
+    problem = parse_protocol("{<({x^2-5x+6},{0})}")
+    assert step_keys(problem)[4:] == ["ineq_product_p_two"] + ["ineq_linear"] * 4 + [
+        "intersection",
+        "intersection",
+        "union",
+    ]

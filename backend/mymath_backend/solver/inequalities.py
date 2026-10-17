@@ -27,6 +27,7 @@ import sympy
 
 from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
+from . import quadratic_pm
 from .arithmetic import format_number
 from .base import SolveContext, SolveError, Step, solver_for
 from .domain import add_restriction_steps
@@ -533,11 +534,17 @@ def _quadratic_inequality(
     expression = _poly_expr(poly, var)
     symbol = sympy.Symbol(var)
     roots = sorted(sympy.solve(sympy.Eq(expression, 0), symbol), key=_sort_key)
+    inside = (a > 0) == below
+    answer = _interval_answer(roots[0], roots[-1], inside=inside, closed=closed)
+    if (
+        discriminant > 0
+        and {a.denominator, b.denominator, c.denominator} == {1}
+        and quadratic_pm.inequality_rows(node, var, int(a), int(b), int(c), ctx.result, answer)
+    ):
+        return answer
     right = CoreNode.node(T.EQUALS, from_sympy(expression), CoreNode.constant("0"))
     ctx.result.add(Step(left=node, right=right, key="ineq_quad_to_eq_quad", args=[x]), [_HEADER])
-
-    inside = (a > 0) == below
-    return _interval_answer(roots[0], roots[-1], inside=inside, closed=closed)
+    return answer
 
 
 def _interval_answer(lo: sympy.Expr, hi: sympy.Expr, *, inside: bool, closed: bool) -> CoreNode:

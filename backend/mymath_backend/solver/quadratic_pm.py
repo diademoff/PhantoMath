@@ -105,8 +105,15 @@ class _Family:
         result.set_solution(solution)
 
 
-def _factoring(f: _Family) -> SolveResult | None:
+def _factor_rows(
+    f: _Family, result: SolveResult, relation: T
+) -> tuple[CoreNode, CoreNode, CoreNode] | None:
+    """The three rows that turn ``a x^2 + b x + c (relation) 0`` into a product of brackets."""
     a, b, c, var = f.a, f.b, f.c, f.var
+
+    def link(left: CoreNode, right: CoreNode) -> CoreNode:
+        return _node(relation, left, right)
+
     p, q = (b + f.root) // 2, (b - f.root) // 2  # p + q = b, p q = a c, p > q
     g = gcd(a, abs(p))
     lead, rest = a // g, p // g
@@ -114,11 +121,9 @@ def _factoring(f: _Family) -> SolveResult | None:
     # a positive second term was captured for a = 1 with a tail equal to the bracket (x^2 + 4x + 3)
     if q == 0 or q % lead or c != second * rest or (q > 0 and (a != 1 or second != 1)):
         return None
-    result = SolveResult()
-
     bracket = _poly([(lead, 1), (rest, 0)], var)
     wrapped = _node(T.BRACKET, bracket)
-    split = _eq(_poly([(a, 2), (p, 1), (q, 1), (c, 0)], var), _num(0))
+    split = link(_poly([(a, 2), (p, 1), (q, 1), (c, 0)], var), _num(0))
     result.add_group(
         "rewrite_expression",
         Step(
@@ -133,17 +138,17 @@ def _factoring(f: _Family) -> SolveResult | None:
     tail_factor = (
         wrapped if second in (1, -1) else _node(T.MULTIPLY_IMPLICIT, _num(abs(second)), wrapped)
     )
-    grouped = _eq(_chain([(1, head), (1 if second > 0 else -1, tail_factor)]), _num(0))
+    grouped = link(_chain([(1, head), (1 if second > 0 else -1, tail_factor)]), _num(0))
     pair = _node(T.ADD if p > 0 else T.SUBTRACT, _mono(a, 2, var), _mono(p, 1, var))
     if second == -1:  # the sign goes first: -x - 2 = -(x + 2)
-        signed = _eq(_chain([(1, pair), (-1, wrapped)]), _num(0))
+        signed = link(_chain([(1, pair), (-1, wrapped)]), _num(0))
         result.add_group(
             "frac_reduce_frac",
             Step(split, signed, "extract_minus"),
             Step(signed, grouped, "extract_arg", [_mono(g, 1, var)]),
         )
     else:
-        headed = _eq(
+        headed = link(
             _chain(
                 [
                     (1, head),
@@ -161,8 +166,17 @@ def _factoring(f: _Family) -> SolveResult | None:
         result.add_group("factorise_call_plural", *pages)
 
     other = _poly([(g, 1), (second, 0)], var)
-    product = _eq(_node(T.MULTIPLY, wrapped, _node(T.BRACKET, other)), _num(0))
+    product = link(_node(T.MULTIPLY, wrapped, _node(T.BRACKET, other)), _num(0))
     result.add_group("factorise_call", Step(grouped, product, "extract_arg", [bracket]))
+    return product, bracket, other
+
+
+def _factoring(f: _Family) -> SolveResult | None:
+    result = SolveResult()
+    rows = _factor_rows(f, result, T.EQUALS)
+    if rows is None:
+        return None
+    product, bracket, other = rows
     cases = [_eq(bracket, _num(0)), _eq(other, _num(0))]
     listed = _node(T.LIST, *cases)
     result.add_group(
@@ -171,7 +185,7 @@ def _factoring(f: _Family) -> SolveResult | None:
     result.add_group(
         "eq_solve_short_plural",
         *[
-            Step(listed, f.solved(root), "eq_linear", [f.x], subresult=_solve_linear(case, var))
+            Step(listed, f.solved(root), "eq_linear", [f.x], subresult=_solve_linear(case, f.var))
             for case, root in zip(cases, (f.low, f.high), strict=True)
         ],
     )
@@ -1220,6 +1234,87 @@ def _two_real_cards(node: CoreNode, a: int, b: int, c: int) -> list[SolveResult]
         [_num(0), two],
     )
     return list(_discriminant_cards(node, a, b, c, verdict, two))
+
+
+def inequality_rows(
+    node: CoreNode, var: str, a: int, b: int, c: int, result: SolveResult, answer: CoreNode
+) -> bool:
+    """``x^2 + b x + c < 0`` with b < 0 < c and rational roots, as Photomath 7.10.0 shows it.
+
+    Factor into brackets, split into two sign cases, solve each inequality, intersect, unite.
+    Returns ``False`` without touching ``result`` outside the captured family.
+    """
+    d = b * b - 4 * a * c
+    if node.type is not T.LESS_THAN or a != 1 or b >= 0 or c <= 0 or d <= 0 or isqrt(d) ** 2 != d:
+        return False
+    family = _Family(var, a, b, c)
+    family.node = node
+    factors = _factor_rows(family, result, T.LESS_THAN)
+    if factors is None:
+        return False
+    product, bracket, other = factors
+    x, zero = family.x, _num(0)
+    low, high = _num(family.low), _num(family.high)
+    first, second = bracket, other
+
+    def system(one: T, two: T) -> CoreNode:
+        return _node(T.SYSTEM, _node(one, first, zero), _node(two, second, zero))
+
+    cases = _node(T.LIST, system(T.LESS_THAN, T.GREATER_THAN), system(T.GREATER_THAN, T.LESS_THAN))
+    result.add_group(
+        "eq_separate_short",
+        Step(
+            product,
+            cases,
+            "ineq_product_p_two",
+            [
+                CoreNode.variable("<0"),
+                cases.children[0],
+                cases.children[1],
+                product.children[0],
+            ],
+        ),
+    )
+
+    # x - 2 < 0 -> x < 2 and x - 3 > 0 -> x > 3, and the same for the other case
+    sides = [
+        (T.LESS_THAN, low, T.GREATER_THAN, high),
+        (T.GREATER_THAN, low, T.LESS_THAN, high),
+    ]
+    pages = []
+    state = cases
+    for index, (one, lo, two, hi) in enumerate(sides):
+        for position, (relation, value, original) in enumerate(
+            ((one, lo, first), (two, hi, second))
+        ):
+            solved_part = _node(relation, x, value)
+            items = [list(case.children) for case in state.children]
+            items[index][position] = solved_part
+            following = _node(T.LIST, *[_node(T.SYSTEM, *pair) for pair in items])
+            pages.append(
+                Step(
+                    state,
+                    following,
+                    "ineq_linear",
+                    [x],
+                    subresult=_detail(_node(relation, original, zero), solved_part),
+                )
+            )
+            state = following
+    result.add_group("ineq_solve_short_plural", *pages)
+
+    empty = _node(T.ELEMENT_OF, x, CoreNode.empty())
+    interval = _node(T.ELEMENT_OF, x, _node(T.OPEN_OPEN_INTERVAL, low, high))
+    reduced_first = _node(T.LIST, empty, state.children[1])
+    reduced = _node(T.LIST, empty, interval)
+    result.add_group(
+        "intersection",
+        Step(state, reduced_first, "intersection"),
+        Step(reduced_first, reduced, "intersection"),
+    )
+    result.add_group("union", Step(reduced, answer, "union"))
+    result.set_solution(answer)
+    return True
 
 
 def methods(

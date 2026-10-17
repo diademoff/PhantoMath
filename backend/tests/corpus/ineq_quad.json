@@ -12,7 +12,11 @@
           {"type": "CONSTANT", "value": "3"}
         ]
       },
-      "steps": ["ineq_quad_to_eq_quad"]
+      "steps": [
+        "write_as_diff", "extract_arg", "extract_arg", "extract_arg", "ineq_product_p_two",
+        "ineq_linear", "ineq_linear", "ineq_linear", "ineq_linear",
+        "intersection", "intersection", "union"
+      ]
     },
     {
       "id": "greater-outside",
