@@ -384,7 +384,7 @@ def _linear_rows(
     solution = eq(final, CoreNode.variable(var), _const(total / coefficient))
     if coefficient != 1:
         divided = eq(
-            relation,
+            final,
             eq(T.FRACTION, current.children[0], _const(coefficient)),
             eq(T.FRACTION, current.children[1], _const(coefficient)),
         )
@@ -402,8 +402,7 @@ def _linear_rows(
                 solution,
                 divide_key,
                 [_const(coefficient)],
-                # inequalities get their (sign-aware) detail from the teaching layer
-                subresult=detail if relation is T.EQUALS else None,
+                subresult=detail,
             ),
         )
     return solution

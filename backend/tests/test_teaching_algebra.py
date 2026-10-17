@@ -232,10 +232,9 @@ def test_actual_inequality_steps_reverse_only_negative_divisor(
     result = SolveResult()
     inequalities.solve_inequality(left, SolveContext(result, ["x"]))
     step = list(result)[-1]
-    work = details(step)
-    assert work[0].key == (
-        "lesson_alg_divide_negative" if coefficient < 0 else "lesson_alg_divide_positive"
-    )
+    assert step.subresult is not None
+    work = list(step.subresult)
+    assert work[0].key == ("ineq_linear_div_neg" if coefficient < 0 else "ineq_linear_div")
     assert work[0].right is not None
     assert step.right is not None
     assert work[0].right.type is step.right.type
