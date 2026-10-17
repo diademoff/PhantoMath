@@ -114,6 +114,7 @@ def solve_arithmetic(node: CoreNode, ctx: SolveContext) -> CoreNode:
         _check_leaf(node)
         return node
 
+    node = _flatten_fraction_sum(node)
     # Дети сворачиваются через общий реестр: так арифметика складывается с
     # другими модулями (например, дробь сворачивается своим модулем).
     folded = [route(child, ctx) for child in node.children]
@@ -153,6 +154,29 @@ def solve_arithmetic(node: CoreNode, ctx: SolveContext) -> CoreNode:
     # Photomath 7.10.0 on device: every operation is its own row (main step).
     ctx.result.add_group(detail.header if detail and detail.header else key, step)
     return constant
+
+
+def _flatten_fraction_sum(node: CoreNode) -> CoreNode:
+    """``a/b + c/d + e/f`` is one addition (Photomath 7.10.0), not two nested ones."""
+    if node.type is not T.ADD:
+        return node
+    leaves: list[CoreNode] = []
+
+    def collect(part: CoreNode) -> None:
+        if part.type is T.ADD:
+            for child in part.children:
+                collect(child)
+        else:
+            leaves.append(part)
+
+    collect(node)
+    if (
+        len(leaves) > 2
+        and sum(leaf.type is T.FRACTION for leaf in leaves) >= 2
+        and all(leaf.type in (T.FRACTION, T.CONSTANT) for leaf in leaves)
+    ):
+        return CoreNode(type=T.ADD, children=leaves)
+    return node
 
 
 def _step_args(key: str, node: CoreNode, result: CoreNode) -> list[CoreNode]:

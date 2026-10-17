@@ -151,6 +151,14 @@ def product_detail(op: T, values: list[Fraction], result: CoreNode) -> SolveResu
 Rows = list[tuple[str, list[Step]]]
 
 
+def _sum_detail(op: T, terms: list[int]) -> SolveResult:
+    """The numerators' arithmetic as its own screen (three or more terms)."""
+    detail = SolveResult()
+    total = CoreNode.node(op, *[CoreNode.constant(str(n)) for n in terms])
+    detail.set_solution(route(total, SolveContext(result=detail)))
+    return detail
+
+
 def addition_rows(op: T, values: list[Fraction], result: CoreNode) -> Rows | None:
     """Sum/difference of numeric fractions as main steps, as Photomath 7.10.0 shows it.
 
@@ -208,10 +216,22 @@ def addition_rows(op: T, values: list[Fraction], result: CoreNode) -> Rows | Non
                 )
             ],
         ),
-        ("calculate_short", [Step(combined, unreduced, "add" if op is T.ADD else "sub")]),
+        (
+            "calculate_short" if len(values) == 2 else "calc_sum",
+            [
+                Step(
+                    combined,
+                    unreduced,
+                    ("add" if op is T.ADD else "sub") if len(values) == 2 else "sum_real_positive",
+                    subresult=None if len(values) == 2 else _sum_detail(op, scaled),
+                )
+            ],
+        ),
     ]
     divisor = gcd(abs(total_n), common)
-    if divisor > 1:
+    if total_n == common:
+        rows.append(("divide", [Step(unreduced, result, "div_with_self", [number(1)])]))
+    elif divisor > 1:
         divided = fraction(
             CoreNode.node(T.DIVIDE, number(total_n), number(divisor)),
             CoreNode.node(T.DIVIDE, number(common), number(divisor)),

@@ -56,6 +56,29 @@ C2 = CoreNode.constant("2")
 C4 = CoreNode.constant("4")
 
 
+class TestFractionSums:
+    def one(self, n: str) -> CoreNode:
+        return CoreNode.constant(n)
+
+    def test_three_fractions_are_one_addition(self) -> None:
+        # Photomath 7.10.0 on device: common denominator, sum of numerators, 6/6 = 1.
+        problem = CoreNode.node(
+            T.ADD,
+            frac(self.one("1"), self.one("2")),
+            frac(self.one("1"), self.one("3")),
+            frac(self.one("1"), self.one("6")),
+        )
+        assert step_keys(problem) == ["frac_sum_common", "sum_real_positive", "div_with_self"]
+        assert value_of(problem) == "1"
+
+    def test_nested_sum_of_fractions_is_flattened(self) -> None:
+        inner = CoreNode.node(
+            T.ADD, frac(self.one("1"), self.one("2")), frac(self.one("1"), self.one("3"))
+        )
+        problem = CoreNode.node(T.ADD, inner, frac(self.one("1"), self.one("6")))
+        assert step_keys(problem) == ["frac_sum_common", "sum_real_positive", "div_with_self"]
+
+
 class TestFractions:
     def test_integer_result(self) -> None:
         assert value_of(frac(CoreNode.constant("6"), C2)) == "3"
