@@ -52,7 +52,6 @@ class TestIndefinite:
         ("expression", "expected"),
         [
             (node(T.ADD, node(T.MULTIPLY, c("2"), var()), c("3")), x**2 + 3 * x),
-            (node(T.SIN, var()), -sympy.cos(x)),
             (node(T.DIVIDE, c("1"), var()), sympy.log(x)),
             (node(T.EXP, var()), sympy.exp(x)),
             (var(), x**2 / 2),
@@ -89,6 +88,14 @@ class TestIndefinite:
         result = solution_of(problem)
         assert result.type is T.LIST
         assert sympy.simplify(to_sympy(result.children[0]) - (x**3 + x**2 + sympy.Symbol("C"))) == 0
+
+    def test_sine_is_one_table_step_then_the_constant(self) -> None:
+        problem = node(T.INTEGRAL, node(T.SIN, var()))
+        assert step_keys(problem) == ["integrate_msg", "integrate_msg_addc"]
+        result = solution_of(problem)
+        assert (
+            sympy.simplify(to_sympy(result.children[0]) - (-sympy.cos(x) + sympy.Symbol("C"))) == 0
+        )
 
     def test_step_key(self) -> None:
         problem = node(T.INTEGRAL, var())
@@ -199,7 +206,7 @@ class TestMethod:
         return [sub.description.type for step in vertical.steps for sub in step.substeps]
 
     def test_table_has_no_method_step(self) -> None:
-        assert self.keys_of(node(T.INTEGRAL, node(T.SIN, var()))) == [
+        assert self.keys_of(node(T.INTEGRAL, node(T.EXP, var()))) == [
             "integrate",
             "integrate_calc",
         ]

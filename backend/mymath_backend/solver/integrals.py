@@ -183,6 +183,28 @@ def _monomial_sum_rows(node: CoreNode, symbol: sympy.Symbol, ctx: SolveContext) 
     return answer
 
 
+def _table_rows(node: CoreNode, symbol: sympy.Symbol, ctx: SolveContext) -> CoreNode | None:
+    """``integral sin x dx`` / ``cos x dx``: one table step, then the constant (device capture)."""
+    body = node.children[-1]
+    if not (
+        body.type in (T.SIN, T.COS)
+        and body.children[0].type is T.VARIABLE
+        and body.children[0].value == str(symbol)
+    ):
+        return None
+    eq = CoreNode.node
+    antiderivative = from_sympy(sympy.integrate(to_sympy(body), symbol))
+    rule = eq(T.EQUALS, node, antiderivative)
+    ctx.result.add_group("find_integral", Step(node, antiderivative, "integrate_msg", [rule]))
+    member = eq(T.ELEMENT_OF, CoreNode.variable("C"), CoreNode.variable("ℝ"))
+    answer = eq(T.LIST, eq(T.ADD, antiderivative, CoreNode.variable("C")), member)
+    ctx.result.add_group(
+        CoreRichText(type="add_arg", args=[member]),
+        Step(antiderivative, answer, "integrate_msg_addc", [member]),
+    )
+    return answer
+
+
 def _indefinite_integral(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Неопределённый интеграл: первообразная."""
     symbol = _variable(ctx)
@@ -191,6 +213,8 @@ def _indefinite_integral(node: CoreNode, ctx: SolveContext) -> CoreNode:
         return power
     if (total := _monomial_sum_rows(node, symbol, ctx)) is not None:
         return total
+    if (table := _table_rows(node, symbol, ctx)) is not None:
+        return table
     expression = to_sympy(node.children[-1])
     ctx.result.add(Step(left=node, right=None, key="integrate"))
     method_key = _integral_method(expression, symbol)

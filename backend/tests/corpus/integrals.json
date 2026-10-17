@@ -64,22 +64,49 @@
       "title": "первообразная sin x",
       "input": "{integral({sin({x})})}",
       "solution": {
-        "type": "NEGATIVE",
+        "type": "LIST",
         "children": [
           {
-            "type": "COS",
+            "type": "ADD",
+            "children": [
+              {
+                "type": "NEGATIVE",
+                "children": [
+                  {
+                    "type": "COS",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "x"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "VARIABLE",
+                "value": "C"
+              }
+            ]
+          },
+          {
+            "type": "ELEMENT_OF",
             "children": [
               {
                 "type": "VARIABLE",
-                "value": "x"
+                "value": "C"
+              },
+              {
+                "type": "VARIABLE",
+                "value": "ℝ"
               }
             ]
           }
         ]
       },
       "steps": [
-        "integrate",
-        "integrate_calc"
+        "integrate_msg",
+        "integrate_msg_addc"
       ]
     },
     {
@@ -244,17 +271,44 @@
       "title": "первообразная cos x",
       "input": "{integral({cos({x})})}",
       "solution": {
-        "type": "SIN",
+        "type": "LIST",
         "children": [
           {
-            "type": "VARIABLE",
-            "value": "x"
+            "type": "ADD",
+            "children": [
+              {
+                "type": "SIN",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "x"
+                  }
+                ]
+              },
+              {
+                "type": "VARIABLE",
+                "value": "C"
+              }
+            ]
+          },
+          {
+            "type": "ELEMENT_OF",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "C"
+              },
+              {
+                "type": "VARIABLE",
+                "value": "ℝ"
+              }
+            ]
           }
         ]
       },
       "steps": [
-        "integrate",
-        "integrate_calc"
+        "integrate_msg",
+        "integrate_msg_addc"
       ]
     },
     {
