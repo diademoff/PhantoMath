@@ -24,20 +24,46 @@ def our_shape(m: dict) -> list[list[bool]]:
     return [[bool(s["detail"]) for s in g["stages"]] for g in m["steps"]]
 
 
+def pm_cards(pm: dict) -> list[tuple[str, list[list[bool]]]]:
+    """Distinct captured cards (solution methods) as ``(label, shape)``; old captures have one."""
+    cards = pm.get("cards") or []
+    seen, out = set(), []
+    for card in cards:
+        if not isinstance(card, dict) or not card.get("walk"):
+            continue
+        label = (card.get("title", ""), card.get("subtitle", ""))
+        shape = [[bool(st["nested"]) for st in g["stages"]] for g in card["walk"]]
+        key = (label, str(shape))
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append((" / ".join(x for x in label if x) or "—", shape))
+    if not out and pm.get("walk"):
+        out.append(("—", pm_shape(pm)))
+    return out
+
+
 def verdict(pm: dict, ours: dict) -> tuple[str, str]:
-    if pm.get("error") or not pm.get("walk"):
+    cards = pm_cards(pm)
+    if pm.get("error") or not cards:
         return "нет эталона", pm.get("error", "шаги конкурента не сняты")
     if ours.get("error") or not ours.get("methods"):
         return "пробел", ours.get("error", "нет шагов")
-    want = pm_shape(pm)
-    best = None
-    for i, m in enumerate(ours["methods"]):
-        got = our_shape(m)
-        note = f"способ {i + 1}: {_fmt(got)}"
-        if got == want:
-            return "структура совпала", note
-        best = best or note
-    return "структура отличается", best
+    mine = [our_shape(m) for m in ours["methods"]]
+    unused = list(range(len(mine)))
+    matched = 0
+    for _label, shape in cards:
+        hit = next((i for i in unused if mine[i] == shape), None)
+        if hit is not None:
+            unused.remove(hit)
+            matched += 1
+    note = "наши способы: " + "; ".join(_fmt(m) for m in mine)
+    if matched == len(cards):
+        return ("структура совпала", note) if len(cards) == 1 else (
+            f"структура совпала ({matched} из {len(cards)})", note)
+    if matched:
+        return f"частично ({matched} из {len(cards)})", note
+    return "структура отличается", note
 
 
 def main() -> None:
@@ -47,13 +73,12 @@ def main() -> None:
         pm = load(HERE / "cap" / f"{t['id']}.json") or {"error": "не снято"}
         ours = load(HERE / "ours" / f"{t['id']}.json") or {"error": "не запущено"}
         v, note = verdict(pm, ours)
-        want = pm_shape(pm)
-        pm_keys = _fmt(want) + ": " + " → ".join(
-            st["text"].split("\n")[0] for g in pm.get("walk", []) for st in g["stages"])
+        pm_keys = "; ".join(f"{label}: {_fmt(shape)}" for label, shape in pm_cards(pm))
         by_section[t["section"]].append(v)
         rows.append(f"| {t['section']} | `{t['pm']}` | {v} | {pm_keys} | {note} |")
     total = sum(len(v) for v in by_section.values())
-    done = sum(v.count("структура совпала") for v in by_section.values())
+    full = sum(1 for v in by_section.values() for x in v if x.startswith("структура совпала"))
+    partial = sum(1 for v in by_section.values() for x in v if x.startswith("частично"))
     lines = [
         "# 12. Матрица соответствия Photomath 7.10.0 ↔ PhantoMath",
         "",
@@ -64,7 +89,7 @@ def main() -> None:
         "(`+`/`-`; группы разделены `|`). Формулировки авторские и не сравниваются.",
         "«Совпало» — только то, что проверено на этих задачах; не вывод о разделе в целом.",
         "",
-        f"Структура совпала в {done} из {total}.",
+        f"Все способы совпали по структуре: {full} из {total} задач; частично: {partial}.",
         "",
         "| Раздел | Ввод (клавиши) | Итог | Шаги Photomath | Наши шаги |",
         "|---|---|---|---|---|",
