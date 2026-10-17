@@ -292,6 +292,30 @@ class TestMethods:
             "solution_eq_num",
         ]
 
+    def test_negative_discriminant_gives_complex_roots_and_the_discriminant_cards(self) -> None:
+        # Photomath 7.10.0 on device: x^2 + 2x + 5 = 0 has the roots -1 +- 2i.
+        group = _group("{=({x^2+2x+5},{0})}")
+        assert len(group.entries) == 4
+        assert _method_keys(group.entries[0]) == [
+            "quad_formula_abc",
+            "mul_with_one",
+            "mul_with_one",
+            "pow",
+            "mul",
+            "calc_diff",
+            "root_square",
+            "quad_separate_signs",
+            "simplify",
+            "simplify",
+            "solution_eq_num",
+        ]
+        assert _method_keys(group.entries[1])[-1] == "root_sqr_neg"
+        vertical = vertical_of("{=({x^2+2x+5},{0})}")
+        assert vertical.solution is not None and vertical.solution.type is T.LIST
+        roots = [eq.children[1] for eq in vertical.solution.children]
+        assert [r.type for r in roots] == [T.ADD, T.SUBTRACT]
+        assert all(r.children[0].value == "-1" for r in roots)
+
     def test_other_quadratics_keep_formula_then_factoring(self) -> None:
         group = _group("{=({x^2+5x+6},{0})}")
         assert _method_keys(group.entries[0]) == [

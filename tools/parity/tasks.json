@@ -328,5 +328,59 @@
   "section": "powers_roots",
   "pm": "<log10>1000",
   "proto": "{log10({1000})}"
+ },
+ {
+  "id": "trig_sin45",
+  "section": "trigonometry",
+  "pm": "<sin>45<deg>",
+  "proto": "{sin({deg({45})})}"
+ },
+ {
+  "id": "trig_cos30",
+  "section": "trigonometry",
+  "pm": "<cos>30<deg>",
+  "proto": "{cos({deg({30})})}"
+ },
+ {
+  "id": "abs_ineq",
+  "section": "absolute_value",
+  "pm": "<abs>x<R><lt>3",
+  "proto": "{<({abs({x})},{3})}"
+ },
+ {
+  "id": "rat_eq",
+  "section": "rational",
+  "pm": "<frac>1<R>x<R>=2",
+  "proto": "{=({frac({1},{x})},{2})}"
+ },
+ {
+  "id": "pct",
+  "section": "arithmetic",
+  "pm": "20%*50",
+  "proto": "{percent({20})*50}"
+ },
+ {
+  "id": "neg_arith",
+  "section": "arithmetic",
+  "pm": "-3-(-5)",
+  "proto": "{-3-(-5)}"
+ },
+ {
+  "id": "paren_arith",
+  "section": "arithmetic",
+  "pm": "(2+3)*4",
+  "proto": "{(2+3)*4}"
+ },
+ {
+  "id": "arith3",
+  "section": "arithmetic",
+  "pm": "2+3*4-5",
+  "proto": "{2+3*4-5}"
+ },
+ {
+  "id": "dec_mul",
+  "section": "arithmetic",
+  "pm": "1,5*4",
+  "proto": "{1.5*4}"
  }
 ]

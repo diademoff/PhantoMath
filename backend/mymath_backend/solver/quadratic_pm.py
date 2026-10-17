@@ -995,6 +995,200 @@ def _double_root(node: CoreNode, var: str, b: int, c: int) -> list[SolveResult] 
     return [factoring, formula_m, pq]
 
 
+def _negative_discriminant(node: CoreNode, var: str, b: int, c: int) -> list[SolveResult] | None:
+    """``x^2 + b x + c = 0`` with D = -m^2 < 0 (captured for b > 0, c > 0).
+
+    Four methods: the roots formula to complex roots, the same formula ending at "the root of a
+    negative number is not defined", and the two discriminant cards.
+    """
+    d = b * b - 4 * c
+    m = isqrt(-d) if d < 0 else 0
+    if b <= 0 or c <= 0 or d >= 0 or m * m != -d:
+        return None
+    x, two, num = CoreNode.variable(var), _num(2), _num
+    unit = CoreNode.node(T.IMAGINARY)
+
+    def imaginary(k: Fraction) -> CoreNode:
+        return unit if k == 1 else _node(T.MULTIPLY_IMPLICIT, _fraction_node(k), unit)
+
+    def state(first: CoreNode, inner: CoreNode, denominator: CoreNode) -> CoreNode:
+        return _eq(
+            x, _node(T.FRACTION, _node(T.ADD_SUBTRACT, first, _node(T.ROOT2, inner)), denominator)
+        )
+
+    la, lb, lc = (CoreNode.variable(v) for v in "abc")
+    standard = _eq(
+        _node(
+            T.ADD,
+            _node(
+                T.ADD,
+                _node(T.MULTIPLY_IMPLICIT, la, _node(T.POWER, x, two)),
+                _node(T.MULTIPLY_IMPLICIT, lb, x),
+            ),
+            lc,
+        ),
+        num(0),
+    )
+    template = _eq(
+        x,
+        _node(
+            T.FRACTION,
+            _node(
+                T.ADD_SUBTRACT,
+                _node(T.NEGATIVE, lb),
+                _node(
+                    T.ROOT2,
+                    _node(T.SUBTRACT, _node(T.POWER, lb, two), _node(T.MULTIPLY, num(4), la, lc)),
+                ),
+            ),
+            _node(T.MULTIPLY, two, la),
+        ),
+    )
+
+    def common_rows(result: SolveResult) -> CoreNode:
+        minus_b = _node(T.NEGATIVE, num(b))
+        full = _node(
+            T.SUBTRACT, _node(T.POWER, num(b), two), _node(T.MULTIPLY, num(4), num(1), num(c))
+        )
+        start = state(minus_b, full, _node(T.MULTIPLY, two, num(1)))
+        result.add_group(
+            "quad_formula_abc_simple", Step(node, start, "quad_formula_abc", [standard, template])
+        )
+        no_den = state(minus_b, full, two)
+        short = _node(T.SUBTRACT, _node(T.POWER, num(b), two), _node(T.MULTIPLY, num(4), num(c)))
+        no_one = state(minus_b, short, two)
+        powered = state(
+            minus_b, _node(T.SUBTRACT, num(b * b), _node(T.MULTIPLY, num(4), num(c))), two
+        )
+        multiplied = state(minus_b, _node(T.SUBTRACT, num(b * b), num(4 * c)), two)
+        result.add_group(
+            ["calculate_short", "find_value"],
+            Step(start, no_den, "mul_with_one", [num(1)]),
+            Step(no_den, no_one, "mul_with_one", [num(1)]),
+            Step(no_one, powered, "pow", [], subresult=_evaluate(_node(T.POWER, num(b), two))),
+            Step(
+                powered,
+                multiplied,
+                "mul",
+                [],
+                subresult=_evaluate(_node(T.MULTIPLY, num(4), num(c))),
+            ),
+        )
+        negative = _node(T.NEGATIVE, num(-d))
+        subtracted = state(minus_b, negative, two)
+        result.add_group(
+            "calculate_short",
+            Step(
+                multiplied,
+                subtracted,
+                "calc_diff",
+                [],
+                subresult=_detail(_node(T.SUBTRACT, num(b * b), num(4 * c)), negative),
+            ),
+        )
+        return subtracted
+
+    # -- complex roots
+    complex_result = SolveResult()
+    subtracted = common_rows(complex_result)
+    root_value = imaginary(Fraction(m))
+    rooted = _eq(
+        x, _node(T.FRACTION, _node(T.ADD_SUBTRACT, _node(T.NEGATIVE, num(b)), root_value), two)
+    )
+    complex_result.add_group(
+        "calculate_short",
+        Step(
+            subtracted,
+            rooted,
+            "root_square",
+            [],
+            subresult=_detail(_node(T.ROOT2, _node(T.NEGATIVE, num(-d))), root_value),
+        ),
+    )
+    parts = [
+        _eq(x, _node(T.FRACTION, _node(sign, _node(T.NEGATIVE, num(b)), root_value), two))
+        for sign in (T.ADD, T.SUBTRACT)
+    ]
+    listed = _node(T.LIST, *parts)
+    complex_result.add_group(
+        "quad_separate", Step(rooted, listed, "quad_separate_signs", list(_SIGNS))
+    )
+    real_part, imaginary_part = Fraction(-b, 2), Fraction(m, 2)
+
+    def value(sign: T) -> CoreNode:
+        return _node(sign, _fraction_node(real_part), imaginary(imaginary_part))
+
+    roots = [_eq(x, value(T.ADD)), _eq(x, value(T.SUBTRACT))]
+    complex_result.add_group(
+        "simplify",
+        *[
+            Step(
+                listed, root, "simplify", [], subresult=_detail(part.children[1], root.children[1])
+            )
+            for part, root in zip(parts, roots, strict=True)
+        ],
+    )
+    answer = _node(T.LIST, *roots)
+    complex_result.add_group(
+        CoreRichText(type="solution_eq_num", args=[two]),
+        Step(listed, answer, "solution_eq_num", [two]),
+    )
+    complex_result.set_solution(answer)
+
+    # -- the same formula, stopping where the real numbers end
+    real_result = SolveResult()
+    subtracted = common_rows(real_result)
+    real_result.add_group("expr_not_def_in_r", Step(subtracted, subtracted, "root_sqr_neg"))
+    real_result.set_solution(CoreNode.empty())
+
+    # -- the discriminant cards
+    a_, b_, c_ = num(1), num(b), num(c)
+    letters = CoreNode.variable("D")
+    template_d = _eq(
+        letters,
+        _node(T.SUBTRACT, _node(T.POWER, lb, two), _node(T.MULTIPLY, num(4), la, lc)),
+    )
+    substituted = _eq(
+        letters,
+        _node(T.SUBTRACT, _node(T.POWER, b_, two), _node(T.MULTIPLY, num(4), a_, c_)),
+    )
+    computed = _eq(letters, num(d))
+
+    def discriminant_rows(result: SolveResult) -> None:
+        coefficients = SolveResult()
+        coefficients.add_group(
+            "extrema_coeff_smpl", Step(node, template_d, "eq_quad_coeff_identify", [a_, b_, c_])
+        )
+        coefficients.set_solution(template_d)
+        result.add_group(
+            "extrema_coeff_smpl",
+            Step(node, template_d, "eq_quad_coeff_identify", [a_, b_, c_], subresult=coefficients),
+        )
+        result.add_group("coeff_sub", Step(template_d, substituted, "eq_quad_eval_disc_sub_smpl"))
+        result.add_group(
+            "calculate_short",
+            Step(
+                substituted,
+                computed,
+                "calculate_direct",
+                [],
+                subresult=_detail(substituted.children[1], num(d)),
+            ),
+        )
+
+    discriminant = SolveResult()
+    discriminant_rows(discriminant)
+    discriminant.set_solution(computed)
+    counting = SolveResult()
+    discriminant_rows(counting)
+    counting.add_group(
+        "eq_quad_disc_no_solution_simple",
+        Step(computed, CoreNode.empty(), "eq_quad_disc_no_solution_var_lt", [num(0)]),
+    )
+    counting.set_solution(CoreNode.empty())
+    return [complex_result, real_result, counting, discriminant]
+
+
 def methods(
     node: CoreNode, var: str, a: Fraction, b: Fraction, c: Fraction
 ) -> list[SolveResult] | None:
@@ -1005,6 +1199,8 @@ def methods(
     d = ib * ib - 4 * ia * ic
     if d == 0 and ia == 1 and (double := _double_root(node, var, ib, ic)) is not None:
         return double
+    if d < 0 and ia == 1 and (negative := _negative_discriminant(node, var, ib, ic)) is not None:
+        return negative
     if ia == 1 and ib == 0 and ic < 0:
         shown: list[SolveResult | None] = [_extraction(node, var, ic)]
         if isqrt(-ic) ** 2 == -ic:
