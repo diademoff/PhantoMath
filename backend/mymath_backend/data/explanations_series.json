@@ -1,0 +1,128 @@
+{
+  "series_compare_reference": {
+    "arity": 1,
+    "templates": {
+      "default": "Compare the series with the reference series ARG1",
+      "ru": "Сравним ряд с эталонным рядом ARG1"
+    }
+  },
+  "series_compare_ratio": {
+    "arity": 1,
+    "templates": {
+      "default": "Find the limit of the ratio of the terms ARG1",
+      "ru": "Найдём предел отношения членов ARG1"
+    }
+  },
+  "series_compare_log_converges": {
+    "arity": 1,
+    "templates": {
+      "default": "The reference series ARG1 converges: the degree of its logarithm is above one",
+      "ru": "Эталонный ряд ARG1 сходится: степень логарифма больше единицы"
+    }
+  },
+  "series_compare_log_diverges": {
+    "arity": 1,
+    "templates": {
+      "default": "The reference series ARG1 diverges: the degree of its logarithm is at most one",
+      "ru": "Эталонный ряд ARG1 расходится: степень логарифма не больше единицы"
+    }
+  },
+  "series_compare_bounded": {
+    "arity": 1,
+    "templates": {
+      "default": "The ratio of the terms stays within positive bounds, so the terms behave like those of ARG1",
+      "ru": "Отношение членов ограничено сверху и снизу положительными числами, поэтому члены ведут себя как у ряда ARG1"
+    }
+  },
+  "series_compare_bounded_converges": {
+    "arity": 1,
+    "templates": {
+      "default": "The terms are comparable with those of ARG1, and ARG1 converges, so the series converges too",
+      "ru": "Члены сравнимы с членами ряда ARG1, а ARG1 сходится, значит, и наш ряд сходится"
+    }
+  },
+  "series_compare_bounded_diverges": {
+    "arity": 1,
+    "templates": {
+      "default": "The terms are comparable with those of ARG1, and ARG1 diverges, so the series diverges too",
+      "ru": "Члены сравнимы с членами ряда ARG1, а ARG1 расходится, значит, и наш ряд расходится"
+    }
+  },
+  "series_find_sum_infinite_geom": {
+    "arity": 0,
+    "templates": {
+      "default": "Sum infinite geometric progressions",
+      "ru": "Найдём сумму бесконечных геометрических прогрессий"
+    }
+  },
+  "series_sigma_inf_split": {
+    "arity": 0,
+    "templates": {
+      "default": "Write each term as a power of n and split the series into geometric ones",
+      "ru": "Запишем слагаемые как степени n и разобьём ряд на геометрические"
+    }
+  },
+  "series_sigma_inf_geom_use": {
+    "arity": 2,
+    "templates": {
+      "default": "The series with ratio ARG1 is geometric: use ARG2",
+      "ru": "Ряд со знаменателем ARG1 геометрический: применим формулу ARG2"
+    }
+  },
+  "series_find_sum_telescope": {
+    "arity": 0,
+    "templates": {
+      "default": "Sum by telescoping",
+      "ru": "Найдём сумму телескопированием"
+    }
+  },
+  "series_sigma_telescope_apart": {
+    "arity": 0,
+    "templates": {
+      "default": "Split the term into simple fractions",
+      "ru": "Разложим член ряда на простейшие дроби"
+    }
+  },
+  "series_sigma_telescope_partial": {
+    "arity": 1,
+    "templates": {
+      "default": "Write the partial sum up to ARG1 and cancel the equal terms",
+      "ru": "Запишем частичную сумму до ARG1 и сократим одинаковые слагаемые"
+    }
+  },
+  "series_sigma_telescope_limit": {
+    "arity": 1,
+    "templates": {
+      "default": "Let ARG1 tend to infinity: the limit of the partial sum is the sum of the series",
+      "ru": "Устремим ARG1 к бесконечности: предел частичной суммы и есть сумма ряда"
+    }
+  },
+  "series_compare_dominates": {
+    "arity": 2,
+    "templates": {
+      "default": "For large n the terms are at least as large as those of ARG2: their ratio ARG1 grows without bound",
+      "ru": "При больших n члены не меньше членов ряда ARG2: их отношение ARG1 неограниченно растёт"
+    }
+  },
+  "series_find_sum_inf_log": {
+    "arity": 0,
+    "templates": {
+      "default": "Sum the logarithms through a telescoping product",
+      "ru": "Найдём сумму логарифмов через телескопическое произведение"
+    }
+  },
+  "series_sigma_log_factor": {
+    "arity": 0,
+    "templates": {
+      "default": "Factor the fraction under the logarithm",
+      "ru": "Разложим дробь под логарифмом на множители"
+    }
+  },
+  "series_sigma_log_partial": {
+    "arity": 1,
+    "templates": {
+      "default": "The product of the first terms telescopes, so the sum up to ARG1 is the logarithm of a fraction",
+      "ru": "Произведение первых членов телескопируется, поэтому сумма до ARG1 — логарифм дроби"
+    }
+  }
+}
