@@ -1,0 +1,221 @@
+{
+  "module": "ineq_quad",
+  "tasks": [
+    {
+      "id": "less-inside",
+      "title": "x² − 5x + 6 < 0 → (2, 3)",
+      "input": "{lt({x^2-5x+6},{0})}",
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "2"},
+          {"type": "CONSTANT", "value": "3"}
+        ]
+      },
+      "steps": [
+        "write_as_diff_fact", "extract_arg", "extract_arg", "extract_arg", "ineq_product_p_two",
+        "ineq_linear", "ineq_linear", "ineq_linear", "ineq_linear",
+        "intersection", "intersection", "union"
+      ]
+    },
+    {
+      "id": "greater-outside",
+      "title": "x² − 5x + 6 > 0 → (−∞, 2) ∪ (3, ∞)",
+      "input": "{gt({x^2-5x+6},{0})}",
+      "solution": {
+        "type": "UNION",
+        "children": [
+          {
+            "type": "OPEN_OPEN_INTERVAL",
+            "children": [
+              {"type": "NEGATIVE", "children": [{"type": "CONSTANT", "value": "∞"}]},
+              {"type": "CONSTANT", "value": "2"}
+            ]
+          },
+          {
+            "type": "OPEN_OPEN_INTERVAL",
+            "children": [
+              {"type": "CONSTANT", "value": "3"},
+              {"type": "CONSTANT", "value": "∞"}
+            ]
+          }
+        ]
+      },
+      "steps": ["write_as_diff_fact", "extract_arg", "extract_arg", "extract_arg", "ineq_product_p_two",
+        "ineq_linear", "ineq_linear", "ineq_linear", "ineq_linear",
+        "intersection", "intersection", "union"]
+    },
+    {
+      "id": "less-equal-closed",
+      "title": "x² − 5x + 6 ≤ 0 → [2, 3]",
+      "input": "{lte({x^2-5x+6},{0})}",
+      "solution": {
+        "type": "CLOSED_CLOSED_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "2"},
+          {"type": "CONSTANT", "value": "3"}
+        ]
+      },
+      "steps": ["write_as_diff_fact", "extract_arg", "extract_arg", "extract_arg", "ineq_product_p_two",
+        "ineq_linear", "ineq_linear", "ineq_linear", "ineq_linear",
+        "intersection", "intersection", "union"]
+    },
+    {
+      "id": "always-true",
+      "title": "x² + 1 > 0 — истинно для всех x",
+      "input": "{gt({x^2+1},{0})}",
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {"type": "NEGATIVE", "children": [{"type": "CONSTANT", "value": "∞"}]},
+          {"type": "CONSTANT", "value": "∞"}
+        ]
+      },
+      "steps": ["rel_move_right_const_ineq", "rel_terminators_pow_all_sol"]
+    },
+    {
+      "id": "always-false",
+      "title": "x² + 1 < 0 — решений нет",
+      "input": "{lt({x^2+1},{0})}",
+      "solution": {"type": "EMPTY"},
+      "steps": ["rel_move_right_const_ineq", "rel_terminators_pow_no_sol"]
+    },
+    {
+      "id": "power-zero-base",
+      "title": "x⁰ − 5x + 6 < 0: сначала ОДЗ x ≠ 0",
+      "input": "{lt({x^0-5x+6},{0})}",
+      "solution": {
+        "type": "GREATER_THAN",
+        "children": [
+          {"type": "VARIABLE", "value": "x"},
+          {"type": "CONSTANT", "value": "7/5"}
+        ]
+      },
+      "steps": ["rel_restrictions_range", "move", "ineq_linear_div_neg"]
+    },
+    {
+      "id": "fractional-power-base",
+      "title": "x^0,5 − 5x + 6 < 0: сначала ОДЗ x ≥ 0",
+      "input": "{lt({x^0.5-5x+6},{0})}",
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "36/25"},
+          {"type": "CONSTANT", "value": "∞"}
+        ]
+      },
+      "steps": ["rel_restrictions_range", "ineq_irr_solve"]
+    },
+    {
+      "id": "cube-root",
+      "title": "x³ + 1 > 0: корень нечётной степени",
+      "input": "{>({x^3+1},{0})}",
+      "solution": {
+        "type": "GREATER_THAN",
+        "children": [
+          {"type": "VARIABLE", "value": "x"},
+          {"type": "CONSTANT", "value": "-1"}
+        ]
+      },
+      "steps": ["rel_move_right_const_ineq", "ineq_pow_root_var"]
+    },
+    {
+      "id": "negative-odd-power",
+      "title": "x⁻³ + 1 > 0: переворот степени и знаки дроби",
+      "input": "{>({x^-3+1},{0})}",
+      "solution": {
+        "type": "UNION",
+        "children": [
+          {
+            "type": "OPEN_OPEN_INTERVAL",
+            "children": [
+              {"type": "NEGATIVE", "children": [{"type": "CONSTANT", "value": "∞"}]},
+              {"type": "CONSTANT", "value": "-1"}
+            ]
+          },
+          {
+            "type": "OPEN_OPEN_INTERVAL",
+            "children": [
+              {"type": "CONSTANT", "value": "0"},
+              {"type": "CONSTANT", "value": "∞"}
+            ]
+          }
+        ]
+      },
+      "steps": ["rel_restrictions_range", "pow_flip_msg", "frac_sum_join", "ineq_quotient_gt",
+        "ineq_linear", "ineq_linear", "ineq_linear", "ineq_linear",
+        "intersection", "intersection", "union", "rel_restrictions_intersect"]
+    },
+    {
+      "id": "negative-even-power",
+      "title": "x⁻² + 1 > 0 — истинно всюду, кроме нуля",
+      "input": "{>({x^-2+1},{0})}",
+      "solution": {
+        "type": "UNION",
+        "children": [
+          {
+            "type": "OPEN_OPEN_INTERVAL",
+            "children": [
+              {"type": "NEGATIVE", "children": [{"type": "CONSTANT", "value": "∞"}]},
+              {"type": "CONSTANT", "value": "0"}
+            ]
+          },
+          {
+            "type": "OPEN_OPEN_INTERVAL",
+            "children": [
+              {"type": "CONSTANT", "value": "0"},
+              {"type": "CONSTANT", "value": "∞"}
+            ]
+          }
+        ]
+      },
+      "steps": ["rel_restrictions_range", "rel_terminators_left_pos_true"]
+    },
+    {
+      "id": "no-real-roots",
+      "title": "x² − 5x + 6 < −3 — решений нет",
+      "input": "{<({x^2-5x+6},{-3})}",
+      "solution": {"type": "EMPTY"},
+      "steps": ["ineq_quad_to_eq_quad", "eq_linear", "ineq_quad_find_a", "ineq_quad_lead_pos_f"]
+    },
+    {
+      "id": "irrational-roots",
+      "title": "x² − 5x + 6 < 3: подстановка иррациональных корней",
+      "input": "{<({x^2-5x+6},{3})}",
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {
+            "type": "SUBTRACT",
+            "children": [
+              {"type": "CONSTANT", "value": "5/2"},
+              {
+                "type": "FRACTION",
+                "children": [
+                  {"type": "ROOT2", "children": [{"type": "CONSTANT", "value": "13"}]},
+                  {"type": "CONSTANT", "value": "2"}
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ADD",
+            "children": [
+              {"type": "CONSTANT", "value": "5/2"},
+              {
+                "type": "FRACTION",
+                "children": [
+                  {"type": "ROOT2", "children": [{"type": "CONSTANT", "value": "13"}]},
+                  {"type": "CONSTANT", "value": "2"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": ["ineq_quad_to_eq_quad", "eq_linear", "ineq_quad_substitute_expr_no_coeff",
+        "ineq_product_p_two", "ineq_linear", "ineq_linear", "ineq_linear", "ineq_linear",
+        "intersection", "intersection", "union"]
+    }
+  ]
+}

@@ -1,0 +1,142 @@
+{
+  "module": "conic",
+  "tasks": [
+    {
+      "id": "circle",
+      "title": "x² + y² = 1 — окружность",
+      "input": "{=({x^2+y^2},{1})}",
+      "command": "conic",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "POWER",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "x"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
+                ]
+              },
+              {
+                "type": "POWER",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "y"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "CONSTANT",
+            "value": "1"
+          }
+        ]
+      },
+      "steps": [
+        "conics_identify",
+        "conics_identify_disc",
+        "conics_represents_circle"
+      ]
+    },
+    {
+      "id": "hyperbola",
+      "title": "x² − y² = 1 — гипербола",
+      "input": "{=({x^2-y^2},{1})}",
+      "command": "conic",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "SUBTRACT",
+            "children": [
+              {
+                "type": "POWER",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "x"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
+                ]
+              },
+              {
+                "type": "POWER",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "y"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "CONSTANT",
+            "value": "1"
+          }
+        ]
+      },
+      "steps": [
+        "frac_expand_var",
+        "frac_expand_var",
+        "conics_identify",
+        "conics_identify_disc",
+        "conics_represents_hyperbola"
+      ]
+    },
+    {
+      "id": "parabola",
+      "title": "y = x² — парабола",
+      "input": "{=({y},{x^2})}",
+      "command": "conic",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "y"
+          },
+          {
+            "type": "POWER",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "conics_identify",
+        "conics_identify_disc",
+        "conics_represents_parabola"
+      ]
+    }
+  ]
+}

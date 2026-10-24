@@ -1,0 +1,76 @@
+{
+  "module": "extrema",
+  "tasks": [
+    {
+      "id": "parabola-minimum",
+      "title": "x² — минимум в x = 0",
+      "input": "{x^2}",
+      "command": "extrema",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "0"
+          }
+        ]
+      },
+      "steps": [
+        "extrema_derive",
+        "extrema_critical_point",
+        "extrema_critical_intervals",
+        "extrema_interval_points",
+        "extrema_minimum"
+      ]
+    },
+    {
+      "id": "cubic-two-extrema",
+      "title": "x³ − 3x — максимум x=−1, минимум x=1",
+      "input": "{x^3-3x}",
+      "command": "extrema",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "-1"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "1"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "extrema_derive",
+        "extrema_critical_point",
+        "extrema_critical_intervals",
+        "extrema_interval_points",
+        "extrema_maximum",
+        "extrema_minimum"
+      ]
+    }
+  ]
+}

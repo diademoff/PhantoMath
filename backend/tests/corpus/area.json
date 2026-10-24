@@ -1,0 +1,96 @@
+{
+  "module": "area",
+  "tasks": [
+    {
+      "id": "odd-symmetric",
+      "title": "площадь ∫₋₁¹ x³ dx = 1/2 (знак меняется)",
+      "input": "{integral_def({-1},{1},{x^3})}",
+      "command": "area",
+      "solution": {
+        "type": "TEXT",
+        "children": [
+          {"type": "TEXT_KEY", "value": "square_units"},
+          {
+            "type": "EQUALS",
+            "children": [
+              {"type": "VARIABLE", "value": "A"},
+              {"type": "CONSTANT", "value": "1/2"}
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "total_area_fun",
+        "total_area_x_intercept",
+        "total_area_sep_interval_zero",
+        "total_area_create",
+        "total_area_create",
+        "integrate_def",
+        "integrate_def",
+        "abs_neg",
+        "total_area_sum",
+        "frac_add",
+        "total_area_final"
+      ]
+    },
+    {
+      "id": "sine-two-periods",
+      "title": "площадь ∫₀^2π sin x dx = 4",
+      "input": "{integral_def({0},{2*pi},{sin({x})})}",
+      "command": "area",
+      "solution": {
+        "type": "TEXT",
+        "children": [
+          {"type": "TEXT_KEY", "value": "square_units"},
+          {
+            "type": "EQUALS",
+            "children": [
+              {"type": "VARIABLE", "value": "A"},
+              {"type": "CONSTANT", "value": "4"}
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "total_area_fun",
+        "total_area_x_intercept",
+        "total_area_sep_interval_zero",
+        "total_area_create",
+        "total_area_create",
+        "integrate_def",
+        "integrate_def",
+        "abs_neg",
+        "total_area_sum",
+        "frac_add",
+        "total_area_final"
+      ]
+    },
+    {
+      "id": "no-sign-change",
+      "title": "площадь ∫₀² x² dx = 8/3",
+      "input": "{integral_def({0},{2},{x^2})}",
+      "command": "area",
+      "solution": {
+        "type": "TEXT",
+        "children": [
+          {"type": "TEXT_KEY", "value": "square_units"},
+          {
+            "type": "EQUALS",
+            "children": [
+              {"type": "VARIABLE", "value": "A"},
+              {"type": "CONSTANT", "value": "8/3"}
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "total_area_fun",
+        "total_area_x_intercept",
+        "total_area_endpoint_zero",
+        "integrate_def",
+        "abs_neg",
+        "total_area_final"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "module": "inverse",
+  "tasks": [
+    {
+      "id": "linear",
+      "title": "обратная к 2x + 3",
+      "input": "{2x+3}",
+      "command": "inverse_function",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {"type": "VARIABLE", "value": "y"},
+          {
+            "type": "SUBTRACT",
+            "children": [
+              {"type": "FRACTION", "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "2"}]},
+              {"type": "CONSTANT", "value": "3/2"}
+            ]
+          }
+        ]
+      },
+      "steps": ["find_inverse"]
+    },
+    {
+      "id": "cube",
+      "title": "обратная к x³ — кубический корень",
+      "input": "{x^3}",
+      "command": "inverse_function",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {"type": "VARIABLE", "value": "y"},
+          {
+            "type": "ROOT",
+            "children": [{"type": "CONSTANT", "value": "3"}, {"type": "VARIABLE", "value": "x"}]
+          }
+        ]
+      },
+      "steps": ["find_inverse"]
+    }
+  ]
+}

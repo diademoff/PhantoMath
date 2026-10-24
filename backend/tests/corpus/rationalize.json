@@ -1,0 +1,30 @@
+{
+  "module": "rationalize",
+  "tasks": [
+    {
+      "id": "one-over-root",
+      "title": "1/√2 → √2/2",
+      "input": "{frac({1},{root2({2})})}",
+      "command": "rationalize",
+      "solution": {
+        "type": "FRACTION",
+        "children": [
+          {"type": "ROOT2", "children": [{"type": "CONSTANT", "value": "2"}]},
+          {"type": "CONSTANT", "value": "2"}
+        ]
+      },
+      "steps": ["rationalize_roots"]
+    },
+    {
+      "id": "three-over-root-three",
+      "title": "3/√3 → √3",
+      "input": "{frac({3},{root2({3})})}",
+      "command": "rationalize",
+      "solution": {
+        "type": "ROOT2",
+        "children": [{"type": "CONSTANT", "value": "3"}]
+      },
+      "steps": ["rationalize_roots"]
+    }
+  ]
+}

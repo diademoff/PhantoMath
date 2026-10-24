@@ -1,0 +1,118 @@
+{
+  "module": "asymptotes",
+  "tasks": [
+    {
+      "id": "hyperbola",
+      "title": "1/x — вертикальная x=0 и горизонтальная y=0",
+      "input": "{1/x}",
+      "command": "asymptotes",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "y"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "partial_frac_vars",
+        "partial_frac_denom_1_improved",
+        "partial_frac_denom_1_improved",
+        "partial_frac_get_unknown",
+        "frac_reduce_out_expr",
+        "frac_expr_div",
+        "partial_frac_sub_improved",
+        "def_vert_asymptote",
+        "find_vert_asymptote",
+        "def_hor_asymptote",
+        "find_hor_asymptote"
+      ]
+    },
+    {
+      "id": "two-vertical",
+      "title": "1/(x²−1) — x=±1 и y=0",
+      "input": "{frac({1},{x^2-1})}",
+      "command": "asymptotes",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "-1"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "1"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "y"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "partial_frac_vars",
+        "partial_frac_denom_1_improved",
+        "partial_frac_denom_1_improved",
+        "partial_frac_get_unknown",
+        "frac_reduce_out_expr",
+        "frac_expr_div",
+        "partial_frac_sub_improved",
+        "def_vert_asymptote",
+        "find_vert_asymptote",
+        "def_hor_asymptote",
+        "find_hor_asymptote"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "module": "inflection",
+  "tasks": [
+    {
+      "id": "cubic",
+      "title": "x³ — перегиб в x = 0",
+      "input": "{x^3}",
+      "command": "inflection",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "0"
+          }
+        ]
+      },
+      "steps": [
+        "inflection_domain_find",
+        "inflection_domain_snd_find",
+        "inflection_sec_der",
+        "inflection_find",
+        "inflection_the_point"
+      ]
+    },
+    {
+      "id": "cubic-shifted",
+      "title": "x³ − 3x — перегиб в x = 0",
+      "input": "{x^3-3x}",
+      "command": "inflection",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "0"
+          }
+        ]
+      },
+      "steps": [
+        "inflection_domain_find",
+        "inflection_domain_snd_find",
+        "inflection_sec_der",
+        "inflection_find",
+        "inflection_the_point"
+      ]
+    }
+  ]
+}

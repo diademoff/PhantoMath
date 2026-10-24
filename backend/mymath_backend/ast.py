@@ -1,0 +1,258 @@
+"""AST выражения -- ``CoreNode``.
+
+Дерево узлов переносит условие задачи и каждое промежуточное выражение
+в объяснении. Формат: ``type`` -- имя элемента
+``CoreNodeType``, ``value`` -- строка (null у не-терминалов), ``children`` --
+список вложенных узлов.
+
+Описание: ``docs/ARCHITECTURE.md``.
+
+Модели -- обычные dataclasses, а не pydantic: так решатель и модели
+контракта не тянут ``pydantic-core`` (Rust) и работают на устройстве под
+встроенным CPython. Валидация, которую раньше
+делал pydantic, выполняется в ``__post_init__``.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterator
+from dataclasses import dataclass, field
+from typing import Any, Self
+
+from .node_types import CoreNodeType
+
+# ARGB: 0xAARRGGBB. Решатель отдаёт целое, а не отдельные каналы.
+Color = int
+
+_MAX_COLOR = 0xFFFFFFFF
+
+# Типы, у которых допустимо и ``value``, и дети: имя функции хранится в
+# ``value``, а её аргумент — в ``children`` (``f(x)``, ``f⁻¹(x)``). У остальных
+# узлов это взаимоисключающие поля.
+_VALUE_WITH_CHILDREN = frozenset({CoreNodeType.FUNCTION, CoreNodeType.FUNCTION_INVERSE})
+
+
+def _coerce_type(value: CoreNodeType | str) -> CoreNodeType:
+    """Привести тип узла к ``CoreNodeType``.
+
+    Принимает и enum, и строку (``"ADD"``) -- как это делал pydantic
+    в lax-режиме. Неизвестное имя -- ошибка формата.
+    """
+    if isinstance(value, CoreNodeType):
+        return value
+    try:
+        return CoreNodeType(str(value).upper())
+    except ValueError as err:
+        raise ValueError(f"неизвестный тип узла: {value!r}") from err
+
+
+@dataclass
+class CoreNode:
+    """Узел выражения.
+
+    Терминал -- ``value`` без потомков. Ветка -- ``type`` без ``value``.
+    Пустой узел (тип ``EMPTY``) используется как заглушка при построении
+    результата по шагам.
+    """
+
+    type: CoreNodeType
+    value: str | None = None
+    children: list[CoreNode] = field(default_factory=list)
+    color: Color | None = None
+    crossed: bool | None = None
+
+    def __post_init__(self) -> None:
+        """Проверить форму узла и привести тип к enum."""
+        self.type = _coerce_type(self.type)
+        if self.value is not None:
+            self.value = str(self.value)
+        if self.color is not None and not 0 <= self.color <= _MAX_COLOR:
+            raise ValueError(f"цвет вне диапазона ARGB: {self.color}")
+        if self.value is not None and self.children and self.type not in _VALUE_WITH_CHILDREN:
+            raise ValueError(
+                f"узел типа {self.type}: нельзя одновременно иметь value "
+                f"({self.value!r}) и потомков"
+            )
+
+    # -- обход ---------------------------------------------------------
+
+    def walk(self) -> Iterator[CoreNode]:
+        """Обойти поддерево в глубину, включая сам узел."""
+        yield self
+        for child in self.children:
+            yield from child.walk()
+
+    def find_all(self, node_type: CoreNodeType) -> list[CoreNode]:
+        """Все узлы данного типа в поддереве."""
+        return [n for n in self.walk() if n.type is node_type]
+
+    # -- конструкторы ---------------------------------------------------
+
+    @classmethod
+    def constant(cls, value: str | int | float) -> CoreNode:
+        """Числовой или символический терминал.
+
+        ``value`` сериализуется строкой: решатель не
+        различает ``"3"`` и ``3`` на входе.
+        """
+        return cls(type=CoreNodeType.CONSTANT, value=str(value))
+
+    @classmethod
+    def variable(cls, name: str) -> CoreNode:
+        """Переменная по имени."""
+        return cls(type=CoreNodeType.VARIABLE, value=name)
+
+    @classmethod
+    def node(cls, node_type: CoreNodeType, *children: CoreNode) -> Self:
+        """Ветка заданного типа."""
+        return cls(type=node_type, children=list(children))
+
+    @classmethod
+    def empty(cls) -> CoreNode:
+        """Заглушка ``EMPTY``."""
+        return cls(type=CoreNodeType.EMPTY)
+
+    # -- сравнение ------------------------------------------------------
+
+    def structural_eq(self, other: object) -> bool:
+        """Структурное равенство, игнорирующее порядок полей.
+
+        Нужно решателю, чтобы сравнивать промежуточные выражения между
+        шагами. Отличается от ``==``: тот чувствителен к типу ``value``
+        (``"3"`` и ``3``) и к классу узла (colored/plain).
+        """
+        if not isinstance(other, CoreNode):
+            return False
+        return (
+            self.type == other.type
+            and (self.value or "") == (other.value or "")
+            and len(self.children) == len(other.children)
+            and all(a.structural_eq(b) for a, b in zip(self.children, other.children, strict=True))
+        )
+
+    # -- сериализация ---------------------------------------------------
+
+    def to_contract(self) -> dict[str, Any]:
+        """Формат контракта (``docs/ARCHITECTURE.md``).
+
+        ``None``-поля и пустой список потомков опускаются.
+        """
+        out: dict[str, Any] = {"type": self.type.value}
+        if self.value is not None:
+            out["value"] = self.value
+        if self.children:
+            out["children"] = [c.to_contract() for c in self.children]
+        if self.color is not None:
+            out["color"] = self.color
+        if self.crossed is not None:
+            out["crossed"] = self.crossed
+        return out
+
+    @classmethod
+    def from_contract(cls, data: dict[str, Any]) -> CoreNode:
+        """Разобрать узел из формата контракта.
+
+        ``color`` и ``crossed`` поднимают узел до ``CoreColoredNode``, если
+        присутствуют.
+        """
+        payload = dict(data)
+        extra = {k: payload.pop(k) for k in ("color", "crossed") if k in payload}
+        try:
+            built: dict[str, Any] = {
+                "type": payload["type"],
+                "value": payload.get("value"),
+                "children": [cls.from_contract(c) for c in payload.get("children", [])],
+            }
+        except RecursionError as err:
+            raise ValueError("слишком глубокий узел") from err
+        if extra:
+            return CoreColoredNode(**built, **extra)
+        return cls(**built)
+
+
+@dataclass
+class CoreColoredNode(CoreNode):
+    """Узел с подсветкой и зачёркиванием.
+
+    Решатель помечает так части выражения в промежуточных шагах:
+    ``color`` выделяет значимую часть, ``crossed`` -- сокращаемую.
+    Наш рендер использует это вместо полноценных анимаций.
+
+    Поля ``color``/``crossed`` объявлены в :class:`CoreNode`, поэтому они
+    переживают сериализацию контракта. Этот класс -- совместимое имя и
+    признак ``is_crossed``.
+    """
+
+    def is_crossed(self) -> bool:
+        """Зачёркнута ли часть. ``None`` считается за ``False``."""
+        return bool(self.crossed)
+
+
+def colored(
+    node: CoreNode, *, color: int | None = None, crossed: bool | None = None
+) -> CoreColoredNode:
+    """Копия узла с подсветкой или зачёркиванием.
+
+    Микро-анимация шага (вариант B): ``crossed`` помечает сокращаемую часть,
+    ``color`` -- значимую. Контракт отдаёт эти поля рядом с типом узла.
+    """
+    return CoreColoredNode(
+        type=node.type,
+        value=node.value,
+        children=list(node.children),
+        color=color,
+        crossed=crossed,
+    )
+
+
+@dataclass
+class CoreAction:
+    """Действие над выражением.
+
+    Описывает операцию с аргументами-узлами: ``{"command": ..., "args": [...]}``.
+    Решатель возвращает действия в ``Entry.action``, а фронт использует их
+    для переключения способа решения.
+    """
+
+    command: str
+    args: list[CoreNode] = field(default_factory=list)
+
+    def to_contract(self) -> dict[str, Any]:
+        """Формат контракта: ``command`` и ``args``."""
+        return {"command": self.command, "args": [a.to_contract() for a in self.args]}
+
+    @classmethod
+    def from_contract(cls, data: dict[str, Any]) -> CoreAction:
+        """Разобрать действие из формата контракта."""
+        return cls(
+            command=data["command"],
+            args=[CoreNode.from_contract(a) for a in data.get("args", [])],
+        )
+
+
+@dataclass
+class CoreRichText:
+    """Локализуемый фрагмент текста -- ``CoreRichText``.
+
+    ``type`` -- ключ словаря объяснений (``data/explanations.json``).
+    Аргументы подставляются в шаблон как ``ARG1``... ``ARGn`` (индекс
+    ``ARGk`` соответствует ``args[k-1]``).
+    """
+
+    type: str
+    args: list[CoreNode] = field(default_factory=list)
+
+    def to_contract(self) -> dict[str, Any]:
+        """Форматы контракта: ключ объяснения и его аргументы."""
+        return {"type": self.type, "args": [a.to_contract() for a in self.args]}
+
+
+__all__ = [
+    "Color",
+    "CoreAction",
+    "CoreColoredNode",
+    "CoreNode",
+    "CoreNodeType",
+    "CoreRichText",
+    "colored",
+]

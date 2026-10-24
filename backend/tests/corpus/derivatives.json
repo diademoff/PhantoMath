@@ -1,0 +1,368 @@
+{
+  "module": "derivatives",
+  "tasks": [
+    {
+      "id": "x-squared",
+      "title": "производная x^2",
+      "input": "{derivation_prime({x^2})}",
+      "solution": {
+        "type": "MULTIPLY_IMPLICIT",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          },
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_rule_power",
+        "lesson_calc_simplify_result"
+      ]
+    },
+    {
+      "id": "polynomial",
+      "title": "производная 3x^2 + 2x",
+      "input": "{derivation_prime({3x^2+2x})}",
+      "solution": {
+        "type": "ADD",
+        "children": [
+          {
+            "type": "MULTIPLY_IMPLICIT",
+            "children": [
+              {
+                "type": "CONSTANT",
+                "value": "6"
+              },
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              }
+            ]
+          },
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_rule_sum",
+        "lesson_calc_part_first",
+        "lesson_calc_part_second",
+        "lesson_calc_compose_derivatives"
+      ]
+    },
+    {
+      "id": "sine",
+      "title": "производная sin x",
+      "input": "{derivation_prime({sin({x})})}",
+      "solution": {
+        "type": "COS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_rule_table"
+      ]
+    },
+    {
+      "id": "sine-chain-rule",
+      "title": "цепное правило: производная sin(2x)",
+      "input": "{derivation_prime({sin({2x})})}",
+      "solution": {
+        "type": "MULTIPLY_IMPLICIT",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          },
+          {
+            "type": "COS",
+            "children": [
+              {
+                "type": "MULTIPLY_IMPLICIT",
+                "children": [
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  },
+                  {
+                    "type": "VARIABLE",
+                    "value": "x"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_rule_chain",
+        "lesson_calc_part_argument",
+        "lesson_calc_compose_derivatives",
+        "lesson_calc_simplify_result"
+      ]
+    },
+    {
+      "id": "reciprocal",
+      "title": "производная 1/x",
+      "input": "{derivation_prime({1/x})}",
+      "solution": {
+        "type": "FRACTION",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "-1"
+          },
+          {
+            "type": "POWER",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_rule_reciprocal",
+        "lesson_calc_part_argument",
+        "lesson_calc_compose_derivatives",
+        "lesson_calc_simplify_result"
+      ]
+    },
+    {
+      "id": "square-root",
+      "title": "производная sqrt(x)",
+      "input": "{derivation_prime({root2({x})})}",
+      "solution": {
+        "type": "FRACTION",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "1"
+          },
+          {
+            "type": "MULTIPLY_IMPLICIT",
+            "children": [
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              },
+              {
+                "type": "ROOT2",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "x"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_rule_sqrt",
+        "lesson_calc_simplify_result"
+      ]
+    },
+    {
+      "id": "cube",
+      "title": "производная x^3",
+      "input": "{derivation_prime({x^3})}",
+      "solution": {
+        "type": "MULTIPLY_IMPLICIT",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "3"
+          },
+          {
+            "type": "POWER",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_rule_power",
+        "lesson_calc_simplify_result"
+      ]
+    },
+    {
+      "id": "product-rule",
+      "title": "производная x·sin x (правило произведения)",
+      "input": "{derivation_prime({x*sin({x})})}",
+      "solution": {
+        "type": "ADD",
+        "children": [
+          {
+            "type": "MULTIPLY",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "COS",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "x"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "SIN",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_rule_product",
+        "lesson_calc_part_first",
+        "lesson_calc_part_second",
+        "lesson_calc_compose_derivatives",
+        "lesson_calc_simplify_result"
+      ]
+    },
+    {
+      "id": "natural-log",
+      "title": "производная ln x",
+      "input": "{derivation_prime({ln({x})})}",
+      "solution": {
+        "type": "FRACTION",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "1"
+          },
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_rule_table"
+      ]
+    },
+    {
+      "id": "cosine",
+      "title": "производная cos x",
+      "input": "{derivation_prime({cos({x})})}",
+      "solution": {
+        "type": "NEGATIVE",
+        "children": [
+          {
+            "type": "SIN",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_rule_table"
+      ]
+    },
+    {
+      "id": "prime-notation",
+      "title": "штриховая запись: (x²)′ = 2x",
+      "input": "{prime({x^2})}",
+      "solution": {
+        "type": "MULTIPLY_IMPLICIT",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          },
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_rule_power",
+        "lesson_calc_simplify_result"
+      ]
+    },
+    {
+      "id": "second-prime-notation",
+      "title": "вторая производная: (x³)′′ = 6x",
+      "input": "{derivation2_prime({x^3})}",
+      "solution": {
+        "type": "MULTIPLY_IMPLICIT",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "6"
+          },
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_second_first",
+        "lesson_calc_second_again"
+      ]
+    },
+    {
+      "id": "abs-derivative",
+      "title": "d/dx |x| — знак",
+      "input": "{derivation_prime({abs({x})})}",
+      "solution": {
+        "type": "SIGN",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          }
+        ]
+      },
+      "steps": [
+        "using_trans",
+        "derive_chain_where",
+        "derive",
+        "derive",
+        "sub_msg_ret",
+        "simplify"
+      ]
+    }
+  ]
+}

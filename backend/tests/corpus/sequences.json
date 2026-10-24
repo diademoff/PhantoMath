@@ -1,0 +1,182 @@
+{
+  "module": "sequences",
+  "tasks": [
+    {
+      "id": "arithmetic",
+      "title": "2, 4, 6, 8 → следующие 10, 12, 14, 16",
+      "input": "{sequence({2},{4},{6},{8})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "10"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "12"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "14"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "16"
+          }
+        ]
+      },
+      "steps": [
+        "seq_check_arithmetic",
+        "seq_state_common_diff",
+        "seq_state_next_four"
+      ]
+    },
+    {
+      "id": "geometric",
+      "title": "3, 6, 12, 24 → следующие 48, 96, 192, 384",
+      "input": "{sequence({3},{6},{12},{24})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "48"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "96"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "192"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "384"
+          }
+        ]
+      },
+      "steps": [
+        "seq_check_geometric",
+        "seq_state_common_ratio",
+        "seq_state_next_four"
+      ]
+    },
+    {
+      "id": "arithmetic-formula",
+      "title": "2, 5, 8 → aₙ = 3n − 1",
+      "input": "{sequence({2},{5},{8})}",
+      "command": "explicit_formula",
+      "solution": {
+        "type": "SUBTRACT",
+        "children": [
+          {
+            "type": "MULTIPLY_IMPLICIT",
+            "children": [
+              {
+                "type": "CONSTANT",
+                "value": "3"
+              },
+              {
+                "type": "VARIABLE",
+                "value": "n"
+              }
+            ]
+          },
+          {
+            "type": "CONSTANT",
+            "value": "1"
+          }
+        ]
+      },
+      "steps": [
+        "seq_find_first",
+        "seq_write_explicit_formula",
+        "seq_arithmetic_sub_explicit_formula"
+      ]
+    },
+    {
+      "id": "geometric-formula",
+      "title": "3, 6, 12 → aₙ = 3·2ⁿ⁻¹",
+      "input": "{sequence({3},{6},{12})}",
+      "command": "explicit_formula",
+      "solution": {
+        "type": "MULTIPLY_IMPLICIT",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "3"
+          },
+          {
+            "type": "POWER",
+            "children": [
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              },
+              {
+                "type": "SUBTRACT",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "n"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "1"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "seq_find_first",
+        "seq_write_explicit_formula",
+        "seq_geometric_sub_explicit_formula"
+      ]
+    },
+    {
+      "id": "convergence-convergent",
+      "title": "1, 1/2, 1/4 → сходится",
+      "input": "{sequence({1},{frac({1},{2})},{frac({1},{4})})}",
+      "command": "sequence_convergence",
+      "solution": {
+        "type": "TEXT",
+        "children": [
+          {
+            "type": "TEXT_KEY",
+            "value": "true"
+          }
+        ]
+      },
+      "steps": [
+        "seq_conv_div_lim",
+        "seq_find_limit",
+        "seq_lim_conv"
+      ]
+    },
+    {
+      "id": "convergence-divergent",
+      "title": "2, 5, 8 → расходится",
+      "input": "{sequence({2},{5},{8})}",
+      "command": "sequence_convergence",
+      "solution": {
+        "type": "TEXT",
+        "children": [
+          {
+            "type": "TEXT_KEY",
+            "value": "false"
+          }
+        ]
+      },
+      "steps": [
+        "seq_conv_div_lim",
+        "seq_find_limit",
+        "seq_lim_div"
+      ]
+    }
+  ]
+}

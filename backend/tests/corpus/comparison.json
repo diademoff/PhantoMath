@@ -1,0 +1,67 @@
+{
+  "module": "comparison",
+  "tasks": [
+    {
+      "id": "less-true",
+      "title": "2 < 3 — истина",
+      "input": "{lt({2},{3})}",
+      "solution": {
+        "type": "TEXT",
+        "children": [{"type": "TEXT_KEY", "value": "true"}]
+      },
+      "steps": ["compare_ineq"]
+    },
+    {
+      "id": "greater-false",
+      "title": "2 > 3 — ложь",
+      "input": "{gt({2},{3})}",
+      "solution": {
+        "type": "TEXT",
+        "children": [{"type": "TEXT_KEY", "value": "false"}]
+      },
+      "steps": ["compare_ineq"]
+    },
+    {
+      "id": "equals-true",
+      "title": "2 = 2 — истина",
+      "input": "{eq({2},{2})}",
+      "solution": {
+        "type": "TEXT",
+        "children": [{"type": "TEXT_KEY", "value": "true"}]
+      },
+      "steps": ["compare_eq_eq"]
+    },
+    {
+      "id": "not-equals-true",
+      "title": "2 ≠ 3 — истина",
+      "input": "{neq({2},{3})}",
+      "solution": {
+        "type": "TEXT",
+        "children": [{"type": "TEXT_KEY", "value": "true"}]
+      },
+      "steps": ["compare_ineq"]
+    },
+    {
+      "id": "fractions-cross",
+      "title": "1/2 < 2/3 — перекрёстное умножение",
+      "input": "{lt({frac({1},{2})},{frac({2},{3})})}",
+      "solution": {"type": "TEXT", "children": [{"type": "TEXT_KEY", "value": "true"}]},
+      "steps": ["frac_expand_lcd_msg", "frac_expand_lcd_msg", "mul_with_one", "mul", "mul", "mul",
+        "compare_frac_nom", "compare_ineq"]
+    },
+    {
+      "id": "order",
+      "title": "упорядочить 3, 1, 2",
+      "input": "{order({3},{1},{2})}",
+      "solution": {
+        "type": "ORDER",
+        "children": [
+          {"type": "CONSTANT", "value": "1"},
+          {"type": "CONSTANT", "value": "2"},
+          {"type": "CONSTANT", "value": "3"}
+        ]
+      },
+      "steps": []
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "module": "rewrite",
+  "tasks": [
+    {
+      "id": "decimal-to-fraction",
+      "title": "0,75 → 3/4",
+      "input": "{0.75}",
+      "command": "to_fraction",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "3/4"
+      },
+      "steps": [
+        "dec_to_frac"
+      ]
+    },
+    {
+      "id": "number-to-percent",
+      "title": "0,5 → 50%",
+      "input": "{0.5}",
+      "command": "to_percent",
+      "solution": {
+        "type": "PERCENTAGE",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "50"
+          }
+        ]
+      },
+      "steps": [
+        "rewrite_as_percent"
+      ]
+    },
+    {
+      "id": "fraction-to-percent",
+      "title": "3/4 → 75%",
+      "input": "{frac({3},{4})}",
+      "command": "to_percent",
+      "solution": {
+        "type": "PERCENTAGE",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "75"
+          }
+        ]
+      },
+      "steps": [
+        "rewrite_as_percent"
+      ]
+    },
+    {
+      "id": "scientific-notation",
+      "title": "2500 → 2.5·10³",
+      "input": "{2500}",
+      "command": "to_sci",
+      "solution": {
+        "type": "MULTIPLY",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "2.5"
+          },
+          {
+            "type": "POWER",
+            "children": [
+              {
+                "type": "CONSTANT",
+                "value": "10"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "3"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "sci_form_msg"
+      ]
+    },
+    {
+      "id": "improper-to-mixed",
+      "title": "7/3 → 2 1/3",
+      "input": "{frac({7},{3})}",
+      "command": "to_mixed",
+      "solution": {
+        "type": "FRACTION_MIXED",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "1"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "3"
+          }
+        ]
+      },
+      "steps": [
+        "frac_to_mfrac"
+      ]
+    }
+  ]
+}

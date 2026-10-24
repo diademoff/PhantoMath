@@ -1,0 +1,61 @@
+{
+  "module": "angle",
+  "tasks": [
+    {
+      "id": "half-pi-to-degrees",
+      "title": "π/2 rad → 90°",
+      "input": "{frac({pi},{2})}",
+      "command": "to_degrees",
+      "solution": {
+        "type": "DEGREE",
+        "children": [{"type": "CONSTANT", "value": "90"}]
+      },
+      "steps": ["trig_convert_formula", "frac_reduce_out_expr", "frac_reduce_out_expr"]
+    },
+    {
+      "id": "ninety-to-radians",
+      "title": "90° → π/2 rad",
+      "input": "{deg({90})}",
+      "command": "to_radians",
+      "solution": {
+        "type": "FRACTION",
+        "children": [
+          {"type": "CONSTANT", "value": "π"},
+          {"type": "CONSTANT", "value": "2"}
+        ]
+      },
+      "steps": ["trig_convert_deg_to_rad", "simplify"]
+    },
+    {
+      "id": "pi-to-degrees",
+      "title": "π rad → 180°",
+      "input": "{pi}",
+      "command": "to_degrees",
+      "solution": {
+        "type": "DEGREE",
+        "children": [{"type": "CONSTANT", "value": "180"}]
+      },
+      "steps": ["trig_convert_formula", "frac_reduce_out_expr"]
+    },
+    {
+      "id": "dms-to-degrees",
+      "title": "12°30′ = 12.5°",
+      "input": "{deg_min({12},{30})}",
+      "solution": {
+        "type": "DEGREE",
+        "children": [{"type": "CONSTANT", "value": "25/2"}]
+      },
+      "steps": ["rewrite_deg"]
+    },
+    {
+      "id": "dms-three-parts",
+      "title": "12°30′15″ = 3001/240°",
+      "input": "{deg_min_sec({12},{30},{15})}",
+      "solution": {
+        "type": "DEGREE",
+        "children": [{"type": "CONSTANT", "value": "3001/240"}]
+      },
+      "steps": ["rewrite_deg"]
+    }
+  ]
+}

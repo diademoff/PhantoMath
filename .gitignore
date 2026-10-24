@@ -1,0 +1,28 @@
+# ── Python ──────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ── Flutter / Dart ──────────────────────────────────────────────────────
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+*.iml
+.idea/
+pubspec.lock
+
+# ── Flutter: локальные пути SDK и артефакты сборки ────────────────────
+app/android/local.properties
+app/android/.gradle/
+app/android/app/.cxx/
+app/.flutter-plugins-dependencies
+
+# ── Встроенный Python на устройстве (генерируется `make python-bundle`) ──
+app/python/mymath_backend/

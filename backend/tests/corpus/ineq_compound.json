@@ -1,0 +1,44 @@
+{
+  "module": "ineq_compound",
+  "tasks": [
+    {
+      "id": "double-open",
+      "title": "1 < x < 3 → (1, 3)",
+      "input": "{lt({1},{x},{3})}",
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "1"},
+          {"type": "CONSTANT", "value": "3"}
+        ]
+      },
+      "steps": ["ineq_solve_separate"]
+    },
+    {
+      "id": "double-closed",
+      "title": "−1 ≤ x ≤ 2 → [−1, 2]",
+      "input": "{lte({-1},{x},{2})}",
+      "solution": {
+        "type": "CLOSED_CLOSED_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "-1"},
+          {"type": "CONSTANT", "value": "2"}
+        ]
+      },
+      "steps": ["ineq_solve_separate"]
+    },
+    {
+      "id": "double-linear-expression",
+      "title": "1 ≤ 2x + 1 ≤ 7 → [0, 3]",
+      "input": "{lte({1},{2x+1},{7})}",
+      "solution": {
+        "type": "CLOSED_CLOSED_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "0"},
+          {"type": "CONSTANT", "value": "3"}
+        ]
+      },
+      "steps": ["ineq_solve_separate"]
+    }
+  ]
+}

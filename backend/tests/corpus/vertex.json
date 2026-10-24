@@ -1,0 +1,33 @@
+{
+  "module": "vertex",
+  "tasks": [
+    {
+      "id": "shifted-parabola",
+      "title": "x² − 4x + 3 — вершина (2, −1)",
+      "input": "{x^2-4x+3}",
+      "command": "vertex",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "2"}]},
+          {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "y"}, {"type": "CONSTANT", "value": "-1"}]}
+        ]
+      },
+      "steps": ["find_vertex"]
+    },
+    {
+      "id": "origin",
+      "title": "x² — вершина (0, 0)",
+      "input": "{x^2}",
+      "command": "vertex",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "0"}]},
+          {"type": "EQUALS", "children": [{"type": "VARIABLE", "value": "y"}, {"type": "CONSTANT", "value": "0"}]}
+        ]
+      },
+      "steps": ["find_vertex"]
+    }
+  ]
+}

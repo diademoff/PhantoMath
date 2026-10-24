@@ -1,0 +1,129 @@
+{
+  "module": "domain",
+  "tasks": [
+    {
+      "id": "polynomial-all-reals",
+      "title": "область определения многочлена — вся прямая",
+      "input": "{x^2+1}",
+      "command": "domain",
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {
+            "type": "NEGATIVE",
+            "children": [
+              {
+                "type": "CONSTANT",
+                "value": "∞"
+              }
+            ]
+          },
+          {
+            "type": "CONSTANT",
+            "value": "∞"
+          }
+        ]
+      },
+      "steps": [
+        "domain_quad_real",
+        "domain_find_defined",
+        "domain_find"
+      ]
+    },
+    {
+      "id": "rational-two-intervals",
+      "title": "область определения 1/(x-1)",
+      "input": "{frac({1},{x-1})}",
+      "command": "domain",
+      "solution": {
+        "type": "UNION",
+        "children": [
+          {
+            "type": "OPEN_OPEN_INTERVAL",
+            "children": [
+              {
+                "type": "NEGATIVE",
+                "children": [
+                  {
+                    "type": "CONSTANT",
+                    "value": "∞"
+                  }
+                ]
+              },
+              {
+                "type": "CONSTANT",
+                "value": "1"
+              }
+            ]
+          },
+          {
+            "type": "OPEN_OPEN_INTERVAL",
+            "children": [
+              {
+                "type": "CONSTANT",
+                "value": "1"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "∞"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "domain_rational",
+        "domain_find_defined",
+        "domain_find"
+      ]
+    },
+    {
+      "id": "square-root",
+      "title": "область определения √(x-2)",
+      "input": "{root2({x-2})}",
+      "command": "domain",
+      "solution": {
+        "type": "CLOSED_OPEN_INTERVAL",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "∞"
+          }
+        ]
+      },
+      "steps": [
+        "domain_even_root",
+        "domain_find_defined",
+        "domain_find"
+      ]
+    },
+    {
+      "id": "logarithm",
+      "title": "область определения ln(x)",
+      "input": "{ln({x})}",
+      "command": "domain",
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "0"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "∞"
+          }
+        ]
+      },
+      "steps": [
+        "domain_log",
+        "domain_find_defined",
+        "domain_find"
+      ]
+    }
+  ]
+}

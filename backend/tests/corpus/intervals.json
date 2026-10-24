@@ -1,0 +1,71 @@
+{
+  "module": "intervals",
+  "tasks": [
+    {
+      "id": "open-kept",
+      "title": "открытый промежуток без изменений",
+      "input": "{ooint({2},{5})}",
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "2"},
+          {"type": "CONSTANT", "value": "5"}
+        ]
+      },
+      "steps": []
+    },
+    {
+      "id": "bounds-folded",
+      "title": "границы сворачиваются: (1+1, 5) → (2, 5)",
+      "input": "{ooint({1+1},{5})}",
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "2"},
+          {"type": "CONSTANT", "value": "5"}
+        ]
+      },
+      "steps": ["add", "rewrite_interval"]
+    },
+    {
+      "id": "closed-open-infinite",
+      "title": "полубесконечный промежуток [0, ∞)",
+      "input": "{coint({0},{inf})}",
+      "solution": {
+        "type": "CLOSED_OPEN_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "0"},
+          {"type": "CONSTANT", "value": "∞"}
+        ]
+      },
+      "steps": []
+    },
+    {
+      "id": "point",
+      "title": "точка [1, 1] — не пустое множество",
+      "input": "{ccint({1},{1})}",
+      "solution": {
+        "type": "CLOSED_CLOSED_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "1"},
+          {"type": "CONSTANT", "value": "1"}
+        ]
+      },
+      "steps": []
+    },
+    {
+      "id": "empty-reversed",
+      "title": "перевёрнутые границы → пустое множество",
+      "input": "{ooint({2},{1})}",
+      "solution": {"type": "EMPTY"},
+      "steps": ["rewrite_interval"]
+    },
+    {
+      "id": "empty-equal-open",
+      "title": "равные открытые границы → пустое множество",
+      "input": "{ocint({1},{1})}",
+      "solution": {"type": "EMPTY"},
+      "steps": ["rewrite_interval"]
+    }
+  ]
+}

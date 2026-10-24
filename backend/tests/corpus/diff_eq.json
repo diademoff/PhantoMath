@@ -1,0 +1,429 @@
+{
+  "module": "diff_eq",
+  "tasks": [
+    {
+      "id": "separation",
+      "title": "y′ = y — разделяющиеся переменные",
+      "input": "{=({prime({y})},{y})}",
+      "command": "diff_eq",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "y"
+          },
+          {
+            "type": "MULTIPLY_IMPLICIT",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "C"
+              },
+              {
+                "type": "EXP",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "x"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_ode_sep_derivative",
+        "lesson_calc_ode_sep_separate",
+        "lesson_calc_ode_sep_integrate",
+        "lesson_calc_ode_sep_primitive",
+        "lesson_calc_ode_sep_express_log"
+      ]
+    },
+    {
+      "id": "linear",
+      "title": "y′ = x + y — линейное уравнение",
+      "input": "{=({prime({y})},{x+y})}",
+      "command": "diff_eq",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "y"
+          },
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "SUBTRACT",
+                "children": [
+                  {
+                    "type": "NEGATIVE",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "x"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "type": "MULTIPLY_IMPLICIT",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "C"
+                  },
+                  {
+                    "type": "EXP",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "x"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_ode_lin_substitute",
+        "lesson_calc_ode_lin_insert",
+        "lesson_calc_ode_lin_choose_v",
+        "lesson_calc_ode_lin_v",
+        "lesson_calc_ode_lin_v_value",
+        "lesson_calc_ode_lin_u_equation",
+        "lesson_calc_ode_lin_u",
+        "lesson_calc_ode_lin_u_value",
+        "lesson_calc_ode_lin_back",
+        "lesson_calc_ode_lin_simplify"
+      ]
+    },
+    {
+      "id": "initial-condition",
+      "title": "y′ = y, y(0) = 1 — частное решение",
+      "input": "{=({prime({y})},{y})}",
+      "command": "diff_eq",
+      "args": [
+        "{0}",
+        "{1}"
+      ],
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "y"
+          },
+          {
+            "type": "EXP",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_ode_sep_derivative",
+        "lesson_calc_ode_sep_separate",
+        "lesson_calc_ode_sep_integrate",
+        "lesson_calc_ode_sep_primitive",
+        "lesson_calc_ode_sep_express_log",
+        "lesson_calc_ode_condition",
+        "lesson_calc_ode_condition_substitute",
+        "lesson_calc_ode_condition_value",
+        "lesson_calc_ode_condition_answer"
+      ]
+    },
+    {
+      "id": "reduction",
+      "title": "y″ = x — понижение порядка двойным интегрированием",
+      "input": "{=({derivation2_prime({y})},{x})}",
+      "command": "diff_eq",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "y"
+          },
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "ADD",
+                "children": [
+                  {
+                    "type": "FRACTION",
+                    "children": [
+                      {
+                        "type": "POWER",
+                        "children": [
+                          {
+                            "type": "VARIABLE",
+                            "value": "x"
+                          },
+                          {
+                            "type": "CONSTANT",
+                            "value": "3"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "6"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "MULTIPLY_IMPLICIT",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "C1"
+                      },
+                      {
+                        "type": "VARIABLE",
+                        "value": "x"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "VARIABLE",
+                "value": "C2"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "diff_eq_solve_by_integration",
+        "lesson_calc_ode_reduce_first",
+        "lesson_calc_ode_reduce_second"
+      ]
+    },
+    {
+      "id": "constant-coefficients",
+      "title": "y″ − 3y′ + 2y = 0 — характеристическое уравнение",
+      "input": "{=({derivation2_prime({y})-3*prime({y})+2*y},{0})}",
+      "command": "diff_eq",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "y"
+          },
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "MULTIPLY_IMPLICIT",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "C1"
+                  },
+                  {
+                    "type": "EXP",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "x"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "MULTIPLY_IMPLICIT",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "C2"
+                  },
+                  {
+                    "type": "EXP",
+                    "children": [
+                      {
+                        "type": "MULTIPLY_IMPLICIT",
+                        "children": [
+                          {
+                            "type": "CONSTANT",
+                            "value": "2"
+                          },
+                          {
+                            "type": "VARIABLE",
+                            "value": "x"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_ode_constant_coeff_homogeneous",
+        "lesson_calc_ode_char_equation",
+        "lesson_calc_ode_char_roots",
+        "lesson_calc_ode_char_case_distinct",
+        "lesson_calc_ode_char_general"
+      ]
+    },
+    {
+      "id": "special-right-side",
+      "title": "y″ + y = sin x — резонанс и частное решение",
+      "input": "{=({derivation2_prime({y})+y},{sin({x})})}",
+      "command": "diff_eq",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "y"
+          },
+          {
+            "type": "SUBTRACT",
+            "children": [
+              {
+                "type": "ADD",
+                "children": [
+                  {
+                    "type": "MULTIPLY_IMPLICIT",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "C1"
+                      },
+                      {
+                        "type": "COS",
+                        "children": [
+                          {
+                            "type": "VARIABLE",
+                            "value": "x"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "MULTIPLY_IMPLICIT",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "C2"
+                      },
+                      {
+                        "type": "SIN",
+                        "children": [
+                          {
+                            "type": "VARIABLE",
+                            "value": "x"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "MULTIPLY_IMPLICIT",
+                "children": [
+                  {
+                    "type": "FRACTION",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "x"
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "2"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "COS",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "x"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_ode_constant_coeff_special",
+        "lesson_calc_ode_char_equation",
+        "lesson_calc_ode_char_roots",
+        "lesson_calc_ode_char_case_complex",
+        "lesson_calc_ode_char_general",
+        "lesson_calc_ode_special_form_trig_resonance",
+        "lesson_calc_ode_special_derivatives",
+        "lesson_calc_ode_special_substitute",
+        "lesson_calc_ode_special_equate",
+        "lesson_calc_ode_special_solve",
+        "lesson_calc_ode_special_particular",
+        "lesson_calc_ode_special_general"
+      ]
+    },
+    {
+      "id": "cauchy-second-order",
+      "title": "y″ + y = 0, y(0) = 0, y′(0) = 1 — задача Коши",
+      "input": "{system({=({derivation2_prime({y})+y},{0})},{=({muli({y},{(0)})},{0})},{=({muli({prime({y})},{(0)})},{1})})}",
+      "command": "diff_eq",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "y"
+          },
+          {
+            "type": "SIN",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_ode_constant_coeff_homogeneous",
+        "lesson_calc_ode_char_equation",
+        "lesson_calc_ode_char_roots",
+        "lesson_calc_ode_char_case_complex",
+        "lesson_calc_ode_char_general",
+        "lesson_calc_ode_conditions_system",
+        "lesson_calc_ode_conditions_values",
+        "lesson_calc_ode_conditions_answer"
+      ]
+    }
+  ]
+}

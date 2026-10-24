@@ -1,0 +1,315 @@
+{
+  "module": "conic_details",
+  "tasks": [
+    {
+      "id": "shifted-circle",
+      "title": "x² + y² − 2x + 4y − 4 = 0 → окружность (1, −2), r = 3",
+      "input": "{=({x^2+y^2-2x+4y-4},{0})}",
+      "command": "conic_details",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "POWER",
+                "children": [
+                  {
+                    "type": "SUBTRACT",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "x"
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "1"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
+                ]
+              },
+              {
+                "type": "POWER",
+                "children": [
+                  {
+                    "type": "ADD",
+                    "children": [
+                      {
+                        "type": "CONSTANT",
+                        "value": "2"
+                      },
+                      {
+                        "type": "VARIABLE",
+                        "value": "y"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "CONSTANT",
+            "value": "9"
+          }
+        ]
+      },
+      "steps": [
+        "conics_identify",
+        "conics_complete_square_both",
+        "graph_rt_info_center",
+        "conics_classify_circle",
+        "conics_since_circle",
+        "graph_rt_info_radius"
+      ]
+    },
+    {
+      "id": "circle-origin",
+      "title": "x² + y² = 4 → окружность (0, 0), r = 2",
+      "input": "{=({x^2+y^2},{4})}",
+      "command": "conic_details",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "POWER",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "x"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
+                ]
+              },
+              {
+                "type": "POWER",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "y"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "CONSTANT",
+            "value": "4"
+          }
+        ]
+      },
+      "steps": [
+        "conics_identify",
+        "conics_complete_square_both",
+        "graph_rt_info_center",
+        "conics_classify_circle",
+        "conics_since_circle",
+        "graph_rt_info_radius"
+      ]
+    },
+    {
+      "id": "rotated-ellipse",
+      "title": "x² + xy + y² = 1 — поворот осей, эллипс",
+      "input": "{=({x^2+xy+y^2},{1})}",
+      "command": "conic_details",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "FRACTION",
+                "children": [
+                  {
+                    "type": "POWER",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "u"
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "2"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
+                ]
+              },
+              {
+                "type": "FRACTION",
+                "children": [
+                  {
+                    "type": "MULTIPLY_IMPLICIT",
+                    "children": [
+                      {
+                        "type": "CONSTANT",
+                        "value": "3"
+                      },
+                      {
+                        "type": "POWER",
+                        "children": [
+                          {
+                            "type": "VARIABLE",
+                            "value": "v"
+                          },
+                          {
+                            "type": "CONSTANT",
+                            "value": "2"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "CONSTANT",
+            "value": "1"
+          }
+        ]
+      },
+      "steps": [
+        "conics_identify",
+        "conics_identify_std_form",
+        "graph_rt_info_center",
+        "conics_since_ellipse",
+        "graph_rt_info_vertices",
+        "graph_rt_info_foci",
+        "graph_rt_info_co_vertices"
+      ]
+    },
+    {
+      "id": "rotated-hyperbola",
+      "title": "x² + 3xy − y² = 1 — поворот осей, гипербола",
+      "input": "{=({x^2+3xy-y^2},{1})}",
+      "command": "conic_details",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "SUBTRACT",
+            "children": [
+              {
+                "type": "FRACTION",
+                "children": [
+                  {
+                    "type": "MULTIPLY",
+                    "children": [
+                      {
+                        "type": "ROOT2",
+                        "children": [
+                          {
+                            "type": "CONSTANT",
+                            "value": "13"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "POWER",
+                        "children": [
+                          {
+                            "type": "VARIABLE",
+                            "value": "v"
+                          },
+                          {
+                            "type": "CONSTANT",
+                            "value": "2"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
+                ]
+              },
+              {
+                "type": "FRACTION",
+                "children": [
+                  {
+                    "type": "MULTIPLY",
+                    "children": [
+                      {
+                        "type": "ROOT2",
+                        "children": [
+                          {
+                            "type": "CONSTANT",
+                            "value": "13"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "POWER",
+                        "children": [
+                          {
+                            "type": "VARIABLE",
+                            "value": "u"
+                          },
+                          {
+                            "type": "CONSTANT",
+                            "value": "2"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "CONSTANT",
+            "value": "1"
+          }
+        ]
+      },
+      "steps": [
+        "conics_identify",
+        "conics_identify_std_form",
+        "graph_rt_info_center",
+        "conics_classify_hyperbola",
+        "conics_since_hyperbola",
+        "graph_rt_info_vertices",
+        "graph_rt_info_foci",
+        "graph_rt_info_asymptotes"
+      ]
+    }
+  ]
+}

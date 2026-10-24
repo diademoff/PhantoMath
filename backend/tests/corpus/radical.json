@@ -1,0 +1,72 @@
+{
+  "module": "radical",
+  "tasks": [
+    {
+      "id": "simple",
+      "title": "√x = 2",
+      "input": "{=({root2({x})},{2})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "4"
+          }
+        ]
+      },
+      "steps": [
+        "eq_irrational_simple_square",
+        "solution_check_sub",
+        "root_square",
+        "solution_check_t"
+      ]
+    },
+    {
+      "id": "extraneous-root-excluded",
+      "title": "√(x+1) = x−1 — посторонний корень x=0 отброшен",
+      "input": "{=({root2({x+1})},{x-1})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "3"
+          }
+        ]
+      },
+      "steps": [
+        "eq_irrational_simple_square",
+        "eq_del_opp",
+        "rel_move_left_vars",
+        "sum_suffix",
+        "extract_arg",
+        "quad_separate_zero_product",
+        "eq_linear",
+        "solution_check_sub",
+        "solution_check_sub",
+        "simplify",
+        "simplify",
+        "solution_check_f",
+        "solution_check_t",
+        "solution_eq_one"
+      ]
+    },
+    {
+      "id": "no-solution",
+      "title": "√x = −1 — решений нет",
+      "input": "{=({root2({x})},{-1})}",
+      "solution": null,
+      "steps": [
+        "rel_terminators_root_no_sol"
+      ]
+    }
+  ]
+}

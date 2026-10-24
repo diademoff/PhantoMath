@@ -1,0 +1,19 @@
+{
+  "module": "mean",
+  "tasks": [
+    {
+      "id": "integers",
+      "title": "среднее 2, 4, 6 = 4",
+      "input": "{mean({2},{4},{6})}",
+      "solution": {"type": "CONSTANT", "value": "4"},
+      "steps": ["calculate_short"]
+    },
+    {
+      "id": "fraction",
+      "title": "среднее 1 и 2 = 3/2",
+      "input": "{mean({1},{2})}",
+      "solution": {"type": "CONSTANT", "value": "3/2"},
+      "steps": ["calculate_short"]
+    }
+  ]
+}

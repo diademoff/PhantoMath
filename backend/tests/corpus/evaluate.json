@@ -1,0 +1,41 @@
+{
+  "module": "evaluate",
+  "tasks": [
+    {
+      "id": "polynomial",
+      "title": "x² + 1 при x = 2",
+      "input": "{x^2+1}",
+      "command": "substitute",
+      "args": ["{2}"],
+      "solution": {"type": "CONSTANT", "value": "5"},
+      "steps": ["substitute_value"]
+    },
+    {
+      "id": "sine",
+      "title": "sin x при x = 0",
+      "input": "{sin({x})}",
+      "command": "substitute",
+      "args": ["{0}"],
+      "solution": {"type": "CONSTANT", "value": "0"},
+      "steps": ["substitute_value"]
+    },
+    {
+      "id": "function-value",
+      "title": "f(x) = x² + 1, f(2) = 5",
+      "input": "{x^2+1}",
+      "command": "evaluate_function",
+      "args": ["{2}"],
+      "solution": {"type": "CONSTANT", "value": "5"},
+      "steps": ["function_evaluate", "function_evaluate_value"]
+    },
+    {
+      "id": "fraction",
+      "title": "1/(x+1) при x = 1",
+      "input": "{frac({1},{x+1})}",
+      "command": "substitute",
+      "args": ["{1}"],
+      "solution": {"type": "CONSTANT", "value": "1/2"},
+      "steps": ["substitute_value"]
+    }
+  ]
+}

@@ -1,0 +1,123 @@
+{
+  "module": "vectors",
+  "tasks": [
+    {
+      "id": "length",
+      "title": "длина вектора (3, 4)",
+      "input": "{list({3},{4})}",
+      "command": "vector_length",
+      "solution": {"type": "CONSTANT", "value": "5"},
+      "steps": ["calculate_short"]
+    },
+    {
+      "id": "add",
+      "title": "сумма векторов (1, 2) + (3, 4)",
+      "input": "{list({1},{2})}",
+      "command": "vector_add",
+      "args": ["{list({3},{4})}"],
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {"type": "CONSTANT", "value": "4"},
+          {"type": "CONSTANT", "value": "6"}
+        ]
+      },
+      "steps": ["calculate_short"]
+    },
+    {
+      "id": "subtract",
+      "title": "разность векторов (1, 2) - (3, 4)",
+      "input": "{list({1},{2})}",
+      "command": "vector_subtract",
+      "args": ["{list({3},{4})}"],
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {"type": "CONSTANT", "value": "-2"},
+          {"type": "CONSTANT", "value": "-2"}
+        ]
+      },
+      "steps": ["calculate_short"]
+    },
+    {
+      "id": "scale",
+      "title": "умножение вектора (1, 2) на 3",
+      "input": "{list({1},{2})}",
+      "command": "vector_scale",
+      "args": ["{3}"],
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {"type": "CONSTANT", "value": "3"},
+          {"type": "CONSTANT", "value": "6"}
+        ]
+      },
+      "steps": ["calculate_short"]
+    },
+    {
+      "id": "dot-product",
+      "title": "скалярное произведение (1, 2)·(3, 4)",
+      "input": "{list({1},{2})}",
+      "command": "vector_dot",
+      "args": ["{list({3},{4})}"],
+      "solution": {"type": "CONSTANT", "value": "11"},
+      "steps": ["calculate_short"]
+    },
+    {
+      "id": "cross-product",
+      "title": "векторное произведение ортов",
+      "input": "{list({1},{0},{0})}",
+      "command": "vector_cross",
+      "args": ["{list({0},{1},{0})}"],
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {"type": "CONSTANT", "value": "0"},
+          {"type": "CONSTANT", "value": "0"},
+          {"type": "CONSTANT", "value": "1"}
+        ]
+      },
+      "steps": ["calculate_short"]
+    },
+    {
+      "id": "length-2d-surd",
+      "title": "длина вектора (1, 1) = √2",
+      "input": "{list({1},{1})}",
+      "command": "vector_length",
+      "solution": {"type": "ROOT2", "children": [{"type": "CONSTANT", "value": "2"}]},
+      "steps": ["calculate_short"]
+    },
+    {
+      "id": "length-3d",
+      "title": "длина вектора (2, 3, 6)",
+      "input": "{list({2},{3},{6})}",
+      "command": "vector_length",
+      "solution": {"type": "CONSTANT", "value": "7"},
+      "steps": ["calculate_short"]
+    },
+    {
+      "id": "scale-fraction",
+      "title": "умножение вектора (2, 4) на 1/2",
+      "input": "{list({2},{4})}",
+      "command": "vector_scale",
+      "args": ["{1/2}"],
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {"type": "CONSTANT", "value": "1"},
+          {"type": "CONSTANT", "value": "2"}
+        ]
+      },
+      "steps": ["calculate_short"]
+    },
+    {
+      "id": "dot-product-vectors",
+      "title": "скалярное произведение (1, 2, 3)·(4, 5, 6)",
+      "input": "{list({1},{2},{3})}",
+      "command": "vector_dot",
+      "args": ["{list({4},{5},{6})}"],
+      "solution": {"type": "CONSTANT", "value": "32"},
+      "steps": ["calculate_short"]
+    }
+  ]
+}

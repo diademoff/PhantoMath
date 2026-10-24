@@ -1,0 +1,279 @@
+{
+  "module": "absolute",
+  "tasks": [
+    {
+      "id": "abs-negative-five",
+      "title": "модуль отрицательного числа",
+      "input": "{abs({-5})}",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "5"
+      },
+      "steps": [
+        "abs_real"
+      ]
+    },
+    {
+      "id": "sign-five",
+      "title": "знак положительного числа",
+      "input": "{sign({5})}",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "1"
+      },
+      "steps": [
+        "sign_simp_gtz"
+      ]
+    },
+    {
+      "id": "floor-2.7",
+      "title": "целая часть положительного дробного",
+      "input": "{floor({2.7})}",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "2"
+      },
+      "steps": [
+        "calculate_direct"
+      ]
+    },
+    {
+      "id": "floor-negative",
+      "title": "целая часть отрицательного: floor(-1.5) = -2",
+      "input": "{floor({-1.5})}",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "-2"
+      },
+      "steps": [
+        "calculate_direct"
+      ]
+    },
+    {
+      "id": "abs-square",
+      "title": "модуль квадрата снимается: |x^2| = x^2",
+      "input": "{abs({x^2})}",
+      "solution": {
+        "type": "POWER",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          }
+        ]
+      },
+      "steps": [
+        "abs_pos"
+      ]
+    },
+    {
+      "id": "sign-square",
+      "title": "знак квадрата равен 1",
+      "input": "{sign({x^2})}",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "1"
+      },
+      "steps": [
+        "find_sign"
+      ]
+    },
+    {
+      "id": "floor-integer-shift",
+      "title": "целая часть: floor(x + 2) = floor(x) + 2",
+      "input": "{floor({x+2})}",
+      "solution": {
+        "type": "ADD",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          },
+          {
+            "type": "FLOOR",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "calculate_direct"
+      ]
+    },
+    {
+      "id": "abs-equation",
+      "title": "|x| = 3 — две ветви",
+      "input": "{=({abs({x})},{3})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "-3"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "3"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "eq_abs_branch",
+        "solution_eq_num"
+      ]
+    },
+    {
+      "id": "abs-equation-linear",
+      "title": "|2x - 3| = 5 — линейный аргумент",
+      "input": "{=({abs({2x-3})},{5})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "-1"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "4"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "eq_abs_branch",
+        "eq_linear",
+        "eq_linear",
+        "solution_eq_num"
+      ]
+    },
+    {
+      "id": "abs-equation-negative-right",
+      "title": "|x| = -2 — решений нет",
+      "input": "{=({abs({x})},{-2})}",
+      "solution": {
+        "type": "EMPTY"
+      },
+      "steps": [
+        "rel_terminators_abs_no_sol"
+      ]
+    },
+    {
+      "id": "abs-equation-variable-right",
+      "title": "|x - 1| = x — правая часть с переменной",
+      "input": "{=({abs({x-1})},{x})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "1/2"
+          }
+        ]
+      },
+      "steps": [
+        "rel_move_left_var",
+        "eq_separate",
+        "eq_linear",
+        "ineq_linear",
+        "eq_linear",
+        "ineq_linear",
+        "intersection",
+        "intersection",
+        "union"
+      ]
+    },
+    {
+      "id": "abs-equation-quadratic-right",
+      "title": "|x| = x² - 2",
+      "input": "{=({abs({x})},{x^2-2})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "-2"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "rel_move_left_var",
+        "eq_separate",
+        "eq_linear",
+        "eq_linear",
+        "intersection",
+        "intersection",
+        "solution_eq_num"
+      ]
+    }
+  ]
+}

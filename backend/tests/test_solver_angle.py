@@ -1,0 +1,83 @@
+"""Тесты перевода углов (O): команды ``to_degrees`` и ``to_radians``.
+
+Радианы → узел ``DEGREE`` (``trig_convert_formula`` + ``frac_reduce_out_expr``),
+``DEGREE`` → радианы (``trig_convert_deg_to_rad`` + ``simplify``). Рядом —
+способы с полным оборотом: прибавить и вычесть.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+from mymath_backend import CoreNodeType as T
+from mymath_backend.input import parse_protocol
+from mymath_backend.results import CoreSolverVerticalResult
+from mymath_backend.solver import SolveError, solve
+
+
+def _vertical(source: str, command: str) -> CoreSolverVerticalResult:
+    vertical = solve(parse_protocol(source), command=command).result.vertical()
+    assert vertical is not None
+    return vertical
+
+
+def step_keys(source: str, command: str) -> list[str]:
+    return [
+        sub.description.type for step in _vertical(source, command).steps for sub in step.substeps
+    ]
+
+
+class TestDms:
+    def test_degree_minute(self) -> None:
+        # 12°30′ = 12.5°.
+        vertical = solve(parse_protocol("{deg_min({12},{30})}")).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        assert vertical.solution.type is T.DEGREE
+        assert vertical.solution.children[0].value == "25/2"
+        keys = [sub.description.type for step in vertical.steps for sub in step.substeps]
+        assert keys == ["rewrite_deg"]
+
+    def test_degree_minute_second(self) -> None:
+        # 12°30′15″ = 12 + 1/2 + 15/3600 = 3001/240.
+        vertical = solve(parse_protocol("{deg_min_sec({12},{30},{15})}")).result.vertical()
+        assert vertical is not None and vertical.solution is not None
+        assert vertical.solution.children[0].value == "3001/240"
+
+
+class TestAngle:
+    def test_radians_to_degrees(self) -> None:
+        answer = _vertical("{frac({pi},{2})}", "to_degrees").solution
+        assert answer is not None and answer.type is T.DEGREE
+        assert answer.children[0].value == "90"
+        assert step_keys("{frac({pi},{2})}", "to_degrees") == [
+            "trig_convert_formula",
+            "frac_reduce_out_expr",
+            "frac_reduce_out_expr",
+        ]
+
+    def test_pi_to_degrees(self) -> None:
+        answer = _vertical("{pi}", "to_degrees").solution
+        assert answer is not None and answer.children[0].value == "180"
+
+    def test_degrees_to_radians(self) -> None:
+        answer = _vertical("{deg({90})}", "to_radians").solution
+        assert answer is not None and answer.type is T.FRACTION
+        assert answer.children[0].value == "π"
+        assert step_keys("{deg({90})}", "to_radians") == [
+            "trig_convert_deg_to_rad",
+            "simplify",
+        ]
+
+    def test_full_turn(self) -> None:
+        answer = _vertical("{deg({180})}", "to_radians").solution
+        assert answer is not None and answer.value == "π"
+
+    def test_equation_rejected(self) -> None:
+        # Угол переводится у числа или угла. Без проверки `simplify` на `Eq`
+        # молча решал уравнение: `2x + 3 = 7` → `x = 2` под шагом
+        # «Выразите радианную меру», а `* 180/π` бросал `TypeError` и ответ
+        # не уходил вовсе.
+        for command in ("to_degrees", "to_radians"):
+            for source in ("{2x+3=7}", "{=({0.5},{0.25})}"):
+                with pytest.raises(SolveError, match="угла или числа"):
+                    _vertical(source, command)

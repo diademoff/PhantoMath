@@ -1,0 +1,187 @@
+{
+  "module": "inequalities",
+  "tasks": [
+    {
+      "id": "linear-less-than",
+      "title": "линейное неравенство: 2x + 1 < 5",
+      "input": "{<({2x+1},{5})}",
+      "solution": {
+        "type": "LESS_THAN",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          }
+        ]
+      },
+      "steps": [
+        "rel_move_right_const_ineq",
+        "sub",
+        "ineq_linear_div"
+      ]
+    },
+    {
+      "id": "negative-flips-sign",
+      "title": "деление на отрицательное меняет знак: -2x < 4",
+      "input": "{<({-2x},{4})}",
+      "solution": {
+        "type": "GREATER_THAN",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "-2"
+          }
+        ]
+      },
+      "steps": [
+        "ineq_linear_div_neg",
+        "div_with_self",
+        "div_pos_neg",
+        "quotient"
+      ]
+    },
+    {
+      "id": "already-isolated",
+      "title": "неизвестное уже изолировано: x >= 3",
+      "input": "{>=({x},{3})}",
+      "solution": {
+        "type": "GREATER_THAN_EQUAL",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "3"
+          }
+        ]
+      },
+      "steps": []
+    },
+    {
+      "id": "less-or-equal",
+      "title": "нестрогое неравенство: 3x <= 6",
+      "input": "{<=({3x},{6})}",
+      "solution": {
+        "type": "LESS_THAN_EQUAL",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          }
+        ]
+      },
+      "steps": [
+        "ineq_linear_div",
+        "div_with_self",
+        "quotient"
+      ]
+    },
+    {
+      "id": "not-equals",
+      "title": "неравенство-неравенство: x != 2",
+      "input": "{!=({x},{2})}",
+      "solution": {
+        "type": "NOT_EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          }
+        ]
+      },
+      "steps": []
+    },
+    {
+      "id": "greater-than-move",
+      "title": "перенос в строгом неравенстве: x + 3 > 5",
+      "input": "{>({x+3},{5})}",
+      "solution": {
+        "type": "GREATER_THAN",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          }
+        ]
+      },
+      "steps": [
+        "rel_move_right_const_ineq",
+        "sub"
+      ]
+    },
+    {
+      "id": "delete-opposite-terms",
+      "title": "равные константы сокращаются: 3x − 2 > −2",
+      "input": "{>({3x-2},{-2})}",
+      "solution": {
+        "type": "GREATER_THAN",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "0"
+          }
+        ]
+      },
+      "steps": [
+        "ineq_del_opp",
+        "ineq_linear_div"
+      ]
+    },
+    {
+      "id": "square-above-zero",
+      "title": "x² − 0 > 0 — истинно всюду, кроме нуля",
+      "input": "{>({x^2-0},{0})}",
+      "solution": {
+        "type": "UNION",
+        "children": [
+          {
+            "type": "OPEN_OPEN_INTERVAL",
+            "children": [
+              {"type": "NEGATIVE", "children": [{"type": "CONSTANT", "value": "∞"}]},
+              {"type": "CONSTANT", "value": "0"}
+            ]
+          },
+          {
+            "type": "OPEN_OPEN_INTERVAL",
+            "children": [
+              {"type": "CONSTANT", "value": "0"},
+              {"type": "CONSTANT", "value": "∞"}
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "add_with_zero",
+        "rel_terminators_left_pos_zero_true_except",
+        "eq_linear",
+        "ineq_pow_diff"
+      ]
+    }
+  ]
+}

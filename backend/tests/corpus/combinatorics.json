@@ -1,0 +1,119 @@
+{
+  "module": "combinatorics",
+  "tasks": [
+    {
+      "id": "factorial-5",
+      "title": "факториал 5",
+      "input": "{factorial({5})}",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "120"
+      },
+      "steps": [
+        "factorial_formula",
+        "product"
+      ]
+    },
+    {
+      "id": "factorial-0",
+      "title": "факториал нуля",
+      "input": "{factorial({0})}",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "1"
+      },
+      "steps": [
+        "by_definition"
+      ]
+    },
+    {
+      "id": "choose-5-2",
+      "title": "биномиальный коэффициент C(5, 2)",
+      "input": "{choose({5},{2})}",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "10"
+      },
+      "steps": [
+        "choose_expand",
+        "using_expand",
+        "sub",
+        "frac_reduce_frac_alg",
+        "mul",
+        "factorial_calculate",
+        "frac_reduce_frac_num"
+      ]
+    },
+    {
+      "id": "choose-5-5",
+      "title": "C(5, 5) = 1",
+      "input": "{choose({5},{5})}",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "1"
+      },
+      "steps": [
+        "choose_def_same"
+      ]
+    },
+    {
+      "id": "permutation-5-2",
+      "title": "перестановки P(5, 2)",
+      "input": "{permutation({5},{2})}",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "20"
+      },
+      "steps": [
+        "permutation_expand",
+        "using_expand",
+        "sub",
+        "frac_reduce_frac_alg",
+        "mul"
+      ]
+    },
+    {
+      "id": "variation-5-2",
+      "title": "размещения A(5, 2)",
+      "input": "{variation({5},{2})}",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "20"
+      },
+      "steps": [
+        "variation_not_allowed_calculate"
+      ]
+    },
+    {
+      "id": "choose-6-3",
+      "title": "биномиальный коэффициент C(6, 3)",
+      "input": "{choose({6},{3})}",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "20"
+      },
+      "steps": [
+        "choose_expand",
+        "using_expand",
+        "sub",
+        "frac_reduce_frac_alg",
+        "product",
+        "factorial_calculate",
+        "frac_reduce_frac_num"
+      ]
+    },
+    {
+      "id": "permutation-3-3",
+      "title": "перестановки P(3, 3) = 3!",
+      "input": "{permutation({3},{3})}",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "6"
+      },
+      "steps": [
+        "permutation_def_same",
+        "factorial_calculate"
+      ]
+    }
+  ]
+}

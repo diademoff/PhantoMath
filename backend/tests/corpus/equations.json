@@ -1,0 +1,399 @@
+{
+  "module": "equations",
+  "tasks": [
+    {
+      "id": "linear",
+      "title": "линейное: 2x + 3 = 7",
+      "input": "{=({2x+3},{7})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          }
+        ]
+      },
+      "steps": [
+        "rel_move_right_const_eq",
+        "sub",
+        "eq_linear_div"
+      ]
+    },
+    {
+      "id": "variables-both-sides",
+      "title": "неизвестное с двух сторон: 3x - 1 = 2x + 4",
+      "input": "{=({3x-1},{2x+4})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "5"
+          }
+        ]
+      },
+      "steps": [
+        "rel_move_left_var",
+        "rel_move_right_const_eq",
+        "sum_suffix",
+        "add"
+      ]
+    },
+    {
+      "id": "linear-divide-first",
+      "title": "способ 2: сначала деление обеих частей",
+      "input": "{=({2x+3},{7})}",
+      "method": 1,
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          }
+        ]
+      },
+      "steps": [
+        "eq_linar_divide_both_sides",
+        "move"
+      ]
+    },
+    {
+      "id": "quadratic-two-roots",
+      "title": "квадратное: x^2 - 5x + 6 = 0, два корня, разложением на множители",
+      "input": "{=({x^2-5x+6},{0})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "3"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "write_as_diff_fact",
+        "extract_arg",
+        "extract_arg",
+        "extract_arg",
+        "quad_separate_zero_product",
+        "eq_linear",
+        "eq_linear",
+        "solution_eq_num"
+      ]
+    },
+    {
+      "id": "quadratic-double-root",
+      "title": "квадратное: x^2 - 4x + 4 = 0, один корень",
+      "input": "{=({x^2-4x+4},{0})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          }
+        ]
+      },
+      "steps": [
+        "using_factor",
+        "eq_quad_exp_zero",
+        "rel_move_right_const_eq"
+      ]
+    },
+    {
+      "id": "quadratic-factoring",
+      "title": "способ 2: квадратное по формуле корней",
+      "input": "{=({x^2-5x+6},{0})}",
+      "method": 1,
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "3"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "quad_formula_abc",
+        "mul_with_one",
+        "mul_with_one",
+        "neg_neg_arg",
+        "pow",
+        "mul",
+        "sub",
+        "root_one",
+        "quad_separate_signs",
+        "calculate_direct",
+        "calculate_direct",
+        "solution_eq_num"
+      ]
+    },
+    {
+      "id": "identity",
+      "title": "тождество: x = x — бесконечно много решений",
+      "input": "{=({x},{x})}",
+      "solution": null,
+      "steps": [
+        "solutions_inf_many"
+      ]
+    },
+    {
+      "id": "contradiction",
+      "title": "противоречие: x + 1 = x + 2 — решений нет",
+      "input": "{=({x+1},{x+2})}",
+      "solution": null,
+      "steps": [
+        "eq_del_opp",
+        "rel_el_of_zero"
+      ]
+    },
+    {
+      "id": "quadratic-zero-b-irrational",
+      "title": "квадратное x^2 - 2 = 0: корни ±√2",
+      "input": "{=({x^2-2},{0})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "NEGATIVE",
+                "children": [
+                  {
+                    "type": "ROOT2",
+                    "children": [
+                      {
+                        "type": "CONSTANT",
+                        "value": "2"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "ROOT2",
+                "children": [
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "rel_move_right_const_eq",
+        "quad_sqrt_sides",
+        "quad_separate_signs",
+        "solution_eq_num"
+      ]
+    },
+    {
+      "id": "linear-fraction-root",
+      "title": "линейное с дробным корнем: 3x = 1",
+      "input": "{=({3x},{1})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "1/3"
+          }
+        ]
+      },
+      "steps": [
+        "eq_linear_div",
+        "div_with_self",
+        "div_to_frac"
+      ]
+    },
+    {
+      "id": "two-radicals",
+      "title": "√x + √(x+1) = 2 — два возведения в квадрат",
+      "input": "{=({root2({x})+root2({x+1})},{2})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "9/16"
+          }
+        ]
+      },
+      "steps": [
+        "eq_irrational_simple_square",
+        "mul_bracket",
+        "sum_suffix",
+        "rel_move_right",
+        "sub",
+        "eq_irrational_simple_square",
+        "mul_bracket",
+        "eq_del_opp",
+        "rel_move_left_var",
+        "sum_suffix",
+        "eq_linear_div",
+        "solution_check_sub",
+        "simplify",
+        "solution_check_t"
+      ]
+    },
+    {
+      "id": "degree-nine",
+      "title": "x⁹ = 1 — степень выше потолка прошлых версий",
+      "input": "{=({x^9},{1})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "1"
+          }
+        ]
+      },
+      "steps": [
+        "eq_root",
+        "root_one"
+      ]
+    },
+    {
+      "id": "parametric-linear",
+      "title": "x + y = 1 — относительно x, y параметр",
+      "input": "{=({x+y},{1})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "SUBTRACT",
+                "children": [
+                  {
+                    "type": "CONSTANT",
+                    "value": "1"
+                  },
+                  {
+                    "type": "VARIABLE",
+                    "value": "y"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ELEMENT_OF",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "y"
+              },
+              {
+                "type": "VARIABLE",
+                "value": "ℝ"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "rel_move_right_var",
+        "eq_linear_param_sol"
+      ]
+    }
+  ]
+}

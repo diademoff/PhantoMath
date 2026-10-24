@@ -1,0 +1,905 @@
+{
+  "module": "integrals",
+  "tasks": [
+    {
+      "id": "power-two",
+      "title": "первообразная x^2",
+      "input": "{integral({x^2})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "FRACTION",
+                "children": [
+                  {
+                    "type": "POWER",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "x"
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "3"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "3"
+                  }
+                ]
+              },
+              {
+                "type": "VARIABLE",
+                "value": "C"
+              }
+            ]
+          },
+          {
+            "type": "ELEMENT_OF",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "C"
+              },
+              {
+                "type": "VARIABLE",
+                "value": "ℝ"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_int_table_rule",
+        "integrate_msg_addc"
+      ]
+    },
+    {
+      "id": "sine",
+      "title": "первообразная sin x",
+      "input": "{integral({sin({x})})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "NEGATIVE",
+                "children": [
+                  {
+                    "type": "COS",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "x"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "VARIABLE",
+                "value": "C"
+              }
+            ]
+          },
+          {
+            "type": "ELEMENT_OF",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "C"
+              },
+              {
+                "type": "VARIABLE",
+                "value": "ℝ"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_int_table_rule",
+        "integrate_msg_addc"
+      ]
+    },
+    {
+      "id": "reciprocal",
+      "title": "первообразная 1/x",
+      "input": "{integral({1/x})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "LN",
+                "children": [
+                  {
+                    "type": "ABS",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "x",
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "VARIABLE",
+                "value": "C",
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "ELEMENT_OF",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "C",
+                "children": []
+              },
+              {
+                "type": "VARIABLE",
+                "value": "ℝ",
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_int_table_rule",
+        "integrate_msg_addc"
+      ]
+    },
+    {
+      "id": "exponential",
+      "title": "первообразная exp(x)",
+      "input": "{integral({exp({x})})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "EXP",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "x",
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "type": "VARIABLE",
+                "value": "C",
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "ELEMENT_OF",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "C",
+                "children": []
+              },
+              {
+                "type": "VARIABLE",
+                "value": "ℝ",
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_int_table_rule",
+        "integrate_msg_addc"
+      ]
+    },
+    {
+      "id": "linear",
+      "title": "первообразная x",
+      "input": "{integral({x})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "FRACTION",
+                "children": [
+                  {
+                    "type": "POWER",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "x",
+                        "children": []
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "2",
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2",
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "type": "VARIABLE",
+                "value": "C",
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "ELEMENT_OF",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "C",
+                "children": []
+              },
+              {
+                "type": "VARIABLE",
+                "value": "ℝ",
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_int_table_rule",
+        "integrate_msg_addc"
+      ]
+    },
+    {
+      "id": "definite-linear",
+      "title": "определённый интеграл x от 0 до 1",
+      "input": "{integral_def({0},{1},{x})}",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "1/2"
+      },
+      "steps": [
+        "integrate_def_solve_undefined",
+        "integrate_msg",
+        "integrate_def_bounds",
+        "integrate_def_msg_range",
+        "calculate_direct"
+      ],
+      "method": 1
+    },
+    {
+      "id": "definite-sine",
+      "title": "определённый интеграл sin x от 0 до π",
+      "input": "{integral_def({0},{pi},{sin({x})})}",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "2"
+      },
+      "steps": [
+        "integrate_def_solve_undefined",
+        "integrate_msg",
+        "integrate_def_bounds",
+        "integrate_def_msg_range",
+        "simplify"
+      ],
+      "method": 1
+    },
+    {
+      "id": "constant",
+      "title": "первообразная константы 2",
+      "input": "{integral({2})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "MULTIPLY_IMPLICIT",
+                "children": [
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  },
+                  {
+                    "type": "VARIABLE",
+                    "value": "x"
+                  }
+                ]
+              },
+              {
+                "type": "VARIABLE",
+                "value": "C"
+              }
+            ]
+          },
+          {
+            "type": "ELEMENT_OF",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "C"
+              },
+              {
+                "type": "VARIABLE",
+                "value": "ℝ"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_int_table_rule",
+        "integrate_msg_addc"
+      ]
+    },
+    {
+      "id": "linear-3x",
+      "title": "первообразная 3x",
+      "input": "{integral({3x})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "FRACTION",
+                "children": [
+                  {
+                    "type": "MULTIPLY_IMPLICIT",
+                    "children": [
+                      {
+                        "type": "CONSTANT",
+                        "value": "3",
+                        "children": []
+                      },
+                      {
+                        "type": "POWER",
+                        "children": [
+                          {
+                            "type": "VARIABLE",
+                            "value": "x",
+                            "children": []
+                          },
+                          {
+                            "type": "CONSTANT",
+                            "value": "2",
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2",
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "type": "VARIABLE",
+                "value": "C",
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "ELEMENT_OF",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "C",
+                "children": []
+              },
+              {
+                "type": "VARIABLE",
+                "value": "ℝ",
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_int_table_rule",
+        "integrate_msg_addc"
+      ]
+    },
+    {
+      "id": "cosine",
+      "title": "первообразная cos x",
+      "input": "{integral({cos({x})})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "SIN",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "x"
+                  }
+                ]
+              },
+              {
+                "type": "VARIABLE",
+                "value": "C"
+              }
+            ]
+          },
+          {
+            "type": "ELEMENT_OF",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "C"
+              },
+              {
+                "type": "VARIABLE",
+                "value": "ℝ"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_int_table_rule",
+        "integrate_msg_addc"
+      ]
+    },
+    {
+      "id": "power-three",
+      "title": "первообразная x^3",
+      "input": "{integral({x^3})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "FRACTION",
+                "children": [
+                  {
+                    "type": "POWER",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "x"
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "4"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "4"
+                  }
+                ]
+              },
+              {
+                "type": "VARIABLE",
+                "value": "C"
+              }
+            ]
+          },
+          {
+            "type": "ELEMENT_OF",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "C"
+              },
+              {
+                "type": "VARIABLE",
+                "value": "ℝ"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_int_table_rule",
+        "integrate_msg_addc"
+      ]
+    },
+    {
+      "id": "definite-x-squared",
+      "title": "определённый интеграл x^2 от 0 до 2",
+      "input": "{integral_def({0},{2},{x^2})}",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "8/3"
+      },
+      "steps": [
+        "integrate_def_solve_undefined",
+        "integrate_msg",
+        "integrate_def_bounds",
+        "integrate_def_msg_range",
+        "calculate_direct"
+      ],
+      "method": 1
+    },
+    {
+      "id": "definite-reciprocal",
+      "title": "определённый интеграл 1/x от 1 до 2",
+      "input": "{integral_def({1},{2},{1/x})}",
+      "solution": {
+        "type": "LN",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          }
+        ]
+      },
+      "steps": [
+        "integrate_def_solve_undefined",
+        "integrate_msg",
+        "integrate_def_bounds",
+        "integrate_def_msg_range",
+        "simplify"
+      ],
+      "method": 1
+    },
+    {
+      "id": "by-parts",
+      "title": "интегрирование по частям: ∫ x·eˣ dx",
+      "input": "{integral({x*exp({x})})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "MULTIPLY_IMPLICIT",
+                "children": [
+                  {
+                    "type": "SUBTRACT",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "x",
+                        "children": []
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "1",
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "type": "EXP",
+                    "children": [
+                      {
+                        "type": "VARIABLE",
+                        "value": "x",
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "VARIABLE",
+                "value": "C",
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "ELEMENT_OF",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "C",
+                "children": []
+              },
+              {
+                "type": "VARIABLE",
+                "value": "ℝ",
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_int_parts_formula",
+        "lesson_calc_int_parts_choose",
+        "lesson_calc_int_parts_differential",
+        "lesson_calc_int_parts_apply",
+        "lesson_calc_int_parts_remainder",
+        "lesson_calc_int_parts_answer",
+        "integrate_msg_addc"
+      ]
+    },
+    {
+      "id": "substitution",
+      "title": "замена: ∫ sin 2x dx",
+      "input": "{integral({sin({2x})})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "FRACTION",
+                "children": [
+                  {
+                    "type": "NEGATIVE",
+                    "children": [
+                      {
+                        "type": "COS",
+                        "children": [
+                          {
+                            "type": "MULTIPLY_IMPLICIT",
+                            "children": [
+                              {
+                                "type": "CONSTANT",
+                                "value": "2",
+                                "children": []
+                              },
+                              {
+                                "type": "VARIABLE",
+                                "value": "x",
+                                "children": []
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "2",
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "type": "VARIABLE",
+                "value": "C",
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "ELEMENT_OF",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "C",
+                "children": []
+              },
+              {
+                "type": "VARIABLE",
+                "value": "ℝ",
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_int_linear_rule",
+        "lesson_calc_int_substitute",
+        "lesson_calc_int_differential",
+        "lesson_calc_int_rewrite",
+        "lesson_calc_int_inner_table",
+        "lesson_calc_int_back_sub",
+        "integrate_msg_addc"
+      ]
+    },
+    {
+      "id": "partial-fractions",
+      "title": "простейшие дроби: ∫ 1/(x²−1) dx",
+      "input": "{integral({frac({1},{x^2-1})})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "SUBTRACT",
+                "children": [
+                  {
+                    "type": "FRACTION",
+                    "children": [
+                      {
+                        "type": "LN",
+                        "children": [
+                          {
+                            "type": "ABS",
+                            "children": [
+                              {
+                                "type": "SUBTRACT",
+                                "children": [
+                                  {
+                                    "type": "VARIABLE",
+                                    "value": "x",
+                                    "children": []
+                                  },
+                                  {
+                                    "type": "CONSTANT",
+                                    "value": "1",
+                                    "children": []
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "2",
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "type": "FRACTION",
+                    "children": [
+                      {
+                        "type": "LN",
+                        "children": [
+                          {
+                            "type": "ABS",
+                            "children": [
+                              {
+                                "type": "ADD",
+                                "children": [
+                                  {
+                                    "type": "VARIABLE",
+                                    "value": "x",
+                                    "children": []
+                                  },
+                                  {
+                                    "type": "CONSTANT",
+                                    "value": "1",
+                                    "children": []
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "2",
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "VARIABLE",
+                "value": "C",
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "ELEMENT_OF",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "C",
+                "children": []
+              },
+              {
+                "type": "VARIABLE",
+                "value": "ℝ",
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_calc_int_frac_factor",
+        "lesson_calc_int_frac_form",
+        "lesson_calc_int_frac_equations",
+        "lesson_calc_int_frac_coeffs",
+        "lesson_calc_int_frac_numbers",
+        "lesson_calc_int_sum_rule",
+        "lesson_calc_int_term_table",
+        "lesson_calc_int_term_table",
+        "integrate_msg_addc"
+      ]
+    },
+    {
+      "id": "improper",
+      "title": "несобственный: ∫₁^∞ 1/x² dx = 1",
+      "input": "{integral_def({1},{inf},{frac({1},{x^2})})}",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "1"
+      },
+      "steps": [
+        "integrate_imp_rewrite_using_lim",
+        "integrate_def",
+        "limit_solve"
+      ],
+      "method": 1
+    },
+    {
+      "id": "improper-discontinuity",
+      "title": "разрыв в пределе: ∫₀¹ 1/√x dx = 2",
+      "input": "{integral_def({0},{1},{frac({1},{root2({x})})})}",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "2"
+      },
+      "steps": [
+        "integrate_imp_rewrite_using_lim_sided_msg",
+        "integrate_def",
+        "limit_solve"
+      ],
+      "method": 1
+    },
+    {
+      "id": "iterated",
+      "title": "повторный: ∫₀¹∫₀² x·y² dy dx = 4/3",
+      "input": "{integral_def({0},{1},{integral_def({0},{2},{muli({x},{y^2})})})}",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "4/3"
+      },
+      "steps": ["integrate_iterated_inner", "integrate_def"]
+    },
+    {
+      "id": "right-dash",
+      "title": "подстановка пределов: x²|₀¹ = 1",
+      "input": "{integralrightdash({x^2},{0},{1})}",
+      "solution": {
+        "type": "CONSTANT",
+        "value": "1"
+      },
+      "steps": [
+        "integrate_def_bounds"
+      ]
+    }
+  ]
+}

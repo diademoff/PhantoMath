@@ -1,0 +1,97 @@
+{
+  "module": "rational",
+  "tasks": [
+    {
+      "id": "linear-fraction",
+      "title": "x/(x-2) = 3",
+      "input": "{=({frac({x},{x-2})},{3})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "3"
+          }
+        ]
+      },
+      "steps": [
+        "rel_restrictions_range",
+        "eq_mul_direct_denom",
+        "mul_bracket",
+        "rel_move_left_var",
+        "sum_suffix",
+        "eq_linear_div",
+        "rel_restrictions_check"
+      ]
+    },
+    {
+      "id": "fraction-equals-number",
+      "title": "1/(x-1) = 2",
+      "input": "{=({frac({1},{x-1})},{2})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "3/2"
+          }
+        ]
+      },
+      "steps": [
+        "rel_restrictions_range",
+        "eq_mul_direct_denom",
+        "mul_bracket",
+        "rel_move_left_var",
+        "rel_move_right_const_eq",
+        "calc_diff",
+        "eq_linear_div",
+        "rel_restrictions_check"
+      ]
+    },
+    {
+      "id": "pole-excluded",
+      "title": "(x²−1)/(x−1) = 0 — корень x=1 исключён",
+      "input": "{=({frac({x^2-1},{x-1})},{0})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "-1"
+          }
+        ]
+      },
+      "steps": [
+        "rel_restrictions_range",
+        "using_factor",
+        "frac_reduce_frac_alg",
+        "rel_move_right_const_eq",
+        "rel_restrictions_check"
+      ]
+    },
+    {
+      "id": "no-solution",
+      "title": "1/(x−1) = 1/(x−2) — решений нет",
+      "input": "{=({frac({1},{x-1})},{frac({1},{x-2})})}",
+      "solution": null,
+      "steps": [
+        "rel_restrictions_range",
+        "eq_linear_eq_num",
+        "eq_del_opp",
+        "rel_el_of_zero"
+      ]
+    }
+  ]
+}

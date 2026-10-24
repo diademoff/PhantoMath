@@ -1,0 +1,96 @@
+{
+  "module": "ineq_rational",
+  "tasks": [
+    {
+      "id": "fraction-less",
+      "title": "1/(x−1) < 2 → (−∞, 1) ∪ (3/2, ∞)",
+      "input": "{lt({frac({1},{x-1})},{2})}",
+      "solution": {
+        "type": "UNION",
+        "children": [
+          {
+            "type": "OPEN_OPEN_INTERVAL",
+            "children": [
+              {"type": "NEGATIVE", "children": [{"type": "CONSTANT", "value": "∞"}]},
+              {"type": "CONSTANT", "value": "1"}
+            ]
+          },
+          {
+            "type": "OPEN_OPEN_INTERVAL",
+            "children": [
+              {"type": "CONSTANT", "value": "3/2"},
+              {"type": "CONSTANT", "value": "∞"}
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "rel_restrictions_range",
+        "rel_move_left_const",
+        "frac_sum_join",
+        "mul_bracket",
+        "add",
+        "ineq_quotient_lt",
+        "ineq_linear", "ineq_linear", "ineq_linear", "ineq_linear",
+        "intersection", "intersection",
+        "union",
+        "rel_restrictions_intersect"
+      ]
+    },
+    {
+      "id": "variable-over-difference",
+      "title": "x/(x−2) > 3 → (2, 3)",
+      "input": "{gt({frac({x},{x-2})},{3})}",
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {"type": "CONSTANT", "value": "2"},
+          {"type": "CONSTANT", "value": "3"}
+        ]
+      },
+      "steps": [
+        "rel_restrictions_range",
+        "rel_move_left_const",
+        "frac_sum_join",
+        "mul_bracket",
+        "sum_suffix",
+        "extract_arg",
+        "ineq_quotient_gt",
+        "ineq_linear", "ineq_linear", "ineq_linear", "ineq_linear",
+        "intersection", "intersection",
+        "union",
+        "rel_restrictions_intersect"
+      ]
+    },
+    {
+      "id": "pole-excluded-root-included",
+      "title": "(x−1)/(x+1) ≥ 0 → (−∞, −1) ∪ [1, ∞)",
+      "input": "{gte({frac({x-1},{x+1})},{0})}",
+      "solution": {
+        "type": "UNION",
+        "children": [
+          {
+            "type": "OPEN_OPEN_INTERVAL",
+            "children": [
+              {"type": "NEGATIVE", "children": [{"type": "CONSTANT", "value": "∞"}]},
+              {"type": "CONSTANT", "value": "-1"}
+            ]
+          },
+          {
+            "type": "CLOSED_OPEN_INTERVAL",
+            "children": [
+              {"type": "CONSTANT", "value": "1"},
+              {"type": "CONSTANT", "value": "∞"}
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "ineq_quotient_gte",
+        "ineq_linear", "ineq_linear", "ineq_linear", "ineq_linear",
+        "intersection", "intersection",
+        "union"
+      ]
+    }
+  ]
+}

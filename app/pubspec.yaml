@@ -1,0 +1,46 @@
+name: mymath_app
+description: "PhantoMath — понять каждый шаг математического решения."
+publish_to: 'none'
+
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # HTTP-клиент к бэкенду. Без него не обойтись: решатель живёт в Python.
+  http: ^1.5.0
+
+  # Рендер формул. Наш AST приводится к LaTeX и отрисовывается им:
+  # писать свой рендер дробей и корней — это отдельный проект.
+  flutter_math_fork: ^0.7.4
+
+  # Блокнот: путь к каталогу приложения для локального файла истории.
+  path_provider: ^2.1.6
+  serious_python: ^5.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/logo.png
+
+# Launcher-иконка из app/logo.png. Фон adaptive-иконки взят из самого лого
+# (малиновый #B80730), поэтому вписывается без полей.
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "logo.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#B80730"
+  adaptive_icon_foreground: "logo.png"

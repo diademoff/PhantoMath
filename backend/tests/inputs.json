@@ -1,0 +1,722 @@
+[
+ {
+  "id": "arith_order",
+  "section": "arithmetic",
+  "proto": "{2+3*4}"
+ },
+ {
+  "id": "arith_paren",
+  "section": "arithmetic",
+  "proto": "{2*(3+4)}"
+ },
+ {
+  "id": "arith_mixed",
+  "section": "arithmetic",
+  "proto": "{100/4+6}"
+ },
+ {
+  "id": "frac_add",
+  "section": "fractions",
+  "proto": "{frac({1},{2})+frac({1},{3})}"
+ },
+ {
+  "id": "frac_mul",
+  "section": "fractions",
+  "proto": "{frac({2},{3})*frac({3},{4})}"
+ },
+ {
+  "id": "frac_div",
+  "section": "fractions",
+  "proto": "{frac({3},{4})/frac({1},{2})}"
+ },
+ {
+  "id": "frac_reduce",
+  "section": "fractions",
+  "proto": "{frac({6},{8})}"
+ },
+ {
+  "id": "root_perfect",
+  "section": "powers_roots",
+  "proto": "{root2({16})}"
+ },
+ {
+  "id": "root_irrational",
+  "section": "powers_roots",
+  "proto": "{root2({12})}"
+ },
+ {
+  "id": "lin_basic",
+  "section": "linear_equations",
+  "proto": "{=({2x+3},{7})}"
+ },
+ {
+  "id": "lin_both",
+  "section": "linear_equations",
+  "proto": "{=({3x-1},{2x+4})}"
+ },
+ {
+  "id": "lin_frac",
+  "section": "linear_equations",
+  "proto": "{=({frac({x},{2})},{5})}"
+ },
+ {
+  "id": "quad_factor",
+  "section": "quadratic_equations",
+  "proto": "{=({x^2-5x+6},{0})}"
+ },
+ {
+  "id": "quad_complex",
+  "section": "quadratic_equations",
+  "proto": "{=({x^2+2x+5},{0})}"
+ },
+ {
+  "id": "quad_diff_sq",
+  "section": "quadratic_equations",
+  "proto": "{=({x^2-4},{0})}"
+ },
+ {
+  "id": "quad_lead",
+  "section": "quadratic_equations",
+  "proto": "{=({2x^2+3x-2},{0})}"
+ },
+ {
+  "id": "ineq_lin",
+  "section": "inequalities",
+  "proto": "{<({2x+1},{5})}"
+ },
+ {
+  "id": "ineq_quad",
+  "section": "inequalities",
+  "proto": "{<({x^2-5x+6},{0})}"
+ },
+ {
+  "id": "abs_eq",
+  "section": "absolute_value",
+  "proto": "{=({abs({x-2})},{3})}"
+ },
+ {
+  "id": "radical_eq",
+  "section": "radical_equations",
+  "proto": "{=({root2({x})},{2})}"
+ },
+ {
+  "id": "trig_value",
+  "section": "trigonometry",
+  "proto": "{sin({deg({30})})}"
+ },
+ {
+  "id": "trig_eq",
+  "section": "trigonometry",
+  "proto": "{=({sin({x})},{frac({1},{2})})}"
+ },
+ {
+  "id": "fact_5",
+  "section": "combinatorics",
+  "proto": "{factorial({5})}"
+ },
+ {
+  "id": "frac_add_reduce",
+  "section": "fractions",
+  "proto": "{frac({1},{2})+frac({1},{6})}"
+ },
+ {
+  "id": "frac_sub",
+  "section": "fractions",
+  "proto": "{frac({3},{4})-frac({1},{6})}"
+ },
+ {
+  "id": "frac_mul_nocancel",
+  "section": "fractions",
+  "proto": "{frac({1},{2})*frac({1},{3})}"
+ },
+ {
+  "id": "frac_mul_whole",
+  "section": "fractions",
+  "proto": "{2*frac({3},{4})}"
+ },
+ {
+  "id": "frac_div_nocancel",
+  "section": "fractions",
+  "proto": "{frac({1},{2})/frac({1},{3})}"
+ },
+ {
+  "id": "frac_add3",
+  "section": "fractions",
+  "proto": "{frac({1},{2})+frac({1},{3})+frac({1},{6})}"
+ },
+ {
+  "id": "frac_add_int",
+  "section": "fractions",
+  "proto": "{frac({1},{2})+1}"
+ },
+ {
+  "id": "trig_cos60",
+  "section": "trigonometry",
+  "proto": "{cos({deg({60})})}"
+ },
+ {
+  "id": "trig_tan45",
+  "section": "trigonometry",
+  "proto": "{tan({deg({45})})}"
+ },
+ {
+  "id": "abs_neg",
+  "section": "absolute_value",
+  "proto": "{abs({-5})}"
+ },
+ {
+  "id": "pow_5sq",
+  "section": "powers_roots",
+  "proto": "{5^2}"
+ },
+ {
+  "id": "quad_double",
+  "section": "quadratic_equations",
+  "proto": "{=({x^2-4x+4},{0})}"
+ },
+ {
+  "id": "quad_irr",
+  "section": "quadratic_equations",
+  "proto": "{=({x^2-2},{0})}"
+ },
+ {
+  "id": "quad_pos",
+  "section": "quadratic_equations",
+  "proto": "{=({x^2+4x+3},{0})}"
+ },
+ {
+  "id": "quad_negc",
+  "section": "quadratic_equations",
+  "proto": "{=({x^2-x-6},{0})}"
+ },
+ {
+  "id": "ineq_gt",
+  "section": "inequalities",
+  "proto": "{>({3x-2},{7})}"
+ },
+ {
+  "id": "ineq_neg",
+  "section": "inequalities",
+  "proto": "{<({-2x},{4})}"
+ },
+ {
+  "id": "ineq_quad_gt",
+  "section": "inequalities",
+  "proto": "{>({x^2-4},{0})}"
+ },
+ {
+  "id": "lin_neg",
+  "section": "linear_equations",
+  "proto": "{=({-2x+3},{7})}"
+ },
+ {
+  "id": "lin_paren",
+  "section": "linear_equations",
+  "proto": "{=({2*(x+1)},{8})}"
+ },
+ {
+  "id": "dec_add",
+  "section": "arithmetic",
+  "proto": "{2.5+0.5}"
+ },
+ {
+  "id": "cos_eq",
+  "section": "trigonometry",
+  "proto": "{=({cos({x})},{1/2})}"
+ },
+ {
+  "id": "tan_eq",
+  "section": "trigonometry",
+  "proto": "{=({tan({x})},{1})}"
+ },
+ {
+  "id": "sqrt_sum",
+  "section": "powers_roots",
+  "proto": "{root2({9})+root2({16})}"
+ },
+ {
+  "id": "d_x2",
+  "section": "derivatives",
+  "proto": "{derivation_diff({x},{x^2})}"
+ },
+ {
+  "id": "d_poly",
+  "section": "derivatives",
+  "proto": "{derivation_diff({x},{3x^2+2x})}"
+ },
+ {
+  "id": "d_sin",
+  "section": "derivatives",
+  "proto": "{derivation_diff({x},{sin({x})})}"
+ },
+ {
+  "id": "int_x2",
+  "section": "integrals",
+  "proto": "{integral({x^2})}"
+ },
+ {
+  "id": "int_poly",
+  "section": "integrals",
+  "proto": "{integral({3x^2+2x})}"
+ },
+ {
+  "id": "int_sin",
+  "section": "integrals",
+  "proto": "{integral({sin({x})})}"
+ },
+ {
+  "id": "lim_x2",
+  "section": "limits",
+  "proto": "{lim({2},{x^2})}"
+ },
+ {
+  "id": "log_1000",
+  "section": "powers_roots",
+  "proto": "{log10({1000})}"
+ },
+ {
+  "id": "trig_sin45",
+  "section": "trigonometry",
+  "proto": "{sin({deg({45})})}"
+ },
+ {
+  "id": "trig_cos30",
+  "section": "trigonometry",
+  "proto": "{cos({deg({30})})}"
+ },
+ {
+  "id": "abs_ineq",
+  "section": "absolute_value",
+  "proto": "{<({abs({x})},{3})}"
+ },
+ {
+  "id": "rat_eq",
+  "section": "rational",
+  "proto": "{=({frac({1},{x})},{2})}"
+ },
+ {
+  "id": "pct",
+  "section": "arithmetic",
+  "proto": "{percent({20})*50}"
+ },
+ {
+  "id": "neg_arith",
+  "section": "arithmetic",
+  "proto": "{-3-(-5)}"
+ },
+ {
+  "id": "paren_arith",
+  "section": "arithmetic",
+  "proto": "{(2+3)*4}"
+ },
+ {
+  "id": "arith3",
+  "section": "arithmetic",
+  "proto": "{2+3*4-5}"
+ },
+ {
+  "id": "dec_mul",
+  "section": "arithmetic",
+  "proto": "{1.5*4}"
+ },
+ {
+  "id": "eq_sq9",
+  "section": "quadratic_equations",
+  "proto": "{=({x^2},{9})}"
+ },
+ {
+  "id": "eq_3x2",
+  "section": "quadratic_equations",
+  "proto": "{=({3x^2},{12})}"
+ },
+ {
+  "id": "ineq_sq1",
+  "section": "inequalities",
+  "proto": "{>({x^2+1},{0})}"
+ },
+ {
+  "id": "d_cos",
+  "section": "derivatives",
+  "proto": "{derivation_diff({x},{cos({x})})}"
+ },
+ {
+  "id": "d_5x",
+  "section": "derivatives",
+  "proto": "{derivation_diff({x},{5x})}"
+ },
+ {
+  "id": "lim_lin",
+  "section": "limits",
+  "proto": "{lim({3},{2x+1})}"
+ },
+ {
+  "id": "log_eq",
+  "section": "logarithms",
+  "proto": "{=({log10({x})},{2})}"
+ },
+ {
+  "id": "abs_lin",
+  "section": "absolute_value",
+  "proto": "{=({abs({2x-1})},{5})}"
+ },
+ {
+  "id": "quad_common",
+  "section": "quadratic_equations",
+  "proto": "{=({x^2-x},{0})}"
+ },
+ {
+  "id": "int_6x",
+  "section": "integrals",
+  "proto": "{integral({6x})}"
+ },
+ {
+  "id": "int_5",
+  "section": "integrals",
+  "proto": "{integral({5})}"
+ },
+ {
+  "id": "ineq_both",
+  "section": "inequalities",
+  "proto": "{<({3x-2},{x+4})}"
+ },
+ {
+  "id": "frac_x3",
+  "section": "linear_equations",
+  "proto": "{=({frac({x},{3})},{2})}"
+ },
+ {
+  "id": "mat_det",
+  "section": "matrices",
+  "proto": "{mat({mat_row({1},{2})},{mat_row({3},{4})})}"
+ },
+ {
+  "id": "sum_i",
+  "section": "series",
+  "proto": "{sigma_def({i},{1},{5},{i})}"
+ },
+ {
+  "id": "perm_52",
+  "section": "combinatorics",
+  "proto": "{permutation({5},{2})}"
+ },
+ {
+  "id": "sum_sq",
+  "section": "series",
+  "proto": "{sigma_def({i},{1},{4},{i^2})}"
+ },
+ {
+  "id": "sys_lin",
+  "section": "systems",
+  "proto": "{system({=({x+y},{3})},{=({x-y},{1})})}"
+ },
+ {
+  "id": "sys_sub",
+  "section": "systems",
+  "proto": "{system({=({y},{2x})},{=({x+y},{6})})}"
+ },
+ {
+  "id": "cplx_mul",
+  "section": "complex",
+  "proto": "{(2+imag({}))*(1-imag({}))}"
+ },
+ {
+  "id": "sys_coef",
+  "section": "systems",
+  "proto": "{system({=({2x+y},{5})},{=({x-y},{1})})}"
+ },
+ {
+  "id": "d_chain",
+  "section": "derivatives",
+  "proto": "{derivation_diff({x},{sin({2x})})}"
+ },
+ {
+  "id": "d_prod",
+  "section": "derivatives",
+  "proto": "{derivation_diff({x},{x^2})*sin({x})}"
+ },
+ {
+  "id": "abs_arith",
+  "section": "absolute_value",
+  "proto": "{abs({-5})}"
+ },
+ {
+  "id": "sqrt_prod",
+  "section": "powers_roots",
+  "proto": "{root2({8})*root2({2})}"
+ },
+ {
+  "id": "quad_neg_lead",
+  "section": "quadratic_equations",
+  "proto": "{=({-x^2+4},{0})}"
+ },
+ {
+  "id": "lin_dec",
+  "section": "linear_equations",
+  "proto": "{=({0.5x},{2})}"
+ },
+ {
+  "id": "lin_both_neg",
+  "section": "linear_equations",
+  "proto": "{=({-x+5},{2x-1})}"
+ },
+ {
+  "id": "lin_paren2",
+  "section": "linear_equations",
+  "proto": "{=({3*(x-2)},{2x+1})}"
+ },
+ {
+  "id": "pow_eq",
+  "section": "exponential",
+  "proto": "{=({2^x},{8})}"
+ },
+ {
+  "id": "cube_eq",
+  "section": "powers_roots",
+  "proto": "{=({x^3},{8})}"
+ },
+ {
+  "id": "sqrt_27",
+  "section": "powers_roots",
+  "proto": "{root2({27})}"
+ },
+ {
+  "id": "pow_prod",
+  "section": "powers_roots",
+  "proto": "{2^3*2^4}"
+ },
+ {
+  "id": "frac_sum_eq",
+  "section": "linear_equations",
+  "proto": "{=({frac({x},{2})+frac({x},{3})},{5})}"
+ },
+ {
+  "id": "pow_eq3",
+  "section": "exponential",
+  "proto": "{=({3^x},{27})}"
+ },
+ {
+  "id": "sq_arith",
+  "section": "powers_roots",
+  "proto": "{3^2+4^2}"
+ },
+ {
+  "id": "pow_neg",
+  "section": "powers_roots",
+  "proto": "{2^-2}"
+ },
+ {
+  "id": "cbrt_27",
+  "section": "powers_roots",
+  "proto": "{root({3},{27})}"
+ },
+ {
+  "id": "sys_mul",
+  "section": "systems",
+  "proto": "{system({=({2x+3y},{8})},{=({x+y},{3})})}"
+ },
+ {
+  "id": "sys_mul2",
+  "section": "systems",
+  "proto": "{system({=({3x+2y},{12})},{=({x-y},{1})})}"
+ },
+ {
+  "id": "d_3x2",
+  "section": "derivatives",
+  "proto": "{derivation_diff({x},{3x^2})}"
+ },
+ {
+  "id": "int_lin",
+  "section": "integrals",
+  "proto": "{integral({2x+3})}"
+ },
+ {
+  "id": "trig_tan60",
+  "section": "trigonometry",
+  "proto": "{tan({deg({60})})}"
+ },
+ {
+  "id": "ineq_both2",
+  "section": "inequalities",
+  "proto": "{>({2x-5},{x+3})}"
+ },
+ {
+  "id": "exp_sq",
+  "section": "algebra",
+  "proto": "{(x+1)^2}"
+ },
+ {
+  "id": "fac_x2_9",
+  "section": "algebra",
+  "proto": "{x^2-9}"
+ },
+ {
+  "id": "simp_like",
+  "section": "algebra",
+  "proto": "{2x+3x}"
+ },
+ {
+  "id": "rat_simp",
+  "section": "algebra",
+  "proto": "{frac({x^2-1},{x-1})}"
+ },
+ {
+  "id": "fac_trinom",
+  "section": "algebra",
+  "proto": "{x^2+5x+6}"
+ },
+ {
+  "id": "exp_prod",
+  "section": "algebra",
+  "proto": "{(x+2)*(x-3)}"
+ },
+ {
+  "id": "sub_val",
+  "section": "algebra",
+  "proto": "{2*(3+4)-5}"
+ },
+ {
+  "id": "frac_mixed",
+  "section": "arithmetic",
+  "proto": "{frac({3},{4})-frac({1},{6})}"
+ },
+ {
+  "id": "exp_sq3",
+  "section": "algebra",
+  "proto": "{(x+3)^2}"
+ },
+ {
+  "id": "exp_sqm2",
+  "section": "algebra",
+  "proto": "{(x-2)^2}"
+ },
+ {
+  "id": "lim_inf",
+  "section": "limits",
+  "proto": "{lim({inf},{frac({1},{x})})}"
+ },
+ {
+  "id": "exp_cube",
+  "section": "algebra",
+  "proto": "{(x+1)^3}"
+ },
+ {
+  "id": "d_prod2",
+  "section": "calculus",
+  "proto": "{derivation_diff({x},{x*sin({x})})}"
+ },
+ {
+  "id": "d_exp",
+  "section": "calculus",
+  "proto": "{derivation_diff({x},{\\e^x})}"
+ },
+ {
+  "id": "int_cos",
+  "section": "calculus",
+  "proto": "{integral({cos({x})})}"
+ },
+ {
+  "id": "lim_sinx",
+  "section": "limits",
+  "proto": "{lim({0},{frac({sin({x})},{x})})}"
+ },
+ {
+  "id": "mat_add",
+  "section": "matrices",
+  "proto": "{mat({mat_row({1},{2})},{mat_row({3},{4})})+mat({mat_row({1},{0})},{mat_row({0},{1})})}"
+ },
+ {
+  "id": "log_prod",
+  "section": "logs",
+  "proto": "{log10({2})+log10({5})}"
+ },
+ {
+  "id": "quad_frac",
+  "section": "quadratic",
+  "proto": "{2*x^2-x-1=0}"
+ },
+ {
+  "id": "sqrt_neg",
+  "section": "powers_roots",
+  "proto": "{root2({-4})}"
+ },
+ {
+  "id": "cplx_div",
+  "section": "complex",
+  "proto": "{frac({1+\\i},{1-\\i})}"
+ },
+ {
+  "id": "cplx_pow",
+  "section": "complex",
+  "proto": "{(1+\\i)^2}"
+ },
+ {
+  "id": "sys_3x3",
+  "section": "systems",
+  "proto": "{system({=({x+y+z},{6})},{=({x-y},{-1})},{=({y+z},{5})})}"
+ },
+ {
+  "id": "quad_ineq_le",
+  "section": "inequalities",
+  "proto": "{<({x^2-9},{0})}"
+ },
+ {
+  "id": "q_neg_neg",
+  "section": "quadratic",
+  "proto": "{=({x^2-4x-5},{0})}"
+ },
+ {
+  "id": "q_pos_neg",
+  "section": "quadratic",
+  "proto": "{=({x^2+x-6},{0})}"
+ },
+ {
+  "id": "q_a3",
+  "section": "quadratic",
+  "proto": "{=({3x^2-7x+2},{0})}"
+ },
+ {
+  "id": "q_a2_pos",
+  "section": "quadratic",
+  "proto": "{=({2x^2+5x+2},{0})}"
+ },
+ {
+  "id": "q_negA",
+  "section": "quadratic",
+  "proto": "{=({-x^2+5x-6},{0})}"
+ },
+ {
+  "id": "int_xsin",
+  "section": "calculus",
+  "proto": "{integral({x*sin({x})})}"
+ },
+ {
+  "id": "lin_frac2",
+  "section": "linear",
+  "proto": "{=({frac({2},{3})+x},{frac({5},{6})})}"
+ },
+ {
+  "id": "ineq_div",
+  "section": "inequalities",
+  "proto": "{>({frac({x},{2})},{3})}"
+ },
+ {
+  "id": "arith_neg",
+  "section": "arithmetic",
+  "proto": "{7-(-3)}"
+ },
+ {
+  "id": "pow_exp2",
+  "section": "powers",
+  "proto": "{=({2^(x+1)},{8})}"
+ },
+ {
+  "id": "d_quot",
+  "section": "calculus",
+  "proto": "{derivation_diff({x},{frac({x},{x+1})})}"
+ },
+ {
+  "id": "exp_cube_m",
+  "section": "algebra",
+  "proto": "{(x-1)^3}"
+ }
+]

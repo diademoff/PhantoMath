@@ -1,0 +1,171 @@
+{
+  "module": "polynomial_high",
+  "tasks": [
+    {
+      "id": "cubic-three-roots",
+      "title": "x³ − 6x² + 11x − 6 = 0 → 1, 2, 3",
+      "input": "{=({x^3-6x^2+11x-6},{0})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "1"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "3"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "write_as_diff_fact",
+        "write_as_sum_fact",
+        "extract_arg",
+        "extract_arg",
+        "extract_arg",
+        "extract_arg",
+        "write_as_diff_fact",
+        "extract_arg",
+        "extract_arg",
+        "extract_arg",
+        "quad_separate_zero_product",
+        "eq_linear",
+        "eq_linear",
+        "eq_linear",
+        "solution_eq_num"
+      ]
+    },
+    {
+      "id": "biquadratic",
+      "title": "x⁴ − 5x² + 4 = 0 → ±1, ±2",
+      "input": "{=({x^4-5x^2+4},{0})}",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "-2"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "-1"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "1"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "eq_quad_substitute",
+        "eq_linear",
+        "sub_msg_ret",
+        "eq_linear",
+        "eq_linear",
+        "solution_eq_num"
+      ]
+    },
+    {
+      "id": "cube-root",
+      "title": "x³ = 2 → x = ∛2 (точный корень)",
+      "input": "{=({x^3},{2})}",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "x"
+          },
+          {
+            "type": "ROOT",
+            "children": [
+              {
+                "type": "CONSTANT",
+                "value": "3"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "eq_root"
+      ]
+    }
+  ]
+}

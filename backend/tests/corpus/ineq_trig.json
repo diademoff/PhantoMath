@@ -1,0 +1,439 @@
+{
+  "module": "ineq_trig",
+  "tasks": [
+    {
+      "id": "sine",
+      "title": "sin x > 1/2 на [0, 2π] → (π/6, 5π/6)",
+      "input": "{gt({sin({x})},{frac({1},{2})})}",
+      "command": "inequality_on_interval",
+      "args": [
+        "{0}",
+        "{2*pi}"
+      ],
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {
+            "type": "FRACTION",
+            "children": [
+              {
+                "type": "CONSTANT",
+                "value": "π"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "6"
+              }
+            ]
+          },
+          {
+            "type": "FRACTION",
+            "children": [
+              {
+                "type": "MULTIPLY_IMPLICIT",
+                "children": [
+                  {
+                    "type": "CONSTANT",
+                    "value": "5"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "π"
+                  }
+                ]
+              },
+              {
+                "type": "CONSTANT",
+                "value": "6"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "ineq_solve_short"
+      ]
+    },
+    {
+      "id": "polynomial-closed",
+      "title": "x² ≤ 4 на [−5, 5] → [−2, 2]",
+      "input": "{lte({x^2},{4})}",
+      "command": "inequality_on_interval",
+      "args": [
+        "{-5}",
+        "{5}"
+      ],
+      "solution": {
+        "type": "CLOSED_CLOSED_INTERVAL",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "-2"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          }
+        ]
+      },
+      "steps": [
+        "ineq_solve_short"
+      ]
+    },
+    {
+      "id": "rational-pole",
+      "title": "1/(x−2) > 0 на [−5, 5] → (2, 5]",
+      "input": "{gt({frac({1},{x-2})},{0})}",
+      "command": "inequality_on_interval",
+      "args": [
+        "{-5}",
+        "{5}"
+      ],
+      "solution": {
+        "type": "OPEN_CLOSED_INTERVAL",
+        "children": [
+          {
+            "type": "CONSTANT",
+            "value": "2"
+          },
+          {
+            "type": "CONSTANT",
+            "value": "5"
+          }
+        ]
+      },
+      "steps": [
+        "ineq_quotient_pos_num_gt",
+        "ineq_solve_short"
+      ]
+    },
+    {
+      "id": "sine-gt-half-periodic",
+      "title": "sin x > 1/2 — периодический промежуток",
+      "input": "{gt({sin({x})},{frac({1},{2})})}",
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "FRACTION",
+                "children": [
+                  {
+                    "type": "CONSTANT",
+                    "value": "π"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "6"
+                  }
+                ]
+              },
+              {
+                "type": "MULTIPLY_IMPLICIT",
+                "children": [
+                  {
+                    "type": "MULTIPLY_IMPLICIT",
+                    "children": [
+                      {
+                        "type": "CONSTANT",
+                        "value": "2"
+                      },
+                      {
+                        "type": "VARIABLE",
+                        "value": "k"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "π"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "FRACTION",
+                "children": [
+                  {
+                    "type": "MULTIPLY_IMPLICIT",
+                    "children": [
+                      {
+                        "type": "CONSTANT",
+                        "value": "5"
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "π"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "6"
+                  }
+                ]
+              },
+              {
+                "type": "MULTIPLY_IMPLICIT",
+                "children": [
+                  {
+                    "type": "MULTIPLY_IMPLICIT",
+                    "children": [
+                      {
+                        "type": "CONSTANT",
+                        "value": "2"
+                      },
+                      {
+                        "type": "VARIABLE",
+                        "value": "k"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "π"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "trig_find_intervals_smpl",
+        "trig_general_sol"
+      ]
+    },
+    {
+      "id": "sine-ge-half-closed",
+      "title": "sin x ≥ 1/2 — закрытые концы",
+      "input": "{gte({sin({x})},{frac({1},{2})})}",
+      "solution": {
+        "type": "CLOSED_CLOSED_INTERVAL",
+        "children": [
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "FRACTION",
+                "children": [
+                  {
+                    "type": "CONSTANT",
+                    "value": "π"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "6"
+                  }
+                ]
+              },
+              {
+                "type": "MULTIPLY_IMPLICIT",
+                "children": [
+                  {
+                    "type": "MULTIPLY_IMPLICIT",
+                    "children": [
+                      {
+                        "type": "CONSTANT",
+                        "value": "2"
+                      },
+                      {
+                        "type": "VARIABLE",
+                        "value": "k"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "π"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "FRACTION",
+                "children": [
+                  {
+                    "type": "MULTIPLY_IMPLICIT",
+                    "children": [
+                      {
+                        "type": "CONSTANT",
+                        "value": "5"
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "π"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "6"
+                  }
+                ]
+              },
+              {
+                "type": "MULTIPLY_IMPLICIT",
+                "children": [
+                  {
+                    "type": "MULTIPLY_IMPLICIT",
+                    "children": [
+                      {
+                        "type": "CONSTANT",
+                        "value": "2"
+                      },
+                      {
+                        "type": "VARIABLE",
+                        "value": "k"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "π"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "trig_find_intervals_smpl",
+        "trig_general_sol"
+      ]
+    },
+    {
+      "id": "abs-sine-gt-half",
+      "title": "|sin x| > 1/2 — период π (метод интервалов)",
+      "input": "{gt({abs({sin({x})})},{frac({1},{2})})}",
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "FRACTION",
+                "children": [
+                  {
+                    "type": "CONSTANT",
+                    "value": "π"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "6"
+                  }
+                ]
+              },
+              {
+                "type": "MULTIPLY_IMPLICIT",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "k"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "π"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "FRACTION",
+                "children": [
+                  {
+                    "type": "MULTIPLY_IMPLICIT",
+                    "children": [
+                      {
+                        "type": "CONSTANT",
+                        "value": "5"
+                      },
+                      {
+                        "type": "CONSTANT",
+                        "value": "π"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "6"
+                  }
+                ]
+              },
+              {
+                "type": "MULTIPLY_IMPLICIT",
+                "children": [
+                  {
+                    "type": "VARIABLE",
+                    "value": "k"
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "π"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "trig_find_intervals_smpl",
+        "trig_general_sol"
+      ]
+    },
+    {
+      "id": "sine-lt-two-all",
+      "title": "sin x < 2 — верное для всех x утверждение",
+      "input": "{lt({sin({x})},{2})}",
+      "solution": {
+        "type": "OPEN_OPEN_INTERVAL",
+        "children": [
+          {
+            "type": "NEGATIVE",
+            "children": [
+              {
+                "type": "CONSTANT",
+                "value": "∞"
+              }
+            ]
+          },
+          {
+            "type": "CONSTANT",
+            "value": "∞"
+          }
+        ]
+      },
+      "steps": [
+        "rel_el_of_r"
+      ]
+    },
+    {
+      "id": "sine-gt-two-empty",
+      "title": "sin x > 2 — решений нет",
+      "input": "{gt({sin({x})},{2})}",
+      "solution": {
+        "type": "EMPTY"
+      },
+      "steps": [
+        "rel_el_of_zero"
+      ]
+    }
+  ]
+}

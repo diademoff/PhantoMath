@@ -1,0 +1,213 @@
+{
+  "module": "system_param",
+  "tasks": [
+    {
+      "id": "parametric",
+      "title": "x + y = 2, 2x + 2y = 4 — бесконечно много решений",
+      "input": "system({=({x+y},{2})},{=({2x+2y},{4})})",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "SUBTRACT",
+                "children": [
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  },
+                  {
+                    "type": "VARIABLE",
+                    "value": "y"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ELEMENT_OF",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "y"
+              },
+              {
+                "type": "VARIABLE",
+                "value": "ℝ"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "lesson_disc_system_matrix",
+        "lesson_disc_eliminate",
+        "lesson_disc_system_rank_infinite",
+        "lesson_disc_system_free_unknowns_basic"
+      ]
+    },
+    {
+      "id": "substitution-method",
+      "title": "x + y = 3, x − y = 1 — способ подстановки (2-й)",
+      "input": "system({=({x+y},{3})},{=({x-y},{1})})",
+      "method": 1,
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "y"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "1"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "system_2x2_sum",
+        "eq_linear_div",
+        "system_substitute_value",
+        "eq_linear",
+        "system_2x2_res",
+        "system_2x2_check",
+        "system_ver",
+        "system_2x2_check_t"
+      ]
+    },
+    {
+      "id": "addition-method",
+      "title": "x + y = 3, x − y = 1 — способ сложения (3-й)",
+      "input": "system({=({x+y},{3})},{=({x-y},{1})})",
+      "method": 2,
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "y"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "1"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "rel_move_right_var",
+        "rel_move_right_var",
+        "system_2x2_equalise",
+        "eq_linear",
+        "system_substitute_value",
+        "eq_linear",
+        "system_2x2_res",
+        "system_2x2_check",
+        "system_ver",
+        "system_2x2_check_t"
+      ]
+    },
+    {
+      "id": "no-solution",
+      "title": "x + y = 1, x + y = 2 — решений нет",
+      "input": "system({=({x+y},{1})},{=({x+y},{2})})",
+      "solution": {
+        "type": "EMPTY",
+        "children": []
+      },
+      "steps": [
+        "lesson_disc_system_matrix",
+        "lesson_disc_eliminate",
+        "lesson_disc_system_contradiction_row",
+        "lesson_disc_system_rank_inconsistent"
+      ]
+    },
+    {
+      "id": "check-true",
+      "title": "проверка решения (2, 1) системы x+y=3, x−y=1",
+      "input": "system({=({x+y},{3})},{=({x-y},{1})})",
+      "command": "system_check",
+      "args": [
+        "{2}",
+        "{1}"
+      ],
+      "solution": {
+        "type": "TEXT",
+        "children": [
+          {
+            "type": "TEXT_KEY",
+            "value": "true"
+          }
+        ]
+      },
+      "steps": [
+        "system_2x2_check",
+        "system_2x2_check_t_vert_arg"
+      ]
+    },
+    {
+      "id": "check-false",
+      "title": "проверка (1, 1) системы x+y=3, x−y=1",
+      "input": "system({=({x+y},{3})},{=({x-y},{1})})",
+      "command": "system_check",
+      "args": [
+        "{1}",
+        "{1}"
+      ],
+      "solution": {
+        "type": "TEXT",
+        "children": [
+          {
+            "type": "TEXT_KEY",
+            "value": "false"
+          }
+        ]
+      },
+      "steps": [
+        "system_2x2_check",
+        "system_2x2_check_f_vert_arg"
+      ]
+    }
+  ]
+}

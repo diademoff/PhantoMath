@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<hierarchy rotation="0">
+  <node index="0" text="" resource-id="" class="android.widget.FrameLayout" package="com.mymath.mymath_app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,0][1080,2340]">
+    <node index="0" text="Ответ" resource-id="" class="android.widget.TextView" package="com.mymath.mymath_app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[44,100][300,160]" />
+    <node index="1" text="" resource-id="" class="android.view.View" package="com.mymath.mymath_app" content-desc="y = C e^{x}" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[44,200][900,320]" />
+    <node index="2" text="Шаг 1" resource-id="" class="android.widget.TextView" package="com.mymath.mymath_app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[44,400][300,460]" />
+    <node index="3" text="1/5. Положим" resource-id="" class="android.widget.TextView" package="com.mymath.mymath_app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[200,500][1000,560]" />
+    <node index="4" text="" resource-id="" class="android.view.View" package="com.mymath.mymath_app" content-desc="2" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[44,500][120,560]" />
+  </node>
+</hierarchy>

@@ -1,0 +1,99 @@
+{
+  "module": "systems",
+  "tasks": [
+    {
+      "id": "simple-2x2",
+      "title": "система x + y = 3, x - y = 1",
+      "input": "system({=({x+y},{3})},{=({x-y},{1})})",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "y"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "1"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "eq_linear",
+        "system_substitute_value",
+        "eq_linear",
+        "system_substitute_value",
+        "eq_linear",
+        "system_2x2_res",
+        "system_2x2_check",
+        "system_ver",
+        "system_2x2_check_t"
+      ]
+    },
+    {
+      "id": "coefficients",
+      "title": "система 2x + 3y = 12, x - y = 1",
+      "input": "system({=({2x+3y},{12})},{=({x-y},{1})})",
+      "solution": {
+        "type": "LIST",
+        "children": [
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "x"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "3"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "children": [
+              {
+                "type": "VARIABLE",
+                "value": "y"
+              },
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "eq_linear",
+        "system_substitute_value",
+        "eq_linear",
+        "system_substitute_value",
+        "eq_linear",
+        "system_2x2_res",
+        "system_2x2_check",
+        "system_ver",
+        "system_2x2_check_t"
+      ]
+    }
+  ]
+}

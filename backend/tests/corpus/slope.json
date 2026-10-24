@@ -1,0 +1,98 @@
+{
+  "module": "slope",
+  "tasks": [
+    {
+      "id": "general-form",
+      "title": "2x + 3y = 6 → y = 2 − 2x/3",
+      "input": "{=({2x+3y},{6})}",
+      "command": "slope_intercept",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "y"
+          },
+          {
+            "type": "SUBTRACT",
+            "children": [
+              {
+                "type": "CONSTANT",
+                "value": "2"
+              },
+              {
+                "type": "FRACTION",
+                "children": [
+                  {
+                    "type": "MULTIPLY_IMPLICIT",
+                    "children": [
+                      {
+                        "type": "CONSTANT",
+                        "value": "2"
+                      },
+                      {
+                        "type": "VARIABLE",
+                        "value": "x"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "CONSTANT",
+                    "value": "3"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "rewrite_in_slope_intercept_form",
+        "identify_y_intercept_as_const_term",
+        "slope_and_y_intercept"
+      ]
+    },
+    {
+      "id": "slope-form",
+      "title": "y = 2x + 3",
+      "input": "{=({y},{2x+3})}",
+      "command": "slope_intercept",
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {
+            "type": "VARIABLE",
+            "value": "y"
+          },
+          {
+            "type": "ADD",
+            "children": [
+              {
+                "type": "CONSTANT",
+                "value": "3"
+              },
+              {
+                "type": "MULTIPLY_IMPLICIT",
+                "children": [
+                  {
+                    "type": "CONSTANT",
+                    "value": "2"
+                  },
+                  {
+                    "type": "VARIABLE",
+                    "value": "x"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "steps": [
+        "rewrite_in_slope_intercept_form",
+        "identify_y_intercept_as_const_term",
+        "slope_and_y_intercept"
+      ]
+    }
+  ]
+}

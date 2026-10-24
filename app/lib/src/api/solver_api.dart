@@ -1,0 +1,644 @@
+/// Клиент бэкенда решателя.
+///
+/// Формат запроса и ответа — контракт решателя (`docs/ARCHITECTURE.md`): на входе `CoreNode`, на выходе
+/// `CoreSolverData` с вертикальными шагами и готовыми текстами пояснений.
+library;
+
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
+import '../i18n.dart';
+import '../model/core_node.dart';
+
+/// Бэкенд не смог решить задачу — это не поломка сервиса.
+class SolveFailure implements Exception {
+  const SolveFailure(this.message, {this.explanationKey});
+
+  /// Текст для показа пользователю.
+  final String message;
+
+  /// Ключ словаря объяснений, если бэкенд его прислал.
+  final String? explanationKey;
+
+  @override
+  String toString() => message;
+}
+
+/// Ответ бэкенда: дерево, шаги и тексты.
+///
+/// Если решатель предложил несколько способов решения, в [methods] лежат все
+/// (включая основной); [steps] повторяют первый способ, а [solution] берётся
+/// из верхнего ответа — он может быть вердиктом (например, `x ∉ ℝ`).
+class SolveResponse {
+  const SolveResponse({
+    required this.steps,
+    this.solution,
+    this.methods = const [],
+    this.selectMethodText,
+    this.header,
+    this.alternatives = const [],
+  });
+
+  /// Шаги решения по порядку следования.
+  final List<SolveStep> steps;
+
+  /// Итоговый ответ, если бэкенд его посчитал.
+  final CoreNode? solution;
+
+  /// Способы решения: основной и альтернативные. Пусто, если способ один.
+  final List<SolveResponse> methods;
+
+  /// Подпись переключателя способов («показать другой способ»).
+  final String? selectMethodText;
+  final String? header;
+
+  /// Альтернативные формы ответа: десятичная, смешанное число, обыкновенная дробь.
+  final List<CoreNode> alternatives;
+
+  /// LaTeX вердикта, когда узла ответа нет: у противоречия решений нет, у тождества — любое
+  /// число. Ключи шагов задаёт решатель (`false_statement_solve`, `solutions_inf_many`).
+  String? get verdictLatex {
+    const undefinedKeys = {'root_sqr_neg', 'log_neg_arg', 'log_undef_zero'};
+    final undefined = steps.any(
+      (step) =>
+          step.substeps.any((s) => undefinedKeys.contains(s.explanationKey)),
+    );
+    if (undefined) {
+      return tr(r'\text{Не определён}', r'\text{Undefined}');
+    }
+    if (steps.any(
+      (step) =>
+          step.substeps.any((s) => s.explanationKey == 'matrix_inv_det_zero'),
+    )) {
+      return tr(
+        r'A^{-1}\text{ не существует}',
+        r'A^{-1}\text{ does not exist}',
+      );
+    }
+    if (steps.any(
+      (step) => step.substeps.any(
+        (s) => s.explanationKey == 'limit_does_not_exist_msg',
+      ),
+    )) {
+      return tr(r'\text{Предел не существует}', r'\text{Limit does not exist}');
+    }
+    if (solution?.type == CoreNodeType.empty) {
+      return tr(r'\text{Решений нет}', r'\text{No solutions}');
+    }
+    final keys = {
+      for (final step in steps)
+        for (final substep in step.substeps) substep.explanationKey,
+    };
+    final emptied = steps.any(
+      (step) => step.substeps.any((s) => s.right?.type == CoreNodeType.empty),
+    );
+    if (emptied || keys.contains('false_statement_solve')) {
+      return tr(r'\text{Решений нет}', r'\text{No solutions}');
+    }
+    if (keys.contains('solutions_inf_many')) return r'x\in\mathbb{R}';
+    return null;
+  }
+}
+
+/// Шаг решения: список подшагов под общим заголовком.
+class SolveStep {
+  const SolveStep({
+    this.id = '',
+    this.headers = const [],
+    this.substeps = const [],
+  });
+
+  final String id;
+  final List<String> headers;
+  final List<Substep> substeps;
+}
+
+/// Ссылка в тексте пояснения: метка, идентификатор и определение понятия.
+class ExplanationLink {
+  const ExplanationLink({
+    required this.label,
+    required this.uuid,
+    this.definition = '',
+  });
+
+  final String label;
+  final String uuid;
+
+  /// Краткое определение понятия; пусто, если его нет.
+  final String definition;
+}
+
+/// Подшаг: «было → стало» с пояснением.
+class Substep {
+  const Substep({
+    this.left,
+    this.right,
+    this.text,
+    this.explanationKey,
+    this.links = const [],
+    this.detail = const [],
+    this.id = '',
+    this.subresult,
+    this.parts = const [],
+    this.theory,
+  });
+
+  final CoreNode? left;
+  final CoreNode? right;
+
+  /// Готовый текст пояснения; `null`, если запрос шёл без развёртки.
+  final String? text;
+
+  /// Ключ словаря объяснений — нужен для ссылок «показать другой способ».
+  final String? explanationKey;
+
+  /// Ссылки внутри текста (метка + uuid) для навигации.
+  final List<ExplanationLink> links;
+
+  /// Раскрываемое углублённое пояснение шага (`subresult`): вложенные шаги.
+  /// Пусто, если у шага нет деталей.
+  final List<SolveStep> detail;
+  final String id;
+  final SolveResponse? subresult;
+  final List<ExplanationPart> parts;
+  final TheoryArticle? theory;
+}
+
+class ExplanationPart {
+  const ExplanationPart({this.text, this.node});
+  final String? text;
+  final CoreNode? node;
+}
+
+class TheoryArticle {
+  const TheoryArticle({
+    required this.id,
+    required this.title,
+    required this.summary,
+    this.formula = '',
+    this.conditions = '',
+    this.example = '',
+    this.mistake = '',
+  });
+  final String id;
+  final String title;
+  final String summary;
+  final String formula;
+  final String conditions;
+  final String example;
+  final String mistake;
+
+  static TheoryArticle? parse(Object? raw) {
+    if (raw is! Map<String, dynamic> ||
+        raw['title'] is! String ||
+        raw['summary'] is! String) {
+      return null;
+    }
+    return TheoryArticle(
+      id: raw['id'] as String? ?? '',
+      title: raw['title'] as String,
+      summary: raw['summary'] as String,
+      formula: raw['formula'] as String? ?? '',
+      conditions: raw['conditions'] as String? ?? '',
+      example: raw['example'] as String? ?? '',
+      mistake: raw['mistake'] as String? ?? '',
+    );
+  }
+}
+
+/// Точка графика.
+class GraphPoint {
+  const GraphPoint(this.x, this.y);
+
+  final double x;
+  final double y;
+}
+
+/// Опорные точки графика: корни, пересечение с осью y, экстремумы, асимптоты.
+///
+/// Соответствует меткам `graph_rt_info_*`. Все списки могут быть
+/// пустыми; для кусочно-заданной функции приходит только признак [piecewise].
+class GraphAnnotations {
+  const GraphAnnotations({
+    this.roots = const [],
+    this.yIntercept,
+    this.maxima = const [],
+    this.minima = const [],
+    this.verticalAsymptotes = const [],
+    this.horizontalAsymptotes = const [],
+    this.piecewise = false,
+  });
+
+  final List<GraphPoint> roots;
+  final GraphPoint? yIntercept;
+  final List<GraphPoint> maxima;
+  final List<GraphPoint> minima;
+  final List<double> verticalAsymptotes;
+  final List<double> horizontalAsymptotes;
+  final bool piecewise;
+
+  bool get isEmpty =>
+      roots.isEmpty &&
+      yIntercept == null &&
+      maxima.isEmpty &&
+      minima.isEmpty &&
+      verticalAsymptotes.isEmpty &&
+      horizontalAsymptotes.isEmpty;
+}
+
+/// Данные для графика `y = f(x)`.
+class GraphData {
+  const GraphData({
+    required this.points,
+    required this.xMin,
+    required this.xMax,
+    required this.yMin,
+    required this.yMax,
+    required this.variable,
+    this.annotations = const GraphAnnotations(),
+  });
+
+  final List<GraphPoint> points;
+  final double xMin;
+  final double xMax;
+  final double yMin;
+  final double yMax;
+  final String variable;
+  final GraphAnnotations annotations;
+}
+
+/// Клиент решателя.
+class SolverApi {
+  SolverApi({required this.baseUrl, http.Client? client})
+    : _client = client ?? http.Client();
+
+  /// Адрес бэкенда, например `http://10.0.2.2:8000` с эмулятора Android.
+  final String baseUrl;
+
+  final http.Client _client;
+
+  /// Решить выражение.
+  ///
+  /// Бросает [SolveFailure], если задача не решилась: это ожидаемый
+  /// исход, а не сбой, и вызывающий покажет текст пользователю.
+  Future<SolveResponse> solve(
+    CoreNode node, {
+    String locale = 'default',
+    bool render = true,
+    String? command,
+    List<CoreNode> args = const [],
+    CoreNode? intervalMin,
+    CoreNode? intervalMax,
+    List<CoreNode> definitions = const [],
+  }) async {
+    final response = await _post(Uri.parse('$baseUrl/api/v1/solve'), {
+      'node': _toJson(node),
+      'locale': locale,
+      'render': render,
+      if (command != null)
+        'action': {
+          'command': command,
+          'args': [for (final arg in args) _toJson(arg)],
+        },
+      // Промежуток отбора корней: применим к тригонометрическим уравнениям.
+      if (intervalMin != null && intervalMax != null)
+        'interval': {'min': _toJson(intervalMin), 'max': _toJson(intervalMax)},
+      // Определения функций: вызовы f(…) подставляются перед решением.
+      if (definitions.isNotEmpty)
+        'definitions': [
+          for (final definition in definitions) _toJson(definition),
+        ],
+    });
+
+    if (response.statusCode != 200) {
+      throw _failure(response);
+    }
+    return _parseSolve(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
+  /// Все офлайн-статьи теории для экрана «Теория».
+  Future<List<TheoryArticle>> theory({String locale = 'ru'}) async {
+    final response = await _client.get(
+      Uri.parse('$baseUrl/api/v1/theory?locale=$locale'),
+    );
+    if (response.statusCode != 200) {
+      throw _failure(
+        response,
+        fallback: tr('Не удалось загрузить теорию', 'Could not load theory'),
+      );
+    }
+    return [
+      for (final raw in jsonDecode(response.body) as List<dynamic>)
+        ?TheoryArticle.parse(raw),
+    ];
+  }
+
+  /// Разобрать строку протокола ввода в дерево.
+  ///
+  /// Нужен для отладки ввода: показывает, что именно бэкенд понял.
+  Future<CoreNode> parse(String source) async {
+    final response = await _post(Uri.parse('$baseUrl/api/v1/parse'), {
+      'source': source,
+    });
+    if (response.statusCode != 200) {
+      throw _failure(
+        response,
+        fallback: tr(
+          'Не удалось разобрать выражение',
+          'Could not parse expression',
+        ),
+      );
+    }
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return CoreNode.fromJson(body['node'] as Map<String, dynamic>);
+  }
+
+  /// Точки графика `y = f(x)` на отрезке.
+  ///
+  /// Бросает [SolveFailure], если график не построить (например, нет
+  /// вещественных значений или неверный диапазон).
+  Future<GraphData> graph(
+    CoreNode node, {
+    double xMin = -10,
+    double xMax = 10,
+    int samples = 400,
+  }) async {
+    final response = await _post(Uri.parse('$baseUrl/api/v1/graph'), {
+      'node': _toJson(node),
+      'xMin': xMin,
+      'xMax': xMax,
+      'samples': samples,
+    });
+    if (response.statusCode != 200) {
+      throw _failure(response);
+    }
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final points = [
+      for (final point in _asList(body['points']))
+        if (point is List && point.length >= 2)
+          GraphPoint(
+            (point[0] as num).toDouble(),
+            (point[1] as num).toDouble(),
+          ),
+    ];
+    return GraphData(
+      points: points,
+      xMin: (body['xMin'] as num).toDouble(),
+      xMax: (body['xMax'] as num).toDouble(),
+      yMin: (body['yMin'] as num).toDouble(),
+      yMax: (body['yMax'] as num).toDouble(),
+      variable: body['variable'] as String? ?? 'x',
+      annotations: _parseAnnotations(body['annotations']),
+    );
+  }
+
+  /// Опорные точки графика из ответа бэкенда.
+  GraphAnnotations _parseAnnotations(Object? raw) {
+    if (raw is! Map<String, dynamic>) return const GraphAnnotations();
+    return GraphAnnotations(
+      roots: _points(raw['roots']),
+      yIntercept: _point(raw['yIntercept']),
+      maxima: _points(raw['maxima']),
+      minima: _points(raw['minima']),
+      verticalAsymptotes: _numbers(raw['verticalAsymptotes']),
+      horizontalAsymptotes: _numbers(raw['horizontalAsymptotes']),
+      piecewise: raw['piecewise'] == true,
+    );
+  }
+
+  List<GraphPoint> _points(Object? raw) {
+    final out = <GraphPoint>[];
+    for (final item in _asList(raw)) {
+      final point = _point(item);
+      if (point != null) out.add(point);
+    }
+    return out;
+  }
+
+  GraphPoint? _point(Object? raw) {
+    if (raw is List && raw.length >= 2 && raw[0] is num && raw[1] is num) {
+      return GraphPoint((raw[0] as num).toDouble(), (raw[1] as num).toDouble());
+    }
+    return null;
+  }
+
+  List<double> _numbers(Object? raw) => [
+    for (final item in _asList(raw))
+      if (item is num) item.toDouble(),
+  ];
+
+  Future<bool> isHealthy() async {
+    try {
+      final response = await _client.get(Uri.parse('$baseUrl/api/v1/health'));
+      return response.statusCode == 200;
+    } on Object {
+      return false;
+    }
+  }
+
+  void close() => _client.close();
+
+  // ── запрос и разбор ответа ────────────────────────────────────────
+
+  /// Выполнить POST, превратив сбой транспорта в [SolveFailure].
+  ///
+  /// Обрыв соединения — такой же ожидаемый исход, как `422`: на устройстве
+  /// обработчик закрывал соединение, и приложение падало необработанным
+  /// `ClientException`, не показывая пользователю ничего.
+  Future<http.Response> _post(Uri uri, Map<String, Object?> body) async {
+    try {
+      return await _client
+          .post(
+            uri,
+            headers: const {'content-type': 'application/json'},
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 30));
+    } on Object {
+      throw SolveFailure(tr('Нет связи с решателем', 'Cannot reach solver'));
+    }
+  }
+
+  SolveFailure _failure(http.Response response, {String? fallback}) {
+    try {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final detail = body['detail'];
+      if (detail is Map<String, dynamic>) {
+        return SolveFailure(
+          detail['message'] as String? ??
+              tr('Задача не решена', 'Problem not solved'),
+          explanationKey: detail['explanation'] as String?,
+        );
+      }
+      if (detail is String) return SolveFailure(detail);
+    } on Object {
+      // Тело не разобралось — сообщаем код, детали не придумаем.
+    }
+    if (fallback != null) return SolveFailure(fallback);
+    if (response.statusCode != 422) {
+      return SolveFailure(
+        tr(
+          'Решатель ответил кодом ${response.statusCode}',
+          'Solver responded with status ${response.statusCode}',
+        ),
+      );
+    }
+    return SolveFailure(tr('Задача не решена', 'Problem not solved'));
+  }
+
+  SolveResponse _parseSolve(Map<String, dynamic> body) {
+    final result = body['result'];
+    if (result is! Map<String, dynamic>) {
+      return const SolveResponse(steps: []);
+    }
+    final topSolution = result['solution'];
+    final alternatives = [
+      for (final raw in _asList(result['alternativeForms']))
+        if (raw is Map<String, dynamic>) CoreNode.fromJson(raw),
+    ];
+    final methods = <SolveResponse>[];
+    String? selectLabel;
+    for (final group in _asList(result['groups'])) {
+      if (group is! Map<String, dynamic>) continue;
+      if (group['type'] != 'VERTICAL') continue;
+      final select = group['selectMethodText'];
+      if (select is Map<String, dynamic>) {
+        selectLabel ??= _headerText(select);
+      }
+      for (final entry in _asList(group['entries'])) {
+        if (entry is! Map<String, dynamic>) continue;
+        methods.add(_parseVertical(entry['result']));
+      }
+    }
+    if (methods.isEmpty) {
+      return SolveResponse(
+        steps: const [],
+        solution: _node(topSolution),
+        alternatives: alternatives,
+      );
+    }
+    final primary = methods.first;
+    return SolveResponse(
+      steps: primary.steps,
+      solution: _node(topSolution) ?? primary.solution,
+      methods: methods.length > 1 ? methods : const [],
+      selectMethodText: selectLabel,
+      header: primary.header,
+      alternatives: alternatives,
+    );
+  }
+
+  /// Один способ решения: шаги и его собственный ответ.
+  SolveResponse _parseVertical(Object? raw) {
+    if (raw is! Map<String, dynamic>) return const SolveResponse(steps: []);
+    return SolveResponse(
+      steps: _parseSteps(raw),
+      solution: _node(raw['solutionNode']),
+      header: raw['header'] is Map<String, dynamic>
+          ? _headerText(raw['header'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+
+  CoreNode? _node(Object? raw) =>
+      raw is Map<String, dynamic> ? CoreNode.fromJson(raw) : null;
+
+  List<SolveStep> _parseSteps(Object? raw) {
+    if (raw is! Map<String, dynamic>) return const [];
+    final out = <SolveStep>[];
+    for (final step in _asList(raw['steps'])) {
+      if (step is! Map<String, dynamic>) continue;
+      out.add(
+        SolveStep(
+          id: step['id'] as String? ?? 'step:${out.length}',
+          headers: [
+            for (final h in _asList(step['headers']))
+              if (h is Map<String, dynamic>) _headerText(h),
+          ],
+          substeps: [
+            for (final s in _asList(step['substeps']))
+              if (s is Map<String, dynamic>) _parseSubstep(s),
+          ],
+        ),
+      );
+    }
+    return out;
+  }
+
+  Substep _parseSubstep(Map<String, dynamic> json) {
+    final description = json['description'] as Map<String, dynamic>?;
+    final explanation = json['explanation'] as Map<String, dynamic>?;
+    final left = json['left'] as Map<String, dynamic>?;
+    final right = json['right'] as Map<String, dynamic>?;
+    return Substep(
+      id: json['id'] as String? ?? '',
+      left: left == null ? null : CoreNode.fromJson(left),
+      right: right == null ? null : CoreNode.fromJson(right),
+      text: explanation?['text'] as String? ?? _textOf(description ?? {}),
+      explanationKey:
+          explanation?['key'] as String? ?? description?['type'] as String?,
+      links: _parseLinks(explanation?['links']),
+      detail: _parseSteps(json['subresult']),
+      subresult: json['subresult'] is Map<String, dynamic>
+          ? _parseVertical(json['subresult'])
+          : null,
+      parts: [
+        for (final part in _asList(explanation?['parts']))
+          if (part is Map<String, dynamic>)
+            ExplanationPart(
+              text: part['text'] as String?,
+              node: _node(part['node']),
+            ),
+      ],
+      theory: TheoryArticle.parse(explanation?['theory']),
+    );
+  }
+
+  /// Ссылки внутри текста пояснения.
+  List<ExplanationLink> _parseLinks(Object? raw) {
+    final out = <ExplanationLink>[];
+    for (final item in _asList(raw)) {
+      if (item is! Map<String, dynamic>) continue;
+      final label = item['label'] as String?;
+      final uuid = item['uuid'] as String?;
+      if (label != null && uuid != null) {
+        out.add(
+          ExplanationLink(
+            label: label,
+            uuid: uuid,
+            definition: item['definition'] as String? ?? '',
+          ),
+        );
+      }
+    }
+    return out;
+  }
+
+  String? _textOf(Map<String, dynamic> description) {
+    final type = description['type'] as String?;
+    return type == null ? null : 'step_$type';
+  }
+
+  /// Текст заголовка шага.
+  ///
+  /// Заголовок — тоже `CoreRichText`, и бэкенд присылает развёрнутый текст в
+  /// `explanation`. Если развёртки нет, заголовок просто пустой: показывать
+  /// техническое `step_eq_solve_short` пользователю незачем.
+  String _headerText(Map<String, dynamic> header) {
+    final explanation = header['explanation'] as Map<String, dynamic>?;
+    return explanation?['text'] as String? ?? '';
+  }
+
+  // ── сериализация запроса ──────────────────────────────────────────
+
+  Map<String, dynamic> _toJson(CoreNode node) => {
+    'type': node.type.wire,
+    if (node.value != null) 'value': node.value,
+    if (node.children.isNotEmpty)
+      'children': [for (final c in node.children) _toJson(c)],
+  };
+
+  static List<dynamic> _asList(Object? value) =>
+      value is List<dynamic> ? value : const [];
+}

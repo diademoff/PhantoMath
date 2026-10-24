@@ -1,0 +1,38 @@
+{
+  "module": "param",
+  "tasks": [
+    {
+      "id": "linear-param",
+      "title": "a·x + b = 0 относительно x",
+      "input": "{=({ax+b},{0})}",
+      "command": "solve_param",
+      "args": ["{x}"],
+      "solution": {
+        "type": "EQUALS",
+        "children": [
+          {"type": "VARIABLE", "value": "x"},
+          {
+            "type": "FRACTION",
+            "children": [
+              {"type": "NEGATIVE", "children": [{"type": "VARIABLE", "value": "b"}]},
+              {"type": "VARIABLE", "value": "a"}
+            ]
+          }
+        ]
+      },
+      "steps": ["eq_param_write", "eq_linear_param_j_final"]
+    },
+    {
+      "id": "numeric",
+      "title": "2x + 3 = 7 относительно x",
+      "input": "{=({2x+3},{7})}",
+      "command": "solve_param",
+      "args": ["{x}"],
+      "solution": {
+        "type": "EQUALS",
+        "children": [{"type": "VARIABLE", "value": "x"}, {"type": "CONSTANT", "value": "2"}]
+      },
+      "steps": ["eq_param_write", "eq_linear_param_j_final"]
+    }
+  ]
+}

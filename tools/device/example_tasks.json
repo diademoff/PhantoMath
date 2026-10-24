@@ -1,0 +1,51 @@
+[
+  {
+    "id": "det2",
+    "note": "Определитель |3 5; 2 4| = 2: клавиша «Определитель», диалог размера 2, четыре ячейки, «Шаги решения», тур по этапам",
+    "actions": [
+      {"key": "OPERATOR_DETERMINANT"},
+      {"dialog": {"size": 2}},
+      {"type": "3"},
+      {"next": 1},
+      {"type": "5"},
+      {"next": 1},
+      {"type": "2"},
+      {"next": 1},
+      {"type": "4"},
+      {"shot": "input"},
+      {"solve": true},
+      {"shot": "answer"},
+      {"tour": {"stages": 2, "details": 1}}
+    ]
+  },
+  {
+    "id": "rank",
+    "note": "Ранг [[1,2,3],[2,4,6],[1,1,1]] = 2: «Матрица» 3×3, девять ячеек, «Другие действия» → «Матрица…» → «Ранг»",
+    "actions": [
+      {"key": "OPERATOR_MATRIX"},
+      {"dialog": {"rows": 3, "cols": 3}},
+      {"type": "1"},
+      {"next": 1},
+      {"type": "2"},
+      {"next": 1},
+      {"type": "3"},
+      {"next": 1},
+      {"type": "2"},
+      {"next": 1},
+      {"type": "4"},
+      {"next": 1},
+      {"type": "6"},
+      {"next": 1},
+      {"type": "1"},
+      {"next": 1},
+      {"type": "1"},
+      {"next": 1},
+      {"type": "1"},
+      {"solve": true},
+      {"tap_text": "Другие действия"},
+      {"tap_text": "Матрица…"},
+      {"tap_text": "Ранг"},
+      {"shot": "rank"}
+    ]
+  }
+]
