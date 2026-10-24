@@ -6,13 +6,10 @@
 
 from __future__ import annotations
 
-import pytest
-
-from mymath_backend import CoreNode
 from mymath_backend import CoreNodeType as T
 from mymath_backend.input import parse_protocol
 from mymath_backend.results import CoreSolverVerticalResult
-from mymath_backend.solver import SolveError, solve
+from mymath_backend.solver import solve
 
 
 def _vertical(source: str) -> CoreSolverVerticalResult:
@@ -33,6 +30,11 @@ class TestPolar:
         assert answer.children[0].type is T.ROOT2
         assert answer.children[1].children[0].type is T.ADD
 
-    def test_real_is_rejected(self) -> None:
-        with pytest.raises(SolveError):
-            solve(CoreNode.constant("2"), command="polar")
+    def test_real_number_has_angle_zero(self) -> None:
+        # Действительное число — тоже комплексное: z = r(cos 0 + i sin 0).
+        vertical = _vertical("{3}")
+        answer = vertical.solution
+        assert answer is not None and answer.type is T.MULTIPLY_IMPLICIT
+        assert answer.children[0].value == "3"
+        inner = answer.children[1].children[0]
+        assert inner.type is T.ADD and inner.children[0].children[0].value == "0"

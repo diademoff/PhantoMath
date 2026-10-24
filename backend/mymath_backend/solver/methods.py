@@ -42,6 +42,24 @@ def method_provider(*node_types: CoreNodeType) -> Callable[[MethodProvider], Met
     return decorate
 
 
+def method_provider_first(
+    *node_types: CoreNodeType,
+) -> Callable[[MethodProvider], MethodProvider]:
+    """Зарегистрировать провайдер, который пробуется раньше уже известных.
+
+    Нужен области, которая считает свой способ основным для узла, хотя общие
+    модули импортируются раньше: уравнения с мнимой единицей решает карточка
+    комплексных чисел, а не общий поиск действительных корней.
+    """
+
+    def decorate(fn: MethodProvider) -> MethodProvider:
+        for node_type in node_types:
+            _MODULE_REGISTRY.setdefault(node_type, []).insert(0, fn)
+        return fn
+
+    return decorate
+
+
 def has_method_provider(node_type: CoreNodeType) -> bool:
     """Есть ли для типа узла хоть один провайдер способов."""
     return node_type in _MODULE_REGISTRY
@@ -83,6 +101,7 @@ __all__ = [
     "MethodProvider",
     "has_method_provider",
     "method_provider",
+    "method_provider_first",
     "method_types",
     "methods_for",
 ]
