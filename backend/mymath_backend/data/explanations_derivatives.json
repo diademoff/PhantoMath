@@ -1,0 +1,58 @@
+{
+ "lesson_calc_rule_root": {
+  "arity": 1,
+  "templates": {
+   "default": "Derivative of a root: ARG1.",
+   "ru": "Производная корня: ARG1."
+  }
+ },
+ "higher_order_pattern": {
+  "arity": 0,
+  "templates": {
+   "default": "The same pattern repeats for every order: write the n-th derivative",
+   "ru": "Закономерность повторяется для любого порядка — запишем производную n-го порядка"
+  }
+ },
+ "higher_order_substitute": {
+  "arity": 1,
+  "templates": {
+   "default": "Put n = ARG1 into the formula",
+   "ru": "Подставим n = ARG1 в формулу"
+  }
+ },
+ "param_derivative_header": {
+  "arity": 0,
+  "templates": {
+   "default": "Derivative of a parametric function",
+   "ru": "Производная параметрической функции"
+  }
+ },
+ "param_derivative_formula": {
+  "arity": 2,
+  "templates": {
+   "default": "For the parametric function y = ARG1, x = ARG2 the derivative is y′_t / x′_t",
+   "ru": "Для параметрической функции y = ARG1, x = ARG2 производная равна отношению y′_t / x′_t"
+  }
+ },
+ "param_second_derivative_formula": {
+  "arity": 1,
+  "templates": {
+   "default": "The second derivative is y″_xx = (y′_x)′_t / x′_t, where ARG1 is the first derivative",
+   "ru": "Вторая производная равна y″_xx = (y′_x)′_t / x′_t, где ARG1 — первая производная"
+  }
+ },
+ "param_derivative_of": {
+  "arity": 1,
+  "templates": {
+   "default": "Find the derivative of ARG1 with respect to the parameter",
+   "ru": "Найдём производную ARG1 по параметру"
+  }
+ },
+ "param_derivative_substitute": {
+  "arity": 0,
+  "templates": {
+   "default": "Substitute both derivatives into the formula and simplify",
+   "ru": "Подставим обе производные в формулу и упростим"
+  }
+ }
+}
