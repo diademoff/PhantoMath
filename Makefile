@@ -9,6 +9,7 @@
 #   make run             — запустить приложение на подключённом устройстве
 #   make test / lint     — тесты и проверки (backend + app)
 #   make device          — запустить локальный сервер решателя (как на устройстве)
+#   make site            — собрать сайт для GitHub Pages в build/site
 #   make clean           — убрать сборочные артефакты
 
 SHELL := /bin/bash
@@ -37,7 +38,7 @@ APK := $(APK_DIR)/app-release.apk
 
 .DEFAULT_GOAL := help
 
-.PHONY: help icon python-bundle apk backend run device test lint audit cards clean
+.PHONY: help icon python-bundle apk backend run device test lint audit cards site clean
 
 help:
 	@echo "make icon          — launcher-иконки из app/logo.png"
@@ -50,6 +51,7 @@ help:
 	@echo "make lint          — ruff, mypy, flutter analyze"
 	@echo "make audit         — все формулы ответов через TeX-парсер приложения"
 	@echo "make cards         — карточки решения текстом и раскладкой (TASKS=… OUT=…)"
+	@echo "make site          — сайт для GitHub Pages в build/site"
 	@echo "make clean         — очистить сборку"
 
 icon:
@@ -102,6 +104,15 @@ cards:
 lint:
 	cd backend && $(UV) run ruff check . && $(UV) run ruff format --check . && $(UV) run mypy mymath_backend
 	cd app && $(FLUTTER) analyze
+
+# Сайт-визитка: site/ + скриншоты и логотип из репозитория (не дублируем их в site/).
+#   просмотр: make site && python3 -m http.server -d build/site
+site:
+	rm -rf build/site
+	mkdir -p build
+	cp -r site build/site
+	cp -r docs/screenshots build/site/screenshots
+	cp app/logo.png build/site/logo.png
 
 clean:
 	cd app && $(FLUTTER) clean

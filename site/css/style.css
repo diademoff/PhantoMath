@@ -1,0 +1,259 @@
+/* Цвета ground/tone/accent main.js пересчитывает каждый кадр из цвета фигуры:
+   страница перекрашивается целиком, но всегда плоскими заливками. */
+:root {
+  --ground: hsl(348 30% 6%);
+  --tone: hsl(348 28% 16%);
+  --accent: hsl(348 85% 58%);
+  --ink: #f5f2f8;
+  --soft: #cfc9d8;
+  --on-accent: #0d0b12;
+  --m: clamp(16px, 3vw, 40px);
+  --bar: 72px;
+  --small: 0.875rem;
+  --body: 1.125rem;
+  --lead: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);
+  --head: clamp(2rem, 1.2rem + 2.8vw, 3.75rem);
+  --title: clamp(3rem, 1rem + 6vw, 6.5rem);
+  --math: "STIX Two Text", "Cambria Math", "Times New Roman", serif;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 400 var(--body) / 1.55 Manrope, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Страница — закреплённая история: справа фигура стоит на месте, слева прокручиваются секции. */
+main {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 24px;
+  padding: 0 var(--m);
+}
+
+/* Фон с параллаксом: знаки рисует depth.js, слой лежит под всем содержимым. */
+#depth {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Место фигуры: без рамки и своей заливки, того же цвета, что страница. */
+.figure {
+  position: sticky;
+  top: var(--bar);
+  grid-column: 2;
+  grid-row: 1 / span 10; /* по числу секций в index.html */
+  height: calc(100vh - var(--bar) - var(--m));
+  height: calc(100svh - var(--bar) - var(--m));
+}
+
+/* Холст шире места фигуры, до краёв экрана: точки в вихре не упираются в невидимую границу. */
+#stage {
+  position: absolute;
+  top: calc(-1 * var(--bar));
+  left: -24px;
+  width: calc(100% + 24px + var(--m));
+  height: calc(100% + var(--bar) + var(--m));
+  pointer-events: none;
+}
+
+.screen {
+  position: absolute;
+  overflow: hidden;
+  border-radius: 6% / 3%;
+  opacity: 0;
+  pointer-events: none;
+}
+.screen img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+.screen img.on { opacity: 1; }
+
+.bar {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--bar);
+  padding: env(safe-area-inset-top) var(--m) 0;
+  background: var(--ground);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-weight: 800;
+  text-decoration: none;
+}
+.brand img { border-radius: 6px; }
+.bar nav { display: flex; align-items: center; gap: 12px; }
+.bar .nav {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 10px;
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.bar .nav:hover { color: var(--accent); }
+
+section {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: var(--bar) 0 var(--m);
+}
+
+.card { min-width: 0; max-width: 40rem; opacity: var(--vis, 1); }
+.card > * {
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: calc(var(--i, 0) * 80ms);
+}
+.js section:not(.in) .card > * { opacity: 0; transform: translateY(24px); }
+/* Параллакс текста: заголовок едет быстрее абзаца, абзац быстрее кнопок. Свойство translate
+   отдельно от transform, поэтому не мешает появлению и не попадает под его transition. */
+.card > * { --k: 18px; translate: 0 calc(var(--d, 0) * var(--k)); }
+.card > :is(h1, h2) { --k: 64px; }
+.card > p { --k: 36px; }
+
+h1, h2 { margin: 0 0 0.45em; font-weight: 800; letter-spacing: -0.03em; line-height: 1; text-wrap: balance; }
+h1 { font-size: var(--title); }
+h2 { font-size: var(--head); }
+p { margin: 0 0 1em; }
+.lead { font-size: var(--lead); line-height: 1.45; }
+
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 1.5em; }
+
+/* Одна форма кнопки на всю страницу: круглые торцы, плоская заливка акцентом. */
+.btn, .problems button, #lang {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 999px;
+  font: 800 var(--body) Manrope, system-ui, sans-serif;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, transform 0.15s;
+}
+.btn { background: var(--accent); color: var(--on-accent); }
+.btn.small, #lang { min-height: 44px; padding: 0 18px; font-size: var(--small); }
+#lang { min-width: 52px; background: var(--tone); color: var(--ink); }
+.btn:hover, #lang:hover, .problems button:hover { background: var(--ink); color: var(--on-accent); }
+.btn:active, #lang:active, .problems button:active { transform: scale(0.96); }
+
+.link {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+  transition: color 0.2s;
+}
+.link:hover { color: var(--accent); }
+
+a:focus-visible, button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+
+/* Живой пример: формулы набраны тем же шрифтом, что и фигура. */
+.math { font-family: var(--math); font-style: italic; }
+/* Факты о приложении: только то, что есть в README. */
+.facts { display: grid; grid-template-columns: repeat(4, auto); justify-content: start; gap: 8px 32px; margin: 2.2em 0 0; }
+.facts dt { font-size: var(--lead); font-weight: 800; letter-spacing: -0.02em; }
+.facts dd { margin: 0; max-width: 9em; color: var(--soft); font-size: var(--small); line-height: 1.35; }
+
+.problems { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 1em; }
+.problems button {
+  padding: 0 18px;
+  background: var(--tone);
+  color: var(--ink);
+  font: italic 400 var(--lead) var(--math);
+}
+.problems button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.answer { font-size: var(--lead); }
+.answer output { white-space: pre; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.chips li { padding: 6px 14px; border-radius: 999px; background: var(--tone); font-size: var(--small); }
+
+pre {
+  margin: 0;
+  padding: 14px 18px;
+  overflow-x: auto;
+  border-radius: 12px;
+  background: var(--tone);
+  font-size: var(--small);
+}
+
+.foot {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding: var(--m);
+  color: var(--soft);
+  font-size: var(--small);
+}
+.foot nav { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+.foot a { color: var(--ink); text-underline-offset: 4px; }
+.foot a:hover { color: var(--accent); }
+
+/* Узкий экран: фигура закреплена сверху, текст прокручивается под ней. */
+@media (max-width: 819px) {
+  :root { --bar: 64px; --figure-h: 42svh; }
+  .bar .nav { display: none; }
+  .facts { display: none; } /* на телефоне первый экран и так полон; факты повторяются ниже */
+  main { grid-template-columns: minmax(0, 1fr); padding-top: var(--bar); }
+  html { scroll-padding-top: calc(var(--bar) + var(--figure-h)); }
+  .figure { z-index: 1; grid-column: 1; grid-row: 1; height: var(--figure-h); }
+  #stage { left: calc(-1 * var(--m)); width: calc(100% + 2 * var(--m)); height: calc(100% + var(--bar)); }
+  section {
+    min-height: calc(100vh - var(--bar) - 42vh);
+    min-height: calc(100svh - var(--bar) - var(--figure-h));
+    padding: 24px 0;
+    /* Текст растворяется, подходя к фигуре; --cut — где её нижний край относительно секции. */
+    -webkit-mask-image: linear-gradient(transparent calc(var(--cut, -999px) - 40px), #000 calc(var(--cut, -999px) + 16px)); /* taste-skill-ignore: маска, не заливка */
+    mask-image: linear-gradient(transparent calc(var(--cut, -999px) - 40px), #000 calc(var(--cut, -999px) + 16px)); /* taste-skill-ignore: маска, не заливка */
+  }
+}
+
+/* На сенсорных экранах прокрутка своя, браузер лишь слегка притягивает к сценам. */
+@media (pointer: coarse) {
+  html { scroll-snap-type: y proximity; }
+  section { scroll-snap-align: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .js section:not(.in) .card > * { transform: none; }
+  .btn:active, #lang:active, .problems button:active { transform: none; }
+}

@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title data-i18n="title">PhantoMath — решает и объясняет каждый шаг</title>
+  <meta name="description" content="PhantoMath: решатель задач по математике для Android с пошаговыми объяснениями. Без интернета, бесплатно, открытый код.">
+  <meta name="theme-color" content="#0d0b12">
+  <link rel="icon" href="logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=STIX+Two+Text:ital,wght@0,400;0,700;1,400&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <canvas id="depth" aria-hidden="true"></canvas>
+  <header class="bar">
+    <a class="brand" href="#top"><img src="logo.png" alt="" width="28" height="28">PhantoMath</a>
+    <nav>
+      <a class="nav" href="#live" data-i18n="n1">Возможности</a>
+      <button id="lang" type="button">EN</button>
+      <a class="btn small" href="https://github.com/diademoff/PhantoMath">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Место фигуры из точек: закреплено справа (на телефоне сверху). -->
+    <div class="figure" aria-hidden="true">
+      <canvas id="stage"></canvas>
+      <div class="screen">
+        <img data-shot="input" src="screenshots/ru-input.png" alt="" width="541" height="1170" class="on">
+        <img data-shot="steps" src="screenshots/ru-steps.png" alt="" width="541" height="1170">
+        <img data-shot="why" src="screenshots/ru-why.png" alt="" width="541" height="1170">
+        <img data-shot="graph" src="screenshots/ru-graph.png" alt="" width="541" height="1170">
+      </div>
+    </div>
+    <section data-scene id="top">
+      <div class="card">
+        <h1>PhantoMath</h1>
+        <p class="lead" data-i18n="p0">Решатель задач по математике для Android. Показывает каждый шаг и объясняет,
+          почему так можно. Без интернета, бесплатно, с открытым кодом.</p>
+        <div class="actions">
+          <a class="btn" href="https://github.com/diademoff/PhantoMath" data-i18n="b0">Исходный код на GitHub</a>
+          <a class="link" href="#live" data-i18n="b1">Смотреть возможности</a>
+        </div>
+        <dl class="facts">
+          <div><dt>1800+</dt><dd data-i18n="d1">тестов проверяют ответы</dd></div>
+          <div><dt>11</dt><dd data-i18n="d2">разделов математики</dd></div>
+          <div><dt>2</dt><dd data-i18n="d3">языка объяснений</dd></div>
+          <div><dt>0</dt><dd data-i18n="d4">рекламы и слежки</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section data-scene id="live">
+      <div class="card">
+        <h2 data-i18n="h1">Ответ появляется, пока вы печатаете</h2>
+        <p data-i18n="p1">Кнопки «Решить» нет. Дроби, степени и корни встают в свои ячейки, а ответ готов, как
+          только задача введена. Выберите задачу, и фигура пересоберётся под неё:</p>
+        <div class="problems" role="group" aria-label="Задача" data-i18n-label="g1"></div>
+        <p class="answer"><span data-i18n="a1">Ответ:</span> <output class="math" id="answer">x = 2,  x = 3</output></p>
+      </div>
+    </section>
+
+    <section data-scene>
+      <div class="card">
+        <h2 data-i18n="h2">Каждый шаг на своей карточке</h2>
+        <p data-i18n="p2">Формула до и после и одна фраза о том, что сделано. Нужно подробнее? Откройте шаг и
+          дойдите до арифметики в столбик.</p>
+      </div>
+    </section>
+
+    <section data-scene>
+      <div class="card">
+        <h2 data-i18n="h3">«Почему?» у каждого правила</h2>
+        <p data-i18n="p3">Короткая статья по теории: правило, формула, когда его можно применять, разобранный
+          пример и типичная ошибка.</p>
+      </div>
+    </section>
+
+    <section data-scene>
+      <div class="card">
+        <h2 data-i18n="h4">Несколько способов решения</h2>
+        <p data-i18n="p4">Квадратное уравнение решается разложением на множители, по формуле корней или
+          выделением полного квадрата. Переключайтесь между способами и сравнивайте.</p>
+      </div>
+    </section>
+
+    <section data-scene>
+      <div class="card">
+        <h2 data-i18n="h5">Корни видны на графике</h2>
+        <p data-i18n="p5">Область определения, нули, экстремумы и асимптоты, а рядом интерактивный
+          график функции. Корни уравнения лежат прямо на оси.</p>
+      </div>
+    </section>
+
+    <section data-scene>
+      <div class="card">
+        <h2 data-i18n="h6">От дробей до дифуров</h2>
+        <p data-i18n="p6">Школьная программа и первые курсы вуза:</p>
+        <ul class="chips" data-i18n="t6">
+          <li>Арифметика</li><li>Алгебра</li><li>Уравнения</li><li>Неравенства</li><li>Системы</li>
+          <li>Тригонометрия</li><li>Функции</li><li>Пределы</li><li>Производные</li><li>Интегралы</li>
+          <li>Ряды</li><li>Матрицы и векторы</li><li>Комплексные числа</li><li>Комбинаторика</li>
+          <li>Конические сечения</li><li>Дифференциальные уравнения</li>
+        </ul>
+      </div>
+    </section>
+
+    <section data-scene>
+      <div class="card">
+        <h2 data-i18n="h7">Решает прямо в телефоне</h2>
+        <p data-i18n="p7">Решатель на Python и SymPy работает на устройстве. Без аккаунта, рекламы и подписки.
+          Домашка никуда не уходит.</p>
+      </div>
+    </section>
+
+    <section data-scene>
+      <div class="card">
+        <h2 data-i18n="h8">Русский и английский</h2>
+        <p data-i18n="p8">Весь интерфейс и каждое объяснение на двух языках. Язык меняется в настройках.</p>
+      </div>
+    </section>
+
+    <section data-scene>
+      <div class="card">
+        <h2 data-i18n="h9">Открытый код, GPL-3.0</h2>
+        <p data-i18n="p9">Смотрите, как получается каждый шаг, исправляйте и добавляйте темы. Ответы проверяют
+          больше 1800 тестов. Собрать APK:</p>
+        <pre><code>git clone https://github.com/diademoff/PhantoMath.git
+cd PhantoMath &amp;&amp; make apk</code></pre>
+        <div class="actions">
+          <a class="btn" href="https://github.com/diademoff/PhantoMath" data-i18n="b9">Открыть на GitHub</a>
+          <a class="link" href="https://github.com/diademoff/PhantoMath#install" data-i18n="c9">Что нужно для сборки</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span>PhantoMath · Android 7.0+ · GPL-3.0-or-later</span>
+    <nav>
+      <a href="https://github.com/diademoff/PhantoMath/blob/master/docs/ARCHITECTURE.md" data-i18n="f1">Как устроено</a>
+      <a href="https://github.com/diademoff/PhantoMath/blob/master/CONTRIBUTING.md" data-i18n="f2">Участие</a>
+      <a href="https://github.com/diademoff/PhantoMath/blob/master/LICENSE" data-i18n="f3">Лицензия</a>
+    </nav>
+  </footer>
+</body>
+</html>
