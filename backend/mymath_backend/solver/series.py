@@ -87,6 +87,8 @@ def sum_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
         index, lower, upper, expression = _parts(node)
     except SolveError:
         return []
+    if _is_infinite(upper):
+        return _infinite_cards(index, lower, expression)
     if not (
         lower.type is T.CONSTANT
         and (lower.value or "").isdigit()
@@ -1242,6 +1244,326 @@ def _arithmetic_card(index: str, high: int, total: CoreNode, lower: int = 1) -> 
     return card
 
 
+# ── бесконечные суммы ────────────────────────────────────────────────
+
+
+def _is_infinite(upper: CoreNode) -> bool:
+    """Верхний предел суммы — бесконечность."""
+    try:
+        return to_sympy(upper) in (sympy.oo, -sympy.oo)
+    except SolveError:
+        return False
+
+
+def _infinite_cards(index: str, lower: CoreNode, expression: CoreNode) -> list[SolveResult]:
+    """Карточки суммы до бесконечности: геометрическая, телескоп, логарифмы.
+
+    Точную сумму даёт sympy; карточка лишь объясняет её школьным способом.
+    Если ни один способ не подошёл, карточек нет и работает общий путь.
+    """
+    symbol = sympy.Symbol(index)
+    term = to_sympy(expression)
+    low = to_sympy(lower)
+    total = sympy.summation(term, (symbol, low, sympy.oo))
+    if total.has(sympy.Sum):
+        # Замкнутой суммы нет: логарифмы сворачиваются в произведение сами.
+        card = _log_telescope_card(index, lower, expression, symbol, term, low, None)
+        return [card] if card is not None else []
+    total = sympy.simplify(total)
+    if total.has(sympy.oo, -sympy.oo, sympy.zoo) or total.is_finite is not True:
+        return []
+    total_node = from_sympy(total)
+    for build in (_geometric_card_inf, _telescope_card_inf, _log_telescope_card):
+        card = build(index, lower, expression, symbol, term, low, total_node)
+        if card is not None:
+            return [card]
+    return []
+
+
+def _geometric_parts(
+    term: sympy.Expr, symbol: sympy.Symbol
+) -> list[tuple[sympy.Expr, sympy.Expr]] | None:
+    """``[(коэффициент, знаменатель)]``, если член — сумма ``c·qⁿ``; иначе ``None``."""
+    parts = sympy.Add.make_args(sympy.expand(term))
+    found: list[tuple[sympy.Expr, sympy.Expr]] = []
+    for part in parts:
+        if part == 0:
+            continue
+        ratio = sympy.simplify(part.subs(symbol, symbol + 1) / part)
+        if ratio.has(symbol) or not ratio.is_number or ratio in (0, 1):
+            return None
+        coefficient = sympy.simplify(part / ratio**symbol)
+        if coefficient.has(symbol) or not coefficient.is_number:
+            return None
+        found.append((coefficient, ratio))
+    return found or None
+
+
+def _signed_sum(parts: list[CoreNode]) -> CoreNode:
+    """Сумма, в которой отрицательное слагаемое записано вычитанием."""
+    result = parts[0]
+    for part in parts[1:]:
+        negative, magnitude = _split_sign(part)
+        result = CoreNode.node(T.SUBTRACT if negative else T.ADD, result, magnitude)
+    return result
+
+
+def _split_sign(node: CoreNode) -> tuple[bool, CoreNode]:
+    """``(-1, |x|)`` для отрицательного числа или произведения с минусом."""
+    if node.type is T.CONSTANT and node.value:
+        try:
+            value = sympy.Rational(node.value)
+        except (TypeError, ValueError):
+            return False, node
+        if value.is_negative:
+            return True, CoreNode.constant(str(-value))
+    if node.type is T.FRACTION and len(node.children) == 2:
+        negative, numerator = _split_sign(node.children[0])
+        if negative:
+            return True, CoreNode.node(T.FRACTION, numerator, node.children[1])
+        return False, node
+    if node.type is T.MULTIPLY and node.children:
+        first, value = node.children[0], node.children[0].value
+        if first.type is T.CONSTANT and value is not None and value.startswith("-"):
+            unsigned = CoreNode.constant(value[1:])
+            return True, CoreNode(type=T.MULTIPLY, children=[unsigned, *node.children[1:]])
+    return False, node
+
+
+def _geom_power_node(coefficient: sympy.Expr, ratio: sympy.Expr, index: str) -> CoreNode:
+    """``c·qⁿ``: множитель и степень пишутся отдельно, без свёртки в ``q⁻ⁿ``."""
+    eq = CoreNode.node
+    power = eq(T.POWER, from_sympy(ratio), CoreNode.variable(index))
+    if coefficient == 1:
+        return power
+    return eq(T.MULTIPLY, from_sympy(coefficient), power)
+
+
+def _geometric_rule(index: str, ratio: CoreNode, low: CoreNode) -> CoreNode:
+    """``Σ_{k=L}^∞ qᵏ = q^L/(1−q)`` как узел."""
+    eq = CoreNode.node
+    return eq(
+        T.EQUALS,
+        _sigma_node(
+            index, low, CoreNode.constant("∞"), eq(T.POWER, ratio, CoreNode.variable(index))
+        ),
+        eq(
+            T.FRACTION,
+            eq(T.POWER, ratio, low),
+            eq(T.SUBTRACT, CoreNode.constant("1"), ratio),
+        ),
+    )
+
+
+def _geom_term_node(coefficient: sympy.Expr, ratio: CoreNode, low: CoreNode) -> CoreNode:
+    """Подстановка в формулу бесконечной прогрессии: ``c·q^L/(1−q)``."""
+    eq, num = CoreNode.node, CoreNode.constant
+    numerator = eq(T.POWER, ratio, low)
+    if coefficient != 1:
+        numerator = eq(T.MULTIPLY, from_sympy(coefficient), numerator)
+    return eq(
+        T.FRACTION,
+        numerator,
+        eq(T.SUBTRACT, num("1"), ratio),
+    )
+
+
+def _geometric_card_inf(
+    index: str,
+    lower: CoreNode,
+    expression: CoreNode,
+    symbol: sympy.Symbol,
+    term: sympy.Expr,
+    low: sympy.Expr,
+    total_node: CoreNode,
+) -> SolveResult | None:
+    """Ряд из нескольких геометрических прогрессий: разбить и сложить по формуле."""
+    parts = _geometric_parts(term, symbol)
+    if parts is None or any(sympy.Abs(ratio) >= 1 for _coefficient, ratio in parts):
+        return None
+    card = SolveResult(header="series_find_sum_infinite_geom")
+    sigmas = [
+        _sigma_node(
+            index,
+            lower,
+            CoreNode.constant("∞"),
+            _geom_power_node(coefficient, ratio, index),
+        )
+        for coefficient, ratio in parts
+    ]
+    card.add_group(
+        "series_sigma_inf_split",
+        Step(
+            _sigma_node(index, lower, CoreNode.constant("∞"), expression),
+            _fold_add(sigmas),
+            "series_sigma_inf_split",
+        ),
+    )
+    formulas: list[CoreNode] = []
+    values: list[CoreNode] = []
+    for (coefficient, ratio), part_sigma in zip(parts, sigmas, strict=True):
+        ratio_node = from_sympy(ratio)
+        formula = _geom_term_node(coefficient, ratio_node, lower)
+        formulas.append(formula)
+        values.append(from_sympy(sympy.nsimplify(coefficient * ratio**low / (1 - ratio))))
+        card.add_group(
+            "series_sigma_inf_geom_use",
+            Step(
+                part_sigma,
+                formula,
+                "series_sigma_inf_geom_use",
+                [ratio_node, _geometric_rule(index, ratio_node, lower)],
+            ),
+        )
+    total_values = _signed_sum(values)
+    if len(formulas) > 1:
+        card.add_group(
+            "calculate_short", Step(_signed_sum(formulas), total_values, "calculate_direct")
+        )
+    if not total_values.structural_eq(total_node):
+        card.add_group("calculate_short", Step(total_values, total_node, "add"))
+    card.set_solution(total_node)
+    return card
+
+
+def _linear_apart(apart: sympy.Expr, symbol: sympy.Symbol) -> bool:
+    """Разложение на дроби ``c/(a·n + b)`` с разными полюсами."""
+    terms = sympy.Add.make_args(apart)
+    if len(terms) < 2:
+        return False
+    for part in terms:
+        numerator, denominator = sympy.fraction(sympy.together(part))
+        if not numerator.is_number:
+            return False
+        try:
+            if sympy.Poly(denominator, symbol).degree() != 1:
+                return False
+        except sympy.PolynomialError:
+            return False
+    return True
+
+
+def _telescope_card_inf(
+    index: str,
+    lower: CoreNode,
+    expression: CoreNode,
+    symbol: sympy.Symbol,
+    term: sympy.Expr,
+    low: sympy.Expr,
+    total_node: CoreNode | None,
+) -> SolveResult | None:
+    """Телескопическая сумма: простейшие дроби, частичная сумма, предел."""
+    try:
+        apart = sympy.apart(term, symbol)
+    except (sympy.PolynomialError, ValueError, TypeError):
+        return None
+    if not _linear_apart(apart, symbol):
+        return None
+    big = sympy.Symbol("N")
+    partial = sympy.summation(term, (symbol, low, big))
+    partial = sympy.simplify(partial)
+    if partial.has(sympy.Sum) or not partial.free_symbols <= {big}:
+        return None
+    try:
+        value = sympy.limit(partial, big, sympy.oo)
+    except (TypeError, ValueError, NotImplementedError):
+        return None
+    if value in (sympy.oo, -sympy.oo, sympy.zoo) or value.is_finite is not True:
+        return None
+    value = sympy.simplify(value)
+    if total_node is not None and sympy.simplify(to_sympy(total_node) - value) != 0:
+        return None
+    if total_node is None:
+        total_node = from_sympy(value)
+    big_node = CoreNode.variable("N")
+    card = SolveResult(header="series_find_sum_telescope")
+    card.add_group(
+        "series_sigma_telescope_apart",
+        Step(
+            _sigma_node(index, lower, CoreNode.constant("∞"), expression),
+            from_sympy(apart),
+            "series_sigma_telescope_apart",
+        ),
+    )
+    card.add_group(
+        "series_sigma_telescope_partial",
+        Step(
+            _sigma_node(index, lower, big_node, expression),
+            from_sympy(partial),
+            "series_sigma_telescope_partial",
+            [big_node],
+        ),
+    )
+    card.add_group(
+        "series_sigma_telescope_limit",
+        Step(from_sympy(partial), total_node, "series_sigma_telescope_limit", [big_node]),
+    )
+    card.set_solution(total_node)
+    return card
+
+
+def _log_telescope_card(
+    index: str,
+    lower: CoreNode,
+    expression: CoreNode,
+    symbol: sympy.Symbol,
+    term: sympy.Expr,
+    low: sympy.Expr,
+    total_node: CoreNode | None,
+) -> SolveResult | None:
+    """Сумма логарифмов: произведение членов телескопируется, предел даёт сумму."""
+    if not (isinstance(term, sympy.log) and term.args[0].is_rational_function(symbol)):
+        return None
+    argument = sympy.factor(term.args[0])
+    big = sympy.Symbol("N")
+    product = sympy.product(argument, (symbol, low, big))
+    try:
+        closed = sympy.combsimp(sympy.simplify(product))
+    except (TypeError, ValueError, NotImplementedError):
+        return None
+    if closed.has(sympy.factorial, sympy.RisingFactorial, sympy.gamma):
+        return None
+    if not closed.free_symbols <= {big}:
+        return None
+    partial = sympy.log(closed)
+    try:
+        value = sympy.limit(partial, big, sympy.oo)
+    except (TypeError, ValueError, NotImplementedError):
+        return None
+    if value in (sympy.oo, -sympy.oo, sympy.zoo) or value.is_finite is not True:
+        return None
+    value = sympy.simplify(value)
+    if total_node is not None and sympy.simplify(to_sympy(total_node) - value) != 0:
+        return None
+    if total_node is None:
+        total_node = from_sympy(value)
+    big_node = CoreNode.variable("N")
+    card = SolveResult(header="series_find_sum_inf_log")
+    card.add_group(
+        "series_sigma_log_factor",
+        Step(
+            from_sympy(term),
+            from_sympy(sympy.log(argument)),
+            "series_sigma_log_factor",
+        ),
+    )
+    card.add_group(
+        "series_sigma_log_partial",
+        Step(
+            _sigma_node(index, lower, big_node, expression),
+            from_sympy(partial),
+            "series_sigma_log_partial",
+            [big_node],
+        ),
+    )
+    card.add_group(
+        "series_sigma_telescope_limit",
+        Step(from_sympy(partial), total_node, "series_sigma_telescope_limit", [big_node]),
+    )
+    card.set_solution(total_node)
+    return card
+
+
 def _special_sum(
     term: sympy.Expr, symbol: sympy.Symbol, lower: sympy.Expr, upper: sympy.Expr
 ) -> str | None:
@@ -1278,8 +1600,9 @@ def _pseries_exponent(term: sympy.Expr, symbol: sympy.Symbol) -> sympy.Expr | No
 def convergence(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Определить, сходится ли ряд (сумма с бесконечным пределом).
 
-    Сначала признак обобщённого гармонического ряда (``p``),
-    затем точная сумма (sympy), затем интегральный признак.
+    Порядок: признак обобщённого гармонического ряда (``p``), необходимый
+    признак, предельный признак сравнения, точная сумма (sympy), затем
+    радикальный и интегральный признаки.
     """
     del args
     if node.type is not T.SIGMA_DEFINITE:
@@ -1291,10 +1614,21 @@ def convergence(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> Core
     exponent = _pseries_exponent(term, symbol)
     if exponent is not None:
         return _pseries_convergence(node, ctx, exponent)
+    # Необходимый признак дешёвый и решает сразу, если член не стремится к
+    # нулю: точную сумму и сравнение тогда искать не нужно (sympy на таких
+    # рядах может считать минуты).
+    limit_value = _term_limit(term, symbol)
+    if _limit_is_nonzero(limit_value):
+        return _nth_term_diverges(node, ctx, term)
+    comparison = _comparison_convergence(node, ctx, expression, symbol, lower)
+    if comparison is not None:
+        return comparison
+    domination = _harmonic_domination(node, ctx, expression, symbol, lower)
+    if domination is not None:
+        return domination
     value = sympy.summation(term, (symbol, to_sympy(lower), to_sympy(upper)))
     if value.has(sympy.Sum):
-        # No closed form: the necessary condition first, then the integral test.
-        limit_value = sympy.limit(term, symbol, sympy.oo)
+        # No closed form: the necessary condition first, then a deciding test.
         limit_node = CoreNode.node(T.LIMIT, CoreNode.constant("∞"), from_sympy(term))
         ctx.result.add_group(
             "limit_solve",
@@ -1305,18 +1639,6 @@ def convergence(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> Core
                 [from_sympy(term)],
             ),
         )
-        if limit_value.is_number and limit_value != 0:
-            answer = boolean_node(False)
-            ctx.result.add_group(
-                "series_test_diverges",
-                Step(
-                    limit_node,
-                    answer,
-                    "series_nth_term_test_lim_nozero",
-                    [CoreNode.constant("0")],
-                ),
-            )
-            return answer
         if limit_value == 0:
             ctx.result.add_group(
                 "series_test_inconclusive",
@@ -1327,12 +1649,151 @@ def convergence(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> Core
                     [from_sympy(limit_value)],
                 ),
             )
+        root = _root_test_fallback(node, ctx, term, symbol)
+        if root is not None:
+            return root
         return _integral_test(node, ctx, expression, lower, symbol)
     converges = value.is_finite is True
     answer = boolean_node(converges)
     ctx.result.add_group(
         "series_test_converges" if converges else "series_test_diverges",
         Step(left=node, right=answer, key="convergent" if converges else "divergent"),
+    )
+    return answer
+
+
+def _term_limit(term: sympy.Expr, symbol: sympy.Symbol) -> object:
+    """Предел общего члена (``None``, если sympy его не берёт)."""
+    try:
+        return sympy.limit(term, symbol, sympy.oo)
+    except (TypeError, ValueError, NotImplementedError, RecursionError, sympy.PolynomialError):
+        return None
+
+
+def _limit_is_nonzero(value: object) -> bool:
+    """Предел — определённое число или бесконечность, но не ноль."""
+    if not isinstance(value, sympy.Expr) or value is sympy.nan:
+        return False
+    if value.has(sympy.Limit) or _accumulation(value) is not None:
+        return False
+    return bool(value.is_number and value != 0)
+
+
+def _nth_term_diverges(node: CoreNode, ctx: SolveContext, term: sympy.Expr) -> CoreNode:
+    """Необходимый признак: предел члена не нулевой, ряд расходится."""
+    term_node = from_sympy(term)
+    limit_node = CoreNode.node(T.LIMIT, CoreNode.constant("∞"), term_node)
+    ctx.result.add_group(
+        "limit_solve",
+        Step(node, limit_node, "series_nth_term_test_use", [term_node]),
+    )
+    answer = boolean_node(False)
+    ctx.result.add_group(
+        "series_test_diverges",
+        Step(
+            limit_node,
+            answer,
+            "series_nth_term_test_lim_nozero",
+            [CoreNode.constant("0")],
+        ),
+    )
+    return answer
+
+
+def _harmonic_domination(
+    node: CoreNode,
+    ctx: SolveContext,
+    expression: CoreNode,
+    symbol: sympy.Symbol,
+    lower: CoreNode,
+) -> CoreNode | None:
+    """Почленное сравнение с гармоническим рядом: члены убывают медленнее ``1/n``.
+
+    Если ``n·aₙ → ∞``, то при больших ``n`` члены не меньше ``1/n``, а
+    гармонический ряд расходится. Точной суммы у таких рядов нет.
+    """
+    term = to_sympy(expression)
+    if term.has((-sympy.Integer(1)) ** symbol, sympy.Abs):
+        return None
+    ratio = sympy.cancel(term * symbol)
+    _value, kind = _ratio_limit(ratio, symbol)
+    if kind != "infinite":
+        return None
+    reference_node = _sigma_node(str(symbol), lower, CoreNode.constant("∞"), from_sympy(1 / symbol))
+    ratio_node = from_sympy(ratio)
+    condition = CoreNode.node(
+        T.LESS_THAN_EQUAL,
+        CoreNode.constant("1"),
+        CoreNode.constant("1"),
+    )
+    ctx.result.add_group(
+        CoreRichText(type="series_compare_reference", args=[reference_node]),
+        Step(reference_node, None, "series_pseries_test_diverges", [condition]),
+    )
+    ctx.result.add_group(
+        "series_compare_dominates",
+        Step(
+            node,
+            ratio_node,
+            "series_compare_dominates",
+            [ratio_node, reference_node],
+        ),
+    )
+    answer = boolean_node(False)
+    ctx.result.add_group(
+        "series_test_diverges",
+        Step(node, answer, "series_direct_comp_test_diverges", [reference_node]),
+    )
+    return answer
+
+
+def _root_test_fallback(
+    node: CoreNode, ctx: SolveContext, term: sympy.Expr, symbol: sympy.Symbol
+) -> CoreNode | None:
+    """Признак Коши после того, как необходимый признак ничего не дал.
+
+    Строки признака строятся, только если предел ``|aₙ|^(1/n)`` сразу даёт
+    ответ: ``limsup < 1`` или ``liminf > 1``. Иначе строк нет и работает
+    интегральный признак.
+    """
+    root = sympy.Abs(term ** (sympy.Integer(1) / symbol))
+    try:
+        limit = sympy.limit(root, symbol, sympy.oo)
+    except (TypeError, ValueError, NotImplementedError, RecursionError):
+        return None
+    bounds = _accumulation(limit)
+    if bounds is not None:
+        # Ограниченно колеблющийся предел: решает limsup (или liminf).
+        if (bounds[1] < 1) is sympy.true:
+            converges = True
+        elif (bounds[0] > 1) is sympy.true:
+            converges = False
+        else:
+            return None
+    elif limit.is_number is not True or limit.is_finite is not True:
+        return None
+    elif (limit < 1) is sympy.true:
+        converges = True
+    elif (limit > 1) is sympy.true:
+        converges = False
+    else:
+        return None
+    root_node = from_sympy(root)
+    ctx.result.add(Step(left=node, right=None, key="series_root_test"))
+    limit_node = CoreNode.node(T.LIMIT, CoreNode.constant("∞"), root_node)
+    ctx.result.add_group(
+        "limit_solve",
+        Step(node, limit_node, "series_root_test_use", [root_node]),
+    )
+    answer = boolean_node(converges)
+    ctx.result.add_group(
+        "series_test_converges" if converges else "series_test_diverges",
+        Step(
+            node,
+            answer,
+            "series_root_test_lim_ltone" if converges else "series_root_test_lim_gtone",
+            [CoreNode.constant("1")],
+        ),
     )
     return answer
 
@@ -1356,6 +1817,233 @@ def _pseries_convergence(node: CoreNode, ctx: SolveContext, exponent: sympy.Expr
             answer,
             "series_pseries_test_converges" if converges else "series_pseries_test_diverges",
             [condition],
+        ),
+    )
+    return answer
+
+
+_P_CANDIDATES = tuple(sympy.Rational(k, 6) for k in range(1, 31))
+_LOG_CANDIDATES = (1, 2, 3, 4)
+
+
+def _needs_comparison(term: sympy.Expr, symbol: sympy.Symbol) -> bool:
+    """Нужен ли признак сравнения вместо точной суммы и интеграла.
+
+    Периодические множители, факториалы и сдвинутые логарифмы не дают ни
+    замкнутой суммы, ни берущегося интеграла: там члены ряда сравнимы со
+    степенью или с ``1/(n·lnᵗn)``, и решает предельный признак сравнения.
+    """
+    periodic = (
+        sympy.sin,
+        sympy.cos,
+        sympy.tan,
+        sympy.cot,
+        sympy.sec,
+        sympy.csc,
+        sympy.sinh,
+        sympy.cosh,
+        sympy.tanh,
+    )
+    for function in term.atoms(sympy.Function):
+        if isinstance(function, periodic):
+            return True
+    if term.has(sympy.factorial, sympy.Abs):
+        return True
+    if term.is_rational_function(symbol):
+        return True
+    for power in term.atoms(sympy.Pow):
+        # Корень из многочлена: точной суммы нет, а член ведёт себя как степень.
+        if power.exp.is_number and power.exp.is_Integer is False and power.base.has(symbol):
+            return True
+    for summand in term.atoms(sympy.Add):
+        if summand.has(sympy.log):
+            return True
+    return any(logarithm.args[0] != symbol for logarithm in term.atoms(sympy.log))
+
+
+def _accumulation(value: object) -> tuple[sympy.Expr, sympy.Expr] | None:
+    """Границы ``AccumBounds``, если предел ограниченно колеблется."""
+    if not isinstance(value, sympy.AccumBounds):
+        return None
+    low, high = value.min, value.max
+    if low in (sympy.oo, -sympy.oo) or high in (sympy.oo, -sympy.oo):
+        return None
+    return low, high
+
+
+def _ratio_limit(expression: sympy.Expr, symbol: sympy.Symbol) -> tuple[object, str]:
+    """``(предел, вид)``: ``zero``, ``finite``, ``bounded``, ``infinite``, ``unknown``."""
+    try:
+        value = sympy.limit(expression, symbol, sympy.oo)
+    except (TypeError, ValueError, NotImplementedError, RecursionError, sympy.PolynomialError):
+        return None, "unknown"
+    if value is sympy.nan or value.has(sympy.Limit):
+        return None, "unknown"
+    if value == 0:
+        return value, "zero"
+    if value in (sympy.oo, -sympy.oo, sympy.zoo):
+        return value, "infinite"
+    bounds = _accumulation(value)
+    if bounds is not None:
+        return value, "bounded"
+    if value.is_finite is True and value.is_positive is True:
+        return value, "finite"
+    return None, "unknown"
+
+
+def _growth_exponent(term: sympy.Expr, symbol: sympy.Symbol) -> sympy.Expr | None:
+    """Показатель роста члена: ``aₙ ~ C·n^(−p)`` даёт ``p``."""
+    try:
+        value = sympy.limit(sympy.log(term) / sympy.log(symbol), symbol, sympy.oo)
+    except (TypeError, ValueError, NotImplementedError, RecursionError, sympy.PolynomialError):
+        return None
+    if value.is_number and value.is_finite is True:
+        return -value
+    return None
+
+
+def _p_ratio(term: sympy.Expr, symbol: sympy.Symbol, p: sympy.Expr) -> tuple[object, str]:
+    """``(предел, вид)`` для отношения ``aₙ·nᵖ``."""
+    return _ratio_limit(symbol**p * term, symbol)
+
+
+def _p_reference(term: sympy.Expr, symbol: sympy.Symbol) -> tuple[sympy.Expr, object, bool] | None:
+    """Эталон ``1/nᵖ``: ``(p, предел отношения, ограниченно ли колеблется)``."""
+    candidates = list(_P_CANDIDATES)
+    start = candidates.index(sympy.Integer(1))
+    estimate = _growth_exponent(term, symbol)
+    if estimate is not None and estimate.is_rational:
+        target = sympy.Rational(estimate).limit_denominator(6)
+        if candidates[0] <= target <= candidates[-1]:
+            # Оценка может лежать между точками сетки (p = 1/5): берём ближайшую.
+            start = min(range(len(candidates)), key=lambda i: abs(candidates[i] - target))
+            value, kind = _p_ratio(term, symbol, target)
+            if kind in ("finite", "bounded"):
+                return target, value, kind == "bounded"
+            if kind == "infinite":
+                scan = list(reversed(candidates[:start]))
+            else:
+                scan = candidates[start + 1 :]
+        else:
+            scan = candidates
+    else:
+        # Оценка показателя не удалась (ряды с факториалом внутри синуса):
+        # идём по целым p и уточняем дробный показатель между соседними.
+        for whole in range(1, 6):
+            value, kind = _p_ratio(term, symbol, sympy.Integer(whole))
+            if kind in ("finite", "bounded"):
+                return sympy.Integer(whole), value, kind == "bounded"
+            if kind == "infinite":
+                scan = [sympy.Rational(k, 6) for k in range(6 * whole - 5, 6 * whole)]
+                break
+        else:
+            return None
+    for p in scan:
+        value, kind = _p_ratio(term, symbol, p)
+        if kind in ("finite", "bounded"):
+            return p, value, kind == "bounded"
+        if kind == "infinite":
+            break
+    return None
+
+
+def _reference_series(
+    term: sympy.Expr, symbol: sympy.Symbol
+) -> tuple[sympy.Expr, object, sympy.Expr, str, bool] | None:
+    """Эталон ``1/nᵖ`` или ``1/(n·lnᵗn)``, предел отношения и признак колебания."""
+    found = _p_reference(term, symbol)
+    if found is not None:
+        p, value, bounded = found
+        return sympy.Integer(1) / symbol**p, value, p, "p", bounded
+    for q in _LOG_CANDIDATES:
+        ratio = term * symbol * sympy.log(symbol) ** q
+        value, kind = _ratio_limit(ratio, symbol)
+        if kind in ("finite", "bounded"):
+            reference = 1 / (symbol * sympy.log(symbol) ** q)
+            return reference, value, sympy.Integer(q), "log", kind == "bounded"
+    return None
+
+
+def _comparison_convergence(
+    node: CoreNode,
+    ctx: SolveContext,
+    expression: CoreNode,
+    symbol: sympy.Symbol,
+    lower: CoreNode,
+    *,
+    only_divergence: bool = False,
+) -> CoreNode | None:
+    """Сходимость предельным признаком сравнения с эталонным рядом.
+
+    ``only_divergence`` пригодится необходимому признаку: он умеет доказывать
+    только расходимость, поэтому сходящийся эталон там не нужен.
+    """
+    term = to_sympy(expression)
+    if not _needs_comparison(term, symbol):
+        return None
+    choice = _reference_series(term, symbol)
+    if choice is None:
+        return None
+    reference, limit_value, parameter, family, bounded = choice
+    converges = (parameter > 1) is sympy.true
+    if only_divergence and converges:
+        return None
+    reference_node = _sigma_node(str(symbol), lower, CoreNode.constant("∞"), from_sympy(reference))
+    steps = [Step(node, None, "series_compare_reference", [reference_node])]
+    if family == "p":
+        condition = CoreNode.node(
+            T.GREATER_THAN if converges else T.LESS_THAN_EQUAL,
+            from_sympy(parameter),
+            CoreNode.constant("1"),
+        )
+        steps.append(
+            Step(
+                reference_node,
+                None,
+                "series_pseries_test_converges" if converges else "series_pseries_test_diverges",
+                [condition],
+            )
+        )
+    else:
+        steps.append(
+            Step(
+                reference_node,
+                None,
+                "series_compare_log_converges" if converges else "series_compare_log_diverges",
+                [reference_node],
+            )
+        )
+    ratio = sympy.cancel(term / reference)
+    ratio_node = from_sympy(ratio)
+    if bounded:
+        steps.append(Step(node, ratio_node, "series_compare_bounded", [reference_node]))
+        ctx.result.add_group("series_limit_test_use_smpl", *steps)
+        answer = boolean_node(converges)
+        ctx.result.add_group(
+            "series_test_converges" if converges else "series_test_diverges",
+            Step(
+                ratio_node,
+                answer,
+                "series_compare_bounded_converges"
+                if converges
+                else "series_compare_bounded_diverges",
+                [reference_node],
+            ),
+        )
+        return answer
+    limit_node = CoreNode.node(T.LIMIT, CoreNode.constant("∞"), ratio_node)
+    steps.append(Step(node, limit_node, "series_compare_ratio", [ratio_node]))
+    value_node = from_sympy(limit_value)
+    steps.append(Step(limit_node, value_node, "limit_solve"))
+    ctx.result.add_group("series_limit_test_use_smpl", *steps)
+    answer = boolean_node(converges)
+    ctx.result.add_group(
+        "series_test_converges" if converges else "series_test_diverges",
+        Step(
+            value_node,
+            answer,
+            "series_limit_test_converges" if converges else "series_limit_test_diverges",
+            [reference_node],
         ),
     )
     return answer
@@ -1585,6 +2273,19 @@ def _remove_abs_step(
     )
 
 
+def _term_test_decides(
+    node: CoreNode, ctx: SolveContext, term: sympy.Expr, symbol: sympy.Symbol
+) -> CoreNode | None:
+    """Необходимый признак после «признак не даёт ответа».
+
+    Нулевой предел оставляет вопрос открытым, ненулевой доказывает расходимость.
+    """
+    _, kind = _ratio_limit(term, symbol)
+    if kind not in ("finite", "infinite"):
+        return None
+    return _nth_term_diverges(node, ctx, term)
+
+
 def ratio_test(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Признак Даламбера: сходимость ряда по пределу ``|aₙ₊₁/aₙ|``.
 
@@ -1637,7 +2338,8 @@ def ratio_test(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreN
                 [CoreNode.constant("1")],
             ),
         )
-        return inconclusive
+        decided = _term_test_decides(node, ctx, term, symbol)
+        return decided if decided is not None else inconclusive
 
     ctx.result.add_group(header, Step(left=node, right=answer, key=key, args=args_nodes))
     return answer
@@ -1713,7 +2415,8 @@ def root_test(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNo
                 [CoreNode.constant("1")],
             ),
         )
-        return inconclusive
+        decided = _term_test_decides(node, ctx, term, symbol)
+        return decided if decided is not None else inconclusive
     ctx.result.add_group(header, Step(left=node, right=answer, key=key, args=args_nodes))
     return answer
 
@@ -1721,13 +2424,14 @@ def root_test(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNo
 def nth_term_test(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Необходимый признак сходимости: предел общего члена.
 
-    A non-zero limit diverges; a zero limit is «не даёт ответа» (the app's
-    ``inconclusive`` card), not an error.
+    A non-zero limit diverges; a zero limit alone proves nothing, so the series
+    is then compared with a reference that diverges (the app's ``inconclusive``
+    card stays when no such comparison holds).
     """
     del args
     if node.type is not T.SIGMA_DEFINITE:
         raise SolveError("необходимый признак применяется к ряду (сумме)")
-    index, _, _, expression = _parts(node)
+    index, lower, _, expression = _parts(node)
     symbol = sympy.Symbol(index)
     term = to_sympy(expression)
 
@@ -1760,7 +2464,12 @@ def nth_term_test(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> Co
                 [from_sympy(limit)],
             ),
         )
-        return inconclusive
+        decided = _comparison_convergence(
+            node, ctx, expression, symbol, lower, only_divergence=True
+        )
+        if decided is None:
+            decided = _harmonic_domination(node, ctx, expression, symbol, lower)
+        return decided if decided is not None else inconclusive
     raise SolveError("необходимый признак сходимости не даёт ответа")
 
 
