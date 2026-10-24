@@ -1,0 +1,121 @@
+{
+  "textbook_header_leading": {
+    "arity": 0,
+    "templates": {
+      "default": "Leading terms: replace every factor by its main term",
+      "ru": "Главные члены: замена каждого множителя на главный член"
+    }
+  },
+  "textbook_leading_replace": {
+    "arity": 1,
+    "templates": {
+      "default": "Pass to the leading terms: ARG1",
+      "ru": "Перейдём к главным членам: ARG1"
+    }
+  },
+  "textbook_uncertainty_zero_inf": {
+    "arity": 0,
+    "templates": {
+      "default": "0 · ∞ indeterminate form: one factor vanishes while the other grows without bound.",
+      "ru": "Неопределённость 0 · ∞: один множитель стремится к нулю, а другой неограниченно возрастает."
+    }
+  },
+  "textbook_header_bounded": {
+    "arity": 0,
+    "templates": {
+      "default": "A bounded factor times an infinitesimal",
+      "ru": "Ограниченный множитель и бесконечно малая"
+    }
+  },
+  "textbook_bounded_factor": {
+    "arity": 1,
+    "templates": {
+      "default": "The factor ARG1 is bounded: it stays within one constant.",
+      "ru": "Множитель ARG1 ограничен: он не выходит за пределы постоянной."
+    }
+  },
+  "textbook_bounded_infinitesimal": {
+    "arity": 1,
+    "templates": {
+      "default": "The other factor ARG1 tends to zero, so the whole product tends to zero.",
+      "ru": "Второй множитель ARG1 стремится к нулю, поэтому всё произведение стремится к нулю."
+    }
+  },
+  "textbook_header_power": {
+    "arity": 0,
+    "templates": {
+      "default": "A power: the limits of the base and of the exponent",
+      "ru": "Степень: пределы основания и показателя"
+    }
+  },
+  "textbook_power_base": {
+    "arity": 1,
+    "templates": {
+      "default": "Find the limit of the base: ARG1",
+      "ru": "Найдём предел основания: ARG1"
+    }
+  },
+  "textbook_power_exponent": {
+    "arity": 1,
+    "templates": {
+      "default": "Find the limit of the exponent: ARG1",
+      "ru": "Найдём предел показателя: ARG1"
+    }
+  },
+  "textbook_header_log_power": {
+    "arity": 0,
+    "templates": {
+      "default": "∞^0 indeterminate form: take logarithms",
+      "ru": "Неопределённость ∞^0: логарифмирование"
+    }
+  },
+  "textbook_take_log": {
+    "arity": 0,
+    "templates": {
+      "default": "Take logarithms and find the limit of the logarithm.",
+      "ru": "Прологарифмируем выражение и найдём предел логарифма."
+    }
+  },
+  "textbook_log_limit": {
+    "arity": 0,
+    "templates": {
+      "default": "Find the limit of the logarithm.",
+      "ru": "Найдём предел логарифма."
+    }
+  },
+  "textbook_second_power": {
+    "arity": 0,
+    "templates": {
+      "default": "Find the limit of the exponent of the reduced power.",
+      "ru": "Найдём предел показателя степени после приведения."
+    }
+  },
+  "textbook_header_sum": {
+    "arity": 0,
+    "templates": {
+      "default": "Limit of a finite sum",
+      "ru": "Предел конечной суммы"
+    }
+  },
+  "textbook_sum_formula": {
+    "arity": 1,
+    "templates": {
+      "default": "Collapse the sum with the closed formula: ARG1",
+      "ru": "Свернём сумму по формуле: ARG1"
+    }
+  },
+  "textbook_sum_limit": {
+    "arity": 1,
+    "templates": {
+      "default": "Insert the closed formula into the limit: ARG1",
+      "ru": "Подставим формулу суммы в предел: ARG1"
+    }
+  },
+  "textbook_sum_decay": {
+    "arity": 1,
+    "templates": {
+      "default": "The term ARG1 tends to zero, so only the constant part remains.",
+      "ru": "Слагаемое ARG1 стремится к нулю, поэтому остаётся только постоянная часть."
+    }
+  }
+}

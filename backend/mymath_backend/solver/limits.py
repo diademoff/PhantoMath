@@ -22,7 +22,7 @@ import sympy
 from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
 from .base import SolveContext, SolveError, SolveResult, Step, route, solver_for
-from .limit_cards import cards_for
+from .limit_cards import _bounded_zero, _not_real, cards_for, expand_sums, limit_variables
 from .methods import method_provider
 from .sympy_bridge import from_sympy, to_sympy
 
@@ -41,6 +41,8 @@ def _two_sided(expression: sympy.Expr, symbol: sympy.Symbol, point: sympy.Expr) 
 
     Раньше двусторонний предел считался как правосторонний (``dir="+"``),
     поэтому ``1/x`` при ``x → 0`` давал ``∞`` вместо «не существует».
+    Если функция действительна только с одной стороны (чётный корень),
+    предел берётся по её области определения: ``√x`` при ``x → 0`` — справа.
     """
     # Вызывается только для T.LIMIT в конечной точке (см. solve_limit).
     try:
@@ -49,6 +51,10 @@ def _two_sided(expression: sympy.Expr, symbol: sympy.Symbol, point: sympy.Expr) 
     except (TypeError, ValueError, NotImplementedError):
         raise SolveError("предел не существует или не вычисляется") from None
     if left != right:
+        if _not_real(left) and not _not_real(right):
+            return right
+        if _not_real(right) and not _not_real(left):
+            return left
         raise SolveError("предел не существует или не вычисляется")
     return right
 
@@ -57,17 +63,32 @@ def _two_sided(expression: sympy.Expr, symbol: sympy.Symbol, point: sympy.Expr) 
 def solve_limit(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Вычислить предел через sympy."""
     ctx.require(len(node.children) == 2, "предел задаётся точкой и выражением")
-    ctx.require(len(ctx.variables) <= 1, "поддерживается одно неизвестное")
-    var = ctx.variables[0] if ctx.variables else "x"
+    # Индекс конечной суммы — связанная переменная, а не второе неизвестное.
+    free = limit_variables(node, ctx.variables)
+    ctx.require(len(free) <= 1, "поддерживается одно неизвестное")
+    var = free[0] if free else "x"
     point, expression = node.children
     symbol = sympy.Symbol(var)
     point_value = to_sympy(point)
-    expression_value = to_sympy(expression)
+    expression_value = to_sympy(expand_sums(expression, var))
 
     if node.type is T.LIMIT and point_value not in (sympy.oo, -sympy.oo):
-        value = _two_sided(expression_value, symbol, point_value)
+        try:
+            value = _two_sided(expression_value, symbol, point_value)
+        except NotImplementedError:
+            bounded = _bounded_zero(expression_value, symbol, point_value)
+            if bounded is None:
+                raise SolveError("предел не существует или не вычисляется") from None
+            value = bounded
     else:
-        value = sympy.limit(expression_value, symbol, point_value, _DIRECTION[node.type])
+        try:
+            value = sympy.limit(expression_value, symbol, point_value, _DIRECTION[node.type])
+        except NotImplementedError:
+            # Ограниченная величина, умноженная на бесконечно малую.
+            bounded = _bounded_zero(expression_value, symbol, point_value)
+            if bounded is None:
+                raise SolveError("предел не существует или не вычисляется") from None
+            value = bounded
     if not isinstance(value, sympy.Expr) or value is sympy.nan or value.has(sympy.Limit):
         raise SolveError("предел не существует или не вычисляется")
 
