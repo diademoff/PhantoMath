@@ -10,6 +10,14 @@
 
 Ключи шагов: ``complex_rewrite`` (Re/Im), ``complex_conjugate`` (сопряжение),
 ``complex_convert_std_form`` (арифметика с ``i``).
+
+Карточки арифметики строятся по частям числа: сумма и разность группируют
+действительные и мнимые части (``complex_separate``), произведение идёт по
+распределительному закону, частное освобождается от знаменателя сопряжённым
+числом (``complex_rationalize_mul``), степени — по периоду ``i``
+(``complex_i_period``) или формуле Муавра (``complex_pow_polar_moivre``).
+Корни извлекаются по тригонометрической форме (``complex_root_formula``), а
+команда ``polar`` пишет в этой форме любое число, включая действительное.
 """
 
 from __future__ import annotations
@@ -173,6 +181,89 @@ def _sum_suffix_detail(
     _ = inside, eq
     detail.set_solution(_iterm(total))
     return detail
+
+
+def _value(expr: sympy.Expr) -> CoreNode:
+    """A number or a symbolic value as a node."""
+    return from_sympy(sympy.simplify(expr))
+
+
+def _numeric_parts(node: CoreNode) -> tuple[sympy.Expr, sympy.Expr] | None:
+    """``(a, b)`` of ``a + bi`` when the node is a number, ``None`` otherwise.
+
+    Unlike :func:`_parts` it accepts irrational parts (``√3``) and fractions:
+    the cards need the parts of any numeric complex number, not only integers.
+    """
+    try:
+        value = to_sympy(node)
+    except SolveError:
+        return None
+    if value.is_number is not True:
+        return None
+    real, imaginary = value.as_real_imag()
+    return sympy.simplify(real), sympy.simplify(imaginary)
+
+
+def _complex_expr(real: sympy.Expr, imaginary: sympy.Expr) -> CoreNode:
+    """``a + bi`` in the algebraic form the keyboard writes."""
+    return from_sympy(sympy.simplify(real + imaginary * sympy.I))
+
+
+def _standard(expr: sympy.Expr) -> CoreNode:
+    """A complex number in the algebraic form ``a + bi`` (denominator rationalized)."""
+    value = sympy.radsimp(sympy.simplify(expr))
+    real, imaginary = value.as_real_imag()
+    return _complex_expr(sympy.simplify(real), sympy.simplify(imaginary))
+
+
+def _imaginary_term(coefficient: sympy.Expr) -> CoreNode:
+    """``bi`` as a term: ``i`` for 1, ``−i`` for −1, ``3i`` otherwise."""
+    if coefficient == 1:
+        return _unit()
+    if coefficient == -1:
+        return CoreNode.node(T.NEGATIVE, _unit())
+    return CoreNode.node(T.MULTIPLY_IMPLICIT, _value(coefficient), _unit())
+
+
+def _bracket(node: CoreNode) -> CoreNode:
+    """Brackets around a sum or a negative number, so a factor reads correctly."""
+    if node.type in (T.ADD, T.SUBTRACT, T.NEGATIVE):
+        return CoreNode.node(T.BRACKET, node)
+    if node.type is T.CONSTANT and (node.value or "").lstrip().startswith(("-", "−")):
+        return CoreNode.node(T.BRACKET, node)
+    return node
+
+
+def _sum_node(left: sympy.Expr, right: sympy.Expr, sign: int) -> CoreNode:
+    """``left ± right`` with the sign folded into the second term."""
+    term = sign * right
+    if term < 0:
+        return CoreNode.node(T.SUBTRACT, _value(left), _value(-term))
+    return CoreNode.node(T.ADD, _value(left), _value(term))
+
+
+def _polar_node(radius: sympy.Expr, angle: sympy.Expr) -> CoreNode:
+    """``r(cos φ + i sin φ)``."""
+    inner = CoreNode.node(
+        T.ADD,
+        CoreNode.node(T.COS, _value(angle)),
+        CoreNode.node(T.MULTIPLY_IMPLICIT, _unit(), CoreNode.node(T.SIN, _value(angle))),
+    )
+    return CoreNode.node(T.MULTIPLY_IMPLICIT, _value(radius), CoreNode.node(T.BRACKET, inner))
+
+
+def _modulus_argument(node: CoreNode, radius: sympy.Expr, angle: sympy.Expr) -> Step:
+    """The row that names the modulus and the argument of a complex number."""
+    return Step(
+        node,
+        CoreNode.node(
+            T.LIST,
+            CoreNode.node(T.EQUALS, CoreNode.variable("r"), _value(radius)),
+            CoreNode.node(T.EQUALS, CoreNode.variable("φ"), _value(angle)),
+        ),
+        "complex_mod_arg",
+        [node, _value(radius), _value(angle)],
+    )
 
 
 def _modulus_rows(
@@ -430,6 +521,367 @@ def _product_rows(
     return final
 
 
+def _sum_rows(
+    node: CoreNode,
+    left: tuple[sympy.Expr, sympy.Expr],
+    right: tuple[sympy.Expr, sympy.Expr],
+    ctx: SolveContext,
+    *,
+    subtract: bool,
+) -> CoreNode:
+    """``(a + bi) ± (c + di)``: the parts are grouped, then added separately."""
+    a, b = left
+    c, d = right
+    sign = -1 if subtract else 1
+    real = a + sign * c
+    imaginary = b + sign * d
+    real_group = CoreNode.node(T.BRACKET, _sum_node(a, c, sign))
+    imaginary_group = CoreNode.node(T.BRACKET, _sum_node(b, d, sign))
+    grouped = CoreNode.node(T.ADD, real_group, CoreNode.node(T.MULTIPLY, imaginary_group, _unit()))
+    final = _complex_expr(real, imaginary)
+    ctx.result.add_group("complex_separate", Step(node, grouped, "complex_separate"))
+    detail = SolveResult()
+    detail.add_group(
+        "calculate_short",
+        Step(real_group, _value(real), "add" if sign * c >= 0 else "calc_diff"),
+        Step(imaginary_group, _value(imaginary), "add" if sign * d >= 0 else "calc_diff"),
+    )
+    detail.set_solution(_value(imaginary))
+    ctx.result.add_group(
+        ["calculate_short", "sum_suffix"],
+        Step(grouped, final, "sum_suffix", subresult=detail),
+    )
+    return final
+
+
+def _division_rows(
+    node: CoreNode,
+    top: tuple[sympy.Expr, sympy.Expr],
+    bottom: tuple[sympy.Expr, sympy.Expr],
+    ctx: SolveContext,
+) -> CoreNode | None:
+    """``(a + bi)/(c + di)``: the denominator is cleared with its conjugate."""
+    a, b = top
+    c, d = bottom
+    if c == 0 and d == 0:
+        return None
+    top_node = _complex_expr(a, b)
+    bottom_node = _complex_expr(c, d)
+    conjugate = _complex_expr(c, -d)
+    top_product = CoreNode.node(T.MULTIPLY, _bracket(top_node), _bracket(conjugate))
+    bottom_product = CoreNode.node(T.MULTIPLY, _bracket(bottom_node), _bracket(conjugate))
+    conjugated = CoreNode.node(T.FRACTION, top_product, bottom_product)
+    ctx.result.add_group(
+        "complex_rationalize_mul", Step(node, conjugated, "complex_rationalize_mul")
+    )
+    numerator = _complex_expr(a * c + b * d, b * c - a * d)
+    expanded = CoreNode.node(T.FRACTION, numerator, bottom_product)
+    ctx.result.add_group("mul_bracket_cross", Step(conjugated, expanded, "mul_bracket_cross_each"))
+    denominator = _value(c * c + d * d)
+    with_square = CoreNode.node(T.FRACTION, numerator, denominator)
+    left, right = CoreNode.variable("a"), CoreNode.variable("b")
+    left_term = CoreNode.node(T.MULTIPLY, right, _unit())
+    law = CoreNode.node(
+        T.EQUALS,
+        CoreNode.node(
+            T.MULTIPLY,
+            CoreNode.node(T.BRACKET, CoreNode.node(T.ADD, left, left_term)),
+            CoreNode.node(T.BRACKET, CoreNode.node(T.SUBTRACT, left, left_term)),
+        ),
+        CoreNode.node(
+            T.ADD,
+            CoreNode.node(T.POWER, left, _number(Fraction(2))),
+            CoreNode.node(T.POWER, right, _number(Fraction(2))),
+        ),
+    )
+    ctx.result.add_group(
+        "factorise_inv_sim", Step(expanded, with_square, "factorise_inv_sim", [law])
+    )
+    final = _standard((a + b * sympy.I) / (c + d * sympy.I))
+    if not final.structural_eq(with_square):
+        ctx.result.add_group(
+            "complex_convert_std_form", Step(with_square, final, "complex_convert_std_form")
+        )
+    return final
+
+
+def _unit_power_rows(
+    node: CoreNode, coefficient: sympy.Expr, exponent: int, ctx: SolveContext
+) -> CoreNode:
+    """``(c i)^n``: the modulus is powered, the unit goes through its period 4."""
+    reduced = exponent % 4
+    reduced_node = CoreNode.node(T.POWER, _unit(), _value(reduced))
+    coefficient_power = coefficient**exponent
+    current = node
+    if coefficient != 1:
+        split = CoreNode.node(
+            T.MULTIPLY,
+            CoreNode.node(T.POWER, _value(coefficient), _value(exponent)),
+            CoreNode.node(T.POWER, _unit(), _value(exponent)),
+        )
+        ctx.result.add_group("complex_pow_split", Step(node, split, "complex_pow_split"))
+        current = split
+        period = CoreNode.node(T.MULTIPLY, _value(coefficient_power), reduced_node)
+    else:
+        period = reduced_node
+    ctx.result.add_group("complex_i_period", Step(current, period, "complex_i_period"))
+    powered = coefficient_power * sympy.I**reduced
+    final = _complex_expr(*sympy.simplify(powered).as_real_imag())
+    law = CoreNode.node(
+        T.EQUALS, CoreNode.node(T.POWER, _unit(), _value(reduced)), _value(sympy.I**reduced)
+    )
+    ctx.result.add_group("calculate_short", Step(period, final, "by_definition", [law]))
+    return final
+
+
+def _square_rows(
+    node: CoreNode, real: sympy.Expr, imaginary: sympy.Expr, ctx: SolveContext
+) -> CoreNode:
+    """``(a + bi)^2`` by the square of a binomial."""
+    a, b = CoreNode.variable("a"), CoreNode.variable("b")
+    squared_binomial = CoreNode.node(T.BRACKET, CoreNode.node(T.ADD, a, b))
+    formula = CoreNode.node(
+        T.EQUALS,
+        CoreNode.node(T.POWER, squared_binomial, _number(Fraction(2))),
+        CoreNode.node(
+            T.ADD,
+            CoreNode.node(
+                T.ADD,
+                CoreNode.node(T.POWER, a, _number(Fraction(2))),
+                CoreNode.node(
+                    T.MULTIPLY_IMPLICIT,
+                    _number(Fraction(2)),
+                    CoreNode.node(T.MULTIPLY_IMPLICIT, a, b),
+                ),
+            ),
+            CoreNode.node(T.POWER, b, _number(Fraction(2))),
+        ),
+    )
+    square_real = CoreNode.node(T.POWER, _value(real), _number(Fraction(2)))
+    square_imaginary = CoreNode.node(T.POWER, _value(imaginary), _number(Fraction(2)))
+    doubled = _imaginary_term(2 * real * imaginary)
+    squared_unit = CoreNode.node(T.POWER, _unit(), _number(Fraction(2)))
+    expanded = CoreNode.node(
+        T.ADD,
+        CoreNode.node(T.ADD, square_real, doubled),
+        CoreNode.node(T.MULTIPLY, square_imaginary, squared_unit),
+    )
+    defined = CoreNode.node(
+        T.SUBTRACT, CoreNode.node(T.ADD, square_real, doubled), square_imaginary
+    )
+    computed = CoreNode.node(
+        T.SUBTRACT,
+        CoreNode.node(T.ADD, _value(real * real), doubled),
+        _value(imaginary * imaginary),
+    )
+    final = _complex_expr(real * real - imaginary * imaginary, 2 * real * imaginary)
+    ctx.result.add_group("expand_msg", Step(node, expanded, "using_expand", [formula]))
+    ctx.result.add_group(
+        "calculate_short",
+        Step(
+            expanded,
+            defined,
+            "by_definition",
+            [
+                CoreNode.node(
+                    T.EQUALS,
+                    CoreNode.node(T.POWER, _unit(), _number(Fraction(2))),
+                    CoreNode.node(T.NEGATIVE, _number(Fraction(1))),
+                )
+            ],
+        ),
+    )
+    ctx.result.add_group("pow", Step(defined, computed, "pow"))
+    ctx.result.add_group("sum_suffix", Step(computed, final, "sum_suffix"))
+    return final
+
+
+def _moivre_rows(node: CoreNode, value: sympy.Expr, exponent: int, ctx: SolveContext) -> CoreNode:
+    """``z^n`` through the trigonometric form and De Moivre's formula."""
+    radius = sympy.simplify(sympy.Abs(value))
+    angle = sympy.simplify(sympy.arg(value))
+    polar = _polar_node(radius, angle)
+    powered = CoreNode.node(T.POWER, CoreNode.node(T.BRACKET, polar), _value(exponent))
+    base = node.children[0] if node.children else node
+    while base.type is T.BRACKET and len(base.children) == 1:
+        base = base.children[0]
+    detail = SolveResult()
+    detail.add_group("complex_trig_form_simple", _modulus_argument(base, radius, angle))
+    detail.set_solution(polar)
+    ctx.result.add_group(
+        "complex_trig_form", Step(node, powered, "complex_trig_form", subresult=detail)
+    )
+    r, angle_variable, n = (
+        CoreNode.variable("r"),
+        CoreNode.variable("θ"),
+        CoreNode.variable("n"),
+    )
+    polar_formula = CoreNode.node(T.BRACKET, _polar_node_symbolic(r, angle_variable))
+    formula = CoreNode.node(
+        T.EQUALS,
+        CoreNode.node(T.POWER, polar_formula, n),
+        CoreNode.node(
+            T.MULTIPLY_IMPLICIT,
+            CoreNode.node(T.POWER, r, n),
+            CoreNode.node(
+                T.BRACKET,
+                CoreNode.node(
+                    T.ADD,
+                    CoreNode.node(T.COS, CoreNode.node(T.MULTIPLY, n, angle_variable)),
+                    CoreNode.node(
+                        T.MULTIPLY_IMPLICIT,
+                        _unit(),
+                        CoreNode.node(T.SIN, CoreNode.node(T.MULTIPLY, n, angle_variable)),
+                    ),
+                ),
+            ),
+        ),
+    )
+    moivre = _polar_node(sympy.simplify(radius**exponent), sympy.simplify(exponent * angle))
+    ctx.result.add_group(
+        "complex_pow_polar_moivre",
+        Step(powered, moivre, "complex_pow_polar_moivre", [formula]),
+    )
+    final = _standard(sympy.expand(value**exponent))
+    ctx.result.add_group(
+        "complex_convert_std_form", Step(moivre, final, "complex_convert_std_form")
+    )
+    return final
+
+
+def _polar_node_symbolic(radius: CoreNode, angle: CoreNode) -> CoreNode:
+    """``r(cos θ + i sin θ)`` built from the given nodes (for a formula)."""
+    return CoreNode.node(
+        T.MULTIPLY_IMPLICIT,
+        radius,
+        CoreNode.node(
+            T.BRACKET,
+            CoreNode.node(
+                T.ADD,
+                CoreNode.node(T.COS, angle),
+                CoreNode.node(T.MULTIPLY_IMPLICIT, _unit(), CoreNode.node(T.SIN, angle)),
+            ),
+        ),
+    )
+
+
+def _inverse_power_rows(
+    node: CoreNode, value: sympy.Expr, exponent: int, ctx: SolveContext
+) -> CoreNode | None:
+    """``z^(−m)``: the reciprocal of ``z^m``, computed as a division."""
+    degree = -exponent
+    base = _complex_expr(*value.as_real_imag())
+    powered = CoreNode.node(T.POWER, _bracket(base), _value(degree))
+    reciprocal = CoreNode.node(T.FRACTION, _number(Fraction(1)), powered)
+    detail = SolveResult()
+    source = node.children[0] if node.children else node
+    if not source.structural_eq(base):
+        detail.add_group(
+            "complex_convert_std_form",
+            Step(source, base, "complex_convert_std_form"),
+        )
+    scratch = SolveContext(result=detail)
+    positive = _power_rows(powered, value, degree, scratch)
+    if positive is None:
+        return None
+    ctx.result.add_group(
+        "complex_pow_inverse",
+        Step(node, reciprocal, "complex_pow_inverse", subresult=detail),
+    )
+    positive_value = sympy.simplify(value**degree)
+    standard = CoreNode.node(
+        T.FRACTION, _number(Fraction(1)), _complex_expr(*positive_value.as_real_imag())
+    )
+    if not standard.structural_eq(reciprocal):
+        ctx.result.add_group(
+            "complex_convert_std_form", Step(reciprocal, standard, "complex_convert_std_form")
+        )
+    parts = positive_value.as_real_imag()
+    return _division_rows(
+        standard,
+        (sympy.Integer(1), sympy.Integer(0)),
+        (sympy.simplify(parts[0]), sympy.simplify(parts[1])),
+        ctx,
+    )
+
+
+def _power_rows(
+    node: CoreNode, value: sympy.Expr, exponent: int, ctx: SolveContext
+) -> CoreNode | None:
+    """An integer power of a numeric complex number, as a textbook does it."""
+    if value.is_number is not True:
+        return None
+    real, imaginary = (sympy.simplify(item) for item in value.as_real_imag())
+    if imaginary == 0:
+        return None
+    if exponent < 0:
+        return _inverse_power_rows(node, value, exponent, ctx)
+    if exponent == 0:
+        return None
+    if real == 0:
+        return _unit_power_rows(node, imaginary, exponent, ctx)
+    if exponent == 2:
+        return _square_rows(node, real, imaginary, ctx)
+    return _moivre_rows(node, value, exponent, ctx)
+
+
+def _integer_exponent(node: CoreNode) -> int | None:
+    """The integer exponent of a ``POWER`` node, ``None`` for anything else."""
+    if node.type is not T.POWER or len(node.children) != 2:
+        return None
+    exponent = node.children[1]
+    sign = 1
+    while exponent.type is T.BRACKET and len(exponent.children) == 1:
+        exponent = exponent.children[0]
+    if exponent.type is T.NEGATIVE and len(exponent.children) == 1:
+        sign, exponent = -1, exponent.children[0]
+        while exponent.type is T.BRACKET and len(exponent.children) == 1:
+            exponent = exponent.children[0]
+    if exponent.type is not T.CONSTANT or exponent.value is None:
+        return None
+    text = exponent.value.strip()
+    if not text.isdigit():
+        return None
+    return sign * int(text)
+
+
+def complex_power_card(node: CoreNode, ctx: SolveContext) -> CoreNode | None:
+    """Power card for a numeric complex base; ``None`` outside that family."""
+    exponent = _integer_exponent(node)
+    if exponent is None:
+        return None
+    return _power_rows(node, to_sympy(node.children[0]), exponent, ctx)
+
+
+def complex_rationalize(node: CoreNode, ctx: SolveContext) -> CoreNode | None:
+    """Division card for a numeric complex fraction; ``None`` outside that family."""
+    if node.type not in (T.FRACTION, T.DIVIDE) or len(node.children) != 2:
+        return None
+    top = _numeric_parts(node.children[0])
+    bottom = _numeric_parts(node.children[1])
+    if top is None or bottom is None:
+        return None
+    return _division_rows(node, top, bottom, ctx)
+
+
+def polar_form(node: CoreNode, ctx: SolveContext) -> CoreNode:
+    """Тригонометрическая форма ``r(cos φ + i sin φ)`` любого числа."""
+    value = to_sympy(node)
+    if value.is_number is not True:
+        raise SolveError("полярная форма — у комплексного числа")
+    radius = sympy.simplify(sympy.Abs(value))
+    angle = sympy.simplify(sympy.arg(value))
+    result = _polar_node(radius, angle)
+    parts = CoreNode.node(
+        T.LIST,
+        CoreNode.node(T.EQUALS, CoreNode.variable("r"), _value(radius)),
+        CoreNode.node(T.EQUALS, CoreNode.variable("φ"), _value(angle)),
+    )
+    ctx.result.add_group("complex_calculate_polar", Step(node, parts, "complex_calculate_polar"))
+    ctx.result.add_group("write_polar_form", Step(node, result, "write_polar_form"))
+    return result
+
+
 def solve_imaginary_arithmetic(node: CoreNode, ctx: SolveContext) -> CoreNode:
     """Арифметика с ``i``: карточки по строкам, иначе стандартный вид через sympy."""
     if ctx.depth == 0:
@@ -454,10 +906,23 @@ def solve_imaginary_arithmetic(node: CoreNode, ctx: SolveContext) -> CoreNode:
             left, right = _parts(node.children[0]), _parts(node.children[1])
             if left is not None and right is not None:
                 return _difference_rows(node, left, right, ctx)
+        if node.type in (T.ADD, T.SUBTRACT) and len(node.children) == 2:
+            first = _numeric_parts(node.children[0])
+            second = _numeric_parts(node.children[1])
+            if first is not None and second is not None:
+                return _sum_rows(node, first, second, ctx, subtract=node.type is T.SUBTRACT)
         if node.type in (T.MULTIPLY, T.MULTIPLY_IMPLICIT) and len(node.children) == 2:
             left, right = _parts(node.children[0]), _parts(node.children[1])
             if left is not None and right is not None:
                 return _product_rows(node, left, right, ctx)
+        if node.type in (T.FRACTION, T.DIVIDE):
+            answer = complex_rationalize(node, ctx)
+            if answer is not None:
+                return answer
+        if node.type is T.POWER:
+            answer = complex_power_card(node, ctx)
+            if answer is not None:
+                return answer
     result = from_sympy(sympy.simplify(to_sympy(node)))
     ctx.result.add(Step(left=node, right=result, key="complex_convert_std_form"))
     return result
@@ -555,25 +1020,86 @@ def _polar_operation(node: CoreNode, args: list[CoreNode], *, divide: bool) -> C
 def complex_roots(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
     """Извлечь корни n-й степени из комплексного числа.
 
-    Аргумент — натуральная степень ``n``; ответ — множество из ``n`` корней
-    (шаг ``complex_find_root_polar``).
+    Аргумент — натуральная степень ``n`` (без аргумента берём квадратный
+    корень); ответ — множество из ``n`` корней (шаг ``complex_find_root_polar``).
     """
-    degree = _integer_argument(args)
+    degree = 2 if not args else _integer_argument(args)
     if degree < 1:
         raise SolveError("степень корня — натуральное число")
     value = to_sympy(node)
     if value.is_number is not True:
         raise SolveError("корни извлекаются из числа")
-    unknown = sympy.Symbol("_z")
-    try:
-        found = sympy.solve(sympy.Eq(unknown**degree, value), unknown)
-    except (NotImplementedError, TypeError, ValueError) as error:
-        raise SolveError("корни не выражаются") from error
-    if not found:
+    roots = _polar_roots(value, degree)
+    if not roots:
         raise SolveError("корни не выражаются")
-    answer = from_sympy(sympy.FiniteSet(*found))
-    ctx.result.add(Step(left=node, right=answer, key="complex_find_root_polar"))
+    answer = from_sympy(sympy.FiniteSet(*roots))
+    detail = _root_polar_detail(node, value, degree)
+    ctx.result.add_group(
+        "complex_find_root_polar",
+        Step(node, answer, "complex_find_root_polar", subresult=detail),
+    )
     return answer
+
+
+def _polar_roots(value: sympy.Expr, degree: int) -> list[sympy.Expr]:
+    """Все ``degree`` корней по формуле Муавра, в алгебраической форме."""
+    radius = sympy.simplify(sympy.Abs(value))
+    angle = sympy.simplify(sympy.arg(value))
+    root_radius = sympy.simplify(sympy.root(radius, degree))
+    found: list[sympy.Expr] = []
+    for index in range(degree):
+        angle_of_root = sympy.simplify((angle + 2 * sympy.pi * index) / degree)
+        found.append(
+            sympy.simplify(
+                sympy.expand_complex(
+                    root_radius * (sympy.cos(angle_of_root) + sympy.I * sympy.sin(angle_of_root))
+                )
+            )
+        )
+    # FiniteSet sorts the roots the same way for every caller: the app keeps a stable order.
+    return list(sympy.FiniteSet(*found))
+
+
+def _root_polar_detail(node: CoreNode, value: sympy.Expr, degree: int) -> SolveResult:
+    """Модуль и аргумент подкоренного числа и его корни в тригонометрической форме."""
+    radius = sympy.simplify(sympy.Abs(value))
+    angle = sympy.simplify(sympy.arg(value))
+    root_radius = sympy.simplify(sympy.root(radius, degree))
+    polar_roots = [
+        _polar_node(root_radius, sympy.simplify((angle + 2 * sympy.pi * index) / degree))
+        for index in range(degree)
+    ]
+    detail = SolveResult()
+    detail.add_group("complex_trig_form_simple", _modulus_argument(node, radius, angle))
+    r, phi, n, k = (CoreNode.variable(name) for name in ("r", "φ", "n", "k"))
+    shifted = CoreNode.node(T.ADD, phi, CoreNode.node(T.MULTIPLY_IMPLICIT, _value(2 * sympy.pi), k))
+    root_angle = CoreNode.node(T.FRACTION, shifted, n)
+    formula = CoreNode.node(
+        T.EQUALS,
+        CoreNode.node(T.POWER, CoreNode.node(T.BRACKET, _polar_node_symbolic(r, phi)), n),
+        CoreNode.node(
+            T.MULTIPLY_IMPLICIT,
+            CoreNode.node(T.POWER, r, CoreNode.node(T.FRACTION, _number(Fraction(1)), n)),
+            CoreNode.node(
+                T.BRACKET,
+                CoreNode.node(
+                    T.ADD,
+                    CoreNode.node(T.COS, root_angle),
+                    CoreNode.node(
+                        T.MULTIPLY_IMPLICIT,
+                        _unit(),
+                        CoreNode.node(T.SIN, CoreNode.node(T.FRACTION, shifted, n)),
+                    ),
+                ),
+            ),
+        ),
+    )
+    detail.add_group(
+        "complex_root_formula",
+        Step(node, CoreNode.node(T.LIST, *polar_roots), "complex_root_formula", [formula]),
+    )
+    detail.set_solution(CoreNode.node(T.LIST, *polar_roots))
+    return detail
 
 
 def _integer_argument(args: list[CoreNode]) -> int:
@@ -609,8 +1135,11 @@ __all__ = [
     "complex_polar_divide",
     "complex_polar_multiply",
     "complex_power",
+    "complex_power_card",
+    "complex_rationalize",
     "complex_roots",
     "contains_imaginary",
+    "polar_form",
     "solve_complex",
     "solve_imaginary_arithmetic",
 ]

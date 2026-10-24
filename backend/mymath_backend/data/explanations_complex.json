@@ -1,0 +1,51 @@
+{
+  "complex_clear_denominator": {
+    "arity": 1,
+    "templates": {
+      "default": "Multiply both sides by ARG1 to clear it from the denominator",
+      "ru": "Умножим обе части на ARG1, чтобы убрать его из знаменателя"
+    }
+  },
+  "complex_i_period": {
+    "arity": 0,
+    "templates": {
+      "default": "Powers of i repeat every four: i⁴ = 1, so keep the remainder of the exponent",
+      "ru": "Степени i повторяются через четыре: i⁴ = 1, поэтому оставим остаток показателя"
+    }
+  },
+  "complex_mod_arg": {
+    "arity": 3,
+    "templates": {
+      "default": "For ARG1 the modulus is ARG2 and the argument is ARG3",
+      "ru": "У числа ARG1 модуль равен ARG2, а аргумент равен ARG3"
+    }
+  },
+  "complex_pow_inverse": {
+    "arity": 0,
+    "templates": {
+      "default": "Replace the negative power with the reciprocal of the positive one",
+      "ru": "Заменим отрицательную степень обратной величиной положительной степени"
+    }
+  },
+  "complex_pow_split": {
+    "arity": 0,
+    "templates": {
+      "default": "Raise each factor to the power separately",
+      "ru": "Возведём в степень каждый множитель отдельно"
+    }
+  },
+  "complex_quad_coeffs": {
+    "arity": 0,
+    "templates": {
+      "default": "Write out the coefficients a, b and c of the quadratic equation",
+      "ru": "Выпишем коэффициенты a, b и c квадратного уравнения"
+    }
+  },
+  "complex_root_formula": {
+    "arity": 1,
+    "templates": {
+      "default": "Find every root by the formula ARG1",
+      "ru": "Найдём все корни по формуле ARG1"
+    }
+  }
+}

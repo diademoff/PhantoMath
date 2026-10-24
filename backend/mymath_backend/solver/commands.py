@@ -69,7 +69,11 @@ from .complex import (
     complex_polar_divide,
     complex_polar_multiply,
     complex_power,
+    complex_power_card,
+    complex_rationalize,
     complex_roots,
+    contains_imaginary,
+    polar_form,
 )
 from .conics import conic_details
 from .derivatives import nth_derivative
@@ -161,9 +165,14 @@ def expand(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
 
     ``trig=True`` раскрывает и тригонометрические формулы: ``sin(2x)``
     превращается в ``2·sin(x)·cos(x)``. Без него sympy оставил бы функцию
-    как есть.
+    как есть. Степень комплексного числа раскрывается карточками Муавра:
+    ``sympy.expand`` оставил бы от неё только ответ.
     """
     del args
+    if node.type is not T.EQUALS and contains_imaginary(node):
+        card = complex_power_card(node, ctx)
+        if card is not None:
+            return card
     token = ordered_terms.set(True)
     try:
         return _apply_side(node, ctx, "expand_msg", lambda expr: sympy.expand(expr, trig=True))
@@ -1154,29 +1163,23 @@ def _vertical_asymptotes(function: sympy.Expr, symbol: sympy.Symbol) -> list[sym
 
 
 def rationalize(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
-    """Убрать иррациональность из знаменателя."""
+    """Убрать иррациональность из знаменателя.
+
+    Комплексный знаменатель убирается сопряжённым числом — это та же
+    карточка деления, что и для остальных частных.
+    """
     del args
+    if node.type is not T.EQUALS and contains_imaginary(node):
+        card = complex_rationalize(node, ctx)
+        if card is not None:
+            return card
     return _apply_side(node, ctx, "rationalize_roots", sympy.radsimp)
 
 
 def polar(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:
-    """Записать комплексное число в полярной форме ``r(cos φ + i sin φ)``."""
+    """Записать число в тригонометрической форме ``r(cos φ + i sin φ)``."""
     del args
-    value = to_sympy(node)
-    if value.is_number is not True or value.is_real is True:
-        raise SolveError("полярная форма — у комплексного числа")
-    radius = from_sympy(sympy.simplify(sympy.Abs(value)))
-    angle = from_sympy(sympy.simplify(sympy.arg(value)))
-    imaginary = CoreNode.constant("i")
-    trig = CoreNode.node(
-        T.ADD,
-        CoreNode.node(T.COS, angle),
-        CoreNode.node(T.MULTIPLY_IMPLICIT, imaginary, CoreNode.node(T.SIN, angle)),
-    )
-    result = CoreNode.node(T.MULTIPLY_IMPLICIT, radius, CoreNode.node(T.BRACKET, trig))
-    ctx.result.add(Step(left=node, right=None, key="complex_calculate_polar"))
-    ctx.result.add(Step(left=node, right=result, key="write_polar_form"))
-    return result
+    return polar_form(node, ctx)
 
 
 def vertex(node: CoreNode, ctx: SolveContext, args: list[CoreNode]) -> CoreNode:

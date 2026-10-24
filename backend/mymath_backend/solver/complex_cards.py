@@ -2,26 +2,39 @@
 
 Worked out for ``(2+i)(1-i)``; positive integers ``a`` and ``c`` follow the same rows.
 Anything else (other signs, ``bi`` with ``b > 1``, three factors) is left to the general path.
+
+The module also owns the cards for equations with the imaginary unit: a complex
+coefficient is still a number, so ``az + b = 0`` and ``az² + bz + c = 0`` are
+solved by a card of their own (``complex_clear_denominator``, ``complex_quad_coeffs``)
+instead of the real-root search.
 """
 
 from __future__ import annotations
 
 from fractions import Fraction
 
+import sympy
+
 from ..ast import CoreNode, CoreRichText
 from ..node_types import CoreNodeType as T
-from .base import SolveContext, SolveResult, Step
+from .base import SolveContext, SolveError, SolveResult, Step
 from .complex import (
+    _bracket,
+    _complex_expr,
     _complex_node,
+    _division_rows,
     _iterm,
+    _standard,
     _sum_suffix_detail,
+    contains_imaginary,
     solve_imaginary_arithmetic,
 )
 from .complex import (
     _parts as _complex_parts,
 )
-from .methods import method_provider
+from .methods import method_provider, method_provider_first
 from .quadratic_cards import _SIGNS, _chain, _detail, _num
+from .sympy_bridge import from_sympy, to_sympy
 
 
 def _node(kind: T, *children: CoreNode) -> CoreNode:
@@ -894,6 +907,267 @@ def complex_quotient_methods(node: CoreNode, variables: list[str]) -> list[Solve
     card.add_group("frac_reduce_frac", Step(summed, final, "frac_reduce_frac_alg", [two]))
     card.set_solution(final)
     return [card, _quotient_polar(node)]
+
+
+@method_provider_first(T.EQUALS)
+def complex_equation_methods(node: CoreNode, variables: list[str]) -> list[SolveResult]:
+    """Уравнения с мнимой единицей: комплексный коэффициент — тоже число.
+
+    Общий поиск корней читает коэффициенты как действительные числа и на
+    ``i`` срывается (или теряет корень), поэтому карточка области берёт такие
+    уравнения первой. Действительные уравнения она не трогает.
+    """
+    if len(node.children) != 2 or not contains_imaginary(node):
+        return []
+    if len(variables) != 1:
+        return []
+    var = variables[0]
+    symbol = sympy.Symbol(var)
+    try:
+        expression = to_sympy(node.children[0]) - to_sympy(node.children[1])
+        numerator, denominator = sympy.fraction(sympy.together(expression))
+        clears = denominator.has(symbol)
+        if clears:
+            numeric_part = denominator.subs(symbol, sympy.Integer(1))
+            numerator = sympy.expand(numerator / numeric_part)
+        else:
+            numerator = sympy.expand(numerator / denominator)
+        polynomial = sympy.Poly(numerator, symbol)
+    except (
+        SolveError,
+        sympy.PolynomialError,
+        sympy.GeneratorsNeeded,
+        TypeError,
+        ValueError,
+        ZeroDivisionError,
+    ):
+        return []
+    degree = polynomial.degree()
+    if degree == 1:
+        card = _linear_equation_card(node, var, polynomial, clears)
+    elif degree == 2:
+        card = _quadratic_equation_card(node, var, polynomial)
+    else:
+        return []
+    return [card] if card is not None else []
+
+
+def _needs_simplification(node: CoreNode) -> bool:
+    """Есть ли в уравнении комплексная степень или дробь, которую надо сосчитать."""
+    return any(
+        item.type in (T.POWER, T.FRACTION, T.DIVIDE) and contains_imaginary(item)
+        for item in node.walk()
+        if item is not node
+    )
+
+
+def _terms(*items: CoreNode) -> CoreNode:
+    """A sum where a negative addend goes through «−» instead of «+ −»."""
+    result = items[0]
+    for node in items[1:]:
+        if node.type is T.NEGATIVE and len(node.children) == 1:
+            result = _node(T.SUBTRACT, result, node.children[0])
+        elif node.type is T.CONSTANT and (node.value or "").lstrip().startswith(("-", "−")):
+            positive = CoreNode.constant((node.value or "").lstrip()[1:])
+            result = _node(T.SUBTRACT, result, positive)
+        else:
+            result = _node(T.ADD, result, node)
+    return result
+
+
+def _linear_equation_card(
+    node: CoreNode, var: str, polynomial: sympy.Poly, clears: bool
+) -> SolveResult | None:
+    """``az + b = 0``: the constant goes right, then both sides are divided by ``a``."""
+    symbol = sympy.Symbol(var)
+    a = polynomial.coeff_monomial(symbol)
+    b = polynomial.coeff_monomial(1)
+    if a == 0:
+        return None
+    unknown = CoreNode.variable(var)
+    a_node, b_node = from_sympy(a), from_sympy(b)
+    standard = _node(
+        T.EQUALS,
+        _terms(
+            _node(T.MULTIPLY, _bracket(a_node), unknown),
+            b_node,
+        ),
+        _num(0),
+    )
+    card = SolveResult()
+    if clears:
+        card.add_group(
+            "complex_clear_denominator",
+            Step(node, standard, "complex_clear_denominator", [unknown]),
+        )
+    elif _needs_simplification(node):
+        card.add_group("simplify", Step(node, standard, "simplify"))
+    moved = _node(
+        T.EQUALS,
+        _node(T.MULTIPLY, _bracket(a_node), unknown),
+        from_sympy(-b),
+    )
+    card.add_group("rel_move_right_const_eq", Step(standard, moved, "rel_move_right_const_eq"))
+    fraction = _node(T.FRACTION, from_sympy(-b), a_node)
+    divided = _node(T.EQUALS, unknown, fraction)
+    detail = SolveResult()
+    scratch = SolveContext(result=detail)
+    _division_rows(
+        fraction,
+        (sympy.re(-b), sympy.im(-b)),
+        (sympy.re(a), sympy.im(a)),
+        scratch,
+    )
+    card.add_group(
+        "eq_linear_div",
+        Step(
+            moved,
+            divided,
+            "eq_linear_div",
+            [a_node],
+            subresult=detail if len(detail) else None,
+        ),
+    )
+    answer = _node(T.EQUALS, unknown, _standard(-b / a))
+    if not divided.structural_eq(answer):
+        card.add_group(
+            "complex_convert_std_form", Step(divided, answer, "complex_convert_std_form")
+        )
+    card.set_solution(answer)
+    return card
+
+
+def _quadratic_equation_card(
+    node: CoreNode, var: str, polynomial: sympy.Poly
+) -> SolveResult | None:
+    """``az² + bz + c = 0``: the discriminant, its root and the two roots."""
+    coefficients = polynomial.all_coeffs()
+    if len(coefficients) != 3:
+        return None
+    a, b, c = coefficients
+    unknown = CoreNode.variable(var)
+    a_node = _complex_expr(sympy.re(a), sympy.im(a))
+    b_node = _complex_expr(sympy.re(b), sympy.im(b))
+    c_node = _complex_expr(sympy.re(c), sympy.im(c))
+    squared = (
+        _node(T.POWER, unknown, _num(2))
+        if a == 1
+        else _node(T.MULTIPLY, _bracket(a_node), _node(T.POWER, unknown, _num(2)))
+    )
+    standard = _node(
+        T.EQUALS,
+        _terms(squared, _node(T.MULTIPLY, _bracket(b_node), unknown), c_node),
+        _num(0),
+    )
+    card = SolveResult(header="eq_quad_solve_complex")
+    current = standard
+    if _needs_simplification(node):
+        card.add_group("simplify", Step(node, standard, "simplify"))
+    else:
+        current = node
+    a_v, b_v, c_v = (CoreNode.variable(name) for name in ("a", "b", "c"))
+    coefficients_node = _node(
+        T.LIST,
+        _node(T.EQUALS, a_v, a_node),
+        _node(T.EQUALS, b_v, b_node),
+        _node(T.EQUALS, c_v, c_node),
+    )
+    card.add_group(
+        "complex_quad_coeffs",
+        Step(current, coefficients_node, "complex_quad_coeffs"),
+    )
+    two = _num(2)
+    discriminant_formula = _node(
+        T.EQUALS,
+        CoreNode.variable("D"),
+        _node(
+            T.SUBTRACT,
+            _node(T.POWER, b_v, two),
+            _node(T.MULTIPLY, _num(4), a_v, c_v),
+        ),
+    )
+    discriminant = sympy.expand(b * b - 4 * a * c)
+    substitution = _node(
+        T.SUBTRACT,
+        _node(T.POWER, _bracket(b_node), two),
+        (
+            _node(T.MULTIPLY, _num(4), _bracket(c_node))
+            if a == 1
+            else _node(T.MULTIPLY, _num(4), _bracket(a_node), _bracket(c_node))
+        ),
+    )
+    card.add_group(
+        "eq_quad_eval_disc_sub",
+        Step(
+            substitution,
+            from_sympy(discriminant),
+            "eq_quad_eval_disc_sub",
+            [a_node, b_node, c_node, discriminant_formula],
+        ),
+    )
+    square_root = sympy.sqrt(discriminant)
+    root_node = from_sympy(sympy.simplify(square_root))
+    card.add_group(
+        "root_square",
+        Step(_node(T.ROOT2, from_sympy(discriminant)), root_node, "root_square"),
+    )
+    abc_formula = _node(
+        T.EQUALS,
+        unknown,
+        _node(
+            T.FRACTION,
+            _node(
+                T.ADD_SUBTRACT,
+                _node(T.NEGATIVE, b_v),
+                _node(
+                    T.ROOT2,
+                    _node(
+                        T.SUBTRACT,
+                        _node(T.POWER, b_v, two),
+                        _node(T.MULTIPLY, _num(4), a_v, c_v),
+                    ),
+                ),
+            ),
+            _node(T.MULTIPLY, two, a_v),
+        ),
+    )
+    card.add_group(
+        "quad_formula_abc",
+        Step(
+            standard,
+            abc_formula,
+            "quad_formula_abc",
+            [standard, abc_formula],
+        ),
+    )
+    denominator = two if a == 1 else _node(T.MULTIPLY, two, _bracket(a_node))
+    substituted = _node(
+        T.EQUALS,
+        unknown,
+        _node(
+            T.FRACTION,
+            _node(
+                T.ADD_SUBTRACT,
+                _bracket(from_sympy(-b)),
+                _bracket(root_node),
+            ),
+            denominator,
+        ),
+    )
+    card.add_group("coeff_sub", Step(abc_formula, substituted, "coeff_sub"))
+    plus = sympy.simplify((-b + square_root) / (2 * a))
+    minus = sympy.simplify((-b - square_root) / (2 * a))
+    roots = _node(
+        T.LIST,
+        _node(T.EQUALS, unknown, _standard(plus)),
+        _node(T.EQUALS, unknown, _standard(minus)),
+    )
+    card.add_group(
+        "quad_separate",
+        Step(substituted, roots, "quad_separate_signs", [_SIGNS[0], _SIGNS[1]]),
+    )
+    card.set_solution(roots)
+    return card
 
 
 __all__ = ["complex_product_methods", "complex_quotient_methods", "complex_square_methods"]
