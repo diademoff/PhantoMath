@@ -21,6 +21,14 @@ from mymath_backend.teaching_registry import templates as pack_templates
 EXPLANATIONS = explanations_path()
 
 
+def _dictionary() -> dict[str, dict[str, object]]:
+    """The main dictionary plus the topic files ``explanations_*.json`` next to it."""
+    data = json.loads(EXPLANATIONS.read_text(encoding="utf-8"))
+    for extra in sorted(EXPLANATIONS.parent.glob(f"{EXPLANATIONS.stem}_*.json")):
+        data |= json.loads(extra.read_text(encoding="utf-8"))
+    return data
+
+
 @pytest.fixture(scope="module")
 def explanations() -> Explanations:
     return load_explanations(str(EXPLANATIONS))
@@ -28,11 +36,11 @@ def explanations() -> Explanations:
 
 class TestDictionary:
     def test_lessons_are_merged(self, explanations: Explanations) -> None:
-        data = json.loads(EXPLANATIONS.read_text(encoding="utf-8"))
+        data = _dictionary()
         assert set(explanations) == set(data) | set(TEMPLATES) | set(pack_templates())
 
     def test_every_key_has_russian_and_english(self) -> None:
-        data = json.loads(EXPLANATIONS.read_text(encoding="utf-8"))
+        data = _dictionary()
         missing = [
             key
             for key, entry in data.items()
@@ -60,10 +68,23 @@ class TestDictionary:
 
     def test_russian_text_has_no_latin_lookalikes(self) -> None:
         """Слово, набранное латинской «e» среди кириллицы, выглядит верно, но не ищется."""
-        data = json.loads(EXPLANATIONS.read_text(encoding="utf-8"))
+        data = _dictionary()
         mixed = re.compile(r"[А-Яа-яЁё][a-zA-Z]|[a-zA-Z][А-Яа-яЁё]")
         bad = [key for key, entry in data.items() if mixed.search(entry["templates"]["ru"])]
         assert bad == []
+
+    def test_a_key_defined_twice_is_an_error(self, tmp_path: Path) -> None:
+        entry = {"arity": 0, "templates": {DEFAULT_LOCALE: "A", "ru": "А"}}
+        (tmp_path / "explanations.json").write_text(json.dumps({"k": entry}), encoding="utf-8")
+        (tmp_path / "explanations_x.json").write_text(json.dumps({"k": entry}), encoding="utf-8")
+        with pytest.raises(ValueError, match="already defined"):
+            Explanations.from_file(tmp_path / "explanations.json")
+
+    def test_topic_files_are_merged(self, tmp_path: Path) -> None:
+        entry = {"arity": 0, "templates": {DEFAULT_LOCALE: "A", "ru": "А"}}
+        (tmp_path / "explanations.json").write_text(json.dumps({"a": entry}), encoding="utf-8")
+        (tmp_path / "explanations_x.json").write_text(json.dumps({"b": entry}), encoding="utf-8")
+        assert {"a", "b"} <= set(Explanations.from_file(tmp_path / "explanations.json"))
 
     def test_undefined_reads_as_a_word(self, explanations: Explanations) -> None:
         assert explanations.render("undefined", [], "ru").text == "Не определено"

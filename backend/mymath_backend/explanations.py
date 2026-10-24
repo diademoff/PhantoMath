@@ -91,11 +91,22 @@ class Explanations:
 
     @classmethod
     def from_file(cls, path: str | Path) -> Explanations:
-        """Загрузить словарь из JSON-файла."""
+        """Загрузить словарь из JSON-файла и тематических ``explanations_*.json`` рядом с ним.
+
+        Ключ, определённый в двух файлах, — ошибка: тексты не должны тихо перекрывать друг друга.
+        """
         from .teaching import TEMPLATES
         from .teaching_registry import templates
 
-        return cls(json.loads(Path(path).read_text(encoding="utf-8")) | TEMPLATES | templates())
+        main = Path(path)
+        entries: dict[str, dict[str, Any]] = json.loads(main.read_text(encoding="utf-8"))
+        for extra in sorted(main.parent.glob(f"{main.stem}_*.json")):
+            more = json.loads(extra.read_text(encoding="utf-8"))
+            clash = sorted(set(entries) & set(more))
+            if clash:
+                raise ValueError(f"{extra.name}: keys already defined: {', '.join(clash[:5])}")
+            entries |= more
+        return cls(entries | TEMPLATES | templates())
 
     # -- доступ --------------------------------------------------------
 
